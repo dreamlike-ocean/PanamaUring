@@ -11,8 +11,8 @@ public class io_uring_files_update {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
         Constants$root.C_INT$LAYOUT.withName("offset"),
-        MemoryLayout.paddingLayout(32),
-        Constants$root.C_POINTER$LAYOUT.withName("fds")
+        Constants$root.C_INT$LAYOUT.withName("resv"),
+        Constants$root.C_LONG_LONG$LAYOUT.withName("fds")
     ).withName("io_uring_files_update");
     public static MemoryLayout $LAYOUT() {
         return io_uring_files_update.$struct$LAYOUT;
@@ -33,20 +33,36 @@ public class io_uring_files_update {
     public static void offset$set(MemorySegment seg, long index, int x) {
         io_uring_files_update.offset$VH.set(seg.asSlice(index*sizeof()), x);
     }
+    static final VarHandle resv$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("resv"));
+    public static VarHandle resv$VH() {
+        return io_uring_files_update.resv$VH;
+    }
+    public static int resv$get(MemorySegment seg) {
+        return (int)io_uring_files_update.resv$VH.get(seg);
+    }
+    public static void resv$set( MemorySegment seg, int x) {
+        io_uring_files_update.resv$VH.set(seg, x);
+    }
+    public static int resv$get(MemorySegment seg, long index) {
+        return (int)io_uring_files_update.resv$VH.get(seg.asSlice(index*sizeof()));
+    }
+    public static void resv$set(MemorySegment seg, long index, int x) {
+        io_uring_files_update.resv$VH.set(seg.asSlice(index*sizeof()), x);
+    }
     static final VarHandle fds$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("fds"));
     public static VarHandle fds$VH() {
         return io_uring_files_update.fds$VH;
     }
-    public static MemoryAddress fds$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress)io_uring_files_update.fds$VH.get(seg);
+    public static long fds$get(MemorySegment seg) {
+        return (long)io_uring_files_update.fds$VH.get(seg);
     }
-    public static void fds$set( MemorySegment seg, MemoryAddress x) {
+    public static void fds$set( MemorySegment seg, long x) {
         io_uring_files_update.fds$VH.set(seg, x);
     }
-    public static MemoryAddress fds$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress)io_uring_files_update.fds$VH.get(seg.asSlice(index*sizeof()));
+    public static long fds$get(MemorySegment seg, long index) {
+        return (long)io_uring_files_update.fds$VH.get(seg.asSlice(index*sizeof()));
     }
-    public static void fds$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void fds$set(MemorySegment seg, long index, long x) {
         io_uring_files_update.fds$VH.set(seg.asSlice(index*sizeof()), x);
     }
     public static long sizeof() { return $LAYOUT().byteSize(); }

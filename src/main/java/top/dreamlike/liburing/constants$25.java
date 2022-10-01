@@ -9,58 +9,55 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$25 {
 
-    static final FunctionDescriptor io_uring_prep_fsync$FUNC = FunctionDescriptor.ofVoid(
+    static final FunctionDescriptor io_uring_register_buffers$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle io_uring_prep_fsync$MH = RuntimeHelper.downcallHandle(
-        "io_uring_prep_fsync",
-        constants$25.io_uring_prep_fsync$FUNC
+    static final MethodHandle io_uring_register_buffers$MH = RuntimeHelper.downcallHandle(
+        "io_uring_register_buffers",
+        constants$25.io_uring_register_buffers$FUNC
     );
-    static final FunctionDescriptor io_uring_prep_nop$FUNC = FunctionDescriptor.ofVoid(
+    static final FunctionDescriptor io_uring_unregister_buffers$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle io_uring_prep_nop$MH = RuntimeHelper.downcallHandle(
-        "io_uring_prep_nop",
-        constants$25.io_uring_prep_nop$FUNC
+    static final MethodHandle io_uring_unregister_buffers$MH = RuntimeHelper.downcallHandle(
+        "io_uring_unregister_buffers",
+        constants$25.io_uring_unregister_buffers$FUNC
     );
-    static final FunctionDescriptor io_uring_prep_timeout$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle io_uring_prep_timeout$MH = RuntimeHelper.downcallHandle(
-        "io_uring_prep_timeout",
-        constants$25.io_uring_prep_timeout$FUNC
-    );
-    static final FunctionDescriptor io_uring_prep_timeout_remove$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle io_uring_prep_timeout_remove$MH = RuntimeHelper.downcallHandle(
-        "io_uring_prep_timeout_remove",
-        constants$25.io_uring_prep_timeout_remove$FUNC
-    );
-    static final FunctionDescriptor io_uring_prep_accept$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor io_uring_register_files$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle io_uring_prep_accept$MH = RuntimeHelper.downcallHandle(
-        "io_uring_prep_accept",
-        constants$25.io_uring_prep_accept$FUNC
+    static final MethodHandle io_uring_register_files$MH = RuntimeHelper.downcallHandle(
+        "io_uring_register_files",
+        constants$25.io_uring_register_files$FUNC
     );
-    static final FunctionDescriptor io_uring_sq_space_left$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor io_uring_unregister_files$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle io_uring_sq_space_left$MH = RuntimeHelper.downcallHandle(
-        "io_uring_sq_space_left",
-        constants$25.io_uring_sq_space_left$FUNC
+    static final MethodHandle io_uring_unregister_files$MH = RuntimeHelper.downcallHandle(
+        "io_uring_unregister_files",
+        constants$25.io_uring_unregister_files$FUNC
+    );
+    static final FunctionDescriptor io_uring_register_files_update$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_register_files_update$MH = RuntimeHelper.downcallHandle(
+        "io_uring_register_files_update",
+        constants$25.io_uring_register_files_update$FUNC
+    );
+    static final FunctionDescriptor io_uring_register_eventfd$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_register_eventfd$MH = RuntimeHelper.downcallHandle(
+        "io_uring_register_eventfd",
+        constants$25.io_uring_register_eventfd$FUNC
     );
 }
 

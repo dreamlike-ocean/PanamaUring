@@ -9,39 +9,6 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$11 {
 
-    static final FunctionDescriptor siginterrupt$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle siginterrupt$MH = RuntimeHelper.downcallHandle(
-        "siginterrupt",
-        constants$11.siginterrupt$FUNC
-    );
-    static final FunctionDescriptor sigaltstack$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle sigaltstack$MH = RuntimeHelper.downcallHandle(
-        "sigaltstack",
-        constants$11.sigaltstack$FUNC
-    );
-    static final FunctionDescriptor sigstack$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle sigstack$MH = RuntimeHelper.downcallHandle(
-        "sigstack",
-        constants$11.sigstack$FUNC
-    );
-    static final FunctionDescriptor pthread_sigmask$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle pthread_sigmask$MH = RuntimeHelper.downcallHandle(
-        "pthread_sigmask",
-        constants$11.pthread_sigmask$FUNC
-    );
     static final FunctionDescriptor pthread_kill$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_LONG_LONG$LAYOUT,
         Constants$root.C_INT$LAYOUT
@@ -54,6 +21,38 @@ class constants$11 {
     static final MethodHandle __libc_current_sigrtmin$MH = RuntimeHelper.downcallHandle(
         "__libc_current_sigrtmin",
         constants$11.__libc_current_sigrtmin$FUNC
+    );
+    static final FunctionDescriptor __libc_current_sigrtmax$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT);
+    static final MethodHandle __libc_current_sigrtmax$MH = RuntimeHelper.downcallHandle(
+        "__libc_current_sigrtmax",
+        constants$11.__libc_current_sigrtmax$FUNC
+    );
+    static final FunctionDescriptor imaxabs$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT
+    );
+    static final MethodHandle imaxabs$MH = RuntimeHelper.downcallHandle(
+        "imaxabs",
+        constants$11.imaxabs$FUNC
+    );
+    static final FunctionDescriptor imaxdiv$FUNC = FunctionDescriptor.of(MemoryLayout.structLayout(
+        Constants$root.C_LONG_LONG$LAYOUT.withName("quot"),
+        Constants$root.C_LONG_LONG$LAYOUT.withName("rem")
+    ),
+        Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT
+    );
+    static final MethodHandle imaxdiv$MH = RuntimeHelper.downcallHandle(
+        "imaxdiv",
+        constants$11.imaxdiv$FUNC
+    );
+    static final FunctionDescriptor strtoimax$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle strtoimax$MH = RuntimeHelper.downcallHandle(
+        "strtoimax",
+        constants$11.strtoimax$FUNC
     );
 }
 

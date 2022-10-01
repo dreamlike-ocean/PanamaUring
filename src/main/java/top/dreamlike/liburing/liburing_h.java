@@ -18,13 +18,13 @@ public class liburing_h extends liburing_h_1 {
     public static OfFloat C_FLOAT = Constants$root.C_FLOAT$LAYOUT;
     public static OfDouble C_DOUBLE = Constants$root.C_DOUBLE$LAYOUT;
     public static OfAddress C_POINTER = Constants$root.C_POINTER$LAYOUT;
+    public static int _XOPEN_SOURCE() {
+        return (int)500L;
+    }
     public static int _SYS_SOCKET_H() {
         return (int)1L;
     }
     public static int _FEATURES_H() {
-        return (int)1L;
-    }
-    public static int _DEFAULT_SOURCE() {
         return (int)1L;
     }
     public static int __GLIBC_USE_ISOC2X() {
@@ -39,10 +39,10 @@ public class liburing_h extends liburing_h_1 {
     public static int __USE_ISOC95() {
         return (int)1L;
     }
-    public static int __USE_POSIX_IMPLICITLY() {
+    public static int _POSIX_SOURCE() {
         return (int)1L;
     }
-    public static int _POSIX_SOURCE() {
+    public static int __USE_POSIX_IMPLICITLY() {
         return (int)1L;
     }
     public static int __USE_POSIX() {
@@ -57,19 +57,19 @@ public class liburing_h extends liburing_h_1 {
     public static int __USE_POSIX199506() {
         return (int)1L;
     }
-    public static int __USE_XOPEN2K() {
+    public static int __USE_XOPEN() {
         return (int)1L;
     }
-    public static int __USE_XOPEN2K8() {
+    public static int __USE_XOPEN_EXTENDED() {
         return (int)1L;
     }
-    public static int _ATFILE_SOURCE() {
+    public static int __USE_UNIX98() {
         return (int)1L;
     }
-    public static int __USE_MISC() {
+    public static int _LARGEFILE_SOURCE() {
         return (int)1L;
     }
-    public static int __USE_ATFILE() {
+    public static int __USE_LARGEFILE() {
         return (int)1L;
     }
     public static int __USE_FORTIFY_LEVEL() {
@@ -166,42 +166,6 @@ public class liburing_h extends liburing_h_1 {
         return (int)1L;
     }
     public static int __BIT_TYPES_DEFINED__() {
-        return (int)1L;
-    }
-    public static int _ENDIAN_H() {
-        return (int)1L;
-    }
-    public static int _BITS_ENDIAN_H() {
-        return (int)1L;
-    }
-    public static int __LITTLE_ENDIAN() {
-        return (int)1234L;
-    }
-    public static int __BIG_ENDIAN() {
-        return (int)4321L;
-    }
-    public static int __PDP_ENDIAN() {
-        return (int)3412L;
-    }
-    public static int _BITS_ENDIANNESS_H() {
-        return (int)1L;
-    }
-    public static int _BITS_BYTESWAP_H() {
-        return (int)1L;
-    }
-    public static int _BITS_UINTN_IDENTITY_H() {
-        return (int)1L;
-    }
-    public static int _SYS_SELECT_H() {
-        return (int)1L;
-    }
-    public static int __sigset_t_defined() {
-        return (int)1L;
-    }
-    public static int __timeval_defined() {
-        return (int)1L;
-    }
-    public static int _STRUCT_TIMESPEC() {
         return (int)1L;
     }
     public static int _BITS_PTHREADTYPES_COMMON_H() {
@@ -468,239 +432,56 @@ public class liburing_h extends liburing_h_1 {
     public static int _SS_SIZE() {
         return (int)128L;
     }
-    public static int __BITS_PER_LONG() {
-        return (int)64L;
-    }
-    public static int FIOSETOWN() {
-        return (int)35073L;
-    }
-    public static int SIOCSPGRP() {
-        return (int)35074L;
-    }
-    public static int FIOGETOWN() {
-        return (int)35075L;
-    }
-    public static int SIOCGPGRP() {
-        return (int)35076L;
-    }
-    public static int SIOCATMARK() {
-        return (int)35077L;
-    }
-    public static int SIOCGSTAMP_OLD() {
-        return (int)35078L;
-    }
-    public static int SIOCGSTAMPNS_OLD() {
-        return (int)35079L;
+    public static int SO_DEBUG() {
+        return (int)1L;
     }
     public static int SOL_SOCKET() {
         return (int)1L;
     }
-    public static int SO_DEBUG() {
-        return (int)1L;
-    }
-    public static int SO_REUSEADDR() {
-        return (int)2L;
-    }
-    public static int SO_TYPE() {
-        return (int)3L;
-    }
-    public static int SO_ERROR() {
-        return (int)4L;
-    }
-    public static int SO_DONTROUTE() {
-        return (int)5L;
+    public static int SO_ACCEPTCONN() {
+        return (int)30L;
     }
     public static int SO_BROADCAST() {
         return (int)6L;
     }
-    public static int SO_SNDBUF() {
-        return (int)7L;
+    public static int SO_DONTROUTE() {
+        return (int)5L;
     }
-    public static int SO_RCVBUF() {
-        return (int)8L;
-    }
-    public static int SO_SNDBUFFORCE() {
-        return (int)32L;
-    }
-    public static int SO_RCVBUFFORCE() {
-        return (int)33L;
+    public static int SO_ERROR() {
+        return (int)4L;
     }
     public static int SO_KEEPALIVE() {
         return (int)9L;
     }
-    public static int SO_OOBINLINE() {
-        return (int)10L;
-    }
-    public static int SO_NO_CHECK() {
-        return (int)11L;
-    }
-    public static int SO_PRIORITY() {
-        return (int)12L;
-    }
     public static int SO_LINGER() {
         return (int)13L;
     }
-    public static int SO_BSDCOMPAT() {
-        return (int)14L;
+    public static int SO_OOBINLINE() {
+        return (int)10L;
     }
-    public static int SO_REUSEPORT() {
-        return (int)15L;
-    }
-    public static int SO_PASSCRED() {
-        return (int)16L;
-    }
-    public static int SO_PEERCRED() {
-        return (int)17L;
+    public static int SO_RCVBUF() {
+        return (int)8L;
     }
     public static int SO_RCVLOWAT() {
         return (int)18L;
     }
+    public static int SO_RCVTIMEO() {
+        return (int)20L;
+    }
+    public static int SO_REUSEADDR() {
+        return (int)2L;
+    }
+    public static int SO_SNDBUF() {
+        return (int)7L;
+    }
     public static int SO_SNDLOWAT() {
         return (int)19L;
     }
-    public static int SO_RCVTIMEO_OLD() {
-        return (int)20L;
-    }
-    public static int SO_SNDTIMEO_OLD() {
+    public static int SO_SNDTIMEO() {
         return (int)21L;
     }
-    public static int SO_SECURITY_AUTHENTICATION() {
-        return (int)22L;
-    }
-    public static int SO_SECURITY_ENCRYPTION_TRANSPORT() {
-        return (int)23L;
-    }
-    public static int SO_SECURITY_ENCRYPTION_NETWORK() {
-        return (int)24L;
-    }
-    public static int SO_BINDTODEVICE() {
-        return (int)25L;
-    }
-    public static int SO_ATTACH_FILTER() {
-        return (int)26L;
-    }
-    public static int SO_DETACH_FILTER() {
-        return (int)27L;
-    }
-    public static int SO_PEERNAME() {
-        return (int)28L;
-    }
-    public static int SO_ACCEPTCONN() {
-        return (int)30L;
-    }
-    public static int SO_PEERSEC() {
-        return (int)31L;
-    }
-    public static int SO_PASSSEC() {
-        return (int)34L;
-    }
-    public static int SO_MARK() {
-        return (int)36L;
-    }
-    public static int SO_PROTOCOL() {
-        return (int)38L;
-    }
-    public static int SO_DOMAIN() {
-        return (int)39L;
-    }
-    public static int SO_RXQ_OVFL() {
-        return (int)40L;
-    }
-    public static int SO_WIFI_STATUS() {
-        return (int)41L;
-    }
-    public static int SO_PEEK_OFF() {
-        return (int)42L;
-    }
-    public static int SO_NOFCS() {
-        return (int)43L;
-    }
-    public static int SO_LOCK_FILTER() {
-        return (int)44L;
-    }
-    public static int SO_SELECT_ERR_QUEUE() {
-        return (int)45L;
-    }
-    public static int SO_BUSY_POLL() {
-        return (int)46L;
-    }
-    public static int SO_MAX_PACING_RATE() {
-        return (int)47L;
-    }
-    public static int SO_BPF_EXTENSIONS() {
-        return (int)48L;
-    }
-    public static int SO_INCOMING_CPU() {
-        return (int)49L;
-    }
-    public static int SO_ATTACH_BPF() {
-        return (int)50L;
-    }
-    public static int SO_ATTACH_REUSEPORT_CBPF() {
-        return (int)51L;
-    }
-    public static int SO_ATTACH_REUSEPORT_EBPF() {
-        return (int)52L;
-    }
-    public static int SO_CNX_ADVICE() {
-        return (int)53L;
-    }
-    public static int SCM_TIMESTAMPING_OPT_STATS() {
-        return (int)54L;
-    }
-    public static int SO_MEMINFO() {
-        return (int)55L;
-    }
-    public static int SO_INCOMING_NAPI_ID() {
-        return (int)56L;
-    }
-    public static int SO_COOKIE() {
-        return (int)57L;
-    }
-    public static int SCM_TIMESTAMPING_PKTINFO() {
-        return (int)58L;
-    }
-    public static int SO_PEERGROUPS() {
-        return (int)59L;
-    }
-    public static int SO_ZEROCOPY() {
-        return (int)60L;
-    }
-    public static int SO_TXTIME() {
-        return (int)61L;
-    }
-    public static int SO_BINDTOIFINDEX() {
-        return (int)62L;
-    }
-    public static int SO_TIMESTAMP_OLD() {
-        return (int)29L;
-    }
-    public static int SO_TIMESTAMPNS_OLD() {
-        return (int)35L;
-    }
-    public static int SO_TIMESTAMPING_OLD() {
-        return (int)37L;
-    }
-    public static int SO_TIMESTAMP_NEW() {
-        return (int)63L;
-    }
-    public static int SO_TIMESTAMPNS_NEW() {
-        return (int)64L;
-    }
-    public static int SO_TIMESTAMPING_NEW() {
-        return (int)65L;
-    }
-    public static int SO_RCVTIMEO_NEW() {
-        return (int)66L;
-    }
-    public static int SO_SNDTIMEO_NEW() {
-        return (int)67L;
-    }
-    public static int SO_DETACH_REUSEPORT_BPF() {
-        return (int)68L;
-    }
-    public static int __osockaddr_defined() {
-        return (int)1L;
+    public static int SO_TYPE() {
+        return (int)3L;
     }
     public static int _SYS_UIO_H() {
         return (int)1L;
@@ -710,6 +491,465 @@ public class liburing_h extends liburing_h_1 {
     }
     public static int __IOV_MAX() {
         return (int)1024L;
+    }
+    public static int _SYS_STAT_H() {
+        return (int)1L;
+    }
+    public static int _BITS_STAT_H() {
+        return (int)1L;
+    }
+    public static int _STAT_VER_KERNEL() {
+        return (int)0L;
+    }
+    public static int _STAT_VER_LINUX() {
+        return (int)1L;
+    }
+    public static int _MKNOD_VER_LINUX() {
+        return (int)0L;
+    }
+    public static int __S_IFMT() {
+        return (int)61440L;
+    }
+    public static int __S_IFDIR() {
+        return (int)16384L;
+    }
+    public static int __S_IFCHR() {
+        return (int)8192L;
+    }
+    public static int __S_IFBLK() {
+        return (int)24576L;
+    }
+    public static int __S_IFREG() {
+        return (int)32768L;
+    }
+    public static int __S_IFIFO() {
+        return (int)4096L;
+    }
+    public static int __S_IFLNK() {
+        return (int)40960L;
+    }
+    public static int __S_IFSOCK() {
+        return (int)49152L;
+    }
+    public static int __S_ISUID() {
+        return (int)2048L;
+    }
+    public static int __S_ISGID() {
+        return (int)1024L;
+    }
+    public static int __S_ISVTX() {
+        return (int)512L;
+    }
+    public static int __S_IREAD() {
+        return (int)256L;
+    }
+    public static int __S_IWRITE() {
+        return (int)128L;
+    }
+    public static int __S_IEXEC() {
+        return (int)64L;
+    }
+    public static int _MKNOD_VER() {
+        return (int)0L;
+    }
+    public static int _ERRNO_H() {
+        return (int)1L;
+    }
+    public static int _BITS_ERRNO_H() {
+        return (int)1L;
+    }
+    public static int EPERM() {
+        return (int)1L;
+    }
+    public static int ENOENT() {
+        return (int)2L;
+    }
+    public static int ESRCH() {
+        return (int)3L;
+    }
+    public static int EINTR() {
+        return (int)4L;
+    }
+    public static int EIO() {
+        return (int)5L;
+    }
+    public static int ENXIO() {
+        return (int)6L;
+    }
+    public static int E2BIG() {
+        return (int)7L;
+    }
+    public static int ENOEXEC() {
+        return (int)8L;
+    }
+    public static int EBADF() {
+        return (int)9L;
+    }
+    public static int ECHILD() {
+        return (int)10L;
+    }
+    public static int EAGAIN() {
+        return (int)11L;
+    }
+    public static int ENOMEM() {
+        return (int)12L;
+    }
+    public static int EACCES() {
+        return (int)13L;
+    }
+    public static int EFAULT() {
+        return (int)14L;
+    }
+    public static int ENOTBLK() {
+        return (int)15L;
+    }
+    public static int EBUSY() {
+        return (int)16L;
+    }
+    public static int EEXIST() {
+        return (int)17L;
+    }
+    public static int EXDEV() {
+        return (int)18L;
+    }
+    public static int ENODEV() {
+        return (int)19L;
+    }
+    public static int ENOTDIR() {
+        return (int)20L;
+    }
+    public static int EISDIR() {
+        return (int)21L;
+    }
+    public static int EINVAL() {
+        return (int)22L;
+    }
+    public static int ENFILE() {
+        return (int)23L;
+    }
+    public static int EMFILE() {
+        return (int)24L;
+    }
+    public static int ENOTTY() {
+        return (int)25L;
+    }
+    public static int ETXTBSY() {
+        return (int)26L;
+    }
+    public static int EFBIG() {
+        return (int)27L;
+    }
+    public static int ENOSPC() {
+        return (int)28L;
+    }
+    public static int ESPIPE() {
+        return (int)29L;
+    }
+    public static int EROFS() {
+        return (int)30L;
+    }
+    public static int EMLINK() {
+        return (int)31L;
+    }
+    public static int EPIPE() {
+        return (int)32L;
+    }
+    public static int EDOM() {
+        return (int)33L;
+    }
+    public static int ERANGE() {
+        return (int)34L;
+    }
+    public static int EDEADLK() {
+        return (int)35L;
+    }
+    public static int ENAMETOOLONG() {
+        return (int)36L;
+    }
+    public static int ENOLCK() {
+        return (int)37L;
+    }
+    public static int ENOSYS() {
+        return (int)38L;
+    }
+    public static int ENOTEMPTY() {
+        return (int)39L;
+    }
+    public static int ELOOP() {
+        return (int)40L;
+    }
+    public static int ENOMSG() {
+        return (int)42L;
+    }
+    public static int EIDRM() {
+        return (int)43L;
+    }
+    public static int ECHRNG() {
+        return (int)44L;
+    }
+    public static int EL2NSYNC() {
+        return (int)45L;
+    }
+    public static int EL3HLT() {
+        return (int)46L;
+    }
+    public static int EL3RST() {
+        return (int)47L;
+    }
+    public static int ELNRNG() {
+        return (int)48L;
+    }
+    public static int EUNATCH() {
+        return (int)49L;
+    }
+    public static int ENOCSI() {
+        return (int)50L;
+    }
+    public static int EL2HLT() {
+        return (int)51L;
+    }
+    public static int EBADE() {
+        return (int)52L;
+    }
+    public static int EBADR() {
+        return (int)53L;
+    }
+    public static int EXFULL() {
+        return (int)54L;
+    }
+    public static int ENOANO() {
+        return (int)55L;
+    }
+    public static int EBADRQC() {
+        return (int)56L;
+    }
+    public static int EBADSLT() {
+        return (int)57L;
+    }
+    public static int EBFONT() {
+        return (int)59L;
+    }
+    public static int ENOSTR() {
+        return (int)60L;
+    }
+    public static int ENODATA() {
+        return (int)61L;
+    }
+    public static int ETIME() {
+        return (int)62L;
+    }
+    public static int ENOSR() {
+        return (int)63L;
+    }
+    public static int ENONET() {
+        return (int)64L;
+    }
+    public static int ENOPKG() {
+        return (int)65L;
+    }
+    public static int EREMOTE() {
+        return (int)66L;
+    }
+    public static int ENOLINK() {
+        return (int)67L;
+    }
+    public static int EADV() {
+        return (int)68L;
+    }
+    public static int ESRMNT() {
+        return (int)69L;
+    }
+    public static int ECOMM() {
+        return (int)70L;
+    }
+    public static int EPROTO() {
+        return (int)71L;
+    }
+    public static int EMULTIHOP() {
+        return (int)72L;
+    }
+    public static int EDOTDOT() {
+        return (int)73L;
+    }
+    public static int EBADMSG() {
+        return (int)74L;
+    }
+    public static int EOVERFLOW() {
+        return (int)75L;
+    }
+    public static int ENOTUNIQ() {
+        return (int)76L;
+    }
+    public static int EBADFD() {
+        return (int)77L;
+    }
+    public static int EREMCHG() {
+        return (int)78L;
+    }
+    public static int ELIBACC() {
+        return (int)79L;
+    }
+    public static int ELIBBAD() {
+        return (int)80L;
+    }
+    public static int ELIBSCN() {
+        return (int)81L;
+    }
+    public static int ELIBMAX() {
+        return (int)82L;
+    }
+    public static int ELIBEXEC() {
+        return (int)83L;
+    }
+    public static int EILSEQ() {
+        return (int)84L;
+    }
+    public static int ERESTART() {
+        return (int)85L;
+    }
+    public static int ESTRPIPE() {
+        return (int)86L;
+    }
+    public static int EUSERS() {
+        return (int)87L;
+    }
+    public static int ENOTSOCK() {
+        return (int)88L;
+    }
+    public static int EDESTADDRREQ() {
+        return (int)89L;
+    }
+    public static int EMSGSIZE() {
+        return (int)90L;
+    }
+    public static int EPROTOTYPE() {
+        return (int)91L;
+    }
+    public static int ENOPROTOOPT() {
+        return (int)92L;
+    }
+    public static int EPROTONOSUPPORT() {
+        return (int)93L;
+    }
+    public static int ESOCKTNOSUPPORT() {
+        return (int)94L;
+    }
+    public static int EOPNOTSUPP() {
+        return (int)95L;
+    }
+    public static int EPFNOSUPPORT() {
+        return (int)96L;
+    }
+    public static int EAFNOSUPPORT() {
+        return (int)97L;
+    }
+    public static int EADDRINUSE() {
+        return (int)98L;
+    }
+    public static int EADDRNOTAVAIL() {
+        return (int)99L;
+    }
+    public static int ENETDOWN() {
+        return (int)100L;
+    }
+    public static int ENETUNREACH() {
+        return (int)101L;
+    }
+    public static int ENETRESET() {
+        return (int)102L;
+    }
+    public static int ECONNABORTED() {
+        return (int)103L;
+    }
+    public static int ECONNRESET() {
+        return (int)104L;
+    }
+    public static int ENOBUFS() {
+        return (int)105L;
+    }
+    public static int EISCONN() {
+        return (int)106L;
+    }
+    public static int ENOTCONN() {
+        return (int)107L;
+    }
+    public static int ESHUTDOWN() {
+        return (int)108L;
+    }
+    public static int ETOOMANYREFS() {
+        return (int)109L;
+    }
+    public static int ETIMEDOUT() {
+        return (int)110L;
+    }
+    public static int ECONNREFUSED() {
+        return (int)111L;
+    }
+    public static int EHOSTDOWN() {
+        return (int)112L;
+    }
+    public static int EHOSTUNREACH() {
+        return (int)113L;
+    }
+    public static int EALREADY() {
+        return (int)114L;
+    }
+    public static int EINPROGRESS() {
+        return (int)115L;
+    }
+    public static int ESTALE() {
+        return (int)116L;
+    }
+    public static int EUCLEAN() {
+        return (int)117L;
+    }
+    public static int ENOTNAM() {
+        return (int)118L;
+    }
+    public static int ENAVAIL() {
+        return (int)119L;
+    }
+    public static int EISNAM() {
+        return (int)120L;
+    }
+    public static int EREMOTEIO() {
+        return (int)121L;
+    }
+    public static int EDQUOT() {
+        return (int)122L;
+    }
+    public static int ENOMEDIUM() {
+        return (int)123L;
+    }
+    public static int EMEDIUMTYPE() {
+        return (int)124L;
+    }
+    public static int ECANCELED() {
+        return (int)125L;
+    }
+    public static int ENOKEY() {
+        return (int)126L;
+    }
+    public static int EKEYEXPIRED() {
+        return (int)127L;
+    }
+    public static int EKEYREVOKED() {
+        return (int)128L;
+    }
+    public static int EKEYREJECTED() {
+        return (int)129L;
+    }
+    public static int EOWNERDEAD() {
+        return (int)130L;
+    }
+    public static int ENOTRECOVERABLE() {
+        return (int)131L;
+    }
+    public static int ERFKILL() {
+        return (int)132L;
+    }
+    public static int EHWPOISON() {
+        return (int)133L;
     }
     public static int _BITS_SIGNUM_H() {
         return (int)1L;
@@ -819,6 +1059,27 @@ public class liburing_h extends liburing_h_1 {
     public static int __sig_atomic_t_defined() {
         return (int)1L;
     }
+    public static int __sigset_t_defined() {
+        return (int)1L;
+    }
+    public static int _STRUCT_TIMESPEC() {
+        return (int)1L;
+    }
+    public static int _BITS_ENDIAN_H() {
+        return (int)1L;
+    }
+    public static int __LITTLE_ENDIAN() {
+        return (int)1234L;
+    }
+    public static int __BIG_ENDIAN() {
+        return (int)4321L;
+    }
+    public static int __PDP_ENDIAN() {
+        return (int)3412L;
+    }
+    public static int _BITS_ENDIANNESS_H() {
+        return (int)1L;
+    }
     public static int __siginfo_t_defined() {
         return (int)1L;
     }
@@ -870,9 +1131,6 @@ public class liburing_h extends liburing_h_1 {
     public static int SA_NODEFER() {
         return (int)1073741824L;
     }
-    public static int SA_INTERRUPT() {
-        return (int)536870912L;
-    }
     public static int SIG_BLOCK() {
         return (int)0L;
     }
@@ -881,9 +1139,6 @@ public class liburing_h extends liburing_h_1 {
     }
     public static int SIG_SETMASK() {
         return (int)2L;
-    }
-    public static int _BITS_SIGCONTEXT_H() {
-        return (int)1L;
     }
     public static int __stack_t_defined() {
         return (int)1L;
@@ -910,6 +1165,15 @@ public class liburing_h extends liburing_h_1 {
         return (int)1L;
     }
     public static int _BITS_SIGTHREAD_H() {
+        return (int)1L;
+    }
+    public static int true_() {
+        return (int)1L;
+    }
+    public static int false_() {
+        return (int)0L;
+    }
+    public static int __bool_true_false_are_defined() {
         return (int)1L;
     }
     public static int _INTTYPES_H() {
@@ -993,14 +1257,11 @@ public class liburing_h extends liburing_h_1 {
     public static int __itimerspec_defined() {
         return (int)1L;
     }
-    public static int _BITS_TYPES_LOCALE_T_H() {
-        return (int)1L;
-    }
-    public static int _BITS_TYPES___LOCALE_T_H() {
-        return (int)1L;
-    }
     public static int TIME_UTC() {
         return (int)1L;
+    }
+    public static int __BITS_PER_LONG() {
+        return (int)64L;
     }
     public static int NR_OPEN() {
         return (int)1024L;
@@ -1449,69 +1710,6 @@ public class liburing_h extends liburing_h_1 {
     public static int SYNC_FILE_RANGE_WAIT_AFTER() {
         return (int)4L;
     }
-    public static int IORING_OP_NOP() {
-        return (int)0L;
-    }
-    public static int IORING_OP_READV() {
-        return (int)1L;
-    }
-    public static int IORING_OP_WRITEV() {
-        return (int)2L;
-    }
-    public static int IORING_OP_FSYNC() {
-        return (int)3L;
-    }
-    public static int IORING_OP_READ_FIXED() {
-        return (int)4L;
-    }
-    public static int IORING_OP_WRITE_FIXED() {
-        return (int)5L;
-    }
-    public static int IORING_OP_POLL_ADD() {
-        return (int)6L;
-    }
-    public static int IORING_OP_POLL_REMOVE() {
-        return (int)7L;
-    }
-    public static int IORING_OP_SYNC_FILE_RANGE() {
-        return (int)8L;
-    }
-    public static int IORING_OP_SENDMSG() {
-        return (int)9L;
-    }
-    public static int IORING_OP_RECVMSG() {
-        return (int)10L;
-    }
-    public static int IORING_OP_TIMEOUT() {
-        return (int)11L;
-    }
-    public static int IORING_OP_TIMEOUT_REMOVE() {
-        return (int)12L;
-    }
-    public static int IORING_OP_ACCEPT() {
-        return (int)13L;
-    }
-    public static int IORING_REGISTER_BUFFERS() {
-        return (int)0L;
-    }
-    public static int IORING_UNREGISTER_BUFFERS() {
-        return (int)1L;
-    }
-    public static int IORING_REGISTER_FILES() {
-        return (int)2L;
-    }
-    public static int IORING_UNREGISTER_FILES() {
-        return (int)3L;
-    }
-    public static int IORING_REGISTER_EVENTFD() {
-        return (int)4L;
-    }
-    public static int IORING_UNREGISTER_EVENTFD() {
-        return (int)5L;
-    }
-    public static int IORING_REGISTER_FILES_UPDATE() {
-        return (int)6L;
-    }
     public static OfShort __int16_t = Constants$root.C_SHORT$LAYOUT;
     public static OfInt __int32_t = Constants$root.C_INT$LAYOUT;
     public static OfLong __int64_t = Constants$root.C_LONG_LONG$LAYOUT;
@@ -1540,117 +1738,22 @@ public class liburing_h extends liburing_h_1 {
     public static OfAddress __caddr_t = Constants$root.C_POINTER$LAYOUT;
     public static OfLong __intptr_t = Constants$root.C_LONG_LONG$LAYOUT;
     public static OfInt __sig_atomic_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong quad_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong loff_t = Constants$root.C_LONG_LONG$LAYOUT;
     public static OfLong off_t = Constants$root.C_LONG_LONG$LAYOUT;
     public static OfInt pid_t = Constants$root.C_INT$LAYOUT;
     public static OfLong ssize_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt daddr_t = Constants$root.C_INT$LAYOUT;
-    public static OfAddress caddr_t = Constants$root.C_POINTER$LAYOUT;
     public static OfInt key_t = Constants$root.C_INT$LAYOUT;
     public static OfLong clock_t = Constants$root.C_LONG_LONG$LAYOUT;
     public static OfInt clockid_t = Constants$root.C_INT$LAYOUT;
     public static OfLong time_t = Constants$root.C_LONG_LONG$LAYOUT;
     public static OfAddress timer_t = Constants$root.C_POINTER$LAYOUT;
+    public static OfLong suseconds_t = Constants$root.C_LONG_LONG$LAYOUT;
     public static OfShort int16_t = Constants$root.C_SHORT$LAYOUT;
     public static OfInt int32_t = Constants$root.C_INT$LAYOUT;
     public static OfLong int64_t = Constants$root.C_LONG_LONG$LAYOUT;
     public static OfLong register_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static MethodHandle __bswap_16$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.__bswap_16$MH,"__bswap_16");
-    }
-    public static short __bswap_16 ( short __bsx) {
-        var mh$ = __bswap_16$MH();
-        try {
-            return (short)mh$.invokeExact(__bsx);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle __bswap_32$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.__bswap_32$MH,"__bswap_32");
-    }
-    public static int __bswap_32 ( int __bsx) {
-        var mh$ = __bswap_32$MH();
-        try {
-            return (int)mh$.invokeExact(__bsx);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle __bswap_64$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.__bswap_64$MH,"__bswap_64");
-    }
-    public static long __bswap_64 ( long __bsx) {
-        var mh$ = __bswap_64$MH();
-        try {
-            return (long)mh$.invokeExact(__bsx);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle __uint16_identity$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.__uint16_identity$MH,"__uint16_identity");
-    }
-    public static short __uint16_identity ( short __x) {
-        var mh$ = __uint16_identity$MH();
-        try {
-            return (short)mh$.invokeExact(__x);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle __uint32_identity$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.__uint32_identity$MH,"__uint32_identity");
-    }
-    public static int __uint32_identity ( int __x) {
-        var mh$ = __uint32_identity$MH();
-        try {
-            return (int)mh$.invokeExact(__x);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle __uint64_identity$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.__uint64_identity$MH,"__uint64_identity");
-    }
-    public static long __uint64_identity ( long __x) {
-        var mh$ = __uint64_identity$MH();
-        try {
-            return (long)mh$.invokeExact(__x);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static OfLong suseconds_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __fd_mask = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong fd_mask = Constants$root.C_LONG_LONG$LAYOUT;
-    public static MethodHandle select$MH() {
-        return RuntimeHelper.requireNonNull(constants$1.select$MH,"select");
-    }
-    public static int select ( int __nfds,  Addressable __readfds,  Addressable __writefds,  Addressable __exceptfds,  Addressable __timeout) {
-        var mh$ = select$MH();
-        try {
-            return (int)mh$.invokeExact(__nfds, __readfds, __writefds, __exceptfds, __timeout);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle pselect$MH() {
-        return RuntimeHelper.requireNonNull(constants$1.pselect$MH,"pselect");
-    }
-    public static int pselect ( int __nfds,  Addressable __readfds,  Addressable __writefds,  Addressable __exceptfds,  Addressable __timeout,  Addressable __sigmask) {
-        var mh$ = pselect$MH();
-        try {
-            return (int)mh$.invokeExact(__nfds, __readfds, __writefds, __exceptfds, __timeout, __sigmask);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
     public static OfLong blksize_t = Constants$root.C_LONG_LONG$LAYOUT;
     public static OfLong blkcnt_t = Constants$root.C_LONG_LONG$LAYOUT;
     public static OfInt pthread_once_t = Constants$root.C_INT$LAYOUT;
-    public static OfInt pthread_spinlock_t = Constants$root.C_INT$LAYOUT;
     public static int SOCK_STREAM() {
         return (int)1L;
     }
@@ -1742,7 +1845,7 @@ public class liburing_h extends liburing_h_1 {
         return (int)1073741824L;
     }
     public static MethodHandle __cmsg_nxthdr$MH() {
-        return RuntimeHelper.requireNonNull(constants$1.__cmsg_nxthdr$MH,"__cmsg_nxthdr");
+        return RuntimeHelper.requireNonNull(constants$0.__cmsg_nxthdr$MH,"__cmsg_nxthdr");
     }
     public static MemoryAddress __cmsg_nxthdr ( Addressable __mhdr,  Addressable __cmsg) {
         var mh$ = __cmsg_nxthdr$MH();
@@ -1755,23 +1858,6 @@ public class liburing_h extends liburing_h_1 {
     public static int SCM_RIGHTS() {
         return (int)1L;
     }
-    public static OfInt __kernel_key_t = Constants$root.C_INT$LAYOUT;
-    public static OfInt __kernel_mqd_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong __kernel_long_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt __kernel_pid_t = Constants$root.C_INT$LAYOUT;
-    public static OfInt __kernel_ipc_pid_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong __kernel_suseconds_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt __kernel_daddr_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong __kernel_ssize_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __kernel_ptrdiff_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __kernel_off_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __kernel_loff_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __kernel_time_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __kernel_time64_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __kernel_clock_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt __kernel_timer_t = Constants$root.C_INT$LAYOUT;
-    public static OfInt __kernel_clockid_t = Constants$root.C_INT$LAYOUT;
-    public static OfAddress __kernel_caddr_t = Constants$root.C_POINTER$LAYOUT;
     public static int SHUT_RD() {
         return (int)0L;
     }
@@ -1782,7 +1868,7 @@ public class liburing_h extends liburing_h_1 {
         return (int)2L;
     }
     public static MethodHandle socket$MH() {
-        return RuntimeHelper.requireNonNull(constants$1.socket$MH,"socket");
+        return RuntimeHelper.requireNonNull(constants$0.socket$MH,"socket");
     }
     public static int socket ( int __domain,  int __type,  int __protocol) {
         var mh$ = socket$MH();
@@ -1793,7 +1879,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle socketpair$MH() {
-        return RuntimeHelper.requireNonNull(constants$2.socketpair$MH,"socketpair");
+        return RuntimeHelper.requireNonNull(constants$0.socketpair$MH,"socketpair");
     }
     public static int socketpair ( int __domain,  int __type,  int __protocol,  Addressable __fds) {
         var mh$ = socketpair$MH();
@@ -1804,7 +1890,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle bind$MH() {
-        return RuntimeHelper.requireNonNull(constants$2.bind$MH,"bind");
+        return RuntimeHelper.requireNonNull(constants$0.bind$MH,"bind");
     }
     public static int bind ( int __fd,  Addressable __addr,  int __len) {
         var mh$ = bind$MH();
@@ -1815,7 +1901,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle getsockname$MH() {
-        return RuntimeHelper.requireNonNull(constants$2.getsockname$MH,"getsockname");
+        return RuntimeHelper.requireNonNull(constants$0.getsockname$MH,"getsockname");
     }
     public static int getsockname ( int __fd,  Addressable __addr,  Addressable __len) {
         var mh$ = getsockname$MH();
@@ -1826,7 +1912,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle connect$MH() {
-        return RuntimeHelper.requireNonNull(constants$2.connect$MH,"connect");
+        return RuntimeHelper.requireNonNull(constants$0.connect$MH,"connect");
     }
     public static int connect ( int __fd,  Addressable __addr,  int __len) {
         var mh$ = connect$MH();
@@ -1837,7 +1923,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle getpeername$MH() {
-        return RuntimeHelper.requireNonNull(constants$2.getpeername$MH,"getpeername");
+        return RuntimeHelper.requireNonNull(constants$1.getpeername$MH,"getpeername");
     }
     public static int getpeername ( int __fd,  Addressable __addr,  Addressable __len) {
         var mh$ = getpeername$MH();
@@ -1848,7 +1934,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle send$MH() {
-        return RuntimeHelper.requireNonNull(constants$2.send$MH,"send");
+        return RuntimeHelper.requireNonNull(constants$1.send$MH,"send");
     }
     public static long send ( int __fd,  Addressable __buf,  long __n,  int __flags) {
         var mh$ = send$MH();
@@ -1859,7 +1945,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle recv$MH() {
-        return RuntimeHelper.requireNonNull(constants$3.recv$MH,"recv");
+        return RuntimeHelper.requireNonNull(constants$1.recv$MH,"recv");
     }
     public static long recv ( int __fd,  Addressable __buf,  long __n,  int __flags) {
         var mh$ = recv$MH();
@@ -1870,7 +1956,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle sendto$MH() {
-        return RuntimeHelper.requireNonNull(constants$3.sendto$MH,"sendto");
+        return RuntimeHelper.requireNonNull(constants$1.sendto$MH,"sendto");
     }
     public static long sendto ( int __fd,  Addressable __buf,  long __n,  int __flags,  Addressable __addr,  int __addr_len) {
         var mh$ = sendto$MH();
@@ -1881,7 +1967,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle recvfrom$MH() {
-        return RuntimeHelper.requireNonNull(constants$3.recvfrom$MH,"recvfrom");
+        return RuntimeHelper.requireNonNull(constants$1.recvfrom$MH,"recvfrom");
     }
     public static long recvfrom ( int __fd,  Addressable __buf,  long __n,  int __flags,  Addressable __addr,  Addressable __addr_len) {
         var mh$ = recvfrom$MH();
@@ -1892,7 +1978,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle sendmsg$MH() {
-        return RuntimeHelper.requireNonNull(constants$3.sendmsg$MH,"sendmsg");
+        return RuntimeHelper.requireNonNull(constants$1.sendmsg$MH,"sendmsg");
     }
     public static long sendmsg ( int __fd,  Addressable __message,  int __flags) {
         var mh$ = sendmsg$MH();
@@ -1903,7 +1989,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle recvmsg$MH() {
-        return RuntimeHelper.requireNonNull(constants$3.recvmsg$MH,"recvmsg");
+        return RuntimeHelper.requireNonNull(constants$2.recvmsg$MH,"recvmsg");
     }
     public static long recvmsg ( int __fd,  Addressable __message,  int __flags) {
         var mh$ = recvmsg$MH();
@@ -1914,7 +2000,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle getsockopt$MH() {
-        return RuntimeHelper.requireNonNull(constants$3.getsockopt$MH,"getsockopt");
+        return RuntimeHelper.requireNonNull(constants$2.getsockopt$MH,"getsockopt");
     }
     public static int getsockopt ( int __fd,  int __level,  int __optname,  Addressable __optval,  Addressable __optlen) {
         var mh$ = getsockopt$MH();
@@ -1925,7 +2011,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle setsockopt$MH() {
-        return RuntimeHelper.requireNonNull(constants$4.setsockopt$MH,"setsockopt");
+        return RuntimeHelper.requireNonNull(constants$2.setsockopt$MH,"setsockopt");
     }
     public static int setsockopt ( int __fd,  int __level,  int __optname,  Addressable __optval,  int __optlen) {
         var mh$ = setsockopt$MH();
@@ -1936,7 +2022,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle listen$MH() {
-        return RuntimeHelper.requireNonNull(constants$4.listen$MH,"listen");
+        return RuntimeHelper.requireNonNull(constants$2.listen$MH,"listen");
     }
     public static int listen ( int __fd,  int __n) {
         var mh$ = listen$MH();
@@ -1947,7 +2033,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle accept$MH() {
-        return RuntimeHelper.requireNonNull(constants$4.accept$MH,"accept");
+        return RuntimeHelper.requireNonNull(constants$2.accept$MH,"accept");
     }
     public static int accept ( int __fd,  Addressable __addr,  Addressable __addr_len) {
         var mh$ = accept$MH();
@@ -1958,7 +2044,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle shutdown$MH() {
-        return RuntimeHelper.requireNonNull(constants$4.shutdown$MH,"shutdown");
+        return RuntimeHelper.requireNonNull(constants$2.shutdown$MH,"shutdown");
     }
     public static int shutdown ( int __fd,  int __how) {
         var mh$ = shutdown$MH();
@@ -1968,30 +2054,8 @@ public class liburing_h extends liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
-    public static MethodHandle sockatmark$MH() {
-        return RuntimeHelper.requireNonNull(constants$4.sockatmark$MH,"sockatmark");
-    }
-    public static int sockatmark ( int __fd) {
-        var mh$ = sockatmark$MH();
-        try {
-            return (int)mh$.invokeExact(__fd);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle isfdtype$MH() {
-        return RuntimeHelper.requireNonNull(constants$4.isfdtype$MH,"isfdtype");
-    }
-    public static int isfdtype ( int __fd,  int __fdtype) {
-        var mh$ = isfdtype$MH();
-        try {
-            return (int)mh$.invokeExact(__fd, __fdtype);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
     public static MethodHandle readv$MH() {
-        return RuntimeHelper.requireNonNull(constants$5.readv$MH,"readv");
+        return RuntimeHelper.requireNonNull(constants$3.readv$MH,"readv");
     }
     public static long readv ( int __fd,  Addressable __iovec,  int __count) {
         var mh$ = readv$MH();
@@ -2002,7 +2066,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle writev$MH() {
-        return RuntimeHelper.requireNonNull(constants$5.writev$MH,"writev");
+        return RuntimeHelper.requireNonNull(constants$3.writev$MH,"writev");
     }
     public static long writev ( int __fd,  Addressable __iovec,  int __count) {
         var mh$ = writev$MH();
@@ -2012,24 +2076,178 @@ public class liburing_h extends liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
-    public static MethodHandle preadv$MH() {
-        return RuntimeHelper.requireNonNull(constants$5.preadv$MH,"preadv");
+    public static MethodHandle stat$MH() {
+        return RuntimeHelper.requireNonNull(constants$3.stat$MH,"stat");
     }
-    public static long preadv ( int __fd,  Addressable __iovec,  int __count,  long __offset) {
-        var mh$ = preadv$MH();
+    public static int stat ( Addressable __file,  Addressable __buf) {
+        var mh$ = stat$MH();
         try {
-            return (long)mh$.invokeExact(__fd, __iovec, __count, __offset);
+            return (int)mh$.invokeExact(__file, __buf);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
-    public static MethodHandle pwritev$MH() {
-        return RuntimeHelper.requireNonNull(constants$5.pwritev$MH,"pwritev");
+    public static MethodHandle fstat$MH() {
+        return RuntimeHelper.requireNonNull(constants$3.fstat$MH,"fstat");
     }
-    public static long pwritev ( int __fd,  Addressable __iovec,  int __count,  long __offset) {
-        var mh$ = pwritev$MH();
+    public static int fstat ( int __fd,  Addressable __buf) {
+        var mh$ = fstat$MH();
         try {
-            return (long)mh$.invokeExact(__fd, __iovec, __count, __offset);
+            return (int)mh$.invokeExact(__fd, __buf);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle lstat$MH() {
+        return RuntimeHelper.requireNonNull(constants$3.lstat$MH,"lstat");
+    }
+    public static int lstat ( Addressable __file,  Addressable __buf) {
+        var mh$ = lstat$MH();
+        try {
+            return (int)mh$.invokeExact(__file, __buf);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle chmod$MH() {
+        return RuntimeHelper.requireNonNull(constants$3.chmod$MH,"chmod");
+    }
+    public static int chmod ( Addressable __file,  int __mode) {
+        var mh$ = chmod$MH();
+        try {
+            return (int)mh$.invokeExact(__file, __mode);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle fchmod$MH() {
+        return RuntimeHelper.requireNonNull(constants$4.fchmod$MH,"fchmod");
+    }
+    public static int fchmod ( int __fd,  int __mode) {
+        var mh$ = fchmod$MH();
+        try {
+            return (int)mh$.invokeExact(__fd, __mode);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle umask$MH() {
+        return RuntimeHelper.requireNonNull(constants$4.umask$MH,"umask");
+    }
+    public static int umask ( int __mask) {
+        var mh$ = umask$MH();
+        try {
+            return (int)mh$.invokeExact(__mask);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle mkdir$MH() {
+        return RuntimeHelper.requireNonNull(constants$4.mkdir$MH,"mkdir");
+    }
+    public static int mkdir ( Addressable __path,  int __mode) {
+        var mh$ = mkdir$MH();
+        try {
+            return (int)mh$.invokeExact(__path, __mode);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle mknod$MH() {
+        return RuntimeHelper.requireNonNull(constants$4.mknod$MH,"mknod");
+    }
+    public static int mknod ( Addressable __path,  int __mode,  long __dev) {
+        var mh$ = mknod$MH();
+        try {
+            return (int)mh$.invokeExact(__path, __mode, __dev);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle mkfifo$MH() {
+        return RuntimeHelper.requireNonNull(constants$4.mkfifo$MH,"mkfifo");
+    }
+    public static int mkfifo ( Addressable __path,  int __mode) {
+        var mh$ = mkfifo$MH();
+        try {
+            return (int)mh$.invokeExact(__path, __mode);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __fxstat$MH() {
+        return RuntimeHelper.requireNonNull(constants$4.__fxstat$MH,"__fxstat");
+    }
+    public static int __fxstat ( int __ver,  int __fildes,  Addressable __stat_buf) {
+        var mh$ = __fxstat$MH();
+        try {
+            return (int)mh$.invokeExact(__ver, __fildes, __stat_buf);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __xstat$MH() {
+        return RuntimeHelper.requireNonNull(constants$5.__xstat$MH,"__xstat");
+    }
+    public static int __xstat ( int __ver,  Addressable __filename,  Addressable __stat_buf) {
+        var mh$ = __xstat$MH();
+        try {
+            return (int)mh$.invokeExact(__ver, __filename, __stat_buf);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __lxstat$MH() {
+        return RuntimeHelper.requireNonNull(constants$5.__lxstat$MH,"__lxstat");
+    }
+    public static int __lxstat ( int __ver,  Addressable __filename,  Addressable __stat_buf) {
+        var mh$ = __lxstat$MH();
+        try {
+            return (int)mh$.invokeExact(__ver, __filename, __stat_buf);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __fxstatat$MH() {
+        return RuntimeHelper.requireNonNull(constants$5.__fxstatat$MH,"__fxstatat");
+    }
+    public static int __fxstatat ( int __ver,  int __fildes,  Addressable __filename,  Addressable __stat_buf,  int __flag) {
+        var mh$ = __fxstatat$MH();
+        try {
+            return (int)mh$.invokeExact(__ver, __fildes, __filename, __stat_buf, __flag);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __xmknod$MH() {
+        return RuntimeHelper.requireNonNull(constants$5.__xmknod$MH,"__xmknod");
+    }
+    public static int __xmknod ( int __ver,  Addressable __path,  int __mode,  Addressable __dev) {
+        var mh$ = __xmknod$MH();
+        try {
+            return (int)mh$.invokeExact(__ver, __path, __mode, __dev);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __xmknodat$MH() {
+        return RuntimeHelper.requireNonNull(constants$5.__xmknodat$MH,"__xmknodat");
+    }
+    public static int __xmknodat ( int __ver,  int __fd,  Addressable __path,  int __mode,  Addressable __dev) {
+        var mh$ = __xmknodat$MH();
+        try {
+            return (int)mh$.invokeExact(__ver, __fd, __path, __mode, __dev);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __errno_location$MH() {
+        return RuntimeHelper.requireNonNull(constants$5.__errno_location$MH,"__errno_location");
+    }
+    public static MemoryAddress __errno_location () {
+        var mh$ = __errno_location$MH();
+        try {
+            return (java.lang.foreign.MemoryAddress)mh$.invokeExact();
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -2158,6 +2376,21 @@ public class liburing_h extends liburing_h_1 {
     public static int BUS_MCEERR_AO() {
         return (int)5L;
     }
+    public static int TRAP_BRKPT() {
+        return (int)1L;
+    }
+    public static int TRAP_TRACE() {
+        return (int)2L;
+    }
+    public static int TRAP_BRANCH() {
+        return (int)3L;
+    }
+    public static int TRAP_HWBKPT() {
+        return (int)4L;
+    }
+    public static int TRAP_UNK() {
+        return (int)5L;
+    }
     public static int CLD_EXITED() {
         return (int)1L;
     }
@@ -2228,6 +2461,17 @@ public class liburing_h extends liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+    public static MethodHandle bsd_signal$MH() {
+        return RuntimeHelper.requireNonNull(constants$6.bsd_signal$MH,"bsd_signal");
+    }
+    public static MemoryAddress bsd_signal ( int __sig,  Addressable __handler) {
+        var mh$ = bsd_signal$MH();
+        try {
+            return (java.lang.foreign.MemoryAddress)mh$.invokeExact(__sig, __handler);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
     public static MethodHandle kill$MH() {
         return RuntimeHelper.requireNonNull(constants$6.kill$MH,"kill");
     }
@@ -2240,7 +2484,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle killpg$MH() {
-        return RuntimeHelper.requireNonNull(constants$6.killpg$MH,"killpg");
+        return RuntimeHelper.requireNonNull(constants$7.killpg$MH,"killpg");
     }
     public static int killpg ( int __pgrp,  int __sig) {
         var mh$ = killpg$MH();
@@ -2251,7 +2495,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle raise$MH() {
-        return RuntimeHelper.requireNonNull(constants$6.raise$MH,"raise");
+        return RuntimeHelper.requireNonNull(constants$7.raise$MH,"raise");
     }
     public static int raise ( int __sig) {
         var mh$ = raise$MH();
@@ -2261,85 +2505,19 @@ public class liburing_h extends liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
-    public static MethodHandle ssignal$MH() {
-        return RuntimeHelper.requireNonNull(constants$6.ssignal$MH,"ssignal");
+    public static MethodHandle sigpause$MH() {
+        return RuntimeHelper.requireNonNull(constants$7.sigpause$MH,"sigpause");
     }
-    public static MemoryAddress ssignal ( int __sig,  Addressable __handler) {
-        var mh$ = ssignal$MH();
-        try {
-            return (java.lang.foreign.MemoryAddress)mh$.invokeExact(__sig, __handler);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle gsignal$MH() {
-        return RuntimeHelper.requireNonNull(constants$7.gsignal$MH,"gsignal");
-    }
-    public static int gsignal ( int __sig) {
-        var mh$ = gsignal$MH();
+    public static int sigpause ( int __sig) {
+        var mh$ = sigpause$MH();
         try {
             return (int)mh$.invokeExact(__sig);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
-    public static MethodHandle psignal$MH() {
-        return RuntimeHelper.requireNonNull(constants$7.psignal$MH,"psignal");
-    }
-    public static void psignal ( int __sig,  Addressable __s) {
-        var mh$ = psignal$MH();
-        try {
-            mh$.invokeExact(__sig, __s);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle psiginfo$MH() {
-        return RuntimeHelper.requireNonNull(constants$7.psiginfo$MH,"psiginfo");
-    }
-    public static void psiginfo ( Addressable __pinfo,  Addressable __s) {
-        var mh$ = psiginfo$MH();
-        try {
-            mh$.invokeExact(__pinfo, __s);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle sigblock$MH() {
-        return RuntimeHelper.requireNonNull(constants$7.sigblock$MH,"sigblock");
-    }
-    public static int sigblock ( int __mask) {
-        var mh$ = sigblock$MH();
-        try {
-            return (int)mh$.invokeExact(__mask);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle sigsetmask$MH() {
-        return RuntimeHelper.requireNonNull(constants$7.sigsetmask$MH,"sigsetmask");
-    }
-    public static int sigsetmask ( int __mask) {
-        var mh$ = sigsetmask$MH();
-        try {
-            return (int)mh$.invokeExact(__mask);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle siggetmask$MH() {
-        return RuntimeHelper.requireNonNull(constants$7.siggetmask$MH,"siggetmask");
-    }
-    public static int siggetmask () {
-        var mh$ = siggetmask$MH();
-        try {
-            return (int)mh$.invokeExact();
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
     public static MethodHandle sigemptyset$MH() {
-        return RuntimeHelper.requireNonNull(constants$8.sigemptyset$MH,"sigemptyset");
+        return RuntimeHelper.requireNonNull(constants$7.sigemptyset$MH,"sigemptyset");
     }
     public static int sigemptyset ( Addressable __set) {
         var mh$ = sigemptyset$MH();
@@ -2350,7 +2528,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle sigfillset$MH() {
-        return RuntimeHelper.requireNonNull(constants$8.sigfillset$MH,"sigfillset");
+        return RuntimeHelper.requireNonNull(constants$7.sigfillset$MH,"sigfillset");
     }
     public static int sigfillset ( Addressable __set) {
         var mh$ = sigfillset$MH();
@@ -2361,7 +2539,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle sigaddset$MH() {
-        return RuntimeHelper.requireNonNull(constants$8.sigaddset$MH,"sigaddset");
+        return RuntimeHelper.requireNonNull(constants$7.sigaddset$MH,"sigaddset");
     }
     public static int sigaddset ( Addressable __set,  int __signo) {
         var mh$ = sigaddset$MH();
@@ -2383,7 +2561,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle sigismember$MH() {
-        return RuntimeHelper.requireNonNull(constants$9.sigismember$MH,"sigismember");
+        return RuntimeHelper.requireNonNull(constants$8.sigismember$MH,"sigismember");
     }
     public static int sigismember ( Addressable __set,  int __signo) {
         var mh$ = sigismember$MH();
@@ -2394,7 +2572,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle sigprocmask$MH() {
-        return RuntimeHelper.requireNonNull(constants$9.sigprocmask$MH,"sigprocmask");
+        return RuntimeHelper.requireNonNull(constants$8.sigprocmask$MH,"sigprocmask");
     }
     public static int sigprocmask ( int __how,  Addressable __set,  Addressable __oset) {
         var mh$ = sigprocmask$MH();
@@ -2405,7 +2583,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle sigsuspend$MH() {
-        return RuntimeHelper.requireNonNull(constants$9.sigsuspend$MH,"sigsuspend");
+        return RuntimeHelper.requireNonNull(constants$8.sigsuspend$MH,"sigsuspend");
     }
     public static int sigsuspend ( Addressable __set) {
         var mh$ = sigsuspend$MH();
@@ -2416,7 +2594,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle sigaction$MH() {
-        return RuntimeHelper.requireNonNull(constants$9.sigaction$MH,"sigaction");
+        return RuntimeHelper.requireNonNull(constants$8.sigaction$MH,"sigaction");
     }
     public static int sigaction ( int __sig,  Addressable __act,  Addressable __oact) {
         var mh$ = sigaction$MH();
@@ -2427,7 +2605,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle sigpending$MH() {
-        return RuntimeHelper.requireNonNull(constants$9.sigpending$MH,"sigpending");
+        return RuntimeHelper.requireNonNull(constants$8.sigpending$MH,"sigpending");
     }
     public static int sigpending ( Addressable __set) {
         var mh$ = sigpending$MH();
@@ -2449,7 +2627,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle sigwaitinfo$MH() {
-        return RuntimeHelper.requireNonNull(constants$10.sigwaitinfo$MH,"sigwaitinfo");
+        return RuntimeHelper.requireNonNull(constants$9.sigwaitinfo$MH,"sigwaitinfo");
     }
     public static int sigwaitinfo ( Addressable __set,  Addressable __info) {
         var mh$ = sigwaitinfo$MH();
@@ -2460,7 +2638,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle sigtimedwait$MH() {
-        return RuntimeHelper.requireNonNull(constants$10.sigtimedwait$MH,"sigtimedwait");
+        return RuntimeHelper.requireNonNull(constants$9.sigtimedwait$MH,"sigtimedwait");
     }
     public static int sigtimedwait ( Addressable __set,  Addressable __info,  Addressable __timeout) {
         var mh$ = sigtimedwait$MH();
@@ -2471,7 +2649,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle sigqueue$MH() {
-        return RuntimeHelper.requireNonNull(constants$10.sigqueue$MH,"sigqueue");
+        return RuntimeHelper.requireNonNull(constants$9.sigqueue$MH,"sigqueue");
     }
     public static int sigqueue ( int __pid,  int __sig,  MemorySegment __val) {
         var mh$ = sigqueue$MH();
@@ -2481,27 +2659,10 @@ public class liburing_h extends liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
-    public static MemorySegment _sys_siglist$SEGMENT() {
-        return RuntimeHelper.requireNonNull(constants$10._sys_siglist$SEGMENT,"_sys_siglist");
-    }
-    public static MemorySegment sys_siglist$SEGMENT() {
-        return RuntimeHelper.requireNonNull(constants$10.sys_siglist$SEGMENT,"sys_siglist");
-    }
-    public static MethodHandle sigreturn$MH() {
-        return RuntimeHelper.requireNonNull(constants$10.sigreturn$MH,"sigreturn");
-    }
-    public static int sigreturn ( Addressable __scp) {
-        var mh$ = sigreturn$MH();
-        try {
-            return (int)mh$.invokeExact(__scp);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
     public static OfLong greg_t = Constants$root.C_LONG_LONG$LAYOUT;
     public static OfAddress fpregset_t = Constants$root.C_POINTER$LAYOUT;
     public static MethodHandle siginterrupt$MH() {
-        return RuntimeHelper.requireNonNull(constants$11.siginterrupt$MH,"siginterrupt");
+        return RuntimeHelper.requireNonNull(constants$9.siginterrupt$MH,"siginterrupt");
     }
     public static int siginterrupt ( int __sig,  int __interrupt) {
         var mh$ = siginterrupt$MH();
@@ -2518,7 +2679,7 @@ public class liburing_h extends liburing_h_1 {
         return (int)2L;
     }
     public static MethodHandle sigaltstack$MH() {
-        return RuntimeHelper.requireNonNull(constants$11.sigaltstack$MH,"sigaltstack");
+        return RuntimeHelper.requireNonNull(constants$9.sigaltstack$MH,"sigaltstack");
     }
     public static int sigaltstack ( Addressable __ss,  Addressable __oss) {
         var mh$ = sigaltstack$MH();
@@ -2529,7 +2690,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle sigstack$MH() {
-        return RuntimeHelper.requireNonNull(constants$11.sigstack$MH,"sigstack");
+        return RuntimeHelper.requireNonNull(constants$10.sigstack$MH,"sigstack");
     }
     public static int sigstack ( Addressable __ss,  Addressable __oss) {
         var mh$ = sigstack$MH();
@@ -2539,8 +2700,52 @@ public class liburing_h extends liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+    public static MethodHandle sighold$MH() {
+        return RuntimeHelper.requireNonNull(constants$10.sighold$MH,"sighold");
+    }
+    public static int sighold ( int __sig) {
+        var mh$ = sighold$MH();
+        try {
+            return (int)mh$.invokeExact(__sig);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle sigrelse$MH() {
+        return RuntimeHelper.requireNonNull(constants$10.sigrelse$MH,"sigrelse");
+    }
+    public static int sigrelse ( int __sig) {
+        var mh$ = sigrelse$MH();
+        try {
+            return (int)mh$.invokeExact(__sig);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle sigignore$MH() {
+        return RuntimeHelper.requireNonNull(constants$10.sigignore$MH,"sigignore");
+    }
+    public static int sigignore ( int __sig) {
+        var mh$ = sigignore$MH();
+        try {
+            return (int)mh$.invokeExact(__sig);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle sigset$MH() {
+        return RuntimeHelper.requireNonNull(constants$10.sigset$MH,"sigset");
+    }
+    public static MemoryAddress sigset ( int __sig,  Addressable __disp) {
+        var mh$ = sigset$MH();
+        try {
+            return (java.lang.foreign.MemoryAddress)mh$.invokeExact(__sig, __disp);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
     public static MethodHandle pthread_sigmask$MH() {
-        return RuntimeHelper.requireNonNull(constants$11.pthread_sigmask$MH,"pthread_sigmask");
+        return RuntimeHelper.requireNonNull(constants$10.pthread_sigmask$MH,"pthread_sigmask");
     }
     public static int pthread_sigmask ( int __how,  Addressable __newmask,  Addressable __oldmask) {
         var mh$ = pthread_sigmask$MH();
@@ -2573,7 +2778,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle __libc_current_sigrtmax$MH() {
-        return RuntimeHelper.requireNonNull(constants$12.__libc_current_sigrtmax$MH,"__libc_current_sigrtmax");
+        return RuntimeHelper.requireNonNull(constants$11.__libc_current_sigrtmax$MH,"__libc_current_sigrtmax");
     }
     public static int __libc_current_sigrtmax () {
         var mh$ = __libc_current_sigrtmax$MH();
@@ -2593,7 +2798,7 @@ public class liburing_h extends liburing_h_1 {
     public static OfLong intmax_t = Constants$root.C_LONG_LONG$LAYOUT;
     public static OfInt __gwchar_t = Constants$root.C_INT$LAYOUT;
     public static MethodHandle imaxabs$MH() {
-        return RuntimeHelper.requireNonNull(constants$12.imaxabs$MH,"imaxabs");
+        return RuntimeHelper.requireNonNull(constants$11.imaxabs$MH,"imaxabs");
     }
     public static long imaxabs ( long __n) {
         var mh$ = imaxabs$MH();
@@ -2604,7 +2809,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle imaxdiv$MH() {
-        return RuntimeHelper.requireNonNull(constants$12.imaxdiv$MH,"imaxdiv");
+        return RuntimeHelper.requireNonNull(constants$11.imaxdiv$MH,"imaxdiv");
     }
     public static MemorySegment imaxdiv ( SegmentAllocator allocator,  long __numer,  long __denom) {
         var mh$ = imaxdiv$MH();
@@ -2615,7 +2820,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle strtoimax$MH() {
-        return RuntimeHelper.requireNonNull(constants$12.strtoimax$MH,"strtoimax");
+        return RuntimeHelper.requireNonNull(constants$11.strtoimax$MH,"strtoimax");
     }
     public static long strtoimax ( Addressable __nptr,  Addressable __endptr,  int __base) {
         var mh$ = strtoimax$MH();
@@ -2648,7 +2853,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle wcstoumax$MH() {
-        return RuntimeHelper.requireNonNull(constants$13.wcstoumax$MH,"wcstoumax");
+        return RuntimeHelper.requireNonNull(constants$12.wcstoumax$MH,"wcstoumax");
     }
     public static long wcstoumax ( Addressable __nptr,  Addressable __endptr,  int __base) {
         var mh$ = wcstoumax$MH();
@@ -2658,10 +2863,19 @@ public class liburing_h extends liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
-    public static OfAddress __locale_t = Constants$root.C_POINTER$LAYOUT;
-    public static OfAddress locale_t = Constants$root.C_POINTER$LAYOUT;
+    public static MethodHandle __sysconf$MH() {
+        return RuntimeHelper.requireNonNull(constants$12.__sysconf$MH,"__sysconf");
+    }
+    public static long __sysconf ( int x0) {
+        var mh$ = __sysconf$MH();
+        try {
+            return (long)mh$.invokeExact(x0);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
     public static MethodHandle clock$MH() {
-        return RuntimeHelper.requireNonNull(constants$13.clock$MH,"clock");
+        return RuntimeHelper.requireNonNull(constants$12.clock$MH,"clock");
     }
     public static long clock () {
         var mh$ = clock$MH();
@@ -2672,7 +2886,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle time$MH() {
-        return RuntimeHelper.requireNonNull(constants$13.time$MH,"time");
+        return RuntimeHelper.requireNonNull(constants$12.time$MH,"time");
     }
     public static long time ( Addressable __timer) {
         var mh$ = time$MH();
@@ -2715,19 +2929,19 @@ public class liburing_h extends liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
-    public static MethodHandle strftime_l$MH() {
-        return RuntimeHelper.requireNonNull(constants$14.strftime_l$MH,"strftime_l");
+    public static MethodHandle strptime$MH() {
+        return RuntimeHelper.requireNonNull(constants$13.strptime$MH,"strptime");
     }
-    public static long strftime_l ( Addressable __s,  long __maxsize,  Addressable __format,  Addressable __tp,  Addressable __loc) {
-        var mh$ = strftime_l$MH();
+    public static MemoryAddress strptime ( Addressable __s,  Addressable __fmt,  Addressable __tp) {
+        var mh$ = strptime$MH();
         try {
-            return (long)mh$.invokeExact(__s, __maxsize, __format, __tp, __loc);
+            return (java.lang.foreign.MemoryAddress)mh$.invokeExact(__s, __fmt, __tp);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
     public static MethodHandle gmtime$MH() {
-        return RuntimeHelper.requireNonNull(constants$14.gmtime$MH,"gmtime");
+        return RuntimeHelper.requireNonNull(constants$13.gmtime$MH,"gmtime");
     }
     public static MemoryAddress gmtime ( Addressable __timer) {
         var mh$ = gmtime$MH();
@@ -2738,7 +2952,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle localtime$MH() {
-        return RuntimeHelper.requireNonNull(constants$14.localtime$MH,"localtime");
+        return RuntimeHelper.requireNonNull(constants$13.localtime$MH,"localtime");
     }
     public static MemoryAddress localtime ( Addressable __timer) {
         var mh$ = localtime$MH();
@@ -2782,7 +2996,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle ctime$MH() {
-        return RuntimeHelper.requireNonNull(constants$15.ctime$MH,"ctime");
+        return RuntimeHelper.requireNonNull(constants$14.ctime$MH,"ctime");
     }
     public static MemoryAddress ctime ( Addressable __timer) {
         var mh$ = ctime$MH();
@@ -2793,7 +3007,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle asctime_r$MH() {
-        return RuntimeHelper.requireNonNull(constants$15.asctime_r$MH,"asctime_r");
+        return RuntimeHelper.requireNonNull(constants$14.asctime_r$MH,"asctime_r");
     }
     public static MemoryAddress asctime_r ( Addressable __tp,  Addressable __buf) {
         var mh$ = asctime_r$MH();
@@ -2804,7 +3018,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle ctime_r$MH() {
-        return RuntimeHelper.requireNonNull(constants$15.ctime_r$MH,"ctime_r");
+        return RuntimeHelper.requireNonNull(constants$14.ctime_r$MH,"ctime_r");
     }
     public static MemoryAddress ctime_r ( Addressable __timer,  Addressable __buf) {
         var mh$ = ctime_r$MH();
@@ -2848,10 +3062,10 @@ public class liburing_h extends liburing_h_1 {
         constants$15.__timezone$VH.set(RuntimeHelper.requireNonNull(constants$15.__timezone$SEGMENT, "__timezone"), x);
     }
     public static MemorySegment tzname$SEGMENT() {
-        return RuntimeHelper.requireNonNull(constants$16.tzname$SEGMENT,"tzname");
+        return RuntimeHelper.requireNonNull(constants$15.tzname$SEGMENT,"tzname");
     }
     public static MethodHandle tzset$MH() {
-        return RuntimeHelper.requireNonNull(constants$16.tzset$MH,"tzset");
+        return RuntimeHelper.requireNonNull(constants$15.tzset$MH,"tzset");
     }
     public static void tzset () {
         var mh$ = tzset$MH();
@@ -2862,19 +3076,19 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MemoryLayout daylight$LAYOUT() {
-        return constants$16.daylight$LAYOUT;
+        return constants$15.daylight$LAYOUT;
     }
     public static VarHandle daylight$VH() {
-        return constants$16.daylight$VH;
+        return constants$15.daylight$VH;
     }
     public static MemorySegment daylight$SEGMENT() {
-        return RuntimeHelper.requireNonNull(constants$16.daylight$SEGMENT,"daylight");
+        return RuntimeHelper.requireNonNull(constants$15.daylight$SEGMENT,"daylight");
     }
     public static int daylight$get() {
-        return (int) constants$16.daylight$VH.get(RuntimeHelper.requireNonNull(constants$16.daylight$SEGMENT, "daylight"));
+        return (int) constants$15.daylight$VH.get(RuntimeHelper.requireNonNull(constants$15.daylight$SEGMENT, "daylight"));
     }
     public static void daylight$set( int x) {
-        constants$16.daylight$VH.set(RuntimeHelper.requireNonNull(constants$16.daylight$SEGMENT, "daylight"), x);
+        constants$15.daylight$VH.set(RuntimeHelper.requireNonNull(constants$15.daylight$SEGMENT, "daylight"), x);
     }
     public static MemoryLayout timezone$LAYOUT() {
         return constants$16.timezone$LAYOUT;
@@ -2891,41 +3105,8 @@ public class liburing_h extends liburing_h_1 {
     public static void timezone$set( long x) {
         constants$16.timezone$VH.set(RuntimeHelper.requireNonNull(constants$16.timezone$SEGMENT, "timezone"), x);
     }
-    public static MethodHandle timegm$MH() {
-        return RuntimeHelper.requireNonNull(constants$16.timegm$MH,"timegm");
-    }
-    public static long timegm ( Addressable __tp) {
-        var mh$ = timegm$MH();
-        try {
-            return (long)mh$.invokeExact(__tp);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle timelocal$MH() {
-        return RuntimeHelper.requireNonNull(constants$16.timelocal$MH,"timelocal");
-    }
-    public static long timelocal ( Addressable __tp) {
-        var mh$ = timelocal$MH();
-        try {
-            return (long)mh$.invokeExact(__tp);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle dysize$MH() {
-        return RuntimeHelper.requireNonNull(constants$17.dysize$MH,"dysize");
-    }
-    public static int dysize ( int __year) {
-        var mh$ = dysize$MH();
-        try {
-            return (int)mh$.invokeExact(__year);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
     public static MethodHandle nanosleep$MH() {
-        return RuntimeHelper.requireNonNull(constants$17.nanosleep$MH,"nanosleep");
+        return RuntimeHelper.requireNonNull(constants$16.nanosleep$MH,"nanosleep");
     }
     public static int nanosleep ( Addressable __requested_time,  Addressable __remaining) {
         var mh$ = nanosleep$MH();
@@ -2936,7 +3117,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle clock_getres$MH() {
-        return RuntimeHelper.requireNonNull(constants$17.clock_getres$MH,"clock_getres");
+        return RuntimeHelper.requireNonNull(constants$16.clock_getres$MH,"clock_getres");
     }
     public static int clock_getres ( int __clock_id,  Addressable __res) {
         var mh$ = clock_getres$MH();
@@ -2947,7 +3128,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle clock_gettime$MH() {
-        return RuntimeHelper.requireNonNull(constants$17.clock_gettime$MH,"clock_gettime");
+        return RuntimeHelper.requireNonNull(constants$16.clock_gettime$MH,"clock_gettime");
     }
     public static int clock_gettime ( int __clock_id,  Addressable __tp) {
         var mh$ = clock_gettime$MH();
@@ -2958,7 +3139,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle clock_settime$MH() {
-        return RuntimeHelper.requireNonNull(constants$17.clock_settime$MH,"clock_settime");
+        return RuntimeHelper.requireNonNull(constants$16.clock_settime$MH,"clock_settime");
     }
     public static int clock_settime ( int __clock_id,  Addressable __tp) {
         var mh$ = clock_settime$MH();
@@ -2968,30 +3149,8 @@ public class liburing_h extends liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
-    public static MethodHandle clock_nanosleep$MH() {
-        return RuntimeHelper.requireNonNull(constants$17.clock_nanosleep$MH,"clock_nanosleep");
-    }
-    public static int clock_nanosleep ( int __clock_id,  int __flags,  Addressable __req,  Addressable __rem) {
-        var mh$ = clock_nanosleep$MH();
-        try {
-            return (int)mh$.invokeExact(__clock_id, __flags, __req, __rem);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle clock_getcpuclockid$MH() {
-        return RuntimeHelper.requireNonNull(constants$18.clock_getcpuclockid$MH,"clock_getcpuclockid");
-    }
-    public static int clock_getcpuclockid ( int __pid,  Addressable __clock_id) {
-        var mh$ = clock_getcpuclockid$MH();
-        try {
-            return (int)mh$.invokeExact(__pid, __clock_id);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
     public static MethodHandle timer_create$MH() {
-        return RuntimeHelper.requireNonNull(constants$18.timer_create$MH,"timer_create");
+        return RuntimeHelper.requireNonNull(constants$16.timer_create$MH,"timer_create");
     }
     public static int timer_create ( int __clock_id,  Addressable __evp,  Addressable __timerid) {
         var mh$ = timer_create$MH();
@@ -3002,7 +3161,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle timer_delete$MH() {
-        return RuntimeHelper.requireNonNull(constants$18.timer_delete$MH,"timer_delete");
+        return RuntimeHelper.requireNonNull(constants$17.timer_delete$MH,"timer_delete");
     }
     public static int timer_delete ( Addressable __timerid) {
         var mh$ = timer_delete$MH();
@@ -3013,7 +3172,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle timer_settime$MH() {
-        return RuntimeHelper.requireNonNull(constants$18.timer_settime$MH,"timer_settime");
+        return RuntimeHelper.requireNonNull(constants$17.timer_settime$MH,"timer_settime");
     }
     public static int timer_settime ( Addressable __timerid,  int __flags,  Addressable __value,  Addressable __ovalue) {
         var mh$ = timer_settime$MH();
@@ -3024,7 +3183,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle timer_gettime$MH() {
-        return RuntimeHelper.requireNonNull(constants$18.timer_gettime$MH,"timer_gettime");
+        return RuntimeHelper.requireNonNull(constants$17.timer_gettime$MH,"timer_gettime");
     }
     public static int timer_gettime ( Addressable __timerid,  Addressable __value) {
         var mh$ = timer_gettime$MH();
@@ -3035,7 +3194,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle timer_getoverrun$MH() {
-        return RuntimeHelper.requireNonNull(constants$18.timer_getoverrun$MH,"timer_getoverrun");
+        return RuntimeHelper.requireNonNull(constants$17.timer_getoverrun$MH,"timer_getoverrun");
     }
     public static int timer_getoverrun ( Addressable __timerid) {
         var mh$ = timer_getoverrun$MH();
@@ -3046,7 +3205,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle timespec_get$MH() {
-        return RuntimeHelper.requireNonNull(constants$19.timespec_get$MH,"timespec_get");
+        return RuntimeHelper.requireNonNull(constants$17.timespec_get$MH,"timespec_get");
     }
     public static int timespec_get ( Addressable __ts,  int __base) {
         var mh$ = timespec_get$MH();
@@ -3056,10 +3215,250 @@ public class liburing_h extends liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
-    public static OfInt __kernel_rwf_t = Constants$root.C_INT$LAYOUT;
+    public static MemoryLayout getdate_err$LAYOUT() {
+        return constants$17.getdate_err$LAYOUT;
+    }
+    public static VarHandle getdate_err$VH() {
+        return constants$17.getdate_err$VH;
+    }
+    public static MemorySegment getdate_err$SEGMENT() {
+        return RuntimeHelper.requireNonNull(constants$17.getdate_err$SEGMENT,"getdate_err");
+    }
+    public static int getdate_err$get() {
+        return (int) constants$17.getdate_err$VH.get(RuntimeHelper.requireNonNull(constants$17.getdate_err$SEGMENT, "getdate_err"));
+    }
+    public static void getdate_err$set( int x) {
+        constants$17.getdate_err$VH.set(RuntimeHelper.requireNonNull(constants$17.getdate_err$SEGMENT, "getdate_err"), x);
+    }
+    public static MethodHandle getdate$MH() {
+        return RuntimeHelper.requireNonNull(constants$18.getdate$MH,"getdate");
+    }
+    public static MemoryAddress getdate ( Addressable __string) {
+        var mh$ = getdate$MH();
+        try {
+            return (java.lang.foreign.MemoryAddress)mh$.invokeExact(__string);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
     public static OfShort __s16 = Constants$root.C_SHORT$LAYOUT;
     public static OfInt __s32 = Constants$root.C_INT$LAYOUT;
     public static OfLong __s64 = Constants$root.C_LONG_LONG$LAYOUT;
+    public static OfInt __kernel_key_t = Constants$root.C_INT$LAYOUT;
+    public static OfInt __kernel_mqd_t = Constants$root.C_INT$LAYOUT;
+    public static OfLong __kernel_long_t = Constants$root.C_LONG_LONG$LAYOUT;
+    public static OfInt __kernel_pid_t = Constants$root.C_INT$LAYOUT;
+    public static OfInt __kernel_ipc_pid_t = Constants$root.C_INT$LAYOUT;
+    public static OfLong __kernel_suseconds_t = Constants$root.C_LONG_LONG$LAYOUT;
+    public static OfInt __kernel_daddr_t = Constants$root.C_INT$LAYOUT;
+    public static OfLong __kernel_ssize_t = Constants$root.C_LONG_LONG$LAYOUT;
+    public static OfLong __kernel_ptrdiff_t = Constants$root.C_LONG_LONG$LAYOUT;
+    public static OfLong __kernel_off_t = Constants$root.C_LONG_LONG$LAYOUT;
+    public static OfLong __kernel_loff_t = Constants$root.C_LONG_LONG$LAYOUT;
+    public static OfLong __kernel_time_t = Constants$root.C_LONG_LONG$LAYOUT;
+    public static OfLong __kernel_time64_t = Constants$root.C_LONG_LONG$LAYOUT;
+    public static OfLong __kernel_clock_t = Constants$root.C_LONG_LONG$LAYOUT;
+    public static OfInt __kernel_timer_t = Constants$root.C_INT$LAYOUT;
+    public static OfInt __kernel_clockid_t = Constants$root.C_INT$LAYOUT;
+    public static OfAddress __kernel_caddr_t = Constants$root.C_POINTER$LAYOUT;
+    public static MethodHandle __arch_swab32$MH() {
+        return RuntimeHelper.requireNonNull(constants$18.__arch_swab32$MH,"__arch_swab32");
+    }
+    public static int __arch_swab32 ( int val) {
+        var mh$ = __arch_swab32$MH();
+        try {
+            return (int)mh$.invokeExact(val);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __arch_swab64$MH() {
+        return RuntimeHelper.requireNonNull(constants$18.__arch_swab64$MH,"__arch_swab64");
+    }
+    public static long __arch_swab64 ( long val) {
+        var mh$ = __arch_swab64$MH();
+        try {
+            return (long)mh$.invokeExact(val);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __fswab16$MH() {
+        return RuntimeHelper.requireNonNull(constants$18.__fswab16$MH,"__fswab16");
+    }
+    public static short __fswab16 ( short val) {
+        var mh$ = __fswab16$MH();
+        try {
+            return (short)mh$.invokeExact(val);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __fswab32$MH() {
+        return RuntimeHelper.requireNonNull(constants$19.__fswab32$MH,"__fswab32");
+    }
+    public static int __fswab32 ( int val) {
+        var mh$ = __fswab32$MH();
+        try {
+            return (int)mh$.invokeExact(val);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __fswab64$MH() {
+        return RuntimeHelper.requireNonNull(constants$19.__fswab64$MH,"__fswab64");
+    }
+    public static long __fswab64 ( long val) {
+        var mh$ = __fswab64$MH();
+        try {
+            return (long)mh$.invokeExact(val);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __fswahw32$MH() {
+        return RuntimeHelper.requireNonNull(constants$19.__fswahw32$MH,"__fswahw32");
+    }
+    public static int __fswahw32 ( int val) {
+        var mh$ = __fswahw32$MH();
+        try {
+            return (int)mh$.invokeExact(val);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __fswahb32$MH() {
+        return RuntimeHelper.requireNonNull(constants$19.__fswahb32$MH,"__fswahb32");
+    }
+    public static int __fswahb32 ( int val) {
+        var mh$ = __fswahb32$MH();
+        try {
+            return (int)mh$.invokeExact(val);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __swab$MH() {
+        return RuntimeHelper.requireNonNull(constants$19.__swab$MH,"__swab");
+    }
+    public static long __swab ( long y) {
+        var mh$ = __swab$MH();
+        try {
+            return (long)mh$.invokeExact(y);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __swab16p$MH() {
+        return RuntimeHelper.requireNonNull(constants$19.__swab16p$MH,"__swab16p");
+    }
+    public static short __swab16p ( Addressable p) {
+        var mh$ = __swab16p$MH();
+        try {
+            return (short)mh$.invokeExact(p);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __swab32p$MH() {
+        return RuntimeHelper.requireNonNull(constants$20.__swab32p$MH,"__swab32p");
+    }
+    public static int __swab32p ( Addressable p) {
+        var mh$ = __swab32p$MH();
+        try {
+            return (int)mh$.invokeExact(p);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __swab64p$MH() {
+        return RuntimeHelper.requireNonNull(constants$20.__swab64p$MH,"__swab64p");
+    }
+    public static long __swab64p ( Addressable p) {
+        var mh$ = __swab64p$MH();
+        try {
+            return (long)mh$.invokeExact(p);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __swahw32p$MH() {
+        return RuntimeHelper.requireNonNull(constants$20.__swahw32p$MH,"__swahw32p");
+    }
+    public static int __swahw32p ( Addressable p) {
+        var mh$ = __swahw32p$MH();
+        try {
+            return (int)mh$.invokeExact(p);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __swahb32p$MH() {
+        return RuntimeHelper.requireNonNull(constants$20.__swahb32p$MH,"__swahb32p");
+    }
+    public static int __swahb32p ( Addressable p) {
+        var mh$ = __swahb32p$MH();
+        try {
+            return (int)mh$.invokeExact(p);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __swab16s$MH() {
+        return RuntimeHelper.requireNonNull(constants$20.__swab16s$MH,"__swab16s");
+    }
+    public static void __swab16s ( Addressable p) {
+        var mh$ = __swab16s$MH();
+        try {
+            mh$.invokeExact(p);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __swab32s$MH() {
+        return RuntimeHelper.requireNonNull(constants$20.__swab32s$MH,"__swab32s");
+    }
+    public static void __swab32s ( Addressable p) {
+        var mh$ = __swab32s$MH();
+        try {
+            mh$.invokeExact(p);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __swab64s$MH() {
+        return RuntimeHelper.requireNonNull(constants$21.__swab64s$MH,"__swab64s");
+    }
+    public static void __swab64s ( Addressable p) {
+        var mh$ = __swab64s$MH();
+        try {
+            mh$.invokeExact(p);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __swahw32s$MH() {
+        return RuntimeHelper.requireNonNull(constants$21.__swahw32s$MH,"__swahw32s");
+    }
+    public static void __swahw32s ( Addressable p) {
+        var mh$ = __swahw32s$MH();
+        try {
+            mh$.invokeExact(p);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __swahb32s$MH() {
+        return RuntimeHelper.requireNonNull(constants$21.__swahb32s$MH,"__swahb32s");
+    }
+    public static void __swahb32s ( Addressable p) {
+        var mh$ = __swahb32s$MH();
+        try {
+            mh$.invokeExact(p);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
     public static int FSCONFIG_SET_FLAG() {
         return (int)0L;
     }
@@ -3084,42 +3483,334 @@ public class liburing_h extends liburing_h_1 {
     public static int FSCONFIG_CMD_RECONFIGURE() {
         return (int)7L;
     }
-    public static OfInt __kernel_rwf_t$0 = Constants$root.C_INT$LAYOUT;
-    public static MethodHandle io_uring_setup$MH() {
-        return RuntimeHelper.requireNonNull(constants$19.io_uring_setup$MH,"io_uring_setup");
+    public static OfInt __kernel_rwf_t = Constants$root.C_INT$LAYOUT;
+    public static int IOSQE_FIXED_FILE_BIT() {
+        return (int)0L;
     }
-    public static int io_uring_setup ( int entries,  Addressable p) {
-        var mh$ = io_uring_setup$MH();
+    public static int IOSQE_IO_DRAIN_BIT() {
+        return (int)1L;
+    }
+    public static int IOSQE_IO_LINK_BIT() {
+        return (int)2L;
+    }
+    public static int IOSQE_IO_HARDLINK_BIT() {
+        return (int)3L;
+    }
+    public static int IOSQE_ASYNC_BIT() {
+        return (int)4L;
+    }
+    public static int IOSQE_BUFFER_SELECT_BIT() {
+        return (int)5L;
+    }
+    public static int IORING_OP_NOP() {
+        return (int)0L;
+    }
+    public static int IORING_OP_READV() {
+        return (int)1L;
+    }
+    public static int IORING_OP_WRITEV() {
+        return (int)2L;
+    }
+    public static int IORING_OP_FSYNC() {
+        return (int)3L;
+    }
+    public static int IORING_OP_READ_FIXED() {
+        return (int)4L;
+    }
+    public static int IORING_OP_WRITE_FIXED() {
+        return (int)5L;
+    }
+    public static int IORING_OP_POLL_ADD() {
+        return (int)6L;
+    }
+    public static int IORING_OP_POLL_REMOVE() {
+        return (int)7L;
+    }
+    public static int IORING_OP_SYNC_FILE_RANGE() {
+        return (int)8L;
+    }
+    public static int IORING_OP_SENDMSG() {
+        return (int)9L;
+    }
+    public static int IORING_OP_RECVMSG() {
+        return (int)10L;
+    }
+    public static int IORING_OP_TIMEOUT() {
+        return (int)11L;
+    }
+    public static int IORING_OP_TIMEOUT_REMOVE() {
+        return (int)12L;
+    }
+    public static int IORING_OP_ACCEPT() {
+        return (int)13L;
+    }
+    public static int IORING_OP_ASYNC_CANCEL() {
+        return (int)14L;
+    }
+    public static int IORING_OP_LINK_TIMEOUT() {
+        return (int)15L;
+    }
+    public static int IORING_OP_CONNECT() {
+        return (int)16L;
+    }
+    public static int IORING_OP_FALLOCATE() {
+        return (int)17L;
+    }
+    public static int IORING_OP_OPENAT() {
+        return (int)18L;
+    }
+    public static int IORING_OP_CLOSE() {
+        return (int)19L;
+    }
+    public static int IORING_OP_FILES_UPDATE() {
+        return (int)20L;
+    }
+    public static int IORING_OP_STATX() {
+        return (int)21L;
+    }
+    public static int IORING_OP_READ() {
+        return (int)22L;
+    }
+    public static int IORING_OP_WRITE() {
+        return (int)23L;
+    }
+    public static int IORING_OP_FADVISE() {
+        return (int)24L;
+    }
+    public static int IORING_OP_MADVISE() {
+        return (int)25L;
+    }
+    public static int IORING_OP_SEND() {
+        return (int)26L;
+    }
+    public static int IORING_OP_RECV() {
+        return (int)27L;
+    }
+    public static int IORING_OP_OPENAT2() {
+        return (int)28L;
+    }
+    public static int IORING_OP_EPOLL_CTL() {
+        return (int)29L;
+    }
+    public static int IORING_OP_SPLICE() {
+        return (int)30L;
+    }
+    public static int IORING_OP_PROVIDE_BUFFERS() {
+        return (int)31L;
+    }
+    public static int IORING_OP_REMOVE_BUFFERS() {
+        return (int)32L;
+    }
+    public static int IORING_OP_TEE() {
+        return (int)33L;
+    }
+    public static int IORING_OP_SHUTDOWN() {
+        return (int)34L;
+    }
+    public static int IORING_OP_RENAMEAT() {
+        return (int)35L;
+    }
+    public static int IORING_OP_UNLINKAT() {
+        return (int)36L;
+    }
+    public static int IORING_OP_MKDIRAT() {
+        return (int)37L;
+    }
+    public static int IORING_OP_LAST() {
+        return (int)38L;
+    }
+    public static int IORING_CQE_BUFFER_SHIFT() {
+        return (int)16L;
+    }
+    public static int IORING_REGISTER_BUFFERS() {
+        return (int)0L;
+    }
+    public static int IORING_UNREGISTER_BUFFERS() {
+        return (int)1L;
+    }
+    public static int IORING_REGISTER_FILES() {
+        return (int)2L;
+    }
+    public static int IORING_UNREGISTER_FILES() {
+        return (int)3L;
+    }
+    public static int IORING_REGISTER_EVENTFD() {
+        return (int)4L;
+    }
+    public static int IORING_UNREGISTER_EVENTFD() {
+        return (int)5L;
+    }
+    public static int IORING_REGISTER_FILES_UPDATE() {
+        return (int)6L;
+    }
+    public static int IORING_REGISTER_EVENTFD_ASYNC() {
+        return (int)7L;
+    }
+    public static int IORING_REGISTER_PROBE() {
+        return (int)8L;
+    }
+    public static int IORING_REGISTER_PERSONALITY() {
+        return (int)9L;
+    }
+    public static int IORING_UNREGISTER_PERSONALITY() {
+        return (int)10L;
+    }
+    public static int IORING_REGISTER_RESTRICTIONS() {
+        return (int)11L;
+    }
+    public static int IORING_REGISTER_ENABLE_RINGS() {
+        return (int)12L;
+    }
+    public static int IORING_REGISTER_LAST() {
+        return (int)13L;
+    }
+    public static int IORING_RESTRICTION_REGISTER_OP() {
+        return (int)0L;
+    }
+    public static int IORING_RESTRICTION_SQE_OP() {
+        return (int)1L;
+    }
+    public static int IORING_RESTRICTION_SQE_FLAGS_ALLOWED() {
+        return (int)2L;
+    }
+    public static int IORING_RESTRICTION_SQE_FLAGS_REQUIRED() {
+        return (int)3L;
+    }
+    public static int IORING_RESTRICTION_LAST() {
+        return (int)4L;
+    }
+    public static OfLong ptrdiff_t = Constants$root.C_LONG_LONG$LAYOUT;
+    public static OfInt wchar_t = Constants$root.C_INT$LAYOUT;
+    public static int memory_order_relaxed() {
+        return (int)0L;
+    }
+    public static int memory_order_consume() {
+        return (int)1L;
+    }
+    public static int memory_order_acquire() {
+        return (int)2L;
+    }
+    public static int memory_order_release() {
+        return (int)3L;
+    }
+    public static int memory_order_acq_rel() {
+        return (int)4L;
+    }
+    public static int memory_order_seq_cst() {
+        return (int)5L;
+    }
+    public static MethodHandle atomic_thread_fence$MH() {
+        return RuntimeHelper.requireNonNull(constants$21.atomic_thread_fence$MH,"atomic_thread_fence");
+    }
+    public static void atomic_thread_fence ( int x0) {
+        var mh$ = atomic_thread_fence$MH();
         try {
-            return (int)mh$.invokeExact(entries, p);
+            mh$.invokeExact(x0);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
-    public static MethodHandle io_uring_enter$MH() {
-        return RuntimeHelper.requireNonNull(constants$19.io_uring_enter$MH,"io_uring_enter");
+    public static MethodHandle atomic_signal_fence$MH() {
+        return RuntimeHelper.requireNonNull(constants$21.atomic_signal_fence$MH,"atomic_signal_fence");
     }
-    public static int io_uring_enter ( int fd,  int to_submit,  int min_complete,  int flags,  Addressable sig) {
-        var mh$ = io_uring_enter$MH();
+    public static void atomic_signal_fence ( int x0) {
+        var mh$ = atomic_signal_fence$MH();
         try {
-            return (int)mh$.invokeExact(fd, to_submit, min_complete, flags, sig);
+            mh$.invokeExact(x0);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
-    public static MethodHandle io_uring_register$MH() {
-        return RuntimeHelper.requireNonNull(constants$19.io_uring_register$MH,"io_uring_register");
+    public static MethodHandle atomic_flag_test_and_set$MH() {
+        return RuntimeHelper.requireNonNull(constants$21.atomic_flag_test_and_set$MH,"atomic_flag_test_and_set");
     }
-    public static int io_uring_register ( int fd,  int opcode,  Addressable arg,  int nr_args) {
-        var mh$ = io_uring_register$MH();
+    public static boolean atomic_flag_test_and_set ( Addressable x0) {
+        var mh$ = atomic_flag_test_and_set$MH();
         try {
-            return (int)mh$.invokeExact(fd, opcode, arg, nr_args);
+            return (boolean)mh$.invokeExact(x0);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle atomic_flag_test_and_set_explicit$MH() {
+        return RuntimeHelper.requireNonNull(constants$22.atomic_flag_test_and_set_explicit$MH,"atomic_flag_test_and_set_explicit");
+    }
+    public static boolean atomic_flag_test_and_set_explicit ( Addressable x0,  int x1) {
+        var mh$ = atomic_flag_test_and_set_explicit$MH();
+        try {
+            return (boolean)mh$.invokeExact(x0, x1);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle atomic_flag_clear$MH() {
+        return RuntimeHelper.requireNonNull(constants$22.atomic_flag_clear$MH,"atomic_flag_clear");
+    }
+    public static void atomic_flag_clear ( Addressable x0) {
+        var mh$ = atomic_flag_clear$MH();
+        try {
+            mh$.invokeExact(x0);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle atomic_flag_clear_explicit$MH() {
+        return RuntimeHelper.requireNonNull(constants$22.atomic_flag_clear_explicit$MH,"atomic_flag_clear_explicit");
+    }
+    public static void atomic_flag_clear_explicit ( Addressable x0,  int x1) {
+        var mh$ = atomic_flag_clear_explicit$MH();
+        try {
+            mh$.invokeExact(x0, x1);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_get_probe_ring$MH() {
+        return RuntimeHelper.requireNonNull(constants$22.io_uring_get_probe_ring$MH,"io_uring_get_probe_ring");
+    }
+    public static MemoryAddress io_uring_get_probe_ring ( Addressable ring) {
+        var mh$ = io_uring_get_probe_ring$MH();
+        try {
+            return (java.lang.foreign.MemoryAddress)mh$.invokeExact(ring);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_get_probe$MH() {
+        return RuntimeHelper.requireNonNull(constants$22.io_uring_get_probe$MH,"io_uring_get_probe");
+    }
+    public static MemoryAddress io_uring_get_probe () {
+        var mh$ = io_uring_get_probe$MH();
+        try {
+            return (java.lang.foreign.MemoryAddress)mh$.invokeExact();
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_free_probe$MH() {
+        return RuntimeHelper.requireNonNull(constants$22.io_uring_free_probe$MH,"io_uring_free_probe");
+    }
+    public static void io_uring_free_probe ( Addressable probe) {
+        var mh$ = io_uring_free_probe$MH();
+        try {
+            mh$.invokeExact(probe);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_opcode_supported$MH() {
+        return RuntimeHelper.requireNonNull(constants$23.io_uring_opcode_supported$MH,"io_uring_opcode_supported");
+    }
+    public static int io_uring_opcode_supported ( Addressable p,  int op) {
+        var mh$ = io_uring_opcode_supported$MH();
+        try {
+            return (int)mh$.invokeExact(p, op);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
     public static MethodHandle io_uring_queue_init_params$MH() {
-        return RuntimeHelper.requireNonNull(constants$19.io_uring_queue_init_params$MH,"io_uring_queue_init_params");
+        return RuntimeHelper.requireNonNull(constants$23.io_uring_queue_init_params$MH,"io_uring_queue_init_params");
     }
     public static int io_uring_queue_init_params ( int entries,  Addressable ring,  Addressable p) {
         var mh$ = io_uring_queue_init_params$MH();
@@ -3130,7 +3821,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_queue_init$MH() {
-        return RuntimeHelper.requireNonNull(constants$19.io_uring_queue_init$MH,"io_uring_queue_init");
+        return RuntimeHelper.requireNonNull(constants$23.io_uring_queue_init$MH,"io_uring_queue_init");
     }
     public static int io_uring_queue_init ( int entries,  Addressable ring,  int flags) {
         var mh$ = io_uring_queue_init$MH();
@@ -3141,7 +3832,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_queue_mmap$MH() {
-        return RuntimeHelper.requireNonNull(constants$20.io_uring_queue_mmap$MH,"io_uring_queue_mmap");
+        return RuntimeHelper.requireNonNull(constants$23.io_uring_queue_mmap$MH,"io_uring_queue_mmap");
     }
     public static int io_uring_queue_mmap ( int fd,  Addressable p,  Addressable ring) {
         var mh$ = io_uring_queue_mmap$MH();
@@ -3151,8 +3842,19 @@ public class liburing_h extends liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+    public static MethodHandle io_uring_ring_dontfork$MH() {
+        return RuntimeHelper.requireNonNull(constants$23.io_uring_ring_dontfork$MH,"io_uring_ring_dontfork");
+    }
+    public static int io_uring_ring_dontfork ( Addressable ring) {
+        var mh$ = io_uring_ring_dontfork$MH();
+        try {
+            return (int)mh$.invokeExact(ring);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
     public static MethodHandle io_uring_queue_exit$MH() {
-        return RuntimeHelper.requireNonNull(constants$20.io_uring_queue_exit$MH,"io_uring_queue_exit");
+        return RuntimeHelper.requireNonNull(constants$23.io_uring_queue_exit$MH,"io_uring_queue_exit");
     }
     public static void io_uring_queue_exit ( Addressable ring) {
         var mh$ = io_uring_queue_exit$MH();
@@ -3163,7 +3865,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_peek_batch_cqe$MH() {
-        return RuntimeHelper.requireNonNull(constants$20.io_uring_peek_batch_cqe$MH,"io_uring_peek_batch_cqe");
+        return RuntimeHelper.requireNonNull(constants$24.io_uring_peek_batch_cqe$MH,"io_uring_peek_batch_cqe");
     }
     public static int io_uring_peek_batch_cqe ( Addressable ring,  Addressable cqes,  int count) {
         var mh$ = io_uring_peek_batch_cqe$MH();
@@ -3174,7 +3876,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_wait_cqes$MH() {
-        return RuntimeHelper.requireNonNull(constants$20.io_uring_wait_cqes$MH,"io_uring_wait_cqes");
+        return RuntimeHelper.requireNonNull(constants$24.io_uring_wait_cqes$MH,"io_uring_wait_cqes");
     }
     public static int io_uring_wait_cqes ( Addressable ring,  Addressable cqe_ptr,  int wait_nr,  Addressable ts,  Addressable sigmask) {
         var mh$ = io_uring_wait_cqes$MH();
@@ -3185,7 +3887,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_wait_cqe_timeout$MH() {
-        return RuntimeHelper.requireNonNull(constants$20.io_uring_wait_cqe_timeout$MH,"io_uring_wait_cqe_timeout");
+        return RuntimeHelper.requireNonNull(constants$24.io_uring_wait_cqe_timeout$MH,"io_uring_wait_cqe_timeout");
     }
     public static int io_uring_wait_cqe_timeout ( Addressable ring,  Addressable cqe_ptr,  Addressable ts) {
         var mh$ = io_uring_wait_cqe_timeout$MH();
@@ -3196,7 +3898,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_submit$MH() {
-        return RuntimeHelper.requireNonNull(constants$20.io_uring_submit$MH,"io_uring_submit");
+        return RuntimeHelper.requireNonNull(constants$24.io_uring_submit$MH,"io_uring_submit");
     }
     public static int io_uring_submit ( Addressable ring) {
         var mh$ = io_uring_submit$MH();
@@ -3207,7 +3909,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_submit_and_wait$MH() {
-        return RuntimeHelper.requireNonNull(constants$21.io_uring_submit_and_wait$MH,"io_uring_submit_and_wait");
+        return RuntimeHelper.requireNonNull(constants$24.io_uring_submit_and_wait$MH,"io_uring_submit_and_wait");
     }
     public static int io_uring_submit_and_wait ( Addressable ring,  int wait_nr) {
         var mh$ = io_uring_submit_and_wait$MH();
@@ -3218,7 +3920,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_get_sqe$MH() {
-        return RuntimeHelper.requireNonNull(constants$21.io_uring_get_sqe$MH,"io_uring_get_sqe");
+        return RuntimeHelper.requireNonNull(constants$24.io_uring_get_sqe$MH,"io_uring_get_sqe");
     }
     public static MemoryAddress io_uring_get_sqe ( Addressable ring) {
         var mh$ = io_uring_get_sqe$MH();
@@ -3229,7 +3931,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_register_buffers$MH() {
-        return RuntimeHelper.requireNonNull(constants$21.io_uring_register_buffers$MH,"io_uring_register_buffers");
+        return RuntimeHelper.requireNonNull(constants$25.io_uring_register_buffers$MH,"io_uring_register_buffers");
     }
     public static int io_uring_register_buffers ( Addressable ring,  Addressable iovecs,  int nr_iovecs) {
         var mh$ = io_uring_register_buffers$MH();
@@ -3240,7 +3942,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_unregister_buffers$MH() {
-        return RuntimeHelper.requireNonNull(constants$21.io_uring_unregister_buffers$MH,"io_uring_unregister_buffers");
+        return RuntimeHelper.requireNonNull(constants$25.io_uring_unregister_buffers$MH,"io_uring_unregister_buffers");
     }
     public static int io_uring_unregister_buffers ( Addressable ring) {
         var mh$ = io_uring_unregister_buffers$MH();
@@ -3251,7 +3953,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_register_files$MH() {
-        return RuntimeHelper.requireNonNull(constants$21.io_uring_register_files$MH,"io_uring_register_files");
+        return RuntimeHelper.requireNonNull(constants$25.io_uring_register_files$MH,"io_uring_register_files");
     }
     public static int io_uring_register_files ( Addressable ring,  Addressable files,  int nr_files) {
         var mh$ = io_uring_register_files$MH();
@@ -3262,7 +3964,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_unregister_files$MH() {
-        return RuntimeHelper.requireNonNull(constants$21.io_uring_unregister_files$MH,"io_uring_unregister_files");
+        return RuntimeHelper.requireNonNull(constants$25.io_uring_unregister_files$MH,"io_uring_unregister_files");
     }
     public static int io_uring_unregister_files ( Addressable ring) {
         var mh$ = io_uring_unregister_files$MH();
@@ -3273,7 +3975,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_register_files_update$MH() {
-        return RuntimeHelper.requireNonNull(constants$22.io_uring_register_files_update$MH,"io_uring_register_files_update");
+        return RuntimeHelper.requireNonNull(constants$25.io_uring_register_files_update$MH,"io_uring_register_files_update");
     }
     public static int io_uring_register_files_update ( Addressable ring,  int off,  Addressable files,  int nr_files) {
         var mh$ = io_uring_register_files_update$MH();
@@ -3284,7 +3986,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_register_eventfd$MH() {
-        return RuntimeHelper.requireNonNull(constants$22.io_uring_register_eventfd$MH,"io_uring_register_eventfd");
+        return RuntimeHelper.requireNonNull(constants$25.io_uring_register_eventfd$MH,"io_uring_register_eventfd");
     }
     public static int io_uring_register_eventfd ( Addressable ring,  int fd) {
         var mh$ = io_uring_register_eventfd$MH();
@@ -3294,8 +3996,19 @@ public class liburing_h extends liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+    public static MethodHandle io_uring_register_eventfd_async$MH() {
+        return RuntimeHelper.requireNonNull(constants$26.io_uring_register_eventfd_async$MH,"io_uring_register_eventfd_async");
+    }
+    public static int io_uring_register_eventfd_async ( Addressable ring,  int fd) {
+        var mh$ = io_uring_register_eventfd_async$MH();
+        try {
+            return (int)mh$.invokeExact(ring, fd);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
     public static MethodHandle io_uring_unregister_eventfd$MH() {
-        return RuntimeHelper.requireNonNull(constants$22.io_uring_unregister_eventfd$MH,"io_uring_unregister_eventfd");
+        return RuntimeHelper.requireNonNull(constants$26.io_uring_unregister_eventfd$MH,"io_uring_unregister_eventfd");
     }
     public static int io_uring_unregister_eventfd ( Addressable ring) {
         var mh$ = io_uring_unregister_eventfd$MH();
@@ -3305,8 +4018,74 @@ public class liburing_h extends liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+    public static MethodHandle io_uring_register_probe$MH() {
+        return RuntimeHelper.requireNonNull(constants$26.io_uring_register_probe$MH,"io_uring_register_probe");
+    }
+    public static int io_uring_register_probe ( Addressable ring,  Addressable p,  int nr) {
+        var mh$ = io_uring_register_probe$MH();
+        try {
+            return (int)mh$.invokeExact(ring, p, nr);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_register_personality$MH() {
+        return RuntimeHelper.requireNonNull(constants$26.io_uring_register_personality$MH,"io_uring_register_personality");
+    }
+    public static int io_uring_register_personality ( Addressable ring) {
+        var mh$ = io_uring_register_personality$MH();
+        try {
+            return (int)mh$.invokeExact(ring);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_unregister_personality$MH() {
+        return RuntimeHelper.requireNonNull(constants$26.io_uring_unregister_personality$MH,"io_uring_unregister_personality");
+    }
+    public static int io_uring_unregister_personality ( Addressable ring,  int id) {
+        var mh$ = io_uring_unregister_personality$MH();
+        try {
+            return (int)mh$.invokeExact(ring, id);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_register_restrictions$MH() {
+        return RuntimeHelper.requireNonNull(constants$26.io_uring_register_restrictions$MH,"io_uring_register_restrictions");
+    }
+    public static int io_uring_register_restrictions ( Addressable ring,  Addressable res,  int nr_res) {
+        var mh$ = io_uring_register_restrictions$MH();
+        try {
+            return (int)mh$.invokeExact(ring, res, nr_res);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_enable_rings$MH() {
+        return RuntimeHelper.requireNonNull(constants$27.io_uring_enable_rings$MH,"io_uring_enable_rings");
+    }
+    public static int io_uring_enable_rings ( Addressable ring) {
+        var mh$ = io_uring_enable_rings$MH();
+        try {
+            return (int)mh$.invokeExact(ring);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle __io_uring_sqring_wait$MH() {
+        return RuntimeHelper.requireNonNull(constants$27.__io_uring_sqring_wait$MH,"__io_uring_sqring_wait");
+    }
+    public static int __io_uring_sqring_wait ( Addressable ring) {
+        var mh$ = __io_uring_sqring_wait$MH();
+        try {
+            return (int)mh$.invokeExact(ring);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
     public static MethodHandle __io_uring_get_cqe$MH() {
-        return RuntimeHelper.requireNonNull(constants$22.__io_uring_get_cqe$MH,"__io_uring_get_cqe");
+        return RuntimeHelper.requireNonNull(constants$27.__io_uring_get_cqe$MH,"__io_uring_get_cqe");
     }
     public static int __io_uring_get_cqe ( Addressable ring,  Addressable cqe_ptr,  int submit,  int wait_nr,  Addressable sigmask) {
         var mh$ = __io_uring_get_cqe$MH();
@@ -3317,7 +4096,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_cq_advance$MH() {
-        return RuntimeHelper.requireNonNull(constants$22.io_uring_cq_advance$MH,"io_uring_cq_advance");
+        return RuntimeHelper.requireNonNull(constants$27.io_uring_cq_advance$MH,"io_uring_cq_advance");
     }
     public static void io_uring_cq_advance ( Addressable ring,  int nr) {
         var mh$ = io_uring_cq_advance$MH();
@@ -3328,7 +4107,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_cqe_seen$MH() {
-        return RuntimeHelper.requireNonNull(constants$22.io_uring_cqe_seen$MH,"io_uring_cqe_seen");
+        return RuntimeHelper.requireNonNull(constants$27.io_uring_cqe_seen$MH,"io_uring_cqe_seen");
     }
     public static void io_uring_cqe_seen ( Addressable ring,  Addressable cqe) {
         var mh$ = io_uring_cqe_seen$MH();
@@ -3339,7 +4118,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_sqe_set_data$MH() {
-        return RuntimeHelper.requireNonNull(constants$23.io_uring_sqe_set_data$MH,"io_uring_sqe_set_data");
+        return RuntimeHelper.requireNonNull(constants$27.io_uring_sqe_set_data$MH,"io_uring_sqe_set_data");
     }
     public static void io_uring_sqe_set_data ( Addressable sqe,  Addressable data) {
         var mh$ = io_uring_sqe_set_data$MH();
@@ -3350,7 +4129,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_cqe_get_data$MH() {
-        return RuntimeHelper.requireNonNull(constants$23.io_uring_cqe_get_data$MH,"io_uring_cqe_get_data");
+        return RuntimeHelper.requireNonNull(constants$28.io_uring_cqe_get_data$MH,"io_uring_cqe_get_data");
     }
     public static MemoryAddress io_uring_cqe_get_data ( Addressable cqe) {
         var mh$ = io_uring_cqe_get_data$MH();
@@ -3361,7 +4140,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_sqe_set_flags$MH() {
-        return RuntimeHelper.requireNonNull(constants$23.io_uring_sqe_set_flags$MH,"io_uring_sqe_set_flags");
+        return RuntimeHelper.requireNonNull(constants$28.io_uring_sqe_set_flags$MH,"io_uring_sqe_set_flags");
     }
     public static void io_uring_sqe_set_flags ( Addressable sqe,  int flags) {
         var mh$ = io_uring_sqe_set_flags$MH();
@@ -3372,33 +4151,40 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_prep_rw$MH() {
-        return RuntimeHelper.requireNonNull(constants$23.io_uring_prep_rw$MH,"io_uring_prep_rw");
+        return RuntimeHelper.requireNonNull(constants$28.io_uring_prep_rw$MH,"io_uring_prep_rw");
     }
     public static void io_uring_prep_rw ( int op,  Addressable sqe,  int fd,  Addressable addr,  int len,  long offset) {
-//        var mh$ = io_uring_prep_rw$MH();
-//        try {
-//            mh$.invokeExact(op, sqe, fd, addr, len, offset);
-//        } catch (Throwable ex$) {
-//            throw new AssertionError("should not reach here", ex$);
-//        }
-        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof(), MemorySession.global());
-        io_uring_sqe.opcode$set(sqeSegment, (byte) op);
-        io_uring_sqe.flags$set(sqeSegment, (byte) 0);
-        io_uring_sqe.ioprio$set(sqeSegment,(short) 0);
-        io_uring_sqe.fd$set(sqeSegment, fd);
-        io_uring_sqe.off$set(sqeSegment, offset);
-        io_uring_sqe.addr$set(sqeSegment, addr.address().toRawLongValue());
-        io_uring_sqe.len$set(sqeSegment, len);
-        io_uring_sqe.rw_flags$set(sqeSegment, 0);
-        io_uring_sqe.user_data$set(sqeSegment, 0);
-
-        MemorySegment __pad = io_uring_sqe.__pad2$slice(sqeSegment);
-        for (int i = 0; i < 3; i++) {
-            __pad.setAtIndex(C_LONG_LONG, i,0);
+        var mh$ = io_uring_prep_rw$MH();
+        try {
+            mh$.invokeExact(op, sqe, fd, addr, len, offset);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_splice$MH() {
+        return RuntimeHelper.requireNonNull(constants$28.io_uring_prep_splice$MH,"io_uring_prep_splice");
+    }
+    public static void io_uring_prep_splice ( Addressable sqe,  int fd_in,  long off_in,  int fd_out,  long off_out,  int nbytes,  int splice_flags) {
+        var mh$ = io_uring_prep_splice$MH();
+        try {
+            mh$.invokeExact(sqe, fd_in, off_in, fd_out, off_out, nbytes, splice_flags);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_tee$MH() {
+        return RuntimeHelper.requireNonNull(constants$28.io_uring_prep_tee$MH,"io_uring_prep_tee");
+    }
+    public static void io_uring_prep_tee ( Addressable sqe,  int fd_in,  int fd_out,  int nbytes,  int splice_flags) {
+        var mh$ = io_uring_prep_tee$MH();
+        try {
+            mh$.invokeExact(sqe, fd_in, fd_out, nbytes, splice_flags);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
         }
     }
     public static MethodHandle io_uring_prep_readv$MH() {
-        return RuntimeHelper.requireNonNull(constants$23.io_uring_prep_readv$MH,"io_uring_prep_readv");
+        return RuntimeHelper.requireNonNull(constants$28.io_uring_prep_readv$MH,"io_uring_prep_readv");
     }
     public static void io_uring_prep_readv ( Addressable sqe,  int fd,  Addressable iovecs,  int nr_vecs,  long offset) {
 //        var mh$ = io_uring_prep_readv$MH();
@@ -3407,10 +4193,10 @@ public class liburing_h extends liburing_h_1 {
 //        } catch (Throwable ex$) {
 //            throw new AssertionError("should not reach here", ex$);
 //        }
-        io_uring_prep_rw(IORING_OP_READV(), sqe, fd,iovecs, nr_vecs, offset);
+        io_uring_prep_rw(IORING_OP_READV(), sqe, fd,iovecs,nr_vecs,offset);
     }
     public static MethodHandle io_uring_prep_read_fixed$MH() {
-        return RuntimeHelper.requireNonNull(constants$23.io_uring_prep_read_fixed$MH,"io_uring_prep_read_fixed");
+        return RuntimeHelper.requireNonNull(constants$29.io_uring_prep_read_fixed$MH,"io_uring_prep_read_fixed");
     }
     public static void io_uring_prep_read_fixed ( Addressable sqe,  int fd,  Addressable buf,  int nbytes,  long offset,  int buf_index) {
         var mh$ = io_uring_prep_read_fixed$MH();
@@ -3421,7 +4207,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_prep_writev$MH() {
-        return RuntimeHelper.requireNonNull(constants$24.io_uring_prep_writev$MH,"io_uring_prep_writev");
+        return RuntimeHelper.requireNonNull(constants$29.io_uring_prep_writev$MH,"io_uring_prep_writev");
     }
     public static void io_uring_prep_writev ( Addressable sqe,  int fd,  Addressable iovecs,  int nr_vecs,  long offset) {
 //        var mh$ = io_uring_prep_writev$MH();
@@ -3430,10 +4216,10 @@ public class liburing_h extends liburing_h_1 {
 //        } catch (Throwable ex$) {
 //            throw new AssertionError("should not reach here", ex$);
 //        }
-        io_uring_prep_rw(IORING_OP_WRITEV(), sqe,fd,iovecs,nr_vecs,offset);
+        io_uring_prep_rw(IORING_OP_WRITEV(), sqe, fd, iovecs, nr_vecs, offset);
     }
     public static MethodHandle io_uring_prep_write_fixed$MH() {
-        return RuntimeHelper.requireNonNull(constants$24.io_uring_prep_write_fixed$MH,"io_uring_prep_write_fixed");
+        return RuntimeHelper.requireNonNull(constants$29.io_uring_prep_write_fixed$MH,"io_uring_prep_write_fixed");
     }
     public static void io_uring_prep_write_fixed ( Addressable sqe,  int fd,  Addressable buf,  int nbytes,  long offset,  int buf_index) {
         var mh$ = io_uring_prep_write_fixed$MH();
@@ -3444,7 +4230,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_prep_recvmsg$MH() {
-        return RuntimeHelper.requireNonNull(constants$24.io_uring_prep_recvmsg$MH,"io_uring_prep_recvmsg");
+        return RuntimeHelper.requireNonNull(constants$29.io_uring_prep_recvmsg$MH,"io_uring_prep_recvmsg");
     }
     public static void io_uring_prep_recvmsg ( Addressable sqe,  int fd,  Addressable msg,  int flags) {
         var mh$ = io_uring_prep_recvmsg$MH();
@@ -3455,7 +4241,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_prep_sendmsg$MH() {
-        return RuntimeHelper.requireNonNull(constants$24.io_uring_prep_sendmsg$MH,"io_uring_prep_sendmsg");
+        return RuntimeHelper.requireNonNull(constants$29.io_uring_prep_sendmsg$MH,"io_uring_prep_sendmsg");
     }
     public static void io_uring_prep_sendmsg ( Addressable sqe,  int fd,  Addressable msg,  int flags) {
         var mh$ = io_uring_prep_sendmsg$MH();
@@ -3466,9 +4252,9 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_prep_poll_add$MH() {
-        return RuntimeHelper.requireNonNull(constants$24.io_uring_prep_poll_add$MH,"io_uring_prep_poll_add");
+        return RuntimeHelper.requireNonNull(constants$29.io_uring_prep_poll_add$MH,"io_uring_prep_poll_add");
     }
-    public static void io_uring_prep_poll_add ( Addressable sqe,  int fd,  short poll_mask) {
+    public static void io_uring_prep_poll_add ( Addressable sqe,  int fd,  int poll_mask) {
         var mh$ = io_uring_prep_poll_add$MH();
         try {
             mh$.invokeExact(sqe, fd, poll_mask);
@@ -3477,7 +4263,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_prep_poll_remove$MH() {
-        return RuntimeHelper.requireNonNull(constants$24.io_uring_prep_poll_remove$MH,"io_uring_prep_poll_remove");
+        return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_poll_remove$MH,"io_uring_prep_poll_remove");
     }
     public static void io_uring_prep_poll_remove ( Addressable sqe,  Addressable user_data) {
         var mh$ = io_uring_prep_poll_remove$MH();
@@ -3488,7 +4274,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_prep_fsync$MH() {
-        return RuntimeHelper.requireNonNull(constants$25.io_uring_prep_fsync$MH,"io_uring_prep_fsync");
+        return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_fsync$MH,"io_uring_prep_fsync");
     }
     public static void io_uring_prep_fsync ( Addressable sqe,  int fd,  int fsync_flags) {
         var mh$ = io_uring_prep_fsync$MH();
@@ -3499,7 +4285,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_prep_nop$MH() {
-        return RuntimeHelper.requireNonNull(constants$25.io_uring_prep_nop$MH,"io_uring_prep_nop");
+        return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_nop$MH,"io_uring_prep_nop");
     }
     public static void io_uring_prep_nop ( Addressable sqe) {
         var mh$ = io_uring_prep_nop$MH();
@@ -3510,7 +4296,7 @@ public class liburing_h extends liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_prep_timeout$MH() {
-        return RuntimeHelper.requireNonNull(constants$25.io_uring_prep_timeout$MH,"io_uring_prep_timeout");
+        return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_timeout$MH,"io_uring_prep_timeout");
     }
     public static void io_uring_prep_timeout ( Addressable sqe,  Addressable ts,  int count,  int flags) {
         var mh$ = io_uring_prep_timeout$MH();
@@ -3519,571 +4305,6 @@ public class liburing_h extends liburing_h_1 {
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
-    }
-    public static MethodHandle io_uring_prep_timeout_remove$MH() {
-        return RuntimeHelper.requireNonNull(constants$25.io_uring_prep_timeout_remove$MH,"io_uring_prep_timeout_remove");
-    }
-    public static void io_uring_prep_timeout_remove ( Addressable sqe,  long user_data,  int flags) {
-        var mh$ = io_uring_prep_timeout_remove$MH();
-        try {
-            mh$.invokeExact(sqe, user_data, flags);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle io_uring_prep_accept$MH() {
-        return RuntimeHelper.requireNonNull(constants$25.io_uring_prep_accept$MH,"io_uring_prep_accept");
-    }
-    public static void io_uring_prep_accept ( Addressable sqe,  int fd,  Addressable addr,  Addressable addrlen,  int flags) {
-        var mh$ = io_uring_prep_accept$MH();
-        try {
-            mh$.invokeExact(sqe, fd, addr, addrlen, flags);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle io_uring_sq_space_left$MH() {
-        return RuntimeHelper.requireNonNull(constants$25.io_uring_sq_space_left$MH,"io_uring_sq_space_left");
-    }
-    public static int io_uring_sq_space_left ( Addressable ring) {
-        var mh$ = io_uring_sq_space_left$MH();
-        try {
-            return (int)mh$.invokeExact(ring);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle io_uring_cq_ready$MH() {
-        return RuntimeHelper.requireNonNull(constants$26.io_uring_cq_ready$MH,"io_uring_cq_ready");
-    }
-    public static int io_uring_cq_ready ( Addressable ring) {
-        var mh$ = io_uring_cq_ready$MH();
-        try {
-            return (int)mh$.invokeExact(ring);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle __io_uring_peek_cqe$MH() {
-        return RuntimeHelper.requireNonNull(constants$26.__io_uring_peek_cqe$MH,"__io_uring_peek_cqe");
-    }
-
-    /**
-     *
-     * @param ring ring对象
-     * @param cqe_ptr 二重指针
-     * @return
-     */
-    public static int __io_uring_peek_cqe ( Addressable ring,  Addressable cqe_ptr) {
-        var mh$ = __io_uring_peek_cqe$MH();
-        try {
-            return (int)mh$.invokeExact(ring, cqe_ptr);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-
-    }
-    public static MethodHandle io_uring_peek_cqe$MH() {
-        return RuntimeHelper.requireNonNull(constants$26.io_uring_peek_cqe$MH,"io_uring_peek_cqe");
-    }
-    public static int io_uring_peek_cqe ( Addressable ring,  Addressable cqe_ptr) {
-        var mh$ = io_uring_peek_cqe$MH();
-        try {
-            return (int)mh$.invokeExact(ring, cqe_ptr);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle io_uring_wait_cqe$MH() {
-        return RuntimeHelper.requireNonNull(constants$26.io_uring_wait_cqe$MH,"io_uring_wait_cqe");
-    }
-    public static int io_uring_wait_cqe ( Addressable ring,  Addressable cqe_ptr) {
-        var mh$ = io_uring_wait_cqe$MH();
-        try {
-            return (int)mh$.invokeExact(ring, cqe_ptr);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static long _POSIX_C_SOURCE() {
-        return 200809L;
-    }
-    public static long __STDC_ISO_10646__() {
-        return 201706L;
-    }
-    public static int __TIMESIZE() {
-        return (int)64L;
-    }
-    public static int __BYTE_ORDER() {
-        return (int)1234L;
-    }
-    public static int __FLOAT_WORD_ORDER() {
-        return (int)1234L;
-    }
-    public static int LITTLE_ENDIAN() {
-        return (int)1234L;
-    }
-    public static int BIG_ENDIAN() {
-        return (int)4321L;
-    }
-    public static int PDP_ENDIAN() {
-        return (int)3412L;
-    }
-    public static int BYTE_ORDER() {
-        return (int)1234L;
-    }
-    public static MemorySegment __FD_ZERO_STOS() {
-        return constants$26.__FD_ZERO_STOS$SEGMENT;
-    }
-    public static long _SIGSET_NWORDS() {
-        return 16L;
-    }
-    public static int __NFDBITS() {
-        return (int)64L;
-    }
-    public static int FD_SETSIZE() {
-        return (int)1024L;
-    }
-    public static int NFDBITS() {
-        return (int)64L;
-    }
-    public static int __PTHREAD_RWLOCK_ELISION_EXTRA() {
-        return (int)0L;
-    }
-    public static int PF_UNIX() {
-        return (int)1L;
-    }
-    public static int PF_FILE() {
-        return (int)1L;
-    }
-    public static int PF_ROUTE() {
-        return (int)16L;
-    }
-    public static int AF_UNSPEC() {
-        return (int)0L;
-    }
-    public static int AF_LOCAL() {
-        return (int)1L;
-    }
-    public static int AF_UNIX() {
-        return (int)1L;
-    }
-    public static int AF_FILE() {
-        return (int)1L;
-    }
-    public static int AF_INET() {
-        return (int)2L;
-    }
-    public static int AF_AX25() {
-        return (int)3L;
-    }
-    public static int AF_IPX() {
-        return (int)4L;
-    }
-    public static int AF_APPLETALK() {
-        return (int)5L;
-    }
-    public static int AF_NETROM() {
-        return (int)6L;
-    }
-    public static int AF_BRIDGE() {
-        return (int)7L;
-    }
-    public static int AF_ATMPVC() {
-        return (int)8L;
-    }
-    public static int AF_X25() {
-        return (int)9L;
-    }
-    public static int AF_INET6() {
-        return (int)10L;
-    }
-    public static int AF_ROSE() {
-        return (int)11L;
-    }
-    public static int AF_DECnet() {
-        return (int)12L;
-    }
-    public static int AF_NETBEUI() {
-        return (int)13L;
-    }
-    public static int AF_SECURITY() {
-        return (int)14L;
-    }
-    public static int AF_KEY() {
-        return (int)15L;
-    }
-    public static int AF_NETLINK() {
-        return (int)16L;
-    }
-    public static int AF_ROUTE() {
-        return (int)16L;
-    }
-    public static int AF_PACKET() {
-        return (int)17L;
-    }
-    public static int AF_ASH() {
-        return (int)18L;
-    }
-    public static int AF_ECONET() {
-        return (int)19L;
-    }
-    public static int AF_ATMSVC() {
-        return (int)20L;
-    }
-    public static int AF_RDS() {
-        return (int)21L;
-    }
-    public static int AF_SNA() {
-        return (int)22L;
-    }
-    public static int AF_IRDA() {
-        return (int)23L;
-    }
-    public static int AF_PPPOX() {
-        return (int)24L;
-    }
-    public static int AF_WANPIPE() {
-        return (int)25L;
-    }
-    public static int AF_LLC() {
-        return (int)26L;
-    }
-    public static int AF_IB() {
-        return (int)27L;
-    }
-    public static int AF_MPLS() {
-        return (int)28L;
-    }
-    public static int AF_CAN() {
-        return (int)29L;
-    }
-    public static int AF_TIPC() {
-        return (int)30L;
-    }
-    public static int AF_BLUETOOTH() {
-        return (int)31L;
-    }
-    public static int AF_IUCV() {
-        return (int)32L;
-    }
-    public static int AF_RXRPC() {
-        return (int)33L;
-    }
-    public static int AF_ISDN() {
-        return (int)34L;
-    }
-    public static int AF_PHONET() {
-        return (int)35L;
-    }
-    public static int AF_IEEE802154() {
-        return (int)36L;
-    }
-    public static int AF_CAIF() {
-        return (int)37L;
-    }
-    public static int AF_ALG() {
-        return (int)38L;
-    }
-    public static int AF_NFC() {
-        return (int)39L;
-    }
-    public static int AF_VSOCK() {
-        return (int)40L;
-    }
-    public static int AF_KCM() {
-        return (int)41L;
-    }
-    public static int AF_QIPCRTR() {
-        return (int)42L;
-    }
-    public static int AF_SMC() {
-        return (int)43L;
-    }
-    public static int AF_XDP() {
-        return (int)44L;
-    }
-    public static int AF_MAX() {
-        return (int)45L;
-    }
-    public static long __SOCKADDR_COMMON_SIZE() {
-        return 2L;
-    }
-    public static long _SS_PADSIZE() {
-        return 118L;
-    }
-    public static int SO_GET_FILTER() {
-        return (int)26L;
-    }
-    public static int SCM_WIFI_STATUS() {
-        return (int)41L;
-    }
-    public static int SO_DETACH_BPF() {
-        return (int)27L;
-    }
-    public static int SCM_TXTIME() {
-        return (int)61L;
-    }
-    public static int SO_TIMESTAMP() {
-        return (int)29L;
-    }
-    public static int SO_TIMESTAMPNS() {
-        return (int)35L;
-    }
-    public static int SO_TIMESTAMPING() {
-        return (int)37L;
-    }
-    public static int SO_RCVTIMEO() {
-        return (int)20L;
-    }
-    public static int SO_SNDTIMEO() {
-        return (int)21L;
-    }
-    public static int SCM_TIMESTAMP() {
-        return (int)29L;
-    }
-    public static int SCM_TIMESTAMPNS() {
-        return (int)35L;
-    }
-    public static int SCM_TIMESTAMPING() {
-        return (int)37L;
-    }
-    public static int UIO_MAXIOV() {
-        return (int)1024L;
-    }
-    public static MemoryAddress SIG_ERR() {
-        return constants$26.SIG_ERR$ADDR;
-    }
-    public static MemoryAddress SIG_DFL() {
-        return constants$27.SIG_DFL$ADDR;
-    }
-    public static MemoryAddress SIG_IGN() {
-        return constants$27.SIG_IGN$ADDR;
-    }
-    public static int SIGIO() {
-        return (int)29L;
-    }
-    public static int SIGIOT() {
-        return (int)6L;
-    }
-    public static int SIGCLD() {
-        return (int)17L;
-    }
-    public static int _NSIG() {
-        return (int)65L;
-    }
-    public static long __SI_PAD_SIZE() {
-        return 28L;
-    }
-    public static long __SIGEV_PAD_SIZE() {
-        return 12L;
-    }
-    public static int NSIG() {
-        return (int)65L;
-    }
-    public static int SA_RESETHAND() {
-        return (int)2147483648L;
-    }
-    public static int SA_NOMASK() {
-        return (int)1073741824L;
-    }
-    public static int SA_ONESHOT() {
-        return (int)2147483648L;
-    }
-    public static int SA_STACK() {
-        return (int)134217728L;
-    }
-    public static int FP_XSTATE_MAGIC1() {
-        return (int)1179670611L;
-    }
-    public static int FP_XSTATE_MAGIC2() {
-        return (int)1179670597L;
-    }
-    public static long FP_XSTATE_MAGIC2_SIZE() {
-        return 4L;
-    }
-    public static int NGREG() {
-        return (int)23L;
-    }
-    public static int __WCHAR_MAX() {
-        return (int)2147483647L;
-    }
-    public static int __WCHAR_MIN() {
-        return (int)-2147483648L;
-    }
-    public static int INT8_MIN() {
-        return (int)-128L;
-    }
-    public static int INT16_MIN() {
-        return (int)-32768L;
-    }
-    public static int INT32_MIN() {
-        return (int)-2147483648L;
-    }
-    public static long INT64_MIN() {
-        return -9223372036854775808L;
-    }
-    public static int INT8_MAX() {
-        return (int)127L;
-    }
-    public static int INT16_MAX() {
-        return (int)32767L;
-    }
-    public static int INT32_MAX() {
-        return (int)2147483647L;
-    }
-    public static long INT64_MAX() {
-        return 9223372036854775807L;
-    }
-    public static int UINT8_MAX() {
-        return (int)255L;
-    }
-    public static int UINT16_MAX() {
-        return (int)65535L;
-    }
-    public static int UINT32_MAX() {
-        return (int)4294967295L;
-    }
-    public static long UINT64_MAX() {
-        return -1L;
-    }
-    public static int INT_LEAST8_MIN() {
-        return (int)-128L;
-    }
-    public static int INT_LEAST16_MIN() {
-        return (int)-32768L;
-    }
-    public static int INT_LEAST32_MIN() {
-        return (int)-2147483648L;
-    }
-    public static long INT_LEAST64_MIN() {
-        return -9223372036854775808L;
-    }
-    public static int INT_LEAST8_MAX() {
-        return (int)127L;
-    }
-    public static int INT_LEAST16_MAX() {
-        return (int)32767L;
-    }
-    public static int INT_LEAST32_MAX() {
-        return (int)2147483647L;
-    }
-    public static long INT_LEAST64_MAX() {
-        return 9223372036854775807L;
-    }
-    public static int UINT_LEAST8_MAX() {
-        return (int)255L;
-    }
-    public static int UINT_LEAST16_MAX() {
-        return (int)65535L;
-    }
-    public static int UINT_LEAST32_MAX() {
-        return (int)4294967295L;
-    }
-    public static long UINT_LEAST64_MAX() {
-        return -1L;
-    }
-    public static int INT_FAST8_MIN() {
-        return (int)-128L;
-    }
-    public static long INT_FAST16_MIN() {
-        return -9223372036854775808L;
-    }
-    public static long INT_FAST32_MIN() {
-        return -9223372036854775808L;
-    }
-    public static long INT_FAST64_MIN() {
-        return -9223372036854775808L;
-    }
-    public static int INT_FAST8_MAX() {
-        return (int)127L;
-    }
-    public static long INT_FAST16_MAX() {
-        return 9223372036854775807L;
-    }
-    public static long INT_FAST32_MAX() {
-        return 9223372036854775807L;
-    }
-    public static long INT_FAST64_MAX() {
-        return 9223372036854775807L;
-    }
-    public static int UINT_FAST8_MAX() {
-        return (int)255L;
-    }
-    public static long UINT_FAST16_MAX() {
-        return -1L;
-    }
-    public static long UINT_FAST32_MAX() {
-        return -1L;
-    }
-    public static long UINT_FAST64_MAX() {
-        return -1L;
-    }
-    public static long INTPTR_MIN() {
-        return -9223372036854775808L;
-    }
-    public static long INTPTR_MAX() {
-        return 9223372036854775807L;
-    }
-    public static long UINTPTR_MAX() {
-        return -1L;
-    }
-    public static long INTMAX_MIN() {
-        return -9223372036854775808L;
-    }
-    public static long INTMAX_MAX() {
-        return 9223372036854775807L;
-    }
-    public static long UINTMAX_MAX() {
-        return -1L;
-    }
-    public static long PTRDIFF_MIN() {
-        return -9223372036854775808L;
-    }
-    public static long PTRDIFF_MAX() {
-        return 9223372036854775807L;
-    }
-    public static int SIG_ATOMIC_MIN() {
-        return (int)-2147483648L;
-    }
-    public static int SIG_ATOMIC_MAX() {
-        return (int)2147483647L;
-    }
-    public static long SIZE_MAX() {
-        return -1L;
-    }
-    public static int WCHAR_MIN() {
-        return (int)-2147483648L;
-    }
-    public static int WCHAR_MAX() {
-        return (int)2147483647L;
-    }
-    public static int WINT_MIN() {
-        return (int)0L;
-    }
-    public static int WINT_MAX() {
-        return (int)4294967295L;
-    }
-    public static MemorySegment __PRI64_PREFIX() {
-        return constants$27.__PRI64_PREFIX$SEGMENT;
-    }
-    public static MemorySegment __PRIPTR_PREFIX() {
-        return constants$27.__PRIPTR_PREFIX$SEGMENT;
-    }
-    public static MemorySegment PRId8() {
-        return constants$27.PRId8$SEGMENT;
-    }
-    public static MemorySegment PRId16() {
-        return constants$27.PRId16$SEGMENT;
-    }
-    public static MemorySegment PRId32() {
-        return constants$28.PRId32$SEGMENT;
-    }
-    public static MemorySegment PRId64() {
-        return constants$28.PRId64$SEGMENT;
-    }
-    public static MemorySegment PRIdLEAST8() {
-        return constants$28.PRIdLEAST8$SEGMENT;
     }
 }
 

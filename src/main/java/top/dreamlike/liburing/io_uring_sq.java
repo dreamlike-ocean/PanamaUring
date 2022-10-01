@@ -21,7 +21,8 @@ public class io_uring_sq {
         Constants$root.C_INT$LAYOUT.withName("sqe_head"),
         Constants$root.C_INT$LAYOUT.withName("sqe_tail"),
         Constants$root.C_LONG_LONG$LAYOUT.withName("ring_sz"),
-        Constants$root.C_POINTER$LAYOUT.withName("ring_ptr")
+        Constants$root.C_POINTER$LAYOUT.withName("ring_ptr"),
+        MemoryLayout.sequenceLayout(4, Constants$root.C_INT$LAYOUT).withName("pad")
     ).withName("io_uring_sq");
     public static MemoryLayout $LAYOUT() {
         return io_uring_sq.$struct$LAYOUT;
@@ -217,6 +218,9 @@ public class io_uring_sq {
     }
     public static void ring_ptr$set(MemorySegment seg, long index, MemoryAddress x) {
         io_uring_sq.ring_ptr$VH.set(seg.asSlice(index*sizeof()), x);
+    }
+    public static MemorySegment pad$slice(MemorySegment seg) {
+        return seg.asSlice(88, 16);
     }
     public static long sizeof() { return $LAYOUT().byteSize(); }
     public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }

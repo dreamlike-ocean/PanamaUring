@@ -16,7 +16,8 @@ public class io_uring_params {
         Constants$root.C_INT$LAYOUT.withName("sq_thread_cpu"),
         Constants$root.C_INT$LAYOUT.withName("sq_thread_idle"),
         Constants$root.C_INT$LAYOUT.withName("features"),
-        MemoryLayout.sequenceLayout(4, Constants$root.C_INT$LAYOUT).withName("resv"),
+        Constants$root.C_INT$LAYOUT.withName("wq_fd"),
+        MemoryLayout.sequenceLayout(3, Constants$root.C_INT$LAYOUT).withName("resv"),
         MemoryLayout.structLayout(
             Constants$root.C_INT$LAYOUT.withName("head"),
             Constants$root.C_INT$LAYOUT.withName("tail"),
@@ -35,7 +36,9 @@ public class io_uring_params {
             Constants$root.C_INT$LAYOUT.withName("ring_entries"),
             Constants$root.C_INT$LAYOUT.withName("overflow"),
             Constants$root.C_INT$LAYOUT.withName("cqes"),
-            MemoryLayout.sequenceLayout(2, Constants$root.C_LONG_LONG$LAYOUT).withName("resv")
+            Constants$root.C_INT$LAYOUT.withName("flags"),
+            Constants$root.C_INT$LAYOUT.withName("resv1"),
+            Constants$root.C_LONG_LONG$LAYOUT.withName("resv2")
         ).withName("cq_off")
     ).withName("io_uring_params");
     public static MemoryLayout $LAYOUT() {
@@ -137,8 +140,24 @@ public class io_uring_params {
     public static void features$set(MemorySegment seg, long index, int x) {
         io_uring_params.features$VH.set(seg.asSlice(index*sizeof()), x);
     }
+    static final VarHandle wq_fd$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("wq_fd"));
+    public static VarHandle wq_fd$VH() {
+        return io_uring_params.wq_fd$VH;
+    }
+    public static int wq_fd$get(MemorySegment seg) {
+        return (int)io_uring_params.wq_fd$VH.get(seg);
+    }
+    public static void wq_fd$set( MemorySegment seg, int x) {
+        io_uring_params.wq_fd$VH.set(seg, x);
+    }
+    public static int wq_fd$get(MemorySegment seg, long index) {
+        return (int)io_uring_params.wq_fd$VH.get(seg.asSlice(index*sizeof()));
+    }
+    public static void wq_fd$set(MemorySegment seg, long index, int x) {
+        io_uring_params.wq_fd$VH.set(seg.asSlice(index*sizeof()), x);
+    }
     public static MemorySegment resv$slice(MemorySegment seg) {
-        return seg.asSlice(24, 16);
+        return seg.asSlice(28, 12);
     }
     public static MemorySegment sq_off$slice(MemorySegment seg) {
         return seg.asSlice(40, 40);

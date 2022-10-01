@@ -9,61 +9,61 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$2 {
 
-    static final FunctionDescriptor socketpair$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle socketpair$MH = RuntimeHelper.downcallHandle(
-        "socketpair",
-        constants$2.socketpair$FUNC
-    );
-    static final FunctionDescriptor bind$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor recvmsg$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
         Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle bind$MH = RuntimeHelper.downcallHandle(
-        "bind",
-        constants$2.bind$FUNC
+    static final MethodHandle recvmsg$MH = RuntimeHelper.downcallHandle(
+        "recvmsg",
+        constants$2.recvmsg$FUNC
     );
-    static final FunctionDescriptor getsockname$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor getsockopt$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle getsockname$MH = RuntimeHelper.downcallHandle(
-        "getsockname",
-        constants$2.getsockname$FUNC
+    static final MethodHandle getsockopt$MH = RuntimeHelper.downcallHandle(
+        "getsockopt",
+        constants$2.getsockopt$FUNC
     );
-    static final FunctionDescriptor connect$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor setsockopt$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle connect$MH = RuntimeHelper.downcallHandle(
-        "connect",
-        constants$2.connect$FUNC
+    static final MethodHandle setsockopt$MH = RuntimeHelper.downcallHandle(
+        "setsockopt",
+        constants$2.setsockopt$FUNC
     );
-    static final FunctionDescriptor getpeername$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor listen$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle listen$MH = RuntimeHelper.downcallHandle(
+        "listen",
+        constants$2.listen$FUNC
+    );
+    static final FunctionDescriptor accept$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle getpeername$MH = RuntimeHelper.downcallHandle(
-        "getpeername",
-        constants$2.getpeername$FUNC
+    static final MethodHandle accept$MH = RuntimeHelper.downcallHandle(
+        "accept",
+        constants$2.accept$FUNC
     );
-    static final FunctionDescriptor send$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+    static final FunctionDescriptor shutdown$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle send$MH = RuntimeHelper.downcallHandle(
-        "send",
-        constants$2.send$FUNC
+    static final MethodHandle shutdown$MH = RuntimeHelper.downcallHandle(
+        "shutdown",
+        constants$2.shutdown$FUNC
     );
 }
 

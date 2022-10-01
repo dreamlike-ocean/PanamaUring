@@ -9,45 +9,51 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$10 {
 
-    static final FunctionDescriptor sigwaitinfo$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor sigstack$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle sigwaitinfo$MH = RuntimeHelper.downcallHandle(
-        "sigwaitinfo",
-        constants$10.sigwaitinfo$FUNC
+    static final MethodHandle sigstack$MH = RuntimeHelper.downcallHandle(
+        "sigstack",
+        constants$10.sigstack$FUNC
     );
-    static final FunctionDescriptor sigtimedwait$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor sighold$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle sigtimedwait$MH = RuntimeHelper.downcallHandle(
-        "sigtimedwait",
-        constants$10.sigtimedwait$FUNC
+    static final MethodHandle sighold$MH = RuntimeHelper.downcallHandle(
+        "sighold",
+        constants$10.sighold$FUNC
     );
-    static final FunctionDescriptor sigqueue$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor sigrelse$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle sigrelse$MH = RuntimeHelper.downcallHandle(
+        "sigrelse",
+        constants$10.sigrelse$FUNC
+    );
+    static final FunctionDescriptor sigignore$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle sigignore$MH = RuntimeHelper.downcallHandle(
+        "sigignore",
+        constants$10.sigignore$FUNC
+    );
+    static final FunctionDescriptor sigset$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        MemoryLayout.unionLayout(
-            Constants$root.C_INT$LAYOUT.withName("sival_int"),
-            Constants$root.C_POINTER$LAYOUT.withName("sival_ptr")
-        ).withName("sigval")
-    );
-    static final MethodHandle sigqueue$MH = RuntimeHelper.downcallHandle(
-        "sigqueue",
-        constants$10.sigqueue$FUNC
-    );
-    static final  SequenceLayout _sys_siglist$LAYOUT = MemoryLayout.sequenceLayout(65, Constants$root.C_POINTER$LAYOUT);
-    static final MemorySegment _sys_siglist$SEGMENT = RuntimeHelper.lookupGlobalVariable("_sys_siglist", constants$10._sys_siglist$LAYOUT);
-    static final  SequenceLayout sys_siglist$LAYOUT = MemoryLayout.sequenceLayout(65, Constants$root.C_POINTER$LAYOUT);
-    static final MemorySegment sys_siglist$SEGMENT = RuntimeHelper.lookupGlobalVariable("sys_siglist", constants$10.sys_siglist$LAYOUT);
-    static final FunctionDescriptor sigreturn$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle sigreturn$MH = RuntimeHelper.downcallHandle(
-        "sigreturn",
-        constants$10.sigreturn$FUNC
+    static final MethodHandle sigset$MH = RuntimeHelper.downcallHandle(
+        "sigset",
+        constants$10.sigset$FUNC
+    );
+    static final FunctionDescriptor pthread_sigmask$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle pthread_sigmask$MH = RuntimeHelper.downcallHandle(
+        "pthread_sigmask",
+        constants$10.pthread_sigmask$FUNC
     );
 }
 

@@ -9,12 +9,26 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$36 {
 
-    static final MemorySegment PRIx32$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("x");
-    static final MemorySegment PRIx64$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("lx");
-    static final MemorySegment PRIxLEAST8$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("x");
-    static final MemorySegment PRIxLEAST16$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("x");
-    static final MemorySegment PRIxLEAST32$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("x");
-    static final MemorySegment PRIxLEAST64$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("lx");
+    static final FunctionDescriptor io_uring_peek_cqe$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle io_uring_peek_cqe$MH = RuntimeHelper.downcallHandle(
+        "io_uring_peek_cqe",
+        constants$36.io_uring_peek_cqe$FUNC
+    );
+    static final FunctionDescriptor io_uring_wait_cqe$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle io_uring_wait_cqe$MH = RuntimeHelper.downcallHandle(
+        "io_uring_wait_cqe",
+        constants$36.io_uring_wait_cqe$FUNC
+    );
+    static final MemoryAddress SIG_ERR$ADDR = MemoryAddress.ofLong(-1L);
+    static final MemoryAddress SIG_DFL$ADDR = MemoryAddress.ofLong(0L);
+    static final MemoryAddress SIG_IGN$ADDR = MemoryAddress.ofLong(1L);
+    static final MemoryAddress SIG_HOLD$ADDR = MemoryAddress.ofLong(2L);
 }
 
 

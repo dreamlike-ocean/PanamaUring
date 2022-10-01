@@ -9,51 +9,67 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$1 {
 
-    static final FunctionDescriptor select$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor getpeername$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle select$MH = RuntimeHelper.downcallHandle(
-        "select",
-        constants$1.select$FUNC
+    static final MethodHandle getpeername$MH = RuntimeHelper.downcallHandle(
+        "getpeername",
+        constants$1.getpeername$FUNC
     );
-    static final FunctionDescriptor pselect$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor send$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
         Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle pselect$MH = RuntimeHelper.downcallHandle(
-        "pselect",
-        constants$1.pselect$FUNC
-    );
-    static final FunctionDescriptor __cmsg_nxthdr$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle __cmsg_nxthdr$MH = RuntimeHelper.downcallHandle(
-        "__cmsg_nxthdr",
-        constants$1.__cmsg_nxthdr$FUNC
-    );
-    static final FunctionDescriptor __kernel_sighandler_t$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_LONG_LONG$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle __kernel_sighandler_t$MH = RuntimeHelper.downcallHandle(
-        constants$1.__kernel_sighandler_t$FUNC
+    static final MethodHandle send$MH = RuntimeHelper.downcallHandle(
+        "send",
+        constants$1.send$FUNC
     );
-    static final FunctionDescriptor socket$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor recv$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
         Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle socket$MH = RuntimeHelper.downcallHandle(
-        "socket",
-        constants$1.socket$FUNC
+    static final MethodHandle recv$MH = RuntimeHelper.downcallHandle(
+        "recv",
+        constants$1.recv$FUNC
+    );
+    static final FunctionDescriptor sendto$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle sendto$MH = RuntimeHelper.downcallHandle(
+        "sendto",
+        constants$1.sendto$FUNC
+    );
+    static final FunctionDescriptor recvfrom$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle recvfrom$MH = RuntimeHelper.downcallHandle(
+        "recvfrom",
+        constants$1.recvfrom$FUNC
+    );
+    static final FunctionDescriptor sendmsg$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle sendmsg$MH = RuntimeHelper.downcallHandle(
+        "sendmsg",
+        constants$1.sendmsg$FUNC
     );
 }
 

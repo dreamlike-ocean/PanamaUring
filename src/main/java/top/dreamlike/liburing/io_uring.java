@@ -22,29 +22,34 @@ public class io_uring {
             Constants$root.C_INT$LAYOUT.withName("sqe_head"),
             Constants$root.C_INT$LAYOUT.withName("sqe_tail"),
             Constants$root.C_LONG_LONG$LAYOUT.withName("ring_sz"),
-            Constants$root.C_POINTER$LAYOUT.withName("ring_ptr")
+            Constants$root.C_POINTER$LAYOUT.withName("ring_ptr"),
+            MemoryLayout.sequenceLayout(4, Constants$root.C_INT$LAYOUT).withName("pad")
         ).withName("sq"),
         MemoryLayout.structLayout(
             Constants$root.C_POINTER$LAYOUT.withName("khead"),
             Constants$root.C_POINTER$LAYOUT.withName("ktail"),
             Constants$root.C_POINTER$LAYOUT.withName("kring_mask"),
             Constants$root.C_POINTER$LAYOUT.withName("kring_entries"),
+            Constants$root.C_POINTER$LAYOUT.withName("kflags"),
             Constants$root.C_POINTER$LAYOUT.withName("koverflow"),
             Constants$root.C_POINTER$LAYOUT.withName("cqes"),
             Constants$root.C_LONG_LONG$LAYOUT.withName("ring_sz"),
-            Constants$root.C_POINTER$LAYOUT.withName("ring_ptr")
+            Constants$root.C_POINTER$LAYOUT.withName("ring_ptr"),
+            MemoryLayout.sequenceLayout(4, Constants$root.C_INT$LAYOUT).withName("pad")
         ).withName("cq"),
         Constants$root.C_INT$LAYOUT.withName("flags"),
-        Constants$root.C_INT$LAYOUT.withName("ring_fd")
+        Constants$root.C_INT$LAYOUT.withName("ring_fd"),
+        Constants$root.C_INT$LAYOUT.withName("features"),
+        MemoryLayout.sequenceLayout(3, Constants$root.C_INT$LAYOUT).withName("pad")
     ).withName("io_uring");
     public static MemoryLayout $LAYOUT() {
         return io_uring.$struct$LAYOUT;
     }
     public static MemorySegment sq$slice(MemorySegment seg) {
-        return seg.asSlice(0, 88);
+        return seg.asSlice(0, 104);
     }
     public static MemorySegment cq$slice(MemorySegment seg) {
-        return seg.asSlice(88, 64);
+        return seg.asSlice(104, 88);
     }
     static final VarHandle flags$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("flags"));
     public static VarHandle flags$VH() {
@@ -77,6 +82,25 @@ public class io_uring {
     }
     public static void ring_fd$set(MemorySegment seg, long index, int x) {
         io_uring.ring_fd$VH.set(seg.asSlice(index*sizeof()), x);
+    }
+    static final VarHandle features$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("features"));
+    public static VarHandle features$VH() {
+        return io_uring.features$VH;
+    }
+    public static int features$get(MemorySegment seg) {
+        return (int)io_uring.features$VH.get(seg);
+    }
+    public static void features$set( MemorySegment seg, int x) {
+        io_uring.features$VH.set(seg, x);
+    }
+    public static int features$get(MemorySegment seg, long index) {
+        return (int)io_uring.features$VH.get(seg.asSlice(index*sizeof()));
+    }
+    public static void features$set(MemorySegment seg, long index, int x) {
+        io_uring.features$VH.set(seg.asSlice(index*sizeof()), x);
+    }
+    public static MemorySegment pad$slice(MemorySegment seg) {
+        return seg.asSlice(204, 12);
     }
     public static long sizeof() { return $LAYOUT().byteSize(); }
     public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }

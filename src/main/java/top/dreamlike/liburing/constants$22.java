@@ -9,57 +9,47 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$22 {
 
-    static final FunctionDescriptor io_uring_register_files_update$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor atomic_flag_test_and_set_explicit$FUNC = FunctionDescriptor.of(Constants$root.C_BOOL$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle io_uring_register_files_update$MH = RuntimeHelper.downcallHandle(
-        "io_uring_register_files_update",
-        constants$22.io_uring_register_files_update$FUNC
+    static final MethodHandle atomic_flag_test_and_set_explicit$MH = RuntimeHelper.downcallHandle(
+        "atomic_flag_test_and_set_explicit",
+        constants$22.atomic_flag_test_and_set_explicit$FUNC
     );
-    static final FunctionDescriptor io_uring_register_eventfd$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor atomic_flag_clear$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle atomic_flag_clear$MH = RuntimeHelper.downcallHandle(
+        "atomic_flag_clear",
+        constants$22.atomic_flag_clear$FUNC
+    );
+    static final FunctionDescriptor atomic_flag_clear_explicit$FUNC = FunctionDescriptor.ofVoid(
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle io_uring_register_eventfd$MH = RuntimeHelper.downcallHandle(
-        "io_uring_register_eventfd",
-        constants$22.io_uring_register_eventfd$FUNC
+    static final MethodHandle atomic_flag_clear_explicit$MH = RuntimeHelper.downcallHandle(
+        "atomic_flag_clear_explicit",
+        constants$22.atomic_flag_clear_explicit$FUNC
     );
-    static final FunctionDescriptor io_uring_unregister_eventfd$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor io_uring_get_probe_ring$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle io_uring_unregister_eventfd$MH = RuntimeHelper.downcallHandle(
-        "io_uring_unregister_eventfd",
-        constants$22.io_uring_unregister_eventfd$FUNC
+    static final MethodHandle io_uring_get_probe_ring$MH = RuntimeHelper.downcallHandle(
+        "io_uring_get_probe_ring",
+        constants$22.io_uring_get_probe_ring$FUNC
     );
-    static final FunctionDescriptor __io_uring_get_cqe$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor io_uring_get_probe$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT);
+    static final MethodHandle io_uring_get_probe$MH = RuntimeHelper.downcallHandle(
+        "io_uring_get_probe",
+        constants$22.io_uring_get_probe$FUNC
+    );
+    static final FunctionDescriptor io_uring_free_probe$FUNC = FunctionDescriptor.ofVoid(
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle __io_uring_get_cqe$MH = RuntimeHelper.downcallHandle(
-        "__io_uring_get_cqe",
-        constants$22.__io_uring_get_cqe$FUNC
-    );
-    static final FunctionDescriptor io_uring_cq_advance$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle io_uring_cq_advance$MH = RuntimeHelper.downcallHandle(
-        "io_uring_cq_advance",
-        constants$22.io_uring_cq_advance$FUNC
-    );
-    static final FunctionDescriptor io_uring_cqe_seen$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle io_uring_cqe_seen$MH = RuntimeHelper.downcallHandle(
-        "io_uring_cqe_seen",
-        constants$22.io_uring_cqe_seen$FUNC
+    static final MethodHandle io_uring_free_probe$MH = RuntimeHelper.downcallHandle(
+        "io_uring_free_probe",
+        constants$22.io_uring_free_probe$FUNC
     );
 }
 

@@ -9,12 +9,70 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$29 {
 
-    static final MemorySegment PRIdFAST8$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("d");
-    static final MemorySegment PRIdFAST16$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("ld");
-    static final MemorySegment PRIdFAST32$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("ld");
-    static final MemorySegment PRIdFAST64$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("ld");
-    static final MemorySegment PRIi8$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("i");
-    static final MemorySegment PRIi16$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("i");
+    static final FunctionDescriptor io_uring_prep_read_fixed$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_read_fixed$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_read_fixed",
+        constants$29.io_uring_prep_read_fixed$FUNC
+    );
+    static final FunctionDescriptor io_uring_prep_writev$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_writev$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_writev",
+        constants$29.io_uring_prep_writev$FUNC
+    );
+    static final FunctionDescriptor io_uring_prep_write_fixed$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_write_fixed$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_write_fixed",
+        constants$29.io_uring_prep_write_fixed$FUNC
+    );
+    static final FunctionDescriptor io_uring_prep_recvmsg$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_recvmsg$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_recvmsg",
+        constants$29.io_uring_prep_recvmsg$FUNC
+    );
+    static final FunctionDescriptor io_uring_prep_sendmsg$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_sendmsg$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_sendmsg",
+        constants$29.io_uring_prep_sendmsg$FUNC
+    );
+    static final FunctionDescriptor io_uring_prep_poll_add$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_poll_add$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_poll_add",
+        constants$29.io_uring_prep_poll_add$FUNC
+    );
 }
 
 

@@ -9,52 +9,47 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$21 {
 
-    static final FunctionDescriptor io_uring_submit_and_wait$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle io_uring_submit_and_wait$MH = RuntimeHelper.downcallHandle(
-        "io_uring_submit_and_wait",
-        constants$21.io_uring_submit_and_wait$FUNC
-    );
-    static final FunctionDescriptor io_uring_get_sqe$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
+    static final FunctionDescriptor __swab64s$FUNC = FunctionDescriptor.ofVoid(
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle io_uring_get_sqe$MH = RuntimeHelper.downcallHandle(
-        "io_uring_get_sqe",
-        constants$21.io_uring_get_sqe$FUNC
+    static final MethodHandle __swab64s$MH = RuntimeHelper.downcallHandle(
+        "__swab64s",
+        constants$21.__swab64s$FUNC
     );
-    static final FunctionDescriptor io_uring_register_buffers$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle io_uring_register_buffers$MH = RuntimeHelper.downcallHandle(
-        "io_uring_register_buffers",
-        constants$21.io_uring_register_buffers$FUNC
-    );
-    static final FunctionDescriptor io_uring_unregister_buffers$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor __swahw32s$FUNC = FunctionDescriptor.ofVoid(
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle io_uring_unregister_buffers$MH = RuntimeHelper.downcallHandle(
-        "io_uring_unregister_buffers",
-        constants$21.io_uring_unregister_buffers$FUNC
+    static final MethodHandle __swahw32s$MH = RuntimeHelper.downcallHandle(
+        "__swahw32s",
+        constants$21.__swahw32s$FUNC
     );
-    static final FunctionDescriptor io_uring_register_files$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle io_uring_register_files$MH = RuntimeHelper.downcallHandle(
-        "io_uring_register_files",
-        constants$21.io_uring_register_files$FUNC
-    );
-    static final FunctionDescriptor io_uring_unregister_files$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor __swahb32s$FUNC = FunctionDescriptor.ofVoid(
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle io_uring_unregister_files$MH = RuntimeHelper.downcallHandle(
-        "io_uring_unregister_files",
-        constants$21.io_uring_unregister_files$FUNC
+    static final MethodHandle __swahb32s$MH = RuntimeHelper.downcallHandle(
+        "__swahb32s",
+        constants$21.__swahb32s$FUNC
+    );
+    static final FunctionDescriptor atomic_thread_fence$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle atomic_thread_fence$MH = RuntimeHelper.downcallHandle(
+        "atomic_thread_fence",
+        constants$21.atomic_thread_fence$FUNC
+    );
+    static final FunctionDescriptor atomic_signal_fence$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle atomic_signal_fence$MH = RuntimeHelper.downcallHandle(
+        "atomic_signal_fence",
+        constants$21.atomic_signal_fence$FUNC
+    );
+    static final FunctionDescriptor atomic_flag_test_and_set$FUNC = FunctionDescriptor.of(Constants$root.C_BOOL$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle atomic_flag_test_and_set$MH = RuntimeHelper.downcallHandle(
+        "atomic_flag_test_and_set",
+        constants$21.atomic_flag_test_and_set$FUNC
     );
 }
 

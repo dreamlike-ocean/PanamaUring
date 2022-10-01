@@ -9,6 +9,12 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$6 {
 
+    static final FunctionDescriptor __sighandler_t$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle __sighandler_t$MH = RuntimeHelper.downcallHandle(
+        constants$6.__sighandler_t$FUNC
+    );
     static final FunctionDescriptor __sysv_signal$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
@@ -25,6 +31,14 @@ class constants$6 {
         "signal",
         constants$6.signal$FUNC
     );
+    static final FunctionDescriptor bsd_signal$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle bsd_signal$MH = RuntimeHelper.downcallHandle(
+        "bsd_signal",
+        constants$6.bsd_signal$FUNC
+    );
     static final FunctionDescriptor kill$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT
@@ -32,29 +46,6 @@ class constants$6 {
     static final MethodHandle kill$MH = RuntimeHelper.downcallHandle(
         "kill",
         constants$6.kill$FUNC
-    );
-    static final FunctionDescriptor killpg$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle killpg$MH = RuntimeHelper.downcallHandle(
-        "killpg",
-        constants$6.killpg$FUNC
-    );
-    static final FunctionDescriptor raise$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle raise$MH = RuntimeHelper.downcallHandle(
-        "raise",
-        constants$6.raise$FUNC
-    );
-    static final FunctionDescriptor ssignal$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle ssignal$MH = RuntimeHelper.downcallHandle(
-        "ssignal",
-        constants$6.ssignal$FUNC
     );
 }
 

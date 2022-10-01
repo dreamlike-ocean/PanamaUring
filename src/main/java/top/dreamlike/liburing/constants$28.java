@@ -9,12 +9,68 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$28 {
 
-    static final MemorySegment PRId32$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("d");
-    static final MemorySegment PRId64$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("ld");
-    static final MemorySegment PRIdLEAST8$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("d");
-    static final MemorySegment PRIdLEAST16$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("d");
-    static final MemorySegment PRIdLEAST32$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("d");
-    static final MemorySegment PRIdLEAST64$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("ld");
+    static final FunctionDescriptor io_uring_cqe_get_data$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle io_uring_cqe_get_data$MH = RuntimeHelper.downcallHandle(
+        "io_uring_cqe_get_data",
+        constants$28.io_uring_cqe_get_data$FUNC
+    );
+    static final FunctionDescriptor io_uring_sqe_set_flags$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_sqe_set_flags$MH = RuntimeHelper.downcallHandle(
+        "io_uring_sqe_set_flags",
+        constants$28.io_uring_sqe_set_flags$FUNC
+    );
+    static final FunctionDescriptor io_uring_prep_rw$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_rw$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_rw",
+        constants$28.io_uring_prep_rw$FUNC
+    );
+    static final FunctionDescriptor io_uring_prep_splice$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_splice$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_splice",
+        constants$28.io_uring_prep_splice$FUNC
+    );
+    static final FunctionDescriptor io_uring_prep_tee$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_tee$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_tee",
+        constants$28.io_uring_prep_tee$FUNC
+    );
+    static final FunctionDescriptor io_uring_prep_readv$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_readv$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_readv",
+        constants$28.io_uring_prep_readv$FUNC
+    );
 }
 
 

@@ -8,34 +8,70 @@ import top.dreamlike.liburing.iovec;
 import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntConsumer;
 
 import static top.dreamlike.liburing.liburing_h.*;
 
 public class IOUring implements AutoCloseable{
+    private static final AtomicInteger count = new AtomicInteger();
+
     private final MemorySegment ring;
     final  MemorySession allocator;
 
-    private static int max_loop = 1024;
+    private final AtomicBoolean close = new AtomicBoolean(false);
 
-    private Map<Integer,IOOpResult> context;
+    private final Thread carrierThread;
+
+    private static final int max_loop = 1024;
+
+    private final Map<Integer,IOOpResult> context;
+
+
+    private final SignalPipe signalPipe;
+
+
 
     public IOUring(int ringSize){
         if (ringSize <= 0) {
             throw new IllegalArgumentException("ring size <= 0");
         }
-        context = new ConcurrentHashMap<>();
-        allocator = MemorySession.openConfined();
+        context = new HashMap<>();
+        allocator = MemorySession.openShared();
         this.ring = io_uring.allocate(allocator);
         var ret= io_uring_queue_init(ringSize, ring, 0);
         if (ret < 0){
             throw new IllegalStateException("io_uring init fail!");
         }
+
+        signalPipe = new SignalPipe(this);
+        prep_readV(signalPipe.readFd, 0,signalPipe.signalBuffer,null);
+        submit();
+        carrierThread = new Thread(()->{
+          while (!close.get()){
+              for (IOOpResult result : waitFd()) {
+                  if (result.callback == null) continue;
+                  result.callback.accept(result.res);
+              }
+          }
+            io_uring_queue_exit(ring);
+            allocator.close();
+            signalPipe.close();
+        });
+        carrierThread.setName("io_uring_"+count.getAndIncrement());
+        carrierThread.start();
+
     }
 
+    public void wake(){
+        prep_readV(signalPipe.readFd, 0,signalPipe.signalBuffer,null);
+        signalPipe.signal();
+    }
 
     public AsyncFile openFile(String path,int ops){
         return new AsyncFile(path,this,ops);
@@ -54,6 +90,7 @@ public class IOUring implements AutoCloseable{
         MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
         io_uring_prep_readv(sqe,fd,iovecStruct, 1, offset);
         io_uring_sqe.user_data$set(sqeSegment,fd);
+        submit();
         context.put(fd, new IOOpResult(fd, -1,buffer,callback));
         return true;
     }
@@ -73,6 +110,7 @@ public class IOUring implements AutoCloseable{
         MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
         io_uring_prep_writev(sqe,fd,iovecStruct, 1, offset);
         io_uring_sqe.user_data$set(sqeSegment,fd);
+        submit();
         context.put(fd, new IOOpResult(fd, -1,buffer,callback));
         return true;
     }
@@ -86,17 +124,20 @@ public class IOUring implements AutoCloseable{
 
     public List<IOOpResult> waitFd(){
         MemorySegment ref = allocator.allocate(C_POINTER.byteSize());
-        __io_uring_get_cqe(ring,ref,0,1,NULL());
-        MemoryAddress memoryAddress = ref.get(C_POINTER, 0);
-        MemorySegment cqe = io_uring_cqe.ofAddress(memoryAddress, MemorySession.global());
+        io_uring_wait_cqe(ring, ref);
+        MemoryAddress cqePoint = ref.get(C_POINTER, 0);
+        MemorySegment cqe = io_uring_cqe.ofAddress(cqePoint, MemorySession.global());
         long fd = io_uring_cqe.user_data$get(cqe);
-        IOOpResult result = context.remove((int)fd);
+        IOOpResult result = context.remove((int) fd);
         result.res = io_uring_cqe.res$get(cqe);
+        io_uring_cqe_seen(ring,cqe);
         return List.of(result);
     }
 
     @Override
     public void close() throws Exception {
-        allocator.close();
+        if (close.compareAndSet(false, true)) {
+            wake();
+        }
     }
 }

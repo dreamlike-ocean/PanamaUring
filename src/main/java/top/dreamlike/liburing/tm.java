@@ -20,8 +20,8 @@ public class tm {
         Constants$root.C_INT$LAYOUT.withName("tm_yday"),
         Constants$root.C_INT$LAYOUT.withName("tm_isdst"),
         MemoryLayout.paddingLayout(32),
-        Constants$root.C_LONG_LONG$LAYOUT.withName("tm_gmtoff"),
-        Constants$root.C_POINTER$LAYOUT.withName("tm_zone")
+        Constants$root.C_LONG_LONG$LAYOUT.withName("__tm_gmtoff"),
+        Constants$root.C_POINTER$LAYOUT.withName("__tm_zone")
     ).withName("tm");
     public static MemoryLayout $LAYOUT() {
         return tm.$struct$LAYOUT;
@@ -170,37 +170,37 @@ public class tm {
     public static void tm_isdst$set(MemorySegment seg, long index, int x) {
         tm.tm_isdst$VH.set(seg.asSlice(index*sizeof()), x);
     }
-    static final VarHandle tm_gmtoff$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("tm_gmtoff"));
-    public static VarHandle tm_gmtoff$VH() {
-        return tm.tm_gmtoff$VH;
+    static final VarHandle __tm_gmtoff$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("__tm_gmtoff"));
+    public static VarHandle __tm_gmtoff$VH() {
+        return tm.__tm_gmtoff$VH;
     }
-    public static long tm_gmtoff$get(MemorySegment seg) {
-        return (long)tm.tm_gmtoff$VH.get(seg);
+    public static long __tm_gmtoff$get(MemorySegment seg) {
+        return (long)tm.__tm_gmtoff$VH.get(seg);
     }
-    public static void tm_gmtoff$set( MemorySegment seg, long x) {
-        tm.tm_gmtoff$VH.set(seg, x);
+    public static void __tm_gmtoff$set( MemorySegment seg, long x) {
+        tm.__tm_gmtoff$VH.set(seg, x);
     }
-    public static long tm_gmtoff$get(MemorySegment seg, long index) {
-        return (long)tm.tm_gmtoff$VH.get(seg.asSlice(index*sizeof()));
+    public static long __tm_gmtoff$get(MemorySegment seg, long index) {
+        return (long)tm.__tm_gmtoff$VH.get(seg.asSlice(index*sizeof()));
     }
-    public static void tm_gmtoff$set(MemorySegment seg, long index, long x) {
-        tm.tm_gmtoff$VH.set(seg.asSlice(index*sizeof()), x);
+    public static void __tm_gmtoff$set(MemorySegment seg, long index, long x) {
+        tm.__tm_gmtoff$VH.set(seg.asSlice(index*sizeof()), x);
     }
-    static final VarHandle tm_zone$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("tm_zone"));
-    public static VarHandle tm_zone$VH() {
-        return tm.tm_zone$VH;
+    static final VarHandle __tm_zone$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("__tm_zone"));
+    public static VarHandle __tm_zone$VH() {
+        return tm.__tm_zone$VH;
     }
-    public static MemoryAddress tm_zone$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress)tm.tm_zone$VH.get(seg);
+    public static MemoryAddress __tm_zone$get(MemorySegment seg) {
+        return (java.lang.foreign.MemoryAddress)tm.__tm_zone$VH.get(seg);
     }
-    public static void tm_zone$set( MemorySegment seg, MemoryAddress x) {
-        tm.tm_zone$VH.set(seg, x);
+    public static void __tm_zone$set( MemorySegment seg, MemoryAddress x) {
+        tm.__tm_zone$VH.set(seg, x);
     }
-    public static MemoryAddress tm_zone$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress)tm.tm_zone$VH.get(seg.asSlice(index*sizeof()));
+    public static MemoryAddress __tm_zone$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemoryAddress)tm.__tm_zone$VH.get(seg.asSlice(index*sizeof()));
     }
-    public static void tm_zone$set(MemorySegment seg, long index, MemoryAddress x) {
-        tm.tm_zone$VH.set(seg.asSlice(index*sizeof()), x);
+    public static void __tm_zone$set(MemorySegment seg, long index, MemoryAddress x) {
+        tm.__tm_zone$VH.set(seg.asSlice(index*sizeof()), x);
     }
     public static long sizeof() { return $LAYOUT().byteSize(); }
     public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }

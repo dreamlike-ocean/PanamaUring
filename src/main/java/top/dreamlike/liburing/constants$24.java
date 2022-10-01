@@ -9,65 +9,56 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$24 {
 
-    static final FunctionDescriptor io_uring_prep_writev$FUNC = FunctionDescriptor.ofVoid(
+    static final FunctionDescriptor io_uring_peek_batch_cqe$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
-    );
-    static final MethodHandle io_uring_prep_writev$MH = RuntimeHelper.downcallHandle(
-        "io_uring_prep_writev",
-        constants$24.io_uring_prep_writev$FUNC
-    );
-    static final FunctionDescriptor io_uring_prep_write_fixed$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle io_uring_prep_write_fixed$MH = RuntimeHelper.downcallHandle(
-        "io_uring_prep_write_fixed",
-        constants$24.io_uring_prep_write_fixed$FUNC
-    );
-    static final FunctionDescriptor io_uring_prep_recvmsg$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle io_uring_prep_recvmsg$MH = RuntimeHelper.downcallHandle(
-        "io_uring_prep_recvmsg",
-        constants$24.io_uring_prep_recvmsg$FUNC
+    static final MethodHandle io_uring_peek_batch_cqe$MH = RuntimeHelper.downcallHandle(
+        "io_uring_peek_batch_cqe",
+        constants$24.io_uring_peek_batch_cqe$FUNC
     );
-    static final FunctionDescriptor io_uring_prep_sendmsg$FUNC = FunctionDescriptor.ofVoid(
+    static final FunctionDescriptor io_uring_wait_cqes$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle io_uring_prep_sendmsg$MH = RuntimeHelper.downcallHandle(
-        "io_uring_prep_sendmsg",
-        constants$24.io_uring_prep_sendmsg$FUNC
-    );
-    static final FunctionDescriptor io_uring_prep_poll_add$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_SHORT$LAYOUT
-    );
-    static final MethodHandle io_uring_prep_poll_add$MH = RuntimeHelper.downcallHandle(
-        "io_uring_prep_poll_add",
-        constants$24.io_uring_prep_poll_add$FUNC
-    );
-    static final FunctionDescriptor io_uring_prep_poll_remove$FUNC = FunctionDescriptor.ofVoid(
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle io_uring_prep_poll_remove$MH = RuntimeHelper.downcallHandle(
-        "io_uring_prep_poll_remove",
-        constants$24.io_uring_prep_poll_remove$FUNC
+    static final MethodHandle io_uring_wait_cqes$MH = RuntimeHelper.downcallHandle(
+        "io_uring_wait_cqes",
+        constants$24.io_uring_wait_cqes$FUNC
+    );
+    static final FunctionDescriptor io_uring_wait_cqe_timeout$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle io_uring_wait_cqe_timeout$MH = RuntimeHelper.downcallHandle(
+        "io_uring_wait_cqe_timeout",
+        constants$24.io_uring_wait_cqe_timeout$FUNC
+    );
+    static final FunctionDescriptor io_uring_submit$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle io_uring_submit$MH = RuntimeHelper.downcallHandle(
+        "io_uring_submit",
+        constants$24.io_uring_submit$FUNC
+    );
+    static final FunctionDescriptor io_uring_submit_and_wait$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_submit_and_wait$MH = RuntimeHelper.downcallHandle(
+        "io_uring_submit_and_wait",
+        constants$24.io_uring_submit_and_wait$FUNC
+    );
+    static final FunctionDescriptor io_uring_get_sqe$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle io_uring_get_sqe$MH = RuntimeHelper.downcallHandle(
+        "io_uring_get_sqe",
+        constants$24.io_uring_get_sqe$FUNC
     );
 }
 

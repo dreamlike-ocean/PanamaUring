@@ -9,12 +9,64 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$34 {
 
-    static final MemorySegment PRIu32$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("u");
-    static final MemorySegment PRIu64$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("lu");
-    static final MemorySegment PRIuLEAST8$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("u");
-    static final MemorySegment PRIuLEAST16$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("u");
-    static final MemorySegment PRIuLEAST32$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("u");
-    static final MemorySegment PRIuLEAST64$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("lu");
+    static final FunctionDescriptor io_uring_prep_remove_buffers$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_remove_buffers$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_remove_buffers",
+        constants$34.io_uring_prep_remove_buffers$FUNC
+    );
+    static final FunctionDescriptor io_uring_prep_shutdown$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_shutdown$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_shutdown",
+        constants$34.io_uring_prep_shutdown$FUNC
+    );
+    static final FunctionDescriptor io_uring_prep_unlinkat$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_unlinkat$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_unlinkat",
+        constants$34.io_uring_prep_unlinkat$FUNC
+    );
+    static final FunctionDescriptor io_uring_prep_renameat$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_renameat$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_renameat",
+        constants$34.io_uring_prep_renameat$FUNC
+    );
+    static final FunctionDescriptor io_uring_prep_sync_file_range$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_sync_file_range$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_sync_file_range",
+        constants$34.io_uring_prep_sync_file_range$FUNC
+    );
+    static final FunctionDescriptor io_uring_sq_ready$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle io_uring_sq_ready$MH = RuntimeHelper.downcallHandle(
+        "io_uring_sq_ready",
+        constants$34.io_uring_sq_ready$FUNC
+    );
 }
 
 

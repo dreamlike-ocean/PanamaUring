@@ -14,10 +14,12 @@ public class io_uring_cq {
         Constants$root.C_POINTER$LAYOUT.withName("ktail"),
         Constants$root.C_POINTER$LAYOUT.withName("kring_mask"),
         Constants$root.C_POINTER$LAYOUT.withName("kring_entries"),
+        Constants$root.C_POINTER$LAYOUT.withName("kflags"),
         Constants$root.C_POINTER$LAYOUT.withName("koverflow"),
         Constants$root.C_POINTER$LAYOUT.withName("cqes"),
         Constants$root.C_LONG_LONG$LAYOUT.withName("ring_sz"),
-        Constants$root.C_POINTER$LAYOUT.withName("ring_ptr")
+        Constants$root.C_POINTER$LAYOUT.withName("ring_ptr"),
+        MemoryLayout.sequenceLayout(4, Constants$root.C_INT$LAYOUT).withName("pad")
     ).withName("io_uring_cq");
     public static MemoryLayout $LAYOUT() {
         return io_uring_cq.$struct$LAYOUT;
@@ -86,6 +88,22 @@ public class io_uring_cq {
     public static void kring_entries$set(MemorySegment seg, long index, MemoryAddress x) {
         io_uring_cq.kring_entries$VH.set(seg.asSlice(index*sizeof()), x);
     }
+    static final VarHandle kflags$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("kflags"));
+    public static VarHandle kflags$VH() {
+        return io_uring_cq.kflags$VH;
+    }
+    public static MemoryAddress kflags$get(MemorySegment seg) {
+        return (java.lang.foreign.MemoryAddress)io_uring_cq.kflags$VH.get(seg);
+    }
+    public static void kflags$set( MemorySegment seg, MemoryAddress x) {
+        io_uring_cq.kflags$VH.set(seg, x);
+    }
+    public static MemoryAddress kflags$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemoryAddress)io_uring_cq.kflags$VH.get(seg.asSlice(index*sizeof()));
+    }
+    public static void kflags$set(MemorySegment seg, long index, MemoryAddress x) {
+        io_uring_cq.kflags$VH.set(seg.asSlice(index*sizeof()), x);
+    }
     static final VarHandle koverflow$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("koverflow"));
     public static VarHandle koverflow$VH() {
         return io_uring_cq.koverflow$VH;
@@ -149,6 +167,9 @@ public class io_uring_cq {
     }
     public static void ring_ptr$set(MemorySegment seg, long index, MemoryAddress x) {
         io_uring_cq.ring_ptr$VH.set(seg.asSlice(index*sizeof()), x);
+    }
+    public static MemorySegment pad$slice(MemorySegment seg) {
+        return seg.asSlice(72, 16);
     }
     public static long sizeof() { return $LAYOUT().byteSize(); }
     public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }

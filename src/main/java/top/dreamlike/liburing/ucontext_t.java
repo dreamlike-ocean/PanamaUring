@@ -10,7 +10,7 @@ import static java.lang.foreign.ValueLayout.*;
 public class ucontext_t {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        Constants$root.C_LONG_LONG$LAYOUT.withName("uc_flags"),
+        Constants$root.C_LONG_LONG$LAYOUT.withName("__uc_flags"),
         Constants$root.C_POINTER$LAYOUT.withName("uc_link"),
         MemoryLayout.structLayout(
             Constants$root.C_POINTER$LAYOUT.withName("ss_sp"),
@@ -19,29 +19,29 @@ public class ucontext_t {
             Constants$root.C_LONG_LONG$LAYOUT.withName("ss_size")
         ).withName("uc_stack"),
         MemoryLayout.structLayout(
-            MemoryLayout.sequenceLayout(23, Constants$root.C_LONG_LONG$LAYOUT).withName("gregs"),
-            Constants$root.C_POINTER$LAYOUT.withName("fpregs"),
+            MemoryLayout.sequenceLayout(23, Constants$root.C_LONG_LONG$LAYOUT).withName("__gregs"),
+            Constants$root.C_POINTER$LAYOUT.withName("__fpregs"),
             MemoryLayout.sequenceLayout(8, Constants$root.C_LONG_LONG$LAYOUT).withName("__reserved1")
         ).withName("uc_mcontext"),
         MemoryLayout.structLayout(
             MemoryLayout.sequenceLayout(16, Constants$root.C_LONG_LONG$LAYOUT).withName("__val")
         ).withName("uc_sigmask"),
         MemoryLayout.structLayout(
-            Constants$root.C_SHORT$LAYOUT.withName("cwd"),
-            Constants$root.C_SHORT$LAYOUT.withName("swd"),
-            Constants$root.C_SHORT$LAYOUT.withName("ftw"),
-            Constants$root.C_SHORT$LAYOUT.withName("fop"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("rip"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("rdp"),
-            Constants$root.C_INT$LAYOUT.withName("mxcsr"),
-            Constants$root.C_INT$LAYOUT.withName("mxcr_mask"),
+            Constants$root.C_SHORT$LAYOUT.withName("__cwd"),
+            Constants$root.C_SHORT$LAYOUT.withName("__swd"),
+            Constants$root.C_SHORT$LAYOUT.withName("__ftw"),
+            Constants$root.C_SHORT$LAYOUT.withName("__fop"),
+            Constants$root.C_LONG_LONG$LAYOUT.withName("__rip"),
+            Constants$root.C_LONG_LONG$LAYOUT.withName("__rdp"),
+            Constants$root.C_INT$LAYOUT.withName("__mxcsr"),
+            Constants$root.C_INT$LAYOUT.withName("__mxcr_mask"),
             MemoryLayout.sequenceLayout(8, MemoryLayout.structLayout(
-                MemoryLayout.sequenceLayout(4, Constants$root.C_SHORT$LAYOUT).withName("significand"),
-                Constants$root.C_SHORT$LAYOUT.withName("exponent"),
+                MemoryLayout.sequenceLayout(4, Constants$root.C_SHORT$LAYOUT).withName("__significand"),
+                Constants$root.C_SHORT$LAYOUT.withName("__exponent"),
                 MemoryLayout.sequenceLayout(3, Constants$root.C_SHORT$LAYOUT).withName("__glibc_reserved1")
             ).withName("_libc_fpxreg")).withName("_st"),
             MemoryLayout.sequenceLayout(16, MemoryLayout.structLayout(
-                MemoryLayout.sequenceLayout(4, Constants$root.C_INT$LAYOUT).withName("element")
+                MemoryLayout.sequenceLayout(4, Constants$root.C_INT$LAYOUT).withName("__element")
             ).withName("_libc_xmmreg")).withName("_xmm"),
             MemoryLayout.sequenceLayout(24, Constants$root.C_INT$LAYOUT).withName("__glibc_reserved1")
         ).withName("__fpregs_mem"),
@@ -50,21 +50,21 @@ public class ucontext_t {
     public static MemoryLayout $LAYOUT() {
         return ucontext_t.$struct$LAYOUT;
     }
-    static final VarHandle uc_flags$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("uc_flags"));
-    public static VarHandle uc_flags$VH() {
-        return ucontext_t.uc_flags$VH;
+    static final VarHandle __uc_flags$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("__uc_flags"));
+    public static VarHandle __uc_flags$VH() {
+        return ucontext_t.__uc_flags$VH;
     }
-    public static long uc_flags$get(MemorySegment seg) {
-        return (long)ucontext_t.uc_flags$VH.get(seg);
+    public static long __uc_flags$get(MemorySegment seg) {
+        return (long)ucontext_t.__uc_flags$VH.get(seg);
     }
-    public static void uc_flags$set( MemorySegment seg, long x) {
-        ucontext_t.uc_flags$VH.set(seg, x);
+    public static void __uc_flags$set( MemorySegment seg, long x) {
+        ucontext_t.__uc_flags$VH.set(seg, x);
     }
-    public static long uc_flags$get(MemorySegment seg, long index) {
-        return (long)ucontext_t.uc_flags$VH.get(seg.asSlice(index*sizeof()));
+    public static long __uc_flags$get(MemorySegment seg, long index) {
+        return (long)ucontext_t.__uc_flags$VH.get(seg.asSlice(index*sizeof()));
     }
-    public static void uc_flags$set(MemorySegment seg, long index, long x) {
-        ucontext_t.uc_flags$VH.set(seg.asSlice(index*sizeof()), x);
+    public static void __uc_flags$set(MemorySegment seg, long index, long x) {
+        ucontext_t.__uc_flags$VH.set(seg.asSlice(index*sizeof()), x);
     }
     static final VarHandle uc_link$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("uc_link"));
     public static VarHandle uc_link$VH() {

@@ -10,154 +10,154 @@ import static java.lang.foreign.ValueLayout.*;
 public class _libc_fpstate {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        Constants$root.C_SHORT$LAYOUT.withName("cwd"),
-        Constants$root.C_SHORT$LAYOUT.withName("swd"),
-        Constants$root.C_SHORT$LAYOUT.withName("ftw"),
-        Constants$root.C_SHORT$LAYOUT.withName("fop"),
-        Constants$root.C_LONG_LONG$LAYOUT.withName("rip"),
-        Constants$root.C_LONG_LONG$LAYOUT.withName("rdp"),
-        Constants$root.C_INT$LAYOUT.withName("mxcsr"),
-        Constants$root.C_INT$LAYOUT.withName("mxcr_mask"),
+        Constants$root.C_SHORT$LAYOUT.withName("__cwd"),
+        Constants$root.C_SHORT$LAYOUT.withName("__swd"),
+        Constants$root.C_SHORT$LAYOUT.withName("__ftw"),
+        Constants$root.C_SHORT$LAYOUT.withName("__fop"),
+        Constants$root.C_LONG_LONG$LAYOUT.withName("__rip"),
+        Constants$root.C_LONG_LONG$LAYOUT.withName("__rdp"),
+        Constants$root.C_INT$LAYOUT.withName("__mxcsr"),
+        Constants$root.C_INT$LAYOUT.withName("__mxcr_mask"),
         MemoryLayout.sequenceLayout(8, MemoryLayout.structLayout(
-            MemoryLayout.sequenceLayout(4, Constants$root.C_SHORT$LAYOUT).withName("significand"),
-            Constants$root.C_SHORT$LAYOUT.withName("exponent"),
+            MemoryLayout.sequenceLayout(4, Constants$root.C_SHORT$LAYOUT).withName("__significand"),
+            Constants$root.C_SHORT$LAYOUT.withName("__exponent"),
             MemoryLayout.sequenceLayout(3, Constants$root.C_SHORT$LAYOUT).withName("__glibc_reserved1")
         ).withName("_libc_fpxreg")).withName("_st"),
         MemoryLayout.sequenceLayout(16, MemoryLayout.structLayout(
-            MemoryLayout.sequenceLayout(4, Constants$root.C_INT$LAYOUT).withName("element")
+            MemoryLayout.sequenceLayout(4, Constants$root.C_INT$LAYOUT).withName("__element")
         ).withName("_libc_xmmreg")).withName("_xmm"),
         MemoryLayout.sequenceLayout(24, Constants$root.C_INT$LAYOUT).withName("__glibc_reserved1")
     ).withName("_libc_fpstate");
     public static MemoryLayout $LAYOUT() {
         return _libc_fpstate.$struct$LAYOUT;
     }
-    static final VarHandle cwd$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("cwd"));
-    public static VarHandle cwd$VH() {
-        return _libc_fpstate.cwd$VH;
+    static final VarHandle __cwd$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("__cwd"));
+    public static VarHandle __cwd$VH() {
+        return _libc_fpstate.__cwd$VH;
     }
-    public static short cwd$get(MemorySegment seg) {
-        return (short)_libc_fpstate.cwd$VH.get(seg);
+    public static short __cwd$get(MemorySegment seg) {
+        return (short)_libc_fpstate.__cwd$VH.get(seg);
     }
-    public static void cwd$set( MemorySegment seg, short x) {
-        _libc_fpstate.cwd$VH.set(seg, x);
+    public static void __cwd$set( MemorySegment seg, short x) {
+        _libc_fpstate.__cwd$VH.set(seg, x);
     }
-    public static short cwd$get(MemorySegment seg, long index) {
-        return (short)_libc_fpstate.cwd$VH.get(seg.asSlice(index*sizeof()));
+    public static short __cwd$get(MemorySegment seg, long index) {
+        return (short)_libc_fpstate.__cwd$VH.get(seg.asSlice(index*sizeof()));
     }
-    public static void cwd$set(MemorySegment seg, long index, short x) {
-        _libc_fpstate.cwd$VH.set(seg.asSlice(index*sizeof()), x);
+    public static void __cwd$set(MemorySegment seg, long index, short x) {
+        _libc_fpstate.__cwd$VH.set(seg.asSlice(index*sizeof()), x);
     }
-    static final VarHandle swd$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("swd"));
-    public static VarHandle swd$VH() {
-        return _libc_fpstate.swd$VH;
+    static final VarHandle __swd$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("__swd"));
+    public static VarHandle __swd$VH() {
+        return _libc_fpstate.__swd$VH;
     }
-    public static short swd$get(MemorySegment seg) {
-        return (short)_libc_fpstate.swd$VH.get(seg);
+    public static short __swd$get(MemorySegment seg) {
+        return (short)_libc_fpstate.__swd$VH.get(seg);
     }
-    public static void swd$set( MemorySegment seg, short x) {
-        _libc_fpstate.swd$VH.set(seg, x);
+    public static void __swd$set( MemorySegment seg, short x) {
+        _libc_fpstate.__swd$VH.set(seg, x);
     }
-    public static short swd$get(MemorySegment seg, long index) {
-        return (short)_libc_fpstate.swd$VH.get(seg.asSlice(index*sizeof()));
+    public static short __swd$get(MemorySegment seg, long index) {
+        return (short)_libc_fpstate.__swd$VH.get(seg.asSlice(index*sizeof()));
     }
-    public static void swd$set(MemorySegment seg, long index, short x) {
-        _libc_fpstate.swd$VH.set(seg.asSlice(index*sizeof()), x);
+    public static void __swd$set(MemorySegment seg, long index, short x) {
+        _libc_fpstate.__swd$VH.set(seg.asSlice(index*sizeof()), x);
     }
-    static final VarHandle ftw$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("ftw"));
-    public static VarHandle ftw$VH() {
-        return _libc_fpstate.ftw$VH;
+    static final VarHandle __ftw$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("__ftw"));
+    public static VarHandle __ftw$VH() {
+        return _libc_fpstate.__ftw$VH;
     }
-    public static short ftw$get(MemorySegment seg) {
-        return (short)_libc_fpstate.ftw$VH.get(seg);
+    public static short __ftw$get(MemorySegment seg) {
+        return (short)_libc_fpstate.__ftw$VH.get(seg);
     }
-    public static void ftw$set( MemorySegment seg, short x) {
-        _libc_fpstate.ftw$VH.set(seg, x);
+    public static void __ftw$set( MemorySegment seg, short x) {
+        _libc_fpstate.__ftw$VH.set(seg, x);
     }
-    public static short ftw$get(MemorySegment seg, long index) {
-        return (short)_libc_fpstate.ftw$VH.get(seg.asSlice(index*sizeof()));
+    public static short __ftw$get(MemorySegment seg, long index) {
+        return (short)_libc_fpstate.__ftw$VH.get(seg.asSlice(index*sizeof()));
     }
-    public static void ftw$set(MemorySegment seg, long index, short x) {
-        _libc_fpstate.ftw$VH.set(seg.asSlice(index*sizeof()), x);
+    public static void __ftw$set(MemorySegment seg, long index, short x) {
+        _libc_fpstate.__ftw$VH.set(seg.asSlice(index*sizeof()), x);
     }
-    static final VarHandle fop$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("fop"));
-    public static VarHandle fop$VH() {
-        return _libc_fpstate.fop$VH;
+    static final VarHandle __fop$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("__fop"));
+    public static VarHandle __fop$VH() {
+        return _libc_fpstate.__fop$VH;
     }
-    public static short fop$get(MemorySegment seg) {
-        return (short)_libc_fpstate.fop$VH.get(seg);
+    public static short __fop$get(MemorySegment seg) {
+        return (short)_libc_fpstate.__fop$VH.get(seg);
     }
-    public static void fop$set( MemorySegment seg, short x) {
-        _libc_fpstate.fop$VH.set(seg, x);
+    public static void __fop$set( MemorySegment seg, short x) {
+        _libc_fpstate.__fop$VH.set(seg, x);
     }
-    public static short fop$get(MemorySegment seg, long index) {
-        return (short)_libc_fpstate.fop$VH.get(seg.asSlice(index*sizeof()));
+    public static short __fop$get(MemorySegment seg, long index) {
+        return (short)_libc_fpstate.__fop$VH.get(seg.asSlice(index*sizeof()));
     }
-    public static void fop$set(MemorySegment seg, long index, short x) {
-        _libc_fpstate.fop$VH.set(seg.asSlice(index*sizeof()), x);
+    public static void __fop$set(MemorySegment seg, long index, short x) {
+        _libc_fpstate.__fop$VH.set(seg.asSlice(index*sizeof()), x);
     }
-    static final VarHandle rip$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("rip"));
-    public static VarHandle rip$VH() {
-        return _libc_fpstate.rip$VH;
+    static final VarHandle __rip$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("__rip"));
+    public static VarHandle __rip$VH() {
+        return _libc_fpstate.__rip$VH;
     }
-    public static long rip$get(MemorySegment seg) {
-        return (long)_libc_fpstate.rip$VH.get(seg);
+    public static long __rip$get(MemorySegment seg) {
+        return (long)_libc_fpstate.__rip$VH.get(seg);
     }
-    public static void rip$set( MemorySegment seg, long x) {
-        _libc_fpstate.rip$VH.set(seg, x);
+    public static void __rip$set( MemorySegment seg, long x) {
+        _libc_fpstate.__rip$VH.set(seg, x);
     }
-    public static long rip$get(MemorySegment seg, long index) {
-        return (long)_libc_fpstate.rip$VH.get(seg.asSlice(index*sizeof()));
+    public static long __rip$get(MemorySegment seg, long index) {
+        return (long)_libc_fpstate.__rip$VH.get(seg.asSlice(index*sizeof()));
     }
-    public static void rip$set(MemorySegment seg, long index, long x) {
-        _libc_fpstate.rip$VH.set(seg.asSlice(index*sizeof()), x);
+    public static void __rip$set(MemorySegment seg, long index, long x) {
+        _libc_fpstate.__rip$VH.set(seg.asSlice(index*sizeof()), x);
     }
-    static final VarHandle rdp$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("rdp"));
-    public static VarHandle rdp$VH() {
-        return _libc_fpstate.rdp$VH;
+    static final VarHandle __rdp$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("__rdp"));
+    public static VarHandle __rdp$VH() {
+        return _libc_fpstate.__rdp$VH;
     }
-    public static long rdp$get(MemorySegment seg) {
-        return (long)_libc_fpstate.rdp$VH.get(seg);
+    public static long __rdp$get(MemorySegment seg) {
+        return (long)_libc_fpstate.__rdp$VH.get(seg);
     }
-    public static void rdp$set( MemorySegment seg, long x) {
-        _libc_fpstate.rdp$VH.set(seg, x);
+    public static void __rdp$set( MemorySegment seg, long x) {
+        _libc_fpstate.__rdp$VH.set(seg, x);
     }
-    public static long rdp$get(MemorySegment seg, long index) {
-        return (long)_libc_fpstate.rdp$VH.get(seg.asSlice(index*sizeof()));
+    public static long __rdp$get(MemorySegment seg, long index) {
+        return (long)_libc_fpstate.__rdp$VH.get(seg.asSlice(index*sizeof()));
     }
-    public static void rdp$set(MemorySegment seg, long index, long x) {
-        _libc_fpstate.rdp$VH.set(seg.asSlice(index*sizeof()), x);
+    public static void __rdp$set(MemorySegment seg, long index, long x) {
+        _libc_fpstate.__rdp$VH.set(seg.asSlice(index*sizeof()), x);
     }
-    static final VarHandle mxcsr$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("mxcsr"));
-    public static VarHandle mxcsr$VH() {
-        return _libc_fpstate.mxcsr$VH;
+    static final VarHandle __mxcsr$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("__mxcsr"));
+    public static VarHandle __mxcsr$VH() {
+        return _libc_fpstate.__mxcsr$VH;
     }
-    public static int mxcsr$get(MemorySegment seg) {
-        return (int)_libc_fpstate.mxcsr$VH.get(seg);
+    public static int __mxcsr$get(MemorySegment seg) {
+        return (int)_libc_fpstate.__mxcsr$VH.get(seg);
     }
-    public static void mxcsr$set( MemorySegment seg, int x) {
-        _libc_fpstate.mxcsr$VH.set(seg, x);
+    public static void __mxcsr$set( MemorySegment seg, int x) {
+        _libc_fpstate.__mxcsr$VH.set(seg, x);
     }
-    public static int mxcsr$get(MemorySegment seg, long index) {
-        return (int)_libc_fpstate.mxcsr$VH.get(seg.asSlice(index*sizeof()));
+    public static int __mxcsr$get(MemorySegment seg, long index) {
+        return (int)_libc_fpstate.__mxcsr$VH.get(seg.asSlice(index*sizeof()));
     }
-    public static void mxcsr$set(MemorySegment seg, long index, int x) {
-        _libc_fpstate.mxcsr$VH.set(seg.asSlice(index*sizeof()), x);
+    public static void __mxcsr$set(MemorySegment seg, long index, int x) {
+        _libc_fpstate.__mxcsr$VH.set(seg.asSlice(index*sizeof()), x);
     }
-    static final VarHandle mxcr_mask$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("mxcr_mask"));
-    public static VarHandle mxcr_mask$VH() {
-        return _libc_fpstate.mxcr_mask$VH;
+    static final VarHandle __mxcr_mask$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("__mxcr_mask"));
+    public static VarHandle __mxcr_mask$VH() {
+        return _libc_fpstate.__mxcr_mask$VH;
     }
-    public static int mxcr_mask$get(MemorySegment seg) {
-        return (int)_libc_fpstate.mxcr_mask$VH.get(seg);
+    public static int __mxcr_mask$get(MemorySegment seg) {
+        return (int)_libc_fpstate.__mxcr_mask$VH.get(seg);
     }
-    public static void mxcr_mask$set( MemorySegment seg, int x) {
-        _libc_fpstate.mxcr_mask$VH.set(seg, x);
+    public static void __mxcr_mask$set( MemorySegment seg, int x) {
+        _libc_fpstate.__mxcr_mask$VH.set(seg, x);
     }
-    public static int mxcr_mask$get(MemorySegment seg, long index) {
-        return (int)_libc_fpstate.mxcr_mask$VH.get(seg.asSlice(index*sizeof()));
+    public static int __mxcr_mask$get(MemorySegment seg, long index) {
+        return (int)_libc_fpstate.__mxcr_mask$VH.get(seg.asSlice(index*sizeof()));
     }
-    public static void mxcr_mask$set(MemorySegment seg, long index, int x) {
-        _libc_fpstate.mxcr_mask$VH.set(seg.asSlice(index*sizeof()), x);
+    public static void __mxcr_mask$set(MemorySegment seg, long index, int x) {
+        _libc_fpstate.__mxcr_mask$VH.set(seg.asSlice(index*sizeof()), x);
     }
     public static MemorySegment _st$slice(MemorySegment seg) {
         return seg.asSlice(32, 128);

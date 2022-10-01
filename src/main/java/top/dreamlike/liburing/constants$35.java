@@ -9,12 +9,51 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$35 {
 
-    static final MemorySegment PRIuFAST8$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("u");
-    static final MemorySegment PRIuFAST16$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("lu");
-    static final MemorySegment PRIuFAST32$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("lu");
-    static final MemorySegment PRIuFAST64$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("lu");
-    static final MemorySegment PRIx8$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("x");
-    static final MemorySegment PRIx16$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("x");
+    static final FunctionDescriptor io_uring_sq_space_left$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle io_uring_sq_space_left$MH = RuntimeHelper.downcallHandle(
+        "io_uring_sq_space_left",
+        constants$35.io_uring_sq_space_left$FUNC
+    );
+    static final FunctionDescriptor io_uring_sqring_wait$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle io_uring_sqring_wait$MH = RuntimeHelper.downcallHandle(
+        "io_uring_sqring_wait",
+        constants$35.io_uring_sqring_wait$FUNC
+    );
+    static final FunctionDescriptor io_uring_cq_ready$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle io_uring_cq_ready$MH = RuntimeHelper.downcallHandle(
+        "io_uring_cq_ready",
+        constants$35.io_uring_cq_ready$FUNC
+    );
+    static final FunctionDescriptor io_uring_cq_eventfd_enabled$FUNC = FunctionDescriptor.of(Constants$root.C_BOOL$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle io_uring_cq_eventfd_enabled$MH = RuntimeHelper.downcallHandle(
+        "io_uring_cq_eventfd_enabled",
+        constants$35.io_uring_cq_eventfd_enabled$FUNC
+    );
+    static final FunctionDescriptor io_uring_cq_eventfd_toggle$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_BOOL$LAYOUT
+    );
+    static final MethodHandle io_uring_cq_eventfd_toggle$MH = RuntimeHelper.downcallHandle(
+        "io_uring_cq_eventfd_toggle",
+        constants$35.io_uring_cq_eventfd_toggle$FUNC
+    );
+    static final FunctionDescriptor io_uring_wait_cqe_nr$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_wait_cqe_nr$MH = RuntimeHelper.downcallHandle(
+        "io_uring_wait_cqe_nr",
+        constants$35.io_uring_wait_cqe_nr$FUNC
+    );
 }
 
 

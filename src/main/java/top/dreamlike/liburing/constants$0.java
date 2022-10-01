@@ -9,47 +9,59 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$0 {
 
-    static final FunctionDescriptor __bswap_16$FUNC = FunctionDescriptor.of(Constants$root.C_SHORT$LAYOUT,
-        Constants$root.C_SHORT$LAYOUT
+    static final FunctionDescriptor __cmsg_nxthdr$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle __bswap_16$MH = RuntimeHelper.downcallHandle(
-        "__bswap_16",
-        constants$0.__bswap_16$FUNC
+    static final MethodHandle __cmsg_nxthdr$MH = RuntimeHelper.downcallHandle(
+        "__cmsg_nxthdr",
+        constants$0.__cmsg_nxthdr$FUNC
     );
-    static final FunctionDescriptor __bswap_32$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor socket$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle __bswap_32$MH = RuntimeHelper.downcallHandle(
-        "__bswap_32",
-        constants$0.__bswap_32$FUNC
+    static final MethodHandle socket$MH = RuntimeHelper.downcallHandle(
+        "socket",
+        constants$0.socket$FUNC
     );
-    static final FunctionDescriptor __bswap_64$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor socketpair$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle __bswap_64$MH = RuntimeHelper.downcallHandle(
-        "__bswap_64",
-        constants$0.__bswap_64$FUNC
+    static final MethodHandle socketpair$MH = RuntimeHelper.downcallHandle(
+        "socketpair",
+        constants$0.socketpair$FUNC
     );
-    static final FunctionDescriptor __uint16_identity$FUNC = FunctionDescriptor.of(Constants$root.C_SHORT$LAYOUT,
-        Constants$root.C_SHORT$LAYOUT
-    );
-    static final MethodHandle __uint16_identity$MH = RuntimeHelper.downcallHandle(
-        "__uint16_identity",
-        constants$0.__uint16_identity$FUNC
-    );
-    static final FunctionDescriptor __uint32_identity$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor bind$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle __uint32_identity$MH = RuntimeHelper.downcallHandle(
-        "__uint32_identity",
-        constants$0.__uint32_identity$FUNC
+    static final MethodHandle bind$MH = RuntimeHelper.downcallHandle(
+        "bind",
+        constants$0.bind$FUNC
     );
-    static final FunctionDescriptor __uint64_identity$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor getsockname$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle __uint64_identity$MH = RuntimeHelper.downcallHandle(
-        "__uint64_identity",
-        constants$0.__uint64_identity$FUNC
+    static final MethodHandle getsockname$MH = RuntimeHelper.downcallHandle(
+        "getsockname",
+        constants$0.getsockname$FUNC
+    );
+    static final FunctionDescriptor connect$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle connect$MH = RuntimeHelper.downcallHandle(
+        "connect",
+        constants$0.connect$FUNC
     );
 }
 

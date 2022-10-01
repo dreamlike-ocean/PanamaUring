@@ -9,55 +9,49 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$17 {
 
-    static final FunctionDescriptor dysize$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor timer_delete$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle timer_delete$MH = RuntimeHelper.downcallHandle(
+        "timer_delete",
+        constants$17.timer_delete$FUNC
+    );
+    static final FunctionDescriptor timer_settime$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle timer_settime$MH = RuntimeHelper.downcallHandle(
+        "timer_settime",
+        constants$17.timer_settime$FUNC
+    );
+    static final FunctionDescriptor timer_gettime$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle timer_gettime$MH = RuntimeHelper.downcallHandle(
+        "timer_gettime",
+        constants$17.timer_gettime$FUNC
+    );
+    static final FunctionDescriptor timer_getoverrun$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle timer_getoverrun$MH = RuntimeHelper.downcallHandle(
+        "timer_getoverrun",
+        constants$17.timer_getoverrun$FUNC
+    );
+    static final FunctionDescriptor timespec_get$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle dysize$MH = RuntimeHelper.downcallHandle(
-        "dysize",
-        constants$17.dysize$FUNC
+    static final MethodHandle timespec_get$MH = RuntimeHelper.downcallHandle(
+        "timespec_get",
+        constants$17.timespec_get$FUNC
     );
-    static final FunctionDescriptor nanosleep$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle nanosleep$MH = RuntimeHelper.downcallHandle(
-        "nanosleep",
-        constants$17.nanosleep$FUNC
-    );
-    static final FunctionDescriptor clock_getres$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle clock_getres$MH = RuntimeHelper.downcallHandle(
-        "clock_getres",
-        constants$17.clock_getres$FUNC
-    );
-    static final FunctionDescriptor clock_gettime$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle clock_gettime$MH = RuntimeHelper.downcallHandle(
-        "clock_gettime",
-        constants$17.clock_gettime$FUNC
-    );
-    static final FunctionDescriptor clock_settime$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle clock_settime$MH = RuntimeHelper.downcallHandle(
-        "clock_settime",
-        constants$17.clock_settime$FUNC
-    );
-    static final FunctionDescriptor clock_nanosleep$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle clock_nanosleep$MH = RuntimeHelper.downcallHandle(
-        "clock_nanosleep",
-        constants$17.clock_nanosleep$FUNC
-    );
+    static final  OfInt getdate_err$LAYOUT = Constants$root.C_INT$LAYOUT;
+    static final VarHandle getdate_err$VH = constants$17.getdate_err$LAYOUT.varHandle();
+    static final MemorySegment getdate_err$SEGMENT = RuntimeHelper.lookupGlobalVariable("getdate_err", constants$17.getdate_err$LAYOUT);
 }
 
 

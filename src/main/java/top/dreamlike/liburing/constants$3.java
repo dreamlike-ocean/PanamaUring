@@ -9,68 +9,55 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$3 {
 
-    static final FunctionDescriptor recv$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle recv$MH = RuntimeHelper.downcallHandle(
-        "recv",
-        constants$3.recv$FUNC
-    );
-    static final FunctionDescriptor sendto$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT,
+    static final FunctionDescriptor readv$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
         Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle sendto$MH = RuntimeHelper.downcallHandle(
-        "sendto",
-        constants$3.sendto$FUNC
+    static final MethodHandle readv$MH = RuntimeHelper.downcallHandle(
+        "readv",
+        constants$3.readv$FUNC
     );
-    static final FunctionDescriptor recvfrom$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+    static final FunctionDescriptor writev$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
         Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle writev$MH = RuntimeHelper.downcallHandle(
+        "writev",
+        constants$3.writev$FUNC
+    );
+    static final FunctionDescriptor stat$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle recvfrom$MH = RuntimeHelper.downcallHandle(
-        "recvfrom",
-        constants$3.recvfrom$FUNC
+    static final MethodHandle stat$MH = RuntimeHelper.downcallHandle(
+        "stat",
+        constants$3.stat$FUNC
     );
-    static final FunctionDescriptor sendmsg$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+    static final FunctionDescriptor fstat$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+        Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle sendmsg$MH = RuntimeHelper.downcallHandle(
-        "sendmsg",
-        constants$3.sendmsg$FUNC
+    static final MethodHandle fstat$MH = RuntimeHelper.downcallHandle(
+        "fstat",
+        constants$3.fstat$FUNC
     );
-    static final FunctionDescriptor recvmsg$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle recvmsg$MH = RuntimeHelper.downcallHandle(
-        "recvmsg",
-        constants$3.recvmsg$FUNC
-    );
-    static final FunctionDescriptor getsockopt$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor lstat$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle getsockopt$MH = RuntimeHelper.downcallHandle(
-        "getsockopt",
-        constants$3.getsockopt$FUNC
+    static final MethodHandle lstat$MH = RuntimeHelper.downcallHandle(
+        "lstat",
+        constants$3.lstat$FUNC
+    );
+    static final FunctionDescriptor chmod$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle chmod$MH = RuntimeHelper.downcallHandle(
+        "chmod",
+        constants$3.chmod$FUNC
     );
 }
 

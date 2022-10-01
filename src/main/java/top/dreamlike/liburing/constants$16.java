@@ -9,32 +9,49 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$16 {
 
-    static final  SequenceLayout tzname$LAYOUT = MemoryLayout.sequenceLayout(2, Constants$root.C_POINTER$LAYOUT);
-    static final MemorySegment tzname$SEGMENT = RuntimeHelper.lookupGlobalVariable("tzname", constants$16.tzname$LAYOUT);
-    static final FunctionDescriptor tzset$FUNC = FunctionDescriptor.ofVoid();
-    static final MethodHandle tzset$MH = RuntimeHelper.downcallHandle(
-        "tzset",
-        constants$16.tzset$FUNC
-    );
-    static final  OfInt daylight$LAYOUT = Constants$root.C_INT$LAYOUT;
-    static final VarHandle daylight$VH = constants$16.daylight$LAYOUT.varHandle();
-    static final MemorySegment daylight$SEGMENT = RuntimeHelper.lookupGlobalVariable("daylight", constants$16.daylight$LAYOUT);
     static final  OfLong timezone$LAYOUT = Constants$root.C_LONG_LONG$LAYOUT;
     static final VarHandle timezone$VH = constants$16.timezone$LAYOUT.varHandle();
     static final MemorySegment timezone$SEGMENT = RuntimeHelper.lookupGlobalVariable("timezone", constants$16.timezone$LAYOUT);
-    static final FunctionDescriptor timegm$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+    static final FunctionDescriptor nanosleep$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle timegm$MH = RuntimeHelper.downcallHandle(
-        "timegm",
-        constants$16.timegm$FUNC
+    static final MethodHandle nanosleep$MH = RuntimeHelper.downcallHandle(
+        "nanosleep",
+        constants$16.nanosleep$FUNC
     );
-    static final FunctionDescriptor timelocal$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+    static final FunctionDescriptor clock_getres$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle timelocal$MH = RuntimeHelper.downcallHandle(
-        "timelocal",
-        constants$16.timelocal$FUNC
+    static final MethodHandle clock_getres$MH = RuntimeHelper.downcallHandle(
+        "clock_getres",
+        constants$16.clock_getres$FUNC
+    );
+    static final FunctionDescriptor clock_gettime$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle clock_gettime$MH = RuntimeHelper.downcallHandle(
+        "clock_gettime",
+        constants$16.clock_gettime$FUNC
+    );
+    static final FunctionDescriptor clock_settime$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle clock_settime$MH = RuntimeHelper.downcallHandle(
+        "clock_settime",
+        constants$16.clock_settime$FUNC
+    );
+    static final FunctionDescriptor timer_create$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle timer_create$MH = RuntimeHelper.downcallHandle(
+        "timer_create",
+        constants$16.timer_create$FUNC
     );
 }
 

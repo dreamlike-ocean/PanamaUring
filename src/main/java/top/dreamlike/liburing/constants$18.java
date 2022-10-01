@@ -9,54 +9,39 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$18 {
 
-    static final FunctionDescriptor clock_getcpuclockid$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor getdate$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle clock_getcpuclockid$MH = RuntimeHelper.downcallHandle(
-        "clock_getcpuclockid",
-        constants$18.clock_getcpuclockid$FUNC
+    static final MethodHandle getdate$MH = RuntimeHelper.downcallHandle(
+        "getdate",
+        constants$18.getdate$FUNC
     );
-    static final FunctionDescriptor timer_create$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor __kernel_sighandler_t$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle timer_create$MH = RuntimeHelper.downcallHandle(
-        "timer_create",
-        constants$18.timer_create$FUNC
+    static final MethodHandle __kernel_sighandler_t$MH = RuntimeHelper.downcallHandle(
+        constants$18.__kernel_sighandler_t$FUNC
     );
-    static final FunctionDescriptor timer_delete$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor __arch_swab32$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle timer_delete$MH = RuntimeHelper.downcallHandle(
-        "timer_delete",
-        constants$18.timer_delete$FUNC
+    static final MethodHandle __arch_swab32$MH = RuntimeHelper.downcallHandle(
+        "__arch_swab32",
+        constants$18.__arch_swab32$FUNC
     );
-    static final FunctionDescriptor timer_settime$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor __arch_swab64$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT
     );
-    static final MethodHandle timer_settime$MH = RuntimeHelper.downcallHandle(
-        "timer_settime",
-        constants$18.timer_settime$FUNC
+    static final MethodHandle __arch_swab64$MH = RuntimeHelper.downcallHandle(
+        "__arch_swab64",
+        constants$18.__arch_swab64$FUNC
     );
-    static final FunctionDescriptor timer_gettime$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor __fswab16$FUNC = FunctionDescriptor.of(Constants$root.C_SHORT$LAYOUT,
+        Constants$root.C_SHORT$LAYOUT
     );
-    static final MethodHandle timer_gettime$MH = RuntimeHelper.downcallHandle(
-        "timer_gettime",
-        constants$18.timer_gettime$FUNC
-    );
-    static final FunctionDescriptor timer_getoverrun$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle timer_getoverrun$MH = RuntimeHelper.downcallHandle(
-        "timer_getoverrun",
-        constants$18.timer_getoverrun$FUNC
+    static final MethodHandle __fswab16$MH = RuntimeHelper.downcallHandle(
+        "__fswab16",
+        constants$18.__fswab16$FUNC
     );
 }
 

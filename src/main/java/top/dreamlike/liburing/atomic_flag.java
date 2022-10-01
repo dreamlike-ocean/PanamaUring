@@ -7,16 +7,13 @@ import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
-public class fd_set {
+public class atomic_flag {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        MemoryLayout.sequenceLayout(16, Constants$root.C_LONG_LONG$LAYOUT).withName("__fds_bits")
-    );
+
+    ).withName("atomic_flag");
     public static MemoryLayout $LAYOUT() {
-        return fd_set.$struct$LAYOUT;
-    }
-    public static MemorySegment __fds_bits$slice(MemorySegment seg) {
-        return seg.asSlice(0, 128);
+        return atomic_flag.$struct$LAYOUT;
     }
     public static long sizeof() { return $LAYOUT().byteSize(); }
     public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }

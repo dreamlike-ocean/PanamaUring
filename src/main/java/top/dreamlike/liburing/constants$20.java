@@ -9,57 +9,47 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$20 {
 
-    static final FunctionDescriptor io_uring_queue_mmap$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
+    static final FunctionDescriptor __swab32p$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle io_uring_queue_mmap$MH = RuntimeHelper.downcallHandle(
-        "io_uring_queue_mmap",
-        constants$20.io_uring_queue_mmap$FUNC
+    static final MethodHandle __swab32p$MH = RuntimeHelper.downcallHandle(
+        "__swab32p",
+        constants$20.__swab32p$FUNC
     );
-    static final FunctionDescriptor io_uring_queue_exit$FUNC = FunctionDescriptor.ofVoid(
+    static final FunctionDescriptor __swab64p$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle io_uring_queue_exit$MH = RuntimeHelper.downcallHandle(
-        "io_uring_queue_exit",
-        constants$20.io_uring_queue_exit$FUNC
+    static final MethodHandle __swab64p$MH = RuntimeHelper.downcallHandle(
+        "__swab64p",
+        constants$20.__swab64p$FUNC
     );
-    static final FunctionDescriptor io_uring_peek_batch_cqe$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle io_uring_peek_batch_cqe$MH = RuntimeHelper.downcallHandle(
-        "io_uring_peek_batch_cqe",
-        constants$20.io_uring_peek_batch_cqe$FUNC
-    );
-    static final FunctionDescriptor io_uring_wait_cqes$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
+    static final FunctionDescriptor __swahw32p$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle io_uring_wait_cqes$MH = RuntimeHelper.downcallHandle(
-        "io_uring_wait_cqes",
-        constants$20.io_uring_wait_cqes$FUNC
+    static final MethodHandle __swahw32p$MH = RuntimeHelper.downcallHandle(
+        "__swahw32p",
+        constants$20.__swahw32p$FUNC
     );
-    static final FunctionDescriptor io_uring_wait_cqe_timeout$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
+    static final FunctionDescriptor __swahb32p$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle io_uring_wait_cqe_timeout$MH = RuntimeHelper.downcallHandle(
-        "io_uring_wait_cqe_timeout",
-        constants$20.io_uring_wait_cqe_timeout$FUNC
+    static final MethodHandle __swahb32p$MH = RuntimeHelper.downcallHandle(
+        "__swahb32p",
+        constants$20.__swahb32p$FUNC
     );
-    static final FunctionDescriptor io_uring_submit$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor __swab16s$FUNC = FunctionDescriptor.ofVoid(
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle io_uring_submit$MH = RuntimeHelper.downcallHandle(
-        "io_uring_submit",
-        constants$20.io_uring_submit$FUNC
+    static final MethodHandle __swab16s$MH = RuntimeHelper.downcallHandle(
+        "__swab16s",
+        constants$20.__swab16s$FUNC
+    );
+    static final FunctionDescriptor __swab32s$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle __swab32s$MH = RuntimeHelper.downcallHandle(
+        "__swab32s",
+        constants$20.__swab32s$FUNC
     );
 }
 

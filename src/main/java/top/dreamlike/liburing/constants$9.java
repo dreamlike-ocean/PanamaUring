@@ -9,46 +9,6 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$9 {
 
-    static final FunctionDescriptor sigismember$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle sigismember$MH = RuntimeHelper.downcallHandle(
-        "sigismember",
-        constants$9.sigismember$FUNC
-    );
-    static final FunctionDescriptor sigprocmask$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle sigprocmask$MH = RuntimeHelper.downcallHandle(
-        "sigprocmask",
-        constants$9.sigprocmask$FUNC
-    );
-    static final FunctionDescriptor sigsuspend$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle sigsuspend$MH = RuntimeHelper.downcallHandle(
-        "sigsuspend",
-        constants$9.sigsuspend$FUNC
-    );
-    static final FunctionDescriptor sigaction$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle sigaction$MH = RuntimeHelper.downcallHandle(
-        "sigaction",
-        constants$9.sigaction$FUNC
-    );
-    static final FunctionDescriptor sigpending$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle sigpending$MH = RuntimeHelper.downcallHandle(
-        "sigpending",
-        constants$9.sigpending$FUNC
-    );
     static final FunctionDescriptor sigwait$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
@@ -56,6 +16,51 @@ class constants$9 {
     static final MethodHandle sigwait$MH = RuntimeHelper.downcallHandle(
         "sigwait",
         constants$9.sigwait$FUNC
+    );
+    static final FunctionDescriptor sigwaitinfo$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle sigwaitinfo$MH = RuntimeHelper.downcallHandle(
+        "sigwaitinfo",
+        constants$9.sigwaitinfo$FUNC
+    );
+    static final FunctionDescriptor sigtimedwait$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle sigtimedwait$MH = RuntimeHelper.downcallHandle(
+        "sigtimedwait",
+        constants$9.sigtimedwait$FUNC
+    );
+    static final FunctionDescriptor sigqueue$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        MemoryLayout.unionLayout(
+            Constants$root.C_INT$LAYOUT.withName("sival_int"),
+            Constants$root.C_POINTER$LAYOUT.withName("sival_ptr")
+        ).withName("sigval")
+    );
+    static final MethodHandle sigqueue$MH = RuntimeHelper.downcallHandle(
+        "sigqueue",
+        constants$9.sigqueue$FUNC
+    );
+    static final FunctionDescriptor siginterrupt$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle siginterrupt$MH = RuntimeHelper.downcallHandle(
+        "siginterrupt",
+        constants$9.siginterrupt$FUNC
+    );
+    static final FunctionDescriptor sigaltstack$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle sigaltstack$MH = RuntimeHelper.downcallHandle(
+        "sigaltstack",
+        constants$9.sigaltstack$FUNC
     );
 }
 

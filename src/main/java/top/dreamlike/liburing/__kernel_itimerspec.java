@@ -7,16 +7,26 @@ import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
-public class _ymmh_state {
+public class __kernel_itimerspec {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        MemoryLayout.sequenceLayout(64, Constants$root.C_INT$LAYOUT).withName("ymmh_space")
-    ).withName("_ymmh_state");
+        MemoryLayout.structLayout(
+            Constants$root.C_LONG_LONG$LAYOUT.withName("tv_sec"),
+            Constants$root.C_LONG_LONG$LAYOUT.withName("tv_nsec")
+        ).withName("it_interval"),
+        MemoryLayout.structLayout(
+            Constants$root.C_LONG_LONG$LAYOUT.withName("tv_sec"),
+            Constants$root.C_LONG_LONG$LAYOUT.withName("tv_nsec")
+        ).withName("it_value")
+    ).withName("__kernel_itimerspec");
     public static MemoryLayout $LAYOUT() {
-        return _ymmh_state.$struct$LAYOUT;
+        return __kernel_itimerspec.$struct$LAYOUT;
     }
-    public static MemorySegment ymmh_space$slice(MemorySegment seg) {
-        return seg.asSlice(0, 256);
+    public static MemorySegment it_interval$slice(MemorySegment seg) {
+        return seg.asSlice(0, 16);
+    }
+    public static MemorySegment it_value$slice(MemorySegment seg) {
+        return seg.asSlice(16, 16);
     }
     public static long sizeof() { return $LAYOUT().byteSize(); }
     public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }

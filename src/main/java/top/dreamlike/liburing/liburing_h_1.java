@@ -9,455 +9,1309 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
  class liburing_h_1 {
 
+    public static MethodHandle io_uring_prep_timeout_remove$MH() {
+        return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_timeout_remove$MH,"io_uring_prep_timeout_remove");
+    }
+    public static void io_uring_prep_timeout_remove ( Addressable sqe,  long user_data,  int flags) {
+        var mh$ = io_uring_prep_timeout_remove$MH();
+        try {
+            mh$.invokeExact(sqe, user_data, flags);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_timeout_update$MH() {
+        return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_timeout_update$MH,"io_uring_prep_timeout_update");
+    }
+    public static void io_uring_prep_timeout_update ( Addressable sqe,  Addressable ts,  long user_data,  int flags) {
+        var mh$ = io_uring_prep_timeout_update$MH();
+        try {
+            mh$.invokeExact(sqe, ts, user_data, flags);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_accept$MH() {
+        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_accept$MH,"io_uring_prep_accept");
+    }
+    public static void io_uring_prep_accept ( Addressable sqe,  int fd,  Addressable addr,  Addressable addrlen,  int flags) {
+        var mh$ = io_uring_prep_accept$MH();
+        try {
+            mh$.invokeExact(sqe, fd, addr, addrlen, flags);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_cancel$MH() {
+        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_cancel$MH,"io_uring_prep_cancel");
+    }
+    public static void io_uring_prep_cancel ( Addressable sqe,  Addressable user_data,  int flags) {
+        var mh$ = io_uring_prep_cancel$MH();
+        try {
+            mh$.invokeExact(sqe, user_data, flags);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_link_timeout$MH() {
+        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_link_timeout$MH,"io_uring_prep_link_timeout");
+    }
+    public static void io_uring_prep_link_timeout ( Addressable sqe,  Addressable ts,  int flags) {
+        var mh$ = io_uring_prep_link_timeout$MH();
+        try {
+            mh$.invokeExact(sqe, ts, flags);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_connect$MH() {
+        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_connect$MH,"io_uring_prep_connect");
+    }
+    public static void io_uring_prep_connect ( Addressable sqe,  int fd,  Addressable addr,  int addrlen) {
+        var mh$ = io_uring_prep_connect$MH();
+        try {
+            mh$.invokeExact(sqe, fd, addr, addrlen);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_files_update$MH() {
+        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_files_update$MH,"io_uring_prep_files_update");
+    }
+    public static void io_uring_prep_files_update ( Addressable sqe,  Addressable fds,  int nr_fds,  int offset) {
+        var mh$ = io_uring_prep_files_update$MH();
+        try {
+            mh$.invokeExact(sqe, fds, nr_fds, offset);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_fallocate$MH() {
+        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_fallocate$MH,"io_uring_prep_fallocate");
+    }
+    public static void io_uring_prep_fallocate ( Addressable sqe,  int fd,  int mode,  long offset,  long len) {
+        var mh$ = io_uring_prep_fallocate$MH();
+        try {
+            mh$.invokeExact(sqe, fd, mode, offset, len);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_openat$MH() {
+        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_openat$MH,"io_uring_prep_openat");
+    }
+    public static void io_uring_prep_openat ( Addressable sqe,  int dfd,  Addressable path,  int flags,  int mode) {
+        var mh$ = io_uring_prep_openat$MH();
+        try {
+            mh$.invokeExact(sqe, dfd, path, flags, mode);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_close$MH() {
+        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_close$MH,"io_uring_prep_close");
+    }
+    public static void io_uring_prep_close ( Addressable sqe,  int fd) {
+        var mh$ = io_uring_prep_close$MH();
+        try {
+            mh$.invokeExact(sqe, fd);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_read$MH() {
+        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_read$MH,"io_uring_prep_read");
+    }
+    public static void io_uring_prep_read ( Addressable sqe,  int fd,  Addressable buf,  int nbytes,  long offset) {
+        var mh$ = io_uring_prep_read$MH();
+        try {
+            mh$.invokeExact(sqe, fd, buf, nbytes, offset);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_write$MH() {
+        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_write$MH,"io_uring_prep_write");
+    }
+    public static void io_uring_prep_write ( Addressable sqe,  int fd,  Addressable buf,  int nbytes,  long offset) {
+        var mh$ = io_uring_prep_write$MH();
+        try {
+            mh$.invokeExact(sqe, fd, buf, nbytes, offset);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_statx$MH() {
+        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_statx$MH,"io_uring_prep_statx");
+    }
+    public static void io_uring_prep_statx ( Addressable sqe,  int dfd,  Addressable path,  int flags,  int mask,  Addressable statxbuf) {
+        var mh$ = io_uring_prep_statx$MH();
+        try {
+            mh$.invokeExact(sqe, dfd, path, flags, mask, statxbuf);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_fadvise$MH() {
+        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_fadvise$MH,"io_uring_prep_fadvise");
+    }
+    public static void io_uring_prep_fadvise ( Addressable sqe,  int fd,  long offset,  long len,  int advice) {
+        var mh$ = io_uring_prep_fadvise$MH();
+        try {
+            mh$.invokeExact(sqe, fd, offset, len, advice);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_madvise$MH() {
+        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_madvise$MH,"io_uring_prep_madvise");
+    }
+    public static void io_uring_prep_madvise ( Addressable sqe,  Addressable addr,  long length,  int advice) {
+        var mh$ = io_uring_prep_madvise$MH();
+        try {
+            mh$.invokeExact(sqe, addr, length, advice);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_send$MH() {
+        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_send$MH,"io_uring_prep_send");
+    }
+    public static void io_uring_prep_send ( Addressable sqe,  int sockfd,  Addressable buf,  long len,  int flags) {
+        var mh$ = io_uring_prep_send$MH();
+        try {
+            mh$.invokeExact(sqe, sockfd, buf, len, flags);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_recv$MH() {
+        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_recv$MH,"io_uring_prep_recv");
+    }
+    public static void io_uring_prep_recv ( Addressable sqe,  int sockfd,  Addressable buf,  long len,  int flags) {
+        var mh$ = io_uring_prep_recv$MH();
+        try {
+            mh$.invokeExact(sqe, sockfd, buf, len, flags);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_openat2$MH() {
+        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_openat2$MH,"io_uring_prep_openat2");
+    }
+    public static void io_uring_prep_openat2 ( Addressable sqe,  int dfd,  Addressable path,  Addressable how) {
+        var mh$ = io_uring_prep_openat2$MH();
+        try {
+            mh$.invokeExact(sqe, dfd, path, how);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_epoll_ctl$MH() {
+        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_epoll_ctl$MH,"io_uring_prep_epoll_ctl");
+    }
+    public static void io_uring_prep_epoll_ctl ( Addressable sqe,  int epfd,  int fd,  int op,  Addressable ev) {
+        var mh$ = io_uring_prep_epoll_ctl$MH();
+        try {
+            mh$.invokeExact(sqe, epfd, fd, op, ev);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_provide_buffers$MH() {
+        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_provide_buffers$MH,"io_uring_prep_provide_buffers");
+    }
+    public static void io_uring_prep_provide_buffers ( Addressable sqe,  Addressable addr,  int len,  int nr,  int bgid,  int bid) {
+        var mh$ = io_uring_prep_provide_buffers$MH();
+        try {
+            mh$.invokeExact(sqe, addr, len, nr, bgid, bid);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_remove_buffers$MH() {
+        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_remove_buffers$MH,"io_uring_prep_remove_buffers");
+    }
+    public static void io_uring_prep_remove_buffers ( Addressable sqe,  int nr,  int bgid) {
+        var mh$ = io_uring_prep_remove_buffers$MH();
+        try {
+            mh$.invokeExact(sqe, nr, bgid);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_shutdown$MH() {
+        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_shutdown$MH,"io_uring_prep_shutdown");
+    }
+    public static void io_uring_prep_shutdown ( Addressable sqe,  int fd,  int how) {
+        var mh$ = io_uring_prep_shutdown$MH();
+        try {
+            mh$.invokeExact(sqe, fd, how);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_unlinkat$MH() {
+        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_unlinkat$MH,"io_uring_prep_unlinkat");
+    }
+    public static void io_uring_prep_unlinkat ( Addressable sqe,  int dfd,  Addressable path,  int flags) {
+        var mh$ = io_uring_prep_unlinkat$MH();
+        try {
+            mh$.invokeExact(sqe, dfd, path, flags);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_renameat$MH() {
+        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_renameat$MH,"io_uring_prep_renameat");
+    }
+    public static void io_uring_prep_renameat ( Addressable sqe,  int olddfd,  Addressable oldpath,  int newdfd,  Addressable newpath,  int flags) {
+        var mh$ = io_uring_prep_renameat$MH();
+        try {
+            mh$.invokeExact(sqe, olddfd, oldpath, newdfd, newpath, flags);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_prep_sync_file_range$MH() {
+        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_sync_file_range$MH,"io_uring_prep_sync_file_range");
+    }
+    public static void io_uring_prep_sync_file_range ( Addressable sqe,  int fd,  int len,  long offset,  int flags) {
+        var mh$ = io_uring_prep_sync_file_range$MH();
+        try {
+            mh$.invokeExact(sqe, fd, len, offset, flags);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_sq_ready$MH() {
+        return RuntimeHelper.requireNonNull(constants$34.io_uring_sq_ready$MH,"io_uring_sq_ready");
+    }
+    public static int io_uring_sq_ready ( Addressable ring) {
+        var mh$ = io_uring_sq_ready$MH();
+        try {
+            return (int)mh$.invokeExact(ring);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_sq_space_left$MH() {
+        return RuntimeHelper.requireNonNull(constants$35.io_uring_sq_space_left$MH,"io_uring_sq_space_left");
+    }
+    public static int io_uring_sq_space_left ( Addressable ring) {
+        var mh$ = io_uring_sq_space_left$MH();
+        try {
+            return (int)mh$.invokeExact(ring);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_sqring_wait$MH() {
+        return RuntimeHelper.requireNonNull(constants$35.io_uring_sqring_wait$MH,"io_uring_sqring_wait");
+    }
+    public static int io_uring_sqring_wait ( Addressable ring) {
+        var mh$ = io_uring_sqring_wait$MH();
+        try {
+            return (int)mh$.invokeExact(ring);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_cq_ready$MH() {
+        return RuntimeHelper.requireNonNull(constants$35.io_uring_cq_ready$MH,"io_uring_cq_ready");
+    }
+    public static int io_uring_cq_ready ( Addressable ring) {
+        var mh$ = io_uring_cq_ready$MH();
+        try {
+            return (int)mh$.invokeExact(ring);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_cq_eventfd_enabled$MH() {
+        return RuntimeHelper.requireNonNull(constants$35.io_uring_cq_eventfd_enabled$MH,"io_uring_cq_eventfd_enabled");
+    }
+    public static boolean io_uring_cq_eventfd_enabled ( Addressable ring) {
+        var mh$ = io_uring_cq_eventfd_enabled$MH();
+        try {
+            return (boolean)mh$.invokeExact(ring);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_cq_eventfd_toggle$MH() {
+        return RuntimeHelper.requireNonNull(constants$35.io_uring_cq_eventfd_toggle$MH,"io_uring_cq_eventfd_toggle");
+    }
+    public static int io_uring_cq_eventfd_toggle ( Addressable ring,  boolean enabled) {
+        var mh$ = io_uring_cq_eventfd_toggle$MH();
+        try {
+            return (int)mh$.invokeExact(ring, enabled);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_wait_cqe_nr$MH() {
+        return RuntimeHelper.requireNonNull(constants$35.io_uring_wait_cqe_nr$MH,"io_uring_wait_cqe_nr");
+    }
+    public static int io_uring_wait_cqe_nr ( Addressable ring,  Addressable cqe_ptr,  int wait_nr) {
+        var mh$ = io_uring_wait_cqe_nr$MH();
+        try {
+            return (int)mh$.invokeExact(ring, cqe_ptr, wait_nr);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_peek_cqe$MH() {
+        return RuntimeHelper.requireNonNull(constants$36.io_uring_peek_cqe$MH,"io_uring_peek_cqe");
+    }
+    public static int io_uring_peek_cqe ( Addressable ring,  Addressable cqe_ptr) {
+        var mh$ = io_uring_peek_cqe$MH();
+        try {
+            return (int)mh$.invokeExact(ring, cqe_ptr);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static MethodHandle io_uring_wait_cqe$MH() {
+        return RuntimeHelper.requireNonNull(constants$36.io_uring_wait_cqe$MH,"io_uring_wait_cqe");
+    }
+    public static int io_uring_wait_cqe ( Addressable ring,  Addressable cqe_ptr) {
+        var mh$ = io_uring_wait_cqe$MH();
+        try {
+            return (int)mh$.invokeExact(ring, cqe_ptr);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    public static long _POSIX_C_SOURCE() {
+        return 199506L;
+    }
+    public static long __STDC_ISO_10646__() {
+        return 201706L;
+    }
+    public static int __TIMESIZE() {
+        return (int)64L;
+    }
+    public static int __PTHREAD_RWLOCK_ELISION_EXTRA() {
+        return (int)0L;
+    }
+    public static int PF_UNIX() {
+        return (int)1L;
+    }
+    public static int PF_FILE() {
+        return (int)1L;
+    }
+    public static int PF_ROUTE() {
+        return (int)16L;
+    }
+    public static int AF_UNSPEC() {
+        return (int)0L;
+    }
+    public static int AF_LOCAL() {
+        return (int)1L;
+    }
+    public static int AF_UNIX() {
+        return (int)1L;
+    }
+    public static int AF_FILE() {
+        return (int)1L;
+    }
+    public static int AF_INET() {
+        return (int)2L;
+    }
+    public static int AF_AX25() {
+        return (int)3L;
+    }
+    public static int AF_IPX() {
+        return (int)4L;
+    }
+    public static int AF_APPLETALK() {
+        return (int)5L;
+    }
+    public static int AF_NETROM() {
+        return (int)6L;
+    }
+    public static int AF_BRIDGE() {
+        return (int)7L;
+    }
+    public static int AF_ATMPVC() {
+        return (int)8L;
+    }
+    public static int AF_X25() {
+        return (int)9L;
+    }
+    public static int AF_INET6() {
+        return (int)10L;
+    }
+    public static int AF_ROSE() {
+        return (int)11L;
+    }
+    public static int AF_DECnet() {
+        return (int)12L;
+    }
+    public static int AF_NETBEUI() {
+        return (int)13L;
+    }
+    public static int AF_SECURITY() {
+        return (int)14L;
+    }
+    public static int AF_KEY() {
+        return (int)15L;
+    }
+    public static int AF_NETLINK() {
+        return (int)16L;
+    }
+    public static int AF_ROUTE() {
+        return (int)16L;
+    }
+    public static int AF_PACKET() {
+        return (int)17L;
+    }
+    public static int AF_ASH() {
+        return (int)18L;
+    }
+    public static int AF_ECONET() {
+        return (int)19L;
+    }
+    public static int AF_ATMSVC() {
+        return (int)20L;
+    }
+    public static int AF_RDS() {
+        return (int)21L;
+    }
+    public static int AF_SNA() {
+        return (int)22L;
+    }
+    public static int AF_IRDA() {
+        return (int)23L;
+    }
+    public static int AF_PPPOX() {
+        return (int)24L;
+    }
+    public static int AF_WANPIPE() {
+        return (int)25L;
+    }
+    public static int AF_LLC() {
+        return (int)26L;
+    }
+    public static int AF_IB() {
+        return (int)27L;
+    }
+    public static int AF_MPLS() {
+        return (int)28L;
+    }
+    public static int AF_CAN() {
+        return (int)29L;
+    }
+    public static int AF_TIPC() {
+        return (int)30L;
+    }
+    public static int AF_BLUETOOTH() {
+        return (int)31L;
+    }
+    public static int AF_IUCV() {
+        return (int)32L;
+    }
+    public static int AF_RXRPC() {
+        return (int)33L;
+    }
+    public static int AF_ISDN() {
+        return (int)34L;
+    }
+    public static int AF_PHONET() {
+        return (int)35L;
+    }
+    public static int AF_IEEE802154() {
+        return (int)36L;
+    }
+    public static int AF_CAIF() {
+        return (int)37L;
+    }
+    public static int AF_ALG() {
+        return (int)38L;
+    }
+    public static int AF_NFC() {
+        return (int)39L;
+    }
+    public static int AF_VSOCK() {
+        return (int)40L;
+    }
+    public static int AF_KCM() {
+        return (int)41L;
+    }
+    public static int AF_QIPCRTR() {
+        return (int)42L;
+    }
+    public static int AF_SMC() {
+        return (int)43L;
+    }
+    public static int AF_XDP() {
+        return (int)44L;
+    }
+    public static int AF_MAX() {
+        return (int)45L;
+    }
+    public static long __SOCKADDR_COMMON_SIZE() {
+        return 2L;
+    }
+    public static long _SS_PADSIZE() {
+        return 118L;
+    }
+    public static int UIO_MAXIOV() {
+        return (int)1024L;
+    }
+    public static int _STAT_VER() {
+        return (int)1L;
+    }
+    public static int S_IFMT() {
+        return (int)61440L;
+    }
+    public static int S_IFDIR() {
+        return (int)16384L;
+    }
+    public static int S_IFCHR() {
+        return (int)8192L;
+    }
+    public static int S_IFBLK() {
+        return (int)24576L;
+    }
+    public static int S_IFREG() {
+        return (int)32768L;
+    }
+    public static int S_IFIFO() {
+        return (int)4096L;
+    }
+    public static int S_IFLNK() {
+        return (int)40960L;
+    }
+    public static int S_IFSOCK() {
+        return (int)49152L;
+    }
+    public static int S_ISUID() {
+        return (int)2048L;
+    }
+    public static int S_ISGID() {
+        return (int)1024L;
+    }
+    public static int S_ISVTX() {
+        return (int)512L;
+    }
+    public static int S_IRUSR() {
+        return (int)256L;
+    }
+    public static int S_IWUSR() {
+        return (int)128L;
+    }
+    public static int S_IXUSR() {
+        return (int)64L;
+    }
+    public static int S_IRWXU() {
+        return (int)448L;
+    }
+    public static int S_IRGRP() {
+        return (int)32L;
+    }
+    public static int S_IWGRP() {
+        return (int)16L;
+    }
+    public static int S_IXGRP() {
+        return (int)8L;
+    }
+    public static int S_IRWXG() {
+        return (int)56L;
+    }
+    public static int S_IROTH() {
+        return (int)4L;
+    }
+    public static int S_IWOTH() {
+        return (int)2L;
+    }
+    public static int S_IXOTH() {
+        return (int)1L;
+    }
+    public static int S_IRWXO() {
+        return (int)7L;
+    }
+    public static int EWOULDBLOCK() {
+        return (int)11L;
+    }
+    public static int EDEADLOCK() {
+        return (int)35L;
+    }
+    public static int ENOTSUP() {
+        return (int)95L;
+    }
+    public static MemoryAddress SIG_ERR() {
+        return constants$36.SIG_ERR$ADDR;
+    }
+    public static MemoryAddress SIG_DFL() {
+        return constants$36.SIG_DFL$ADDR;
+    }
+    public static MemoryAddress SIG_IGN() {
+        return constants$36.SIG_IGN$ADDR;
+    }
+    public static MemoryAddress SIG_HOLD() {
+        return constants$36.SIG_HOLD$ADDR;
+    }
+    public static int SIGIO() {
+        return (int)29L;
+    }
+    public static int SIGIOT() {
+        return (int)6L;
+    }
+    public static int SIGCLD() {
+        return (int)17L;
+    }
+    public static int _NSIG() {
+        return (int)65L;
+    }
+    public static long _SIGSET_NWORDS() {
+        return 16L;
+    }
+    public static int __BYTE_ORDER() {
+        return (int)1234L;
+    }
+    public static int __FLOAT_WORD_ORDER() {
+        return (int)1234L;
+    }
+    public static long __SI_PAD_SIZE() {
+        return 28L;
+    }
+    public static long __SIGEV_PAD_SIZE() {
+        return 12L;
+    }
+    public static int SA_RESETHAND() {
+        return (int)2147483648L;
+    }
+    public static int __WCHAR_MAX() {
+        return (int)2147483647L;
+    }
+    public static int __WCHAR_MIN() {
+        return (int)-2147483648L;
+    }
+    public static int INT8_MIN() {
+        return (int)-128L;
+    }
+    public static int INT16_MIN() {
+        return (int)-32768L;
+    }
+    public static int INT32_MIN() {
+        return (int)-2147483648L;
+    }
+    public static long INT64_MIN() {
+        return -9223372036854775808L;
+    }
+    public static int INT8_MAX() {
+        return (int)127L;
+    }
+    public static int INT16_MAX() {
+        return (int)32767L;
+    }
+    public static int INT32_MAX() {
+        return (int)2147483647L;
+    }
+    public static long INT64_MAX() {
+        return 9223372036854775807L;
+    }
+    public static int UINT8_MAX() {
+        return (int)255L;
+    }
+    public static int UINT16_MAX() {
+        return (int)65535L;
+    }
+    public static int UINT32_MAX() {
+        return (int)4294967295L;
+    }
+    public static long UINT64_MAX() {
+        return -1L;
+    }
+    public static int INT_LEAST8_MIN() {
+        return (int)-128L;
+    }
+    public static int INT_LEAST16_MIN() {
+        return (int)-32768L;
+    }
+    public static int INT_LEAST32_MIN() {
+        return (int)-2147483648L;
+    }
+    public static long INT_LEAST64_MIN() {
+        return -9223372036854775808L;
+    }
+    public static int INT_LEAST8_MAX() {
+        return (int)127L;
+    }
+    public static int INT_LEAST16_MAX() {
+        return (int)32767L;
+    }
+    public static int INT_LEAST32_MAX() {
+        return (int)2147483647L;
+    }
+    public static long INT_LEAST64_MAX() {
+        return 9223372036854775807L;
+    }
+    public static int UINT_LEAST8_MAX() {
+        return (int)255L;
+    }
+    public static int UINT_LEAST16_MAX() {
+        return (int)65535L;
+    }
+    public static int UINT_LEAST32_MAX() {
+        return (int)4294967295L;
+    }
+    public static long UINT_LEAST64_MAX() {
+        return -1L;
+    }
+    public static int INT_FAST8_MIN() {
+        return (int)-128L;
+    }
+    public static long INT_FAST16_MIN() {
+        return -9223372036854775808L;
+    }
+    public static long INT_FAST32_MIN() {
+        return -9223372036854775808L;
+    }
+    public static long INT_FAST64_MIN() {
+        return -9223372036854775808L;
+    }
+    public static int INT_FAST8_MAX() {
+        return (int)127L;
+    }
+    public static long INT_FAST16_MAX() {
+        return 9223372036854775807L;
+    }
+    public static long INT_FAST32_MAX() {
+        return 9223372036854775807L;
+    }
+    public static long INT_FAST64_MAX() {
+        return 9223372036854775807L;
+    }
+    public static int UINT_FAST8_MAX() {
+        return (int)255L;
+    }
+    public static long UINT_FAST16_MAX() {
+        return -1L;
+    }
+    public static long UINT_FAST32_MAX() {
+        return -1L;
+    }
+    public static long UINT_FAST64_MAX() {
+        return -1L;
+    }
+    public static long INTPTR_MIN() {
+        return -9223372036854775808L;
+    }
+    public static long INTPTR_MAX() {
+        return 9223372036854775807L;
+    }
+    public static long UINTPTR_MAX() {
+        return -1L;
+    }
+    public static long INTMAX_MIN() {
+        return -9223372036854775808L;
+    }
+    public static long INTMAX_MAX() {
+        return 9223372036854775807L;
+    }
+    public static long UINTMAX_MAX() {
+        return -1L;
+    }
+    public static long PTRDIFF_MIN() {
+        return -9223372036854775808L;
+    }
+    public static long PTRDIFF_MAX() {
+        return 9223372036854775807L;
+    }
+    public static int SIG_ATOMIC_MIN() {
+        return (int)-2147483648L;
+    }
+    public static int SIG_ATOMIC_MAX() {
+        return (int)2147483647L;
+    }
+    public static long SIZE_MAX() {
+        return -1L;
+    }
+    public static int WCHAR_MIN() {
+        return (int)-2147483648L;
+    }
+    public static int WCHAR_MAX() {
+        return (int)2147483647L;
+    }
+    public static int WINT_MIN() {
+        return (int)0L;
+    }
+    public static int WINT_MAX() {
+        return (int)4294967295L;
+    }
+    public static MemorySegment __PRI64_PREFIX() {
+        return constants$37.__PRI64_PREFIX$SEGMENT;
+    }
+    public static MemorySegment __PRIPTR_PREFIX() {
+        return constants$37.__PRIPTR_PREFIX$SEGMENT;
+    }
+    public static MemorySegment PRId8() {
+        return constants$37.PRId8$SEGMENT;
+    }
+    public static MemorySegment PRId16() {
+        return constants$37.PRId16$SEGMENT;
+    }
+    public static MemorySegment PRId32() {
+        return constants$37.PRId32$SEGMENT;
+    }
+    public static MemorySegment PRId64() {
+        return constants$37.PRId64$SEGMENT;
+    }
+    public static MemorySegment PRIdLEAST8() {
+        return constants$38.PRIdLEAST8$SEGMENT;
+    }
     public static MemorySegment PRIdLEAST16() {
-        return constants$28.PRIdLEAST16$SEGMENT;
+        return constants$38.PRIdLEAST16$SEGMENT;
     }
     public static MemorySegment PRIdLEAST32() {
-        return constants$28.PRIdLEAST32$SEGMENT;
+        return constants$38.PRIdLEAST32$SEGMENT;
     }
     public static MemorySegment PRIdLEAST64() {
-        return constants$28.PRIdLEAST64$SEGMENT;
+        return constants$38.PRIdLEAST64$SEGMENT;
     }
     public static MemorySegment PRIdFAST8() {
-        return constants$29.PRIdFAST8$SEGMENT;
+        return constants$38.PRIdFAST8$SEGMENT;
     }
     public static MemorySegment PRIdFAST16() {
-        return constants$29.PRIdFAST16$SEGMENT;
+        return constants$38.PRIdFAST16$SEGMENT;
     }
     public static MemorySegment PRIdFAST32() {
-        return constants$29.PRIdFAST32$SEGMENT;
+        return constants$39.PRIdFAST32$SEGMENT;
     }
     public static MemorySegment PRIdFAST64() {
-        return constants$29.PRIdFAST64$SEGMENT;
+        return constants$39.PRIdFAST64$SEGMENT;
     }
     public static MemorySegment PRIi8() {
-        return constants$29.PRIi8$SEGMENT;
+        return constants$39.PRIi8$SEGMENT;
     }
     public static MemorySegment PRIi16() {
-        return constants$29.PRIi16$SEGMENT;
+        return constants$39.PRIi16$SEGMENT;
     }
     public static MemorySegment PRIi32() {
-        return constants$30.PRIi32$SEGMENT;
+        return constants$39.PRIi32$SEGMENT;
     }
     public static MemorySegment PRIi64() {
-        return constants$30.PRIi64$SEGMENT;
+        return constants$39.PRIi64$SEGMENT;
     }
     public static MemorySegment PRIiLEAST8() {
-        return constants$30.PRIiLEAST8$SEGMENT;
+        return constants$40.PRIiLEAST8$SEGMENT;
     }
     public static MemorySegment PRIiLEAST16() {
-        return constants$30.PRIiLEAST16$SEGMENT;
+        return constants$40.PRIiLEAST16$SEGMENT;
     }
     public static MemorySegment PRIiLEAST32() {
-        return constants$30.PRIiLEAST32$SEGMENT;
+        return constants$40.PRIiLEAST32$SEGMENT;
     }
     public static MemorySegment PRIiLEAST64() {
-        return constants$30.PRIiLEAST64$SEGMENT;
+        return constants$40.PRIiLEAST64$SEGMENT;
     }
     public static MemorySegment PRIiFAST8() {
-        return constants$31.PRIiFAST8$SEGMENT;
+        return constants$40.PRIiFAST8$SEGMENT;
     }
     public static MemorySegment PRIiFAST16() {
-        return constants$31.PRIiFAST16$SEGMENT;
+        return constants$40.PRIiFAST16$SEGMENT;
     }
     public static MemorySegment PRIiFAST32() {
-        return constants$31.PRIiFAST32$SEGMENT;
+        return constants$41.PRIiFAST32$SEGMENT;
     }
     public static MemorySegment PRIiFAST64() {
-        return constants$31.PRIiFAST64$SEGMENT;
+        return constants$41.PRIiFAST64$SEGMENT;
     }
     public static MemorySegment PRIo8() {
-        return constants$31.PRIo8$SEGMENT;
+        return constants$41.PRIo8$SEGMENT;
     }
     public static MemorySegment PRIo16() {
-        return constants$31.PRIo16$SEGMENT;
+        return constants$41.PRIo16$SEGMENT;
     }
     public static MemorySegment PRIo32() {
-        return constants$32.PRIo32$SEGMENT;
+        return constants$41.PRIo32$SEGMENT;
     }
     public static MemorySegment PRIo64() {
-        return constants$32.PRIo64$SEGMENT;
+        return constants$41.PRIo64$SEGMENT;
     }
     public static MemorySegment PRIoLEAST8() {
-        return constants$32.PRIoLEAST8$SEGMENT;
+        return constants$42.PRIoLEAST8$SEGMENT;
     }
     public static MemorySegment PRIoLEAST16() {
-        return constants$32.PRIoLEAST16$SEGMENT;
+        return constants$42.PRIoLEAST16$SEGMENT;
     }
     public static MemorySegment PRIoLEAST32() {
-        return constants$32.PRIoLEAST32$SEGMENT;
+        return constants$42.PRIoLEAST32$SEGMENT;
     }
     public static MemorySegment PRIoLEAST64() {
-        return constants$32.PRIoLEAST64$SEGMENT;
+        return constants$42.PRIoLEAST64$SEGMENT;
     }
     public static MemorySegment PRIoFAST8() {
-        return constants$33.PRIoFAST8$SEGMENT;
+        return constants$42.PRIoFAST8$SEGMENT;
     }
     public static MemorySegment PRIoFAST16() {
-        return constants$33.PRIoFAST16$SEGMENT;
+        return constants$42.PRIoFAST16$SEGMENT;
     }
     public static MemorySegment PRIoFAST32() {
-        return constants$33.PRIoFAST32$SEGMENT;
+        return constants$43.PRIoFAST32$SEGMENT;
     }
     public static MemorySegment PRIoFAST64() {
-        return constants$33.PRIoFAST64$SEGMENT;
+        return constants$43.PRIoFAST64$SEGMENT;
     }
     public static MemorySegment PRIu8() {
-        return constants$33.PRIu8$SEGMENT;
+        return constants$43.PRIu8$SEGMENT;
     }
     public static MemorySegment PRIu16() {
-        return constants$33.PRIu16$SEGMENT;
+        return constants$43.PRIu16$SEGMENT;
     }
     public static MemorySegment PRIu32() {
-        return constants$34.PRIu32$SEGMENT;
+        return constants$43.PRIu32$SEGMENT;
     }
     public static MemorySegment PRIu64() {
-        return constants$34.PRIu64$SEGMENT;
+        return constants$43.PRIu64$SEGMENT;
     }
     public static MemorySegment PRIuLEAST8() {
-        return constants$34.PRIuLEAST8$SEGMENT;
+        return constants$44.PRIuLEAST8$SEGMENT;
     }
     public static MemorySegment PRIuLEAST16() {
-        return constants$34.PRIuLEAST16$SEGMENT;
+        return constants$44.PRIuLEAST16$SEGMENT;
     }
     public static MemorySegment PRIuLEAST32() {
-        return constants$34.PRIuLEAST32$SEGMENT;
+        return constants$44.PRIuLEAST32$SEGMENT;
     }
     public static MemorySegment PRIuLEAST64() {
-        return constants$34.PRIuLEAST64$SEGMENT;
+        return constants$44.PRIuLEAST64$SEGMENT;
     }
     public static MemorySegment PRIuFAST8() {
-        return constants$35.PRIuFAST8$SEGMENT;
+        return constants$44.PRIuFAST8$SEGMENT;
     }
     public static MemorySegment PRIuFAST16() {
-        return constants$35.PRIuFAST16$SEGMENT;
+        return constants$44.PRIuFAST16$SEGMENT;
     }
     public static MemorySegment PRIuFAST32() {
-        return constants$35.PRIuFAST32$SEGMENT;
+        return constants$45.PRIuFAST32$SEGMENT;
     }
     public static MemorySegment PRIuFAST64() {
-        return constants$35.PRIuFAST64$SEGMENT;
+        return constants$45.PRIuFAST64$SEGMENT;
     }
     public static MemorySegment PRIx8() {
-        return constants$35.PRIx8$SEGMENT;
+        return constants$45.PRIx8$SEGMENT;
     }
     public static MemorySegment PRIx16() {
-        return constants$35.PRIx16$SEGMENT;
+        return constants$45.PRIx16$SEGMENT;
     }
     public static MemorySegment PRIx32() {
-        return constants$36.PRIx32$SEGMENT;
+        return constants$45.PRIx32$SEGMENT;
     }
     public static MemorySegment PRIx64() {
-        return constants$36.PRIx64$SEGMENT;
+        return constants$45.PRIx64$SEGMENT;
     }
     public static MemorySegment PRIxLEAST8() {
-        return constants$36.PRIxLEAST8$SEGMENT;
+        return constants$46.PRIxLEAST8$SEGMENT;
     }
     public static MemorySegment PRIxLEAST16() {
-        return constants$36.PRIxLEAST16$SEGMENT;
+        return constants$46.PRIxLEAST16$SEGMENT;
     }
     public static MemorySegment PRIxLEAST32() {
-        return constants$36.PRIxLEAST32$SEGMENT;
+        return constants$46.PRIxLEAST32$SEGMENT;
     }
     public static MemorySegment PRIxLEAST64() {
-        return constants$36.PRIxLEAST64$SEGMENT;
+        return constants$46.PRIxLEAST64$SEGMENT;
     }
     public static MemorySegment PRIxFAST8() {
-        return constants$37.PRIxFAST8$SEGMENT;
+        return constants$46.PRIxFAST8$SEGMENT;
     }
     public static MemorySegment PRIxFAST16() {
-        return constants$37.PRIxFAST16$SEGMENT;
+        return constants$46.PRIxFAST16$SEGMENT;
     }
     public static MemorySegment PRIxFAST32() {
-        return constants$37.PRIxFAST32$SEGMENT;
+        return constants$47.PRIxFAST32$SEGMENT;
     }
     public static MemorySegment PRIxFAST64() {
-        return constants$37.PRIxFAST64$SEGMENT;
+        return constants$47.PRIxFAST64$SEGMENT;
     }
     public static MemorySegment PRIX8() {
-        return constants$37.PRIX8$SEGMENT;
+        return constants$47.PRIX8$SEGMENT;
     }
     public static MemorySegment PRIX16() {
-        return constants$37.PRIX16$SEGMENT;
+        return constants$47.PRIX16$SEGMENT;
     }
     public static MemorySegment PRIX32() {
-        return constants$38.PRIX32$SEGMENT;
+        return constants$47.PRIX32$SEGMENT;
     }
     public static MemorySegment PRIX64() {
-        return constants$38.PRIX64$SEGMENT;
+        return constants$47.PRIX64$SEGMENT;
     }
     public static MemorySegment PRIXLEAST8() {
-        return constants$38.PRIXLEAST8$SEGMENT;
+        return constants$48.PRIXLEAST8$SEGMENT;
     }
     public static MemorySegment PRIXLEAST16() {
-        return constants$38.PRIXLEAST16$SEGMENT;
+        return constants$48.PRIXLEAST16$SEGMENT;
     }
     public static MemorySegment PRIXLEAST32() {
-        return constants$38.PRIXLEAST32$SEGMENT;
+        return constants$48.PRIXLEAST32$SEGMENT;
     }
     public static MemorySegment PRIXLEAST64() {
-        return constants$38.PRIXLEAST64$SEGMENT;
+        return constants$48.PRIXLEAST64$SEGMENT;
     }
     public static MemorySegment PRIXFAST8() {
-        return constants$39.PRIXFAST8$SEGMENT;
+        return constants$48.PRIXFAST8$SEGMENT;
     }
     public static MemorySegment PRIXFAST16() {
-        return constants$39.PRIXFAST16$SEGMENT;
+        return constants$48.PRIXFAST16$SEGMENT;
     }
     public static MemorySegment PRIXFAST32() {
-        return constants$39.PRIXFAST32$SEGMENT;
+        return constants$49.PRIXFAST32$SEGMENT;
     }
     public static MemorySegment PRIXFAST64() {
-        return constants$39.PRIXFAST64$SEGMENT;
+        return constants$49.PRIXFAST64$SEGMENT;
     }
     public static MemorySegment PRIdMAX() {
-        return constants$39.PRIdMAX$SEGMENT;
+        return constants$49.PRIdMAX$SEGMENT;
     }
     public static MemorySegment PRIiMAX() {
-        return constants$39.PRIiMAX$SEGMENT;
+        return constants$49.PRIiMAX$SEGMENT;
     }
     public static MemorySegment PRIoMAX() {
-        return constants$40.PRIoMAX$SEGMENT;
+        return constants$49.PRIoMAX$SEGMENT;
     }
     public static MemorySegment PRIuMAX() {
-        return constants$40.PRIuMAX$SEGMENT;
+        return constants$49.PRIuMAX$SEGMENT;
     }
     public static MemorySegment PRIxMAX() {
-        return constants$40.PRIxMAX$SEGMENT;
+        return constants$50.PRIxMAX$SEGMENT;
     }
     public static MemorySegment PRIXMAX() {
-        return constants$40.PRIXMAX$SEGMENT;
+        return constants$50.PRIXMAX$SEGMENT;
     }
     public static MemorySegment PRIdPTR() {
-        return constants$40.PRIdPTR$SEGMENT;
+        return constants$50.PRIdPTR$SEGMENT;
     }
     public static MemorySegment PRIiPTR() {
-        return constants$40.PRIiPTR$SEGMENT;
+        return constants$50.PRIiPTR$SEGMENT;
     }
     public static MemorySegment PRIoPTR() {
-        return constants$41.PRIoPTR$SEGMENT;
+        return constants$50.PRIoPTR$SEGMENT;
     }
     public static MemorySegment PRIuPTR() {
-        return constants$41.PRIuPTR$SEGMENT;
+        return constants$50.PRIuPTR$SEGMENT;
     }
     public static MemorySegment PRIxPTR() {
-        return constants$41.PRIxPTR$SEGMENT;
+        return constants$51.PRIxPTR$SEGMENT;
     }
     public static MemorySegment PRIXPTR() {
-        return constants$41.PRIXPTR$SEGMENT;
+        return constants$51.PRIXPTR$SEGMENT;
     }
     public static MemorySegment SCNd8() {
-        return constants$41.SCNd8$SEGMENT;
+        return constants$51.SCNd8$SEGMENT;
     }
     public static MemorySegment SCNd16() {
-        return constants$41.SCNd16$SEGMENT;
+        return constants$51.SCNd16$SEGMENT;
     }
     public static MemorySegment SCNd32() {
-        return constants$42.SCNd32$SEGMENT;
+        return constants$51.SCNd32$SEGMENT;
     }
     public static MemorySegment SCNd64() {
-        return constants$42.SCNd64$SEGMENT;
+        return constants$51.SCNd64$SEGMENT;
     }
     public static MemorySegment SCNdLEAST8() {
-        return constants$42.SCNdLEAST8$SEGMENT;
+        return constants$52.SCNdLEAST8$SEGMENT;
     }
     public static MemorySegment SCNdLEAST16() {
-        return constants$42.SCNdLEAST16$SEGMENT;
+        return constants$52.SCNdLEAST16$SEGMENT;
     }
     public static MemorySegment SCNdLEAST32() {
-        return constants$42.SCNdLEAST32$SEGMENT;
+        return constants$52.SCNdLEAST32$SEGMENT;
     }
     public static MemorySegment SCNdLEAST64() {
-        return constants$42.SCNdLEAST64$SEGMENT;
+        return constants$52.SCNdLEAST64$SEGMENT;
     }
     public static MemorySegment SCNdFAST8() {
-        return constants$43.SCNdFAST8$SEGMENT;
+        return constants$52.SCNdFAST8$SEGMENT;
     }
     public static MemorySegment SCNdFAST16() {
-        return constants$43.SCNdFAST16$SEGMENT;
+        return constants$52.SCNdFAST16$SEGMENT;
     }
     public static MemorySegment SCNdFAST32() {
-        return constants$43.SCNdFAST32$SEGMENT;
+        return constants$53.SCNdFAST32$SEGMENT;
     }
     public static MemorySegment SCNdFAST64() {
-        return constants$43.SCNdFAST64$SEGMENT;
+        return constants$53.SCNdFAST64$SEGMENT;
     }
     public static MemorySegment SCNi8() {
-        return constants$43.SCNi8$SEGMENT;
+        return constants$53.SCNi8$SEGMENT;
     }
     public static MemorySegment SCNi16() {
-        return constants$43.SCNi16$SEGMENT;
+        return constants$53.SCNi16$SEGMENT;
     }
     public static MemorySegment SCNi32() {
-        return constants$44.SCNi32$SEGMENT;
+        return constants$53.SCNi32$SEGMENT;
     }
     public static MemorySegment SCNi64() {
-        return constants$44.SCNi64$SEGMENT;
+        return constants$53.SCNi64$SEGMENT;
     }
     public static MemorySegment SCNiLEAST8() {
-        return constants$44.SCNiLEAST8$SEGMENT;
+        return constants$54.SCNiLEAST8$SEGMENT;
     }
     public static MemorySegment SCNiLEAST16() {
-        return constants$44.SCNiLEAST16$SEGMENT;
+        return constants$54.SCNiLEAST16$SEGMENT;
     }
     public static MemorySegment SCNiLEAST32() {
-        return constants$44.SCNiLEAST32$SEGMENT;
+        return constants$54.SCNiLEAST32$SEGMENT;
     }
     public static MemorySegment SCNiLEAST64() {
-        return constants$44.SCNiLEAST64$SEGMENT;
+        return constants$54.SCNiLEAST64$SEGMENT;
     }
     public static MemorySegment SCNiFAST8() {
-        return constants$45.SCNiFAST8$SEGMENT;
+        return constants$54.SCNiFAST8$SEGMENT;
     }
     public static MemorySegment SCNiFAST16() {
-        return constants$45.SCNiFAST16$SEGMENT;
+        return constants$54.SCNiFAST16$SEGMENT;
     }
     public static MemorySegment SCNiFAST32() {
-        return constants$45.SCNiFAST32$SEGMENT;
+        return constants$55.SCNiFAST32$SEGMENT;
     }
     public static MemorySegment SCNiFAST64() {
-        return constants$45.SCNiFAST64$SEGMENT;
+        return constants$55.SCNiFAST64$SEGMENT;
     }
     public static MemorySegment SCNu8() {
-        return constants$45.SCNu8$SEGMENT;
+        return constants$55.SCNu8$SEGMENT;
     }
     public static MemorySegment SCNu16() {
-        return constants$45.SCNu16$SEGMENT;
+        return constants$55.SCNu16$SEGMENT;
     }
     public static MemorySegment SCNu32() {
-        return constants$46.SCNu32$SEGMENT;
+        return constants$55.SCNu32$SEGMENT;
     }
     public static MemorySegment SCNu64() {
-        return constants$46.SCNu64$SEGMENT;
+        return constants$55.SCNu64$SEGMENT;
     }
     public static MemorySegment SCNuLEAST8() {
-        return constants$46.SCNuLEAST8$SEGMENT;
+        return constants$56.SCNuLEAST8$SEGMENT;
     }
     public static MemorySegment SCNuLEAST16() {
-        return constants$46.SCNuLEAST16$SEGMENT;
+        return constants$56.SCNuLEAST16$SEGMENT;
     }
     public static MemorySegment SCNuLEAST32() {
-        return constants$46.SCNuLEAST32$SEGMENT;
+        return constants$56.SCNuLEAST32$SEGMENT;
     }
     public static MemorySegment SCNuLEAST64() {
-        return constants$46.SCNuLEAST64$SEGMENT;
+        return constants$56.SCNuLEAST64$SEGMENT;
     }
     public static MemorySegment SCNuFAST8() {
-        return constants$47.SCNuFAST8$SEGMENT;
+        return constants$56.SCNuFAST8$SEGMENT;
     }
     public static MemorySegment SCNuFAST16() {
-        return constants$47.SCNuFAST16$SEGMENT;
+        return constants$56.SCNuFAST16$SEGMENT;
     }
     public static MemorySegment SCNuFAST32() {
-        return constants$47.SCNuFAST32$SEGMENT;
+        return constants$57.SCNuFAST32$SEGMENT;
     }
     public static MemorySegment SCNuFAST64() {
-        return constants$47.SCNuFAST64$SEGMENT;
+        return constants$57.SCNuFAST64$SEGMENT;
     }
     public static MemorySegment SCNo8() {
-        return constants$47.SCNo8$SEGMENT;
+        return constants$57.SCNo8$SEGMENT;
     }
     public static MemorySegment SCNo16() {
-        return constants$47.SCNo16$SEGMENT;
+        return constants$57.SCNo16$SEGMENT;
     }
     public static MemorySegment SCNo32() {
-        return constants$48.SCNo32$SEGMENT;
+        return constants$57.SCNo32$SEGMENT;
     }
     public static MemorySegment SCNo64() {
-        return constants$48.SCNo64$SEGMENT;
+        return constants$57.SCNo64$SEGMENT;
     }
     public static MemorySegment SCNoLEAST8() {
-        return constants$48.SCNoLEAST8$SEGMENT;
+        return constants$58.SCNoLEAST8$SEGMENT;
     }
     public static MemorySegment SCNoLEAST16() {
-        return constants$48.SCNoLEAST16$SEGMENT;
+        return constants$58.SCNoLEAST16$SEGMENT;
     }
     public static MemorySegment SCNoLEAST32() {
-        return constants$48.SCNoLEAST32$SEGMENT;
+        return constants$58.SCNoLEAST32$SEGMENT;
     }
     public static MemorySegment SCNoLEAST64() {
-        return constants$48.SCNoLEAST64$SEGMENT;
+        return constants$58.SCNoLEAST64$SEGMENT;
     }
     public static MemorySegment SCNoFAST8() {
-        return constants$49.SCNoFAST8$SEGMENT;
+        return constants$58.SCNoFAST8$SEGMENT;
     }
     public static MemorySegment SCNoFAST16() {
-        return constants$49.SCNoFAST16$SEGMENT;
+        return constants$58.SCNoFAST16$SEGMENT;
     }
     public static MemorySegment SCNoFAST32() {
-        return constants$49.SCNoFAST32$SEGMENT;
+        return constants$59.SCNoFAST32$SEGMENT;
     }
     public static MemorySegment SCNoFAST64() {
-        return constants$49.SCNoFAST64$SEGMENT;
+        return constants$59.SCNoFAST64$SEGMENT;
     }
     public static MemorySegment SCNx8() {
-        return constants$49.SCNx8$SEGMENT;
+        return constants$59.SCNx8$SEGMENT;
     }
     public static MemorySegment SCNx16() {
-        return constants$49.SCNx16$SEGMENT;
+        return constants$59.SCNx16$SEGMENT;
     }
     public static MemorySegment SCNx32() {
-        return constants$50.SCNx32$SEGMENT;
+        return constants$59.SCNx32$SEGMENT;
     }
     public static MemorySegment SCNx64() {
-        return constants$50.SCNx64$SEGMENT;
+        return constants$59.SCNx64$SEGMENT;
     }
     public static MemorySegment SCNxLEAST8() {
-        return constants$50.SCNxLEAST8$SEGMENT;
+        return constants$60.SCNxLEAST8$SEGMENT;
     }
     public static MemorySegment SCNxLEAST16() {
-        return constants$50.SCNxLEAST16$SEGMENT;
+        return constants$60.SCNxLEAST16$SEGMENT;
     }
     public static MemorySegment SCNxLEAST32() {
-        return constants$50.SCNxLEAST32$SEGMENT;
+        return constants$60.SCNxLEAST32$SEGMENT;
     }
     public static MemorySegment SCNxLEAST64() {
-        return constants$50.SCNxLEAST64$SEGMENT;
+        return constants$60.SCNxLEAST64$SEGMENT;
     }
     public static MemorySegment SCNxFAST8() {
-        return constants$51.SCNxFAST8$SEGMENT;
+        return constants$60.SCNxFAST8$SEGMENT;
     }
     public static MemorySegment SCNxFAST16() {
-        return constants$51.SCNxFAST16$SEGMENT;
+        return constants$60.SCNxFAST16$SEGMENT;
     }
     public static MemorySegment SCNxFAST32() {
-        return constants$51.SCNxFAST32$SEGMENT;
+        return constants$61.SCNxFAST32$SEGMENT;
     }
     public static MemorySegment SCNxFAST64() {
-        return constants$51.SCNxFAST64$SEGMENT;
+        return constants$61.SCNxFAST64$SEGMENT;
     }
     public static MemorySegment SCNdMAX() {
-        return constants$51.SCNdMAX$SEGMENT;
+        return constants$61.SCNdMAX$SEGMENT;
     }
     public static MemorySegment SCNiMAX() {
-        return constants$51.SCNiMAX$SEGMENT;
+        return constants$61.SCNiMAX$SEGMENT;
     }
     public static MemorySegment SCNoMAX() {
-        return constants$52.SCNoMAX$SEGMENT;
+        return constants$61.SCNoMAX$SEGMENT;
     }
     public static MemorySegment SCNuMAX() {
-        return constants$52.SCNuMAX$SEGMENT;
+        return constants$61.SCNuMAX$SEGMENT;
     }
     public static MemorySegment SCNxMAX() {
-        return constants$52.SCNxMAX$SEGMENT;
+        return constants$62.SCNxMAX$SEGMENT;
     }
     public static MemorySegment SCNdPTR() {
-        return constants$52.SCNdPTR$SEGMENT;
+        return constants$62.SCNdPTR$SEGMENT;
     }
     public static MemorySegment SCNiPTR() {
-        return constants$52.SCNiPTR$SEGMENT;
+        return constants$62.SCNiPTR$SEGMENT;
     }
     public static MemorySegment SCNoPTR() {
-        return constants$52.SCNoPTR$SEGMENT;
+        return constants$62.SCNoPTR$SEGMENT;
     }
     public static MemorySegment SCNuPTR() {
-        return constants$53.SCNuPTR$SEGMENT;
+        return constants$62.SCNuPTR$SEGMENT;
     }
     public static MemorySegment SCNxPTR() {
-        return constants$53.SCNxPTR$SEGMENT;
+        return constants$62.SCNxPTR$SEGMENT;
     }
     public static MemoryAddress NULL() {
-        return constants$53.NULL$ADDR;
+        return constants$63.NULL$ADDR;
     }
     public static long CLOCKS_PER_SEC() {
         return 1000000L;
@@ -508,7 +1362,7 @@ import static java.lang.foreign.ValueLayout.*;
         return (int)16L;
     }
     public static MemorySegment FSCRYPT_KEY_DESC_PREFIX() {
-        return constants$53.FSCRYPT_KEY_DESC_PREFIX$SEGMENT;
+        return constants$63.FSCRYPT_KEY_DESC_PREFIX$SEGMENT;
     }
     public static long FS_IOC_SET_ENCRYPTION_POLICY() {
         return 2148296211L;
@@ -571,7 +1425,7 @@ import static java.lang.foreign.ValueLayout.*;
         return (int)9L;
     }
     public static MemorySegment FS_KEY_DESC_PREFIX() {
-        return constants$53.FS_KEY_DESC_PREFIX$SEGMENT;
+        return constants$63.FS_KEY_DESC_PREFIX$SEGMENT;
     }
     public static int FS_KEY_DESC_PREFIX_SIZE() {
         return (int)8L;
@@ -828,6 +1682,15 @@ import static java.lang.foreign.ValueLayout.*;
     public static int IOSQE_IO_LINK() {
         return (int)4L;
     }
+    public static int IOSQE_IO_HARDLINK() {
+        return (int)8L;
+    }
+    public static int IOSQE_ASYNC() {
+        return (int)16L;
+    }
+    public static int IOSQE_BUFFER_SELECT() {
+        return (int)32L;
+    }
     public static int IORING_SETUP_IOPOLL() {
         return (int)1L;
     }
@@ -840,10 +1703,28 @@ import static java.lang.foreign.ValueLayout.*;
     public static int IORING_SETUP_CQSIZE() {
         return (int)8L;
     }
+    public static int IORING_SETUP_CLAMP() {
+        return (int)16L;
+    }
+    public static int IORING_SETUP_ATTACH_WQ() {
+        return (int)32L;
+    }
+    public static int IORING_SETUP_R_DISABLED() {
+        return (int)64L;
+    }
     public static int IORING_FSYNC_DATASYNC() {
         return (int)1L;
     }
     public static int IORING_TIMEOUT_ABS() {
+        return (int)1L;
+    }
+    public static int IORING_TIMEOUT_UPDATE() {
+        return (int)2L;
+    }
+    public static int SPLICE_F_FD_IN_FIXED() {
+        return (int)2147483648L;
+    }
+    public static int IORING_CQE_F_BUFFER() {
         return (int)1L;
     }
     public static long IORING_OFF_SQ_RING() {
@@ -858,14 +1739,89 @@ import static java.lang.foreign.ValueLayout.*;
     public static int IORING_SQ_NEED_WAKEUP() {
         return (int)1L;
     }
+    public static int IORING_SQ_CQ_OVERFLOW() {
+        return (int)2L;
+    }
+    public static int IORING_CQ_EVENTFD_DISABLED() {
+        return (int)1L;
+    }
     public static int IORING_ENTER_GETEVENTS() {
         return (int)1L;
     }
     public static int IORING_ENTER_SQ_WAKEUP() {
         return (int)2L;
     }
+    public static int IORING_ENTER_SQ_WAIT() {
+        return (int)4L;
+    }
+    public static int IORING_ENTER_EXT_ARG() {
+        return (int)8L;
+    }
     public static int IORING_FEAT_SINGLE_MMAP() {
         return (int)1L;
+    }
+    public static int IORING_FEAT_NODROP() {
+        return (int)2L;
+    }
+    public static int IORING_FEAT_SUBMIT_STABLE() {
+        return (int)4L;
+    }
+    public static int IORING_FEAT_RW_CUR_POS() {
+        return (int)8L;
+    }
+    public static int IORING_FEAT_CUR_PERSONALITY() {
+        return (int)16L;
+    }
+    public static int IORING_FEAT_FAST_POLL() {
+        return (int)32L;
+    }
+    public static int IORING_FEAT_POLL_32BITS() {
+        return (int)64L;
+    }
+    public static int IORING_FEAT_SQPOLL_NONFIXED() {
+        return (int)128L;
+    }
+    public static int IORING_FEAT_EXT_ARG() {
+        return (int)256L;
+    }
+    public static int IORING_FEAT_NATIVE_WORKERS() {
+        return (int)512L;
+    }
+    public static int IORING_REGISTER_FILES_SKIP() {
+        return (int)-2L;
+    }
+    public static int IO_URING_OP_SUPPORTED() {
+        return (int)1L;
+    }
+    public static int ATOMIC_BOOL_LOCK_FREE() {
+        return (int)2L;
+    }
+    public static int ATOMIC_CHAR_LOCK_FREE() {
+        return (int)2L;
+    }
+    public static int ATOMIC_CHAR16_T_LOCK_FREE() {
+        return (int)2L;
+    }
+    public static int ATOMIC_CHAR32_T_LOCK_FREE() {
+        return (int)2L;
+    }
+    public static int ATOMIC_WCHAR_T_LOCK_FREE() {
+        return (int)2L;
+    }
+    public static int ATOMIC_SHORT_LOCK_FREE() {
+        return (int)2L;
+    }
+    public static int ATOMIC_INT_LOCK_FREE() {
+        return (int)2L;
+    }
+    public static int ATOMIC_LONG_LOCK_FREE() {
+        return (int)2L;
+    }
+    public static int ATOMIC_LLONG_LOCK_FREE() {
+        return (int)2L;
+    }
+    public static int ATOMIC_POINTER_LOCK_FREE() {
+        return (int)2L;
     }
     public static long LIBURING_UDATA_TIMEOUT() {
         return -1L;

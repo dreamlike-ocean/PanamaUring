@@ -16,7 +16,9 @@ public class io_cqring_offsets {
         Constants$root.C_INT$LAYOUT.withName("ring_entries"),
         Constants$root.C_INT$LAYOUT.withName("overflow"),
         Constants$root.C_INT$LAYOUT.withName("cqes"),
-        MemoryLayout.sequenceLayout(2, Constants$root.C_LONG_LONG$LAYOUT).withName("resv")
+        Constants$root.C_INT$LAYOUT.withName("flags"),
+        Constants$root.C_INT$LAYOUT.withName("resv1"),
+        Constants$root.C_LONG_LONG$LAYOUT.withName("resv2")
     ).withName("io_cqring_offsets");
     public static MemoryLayout $LAYOUT() {
         return io_cqring_offsets.$struct$LAYOUT;
@@ -117,8 +119,53 @@ public class io_cqring_offsets {
     public static void cqes$set(MemorySegment seg, long index, int x) {
         io_cqring_offsets.cqes$VH.set(seg.asSlice(index*sizeof()), x);
     }
-    public static MemorySegment resv$slice(MemorySegment seg) {
-        return seg.asSlice(24, 16);
+    static final VarHandle flags$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("flags"));
+    public static VarHandle flags$VH() {
+        return io_cqring_offsets.flags$VH;
+    }
+    public static int flags$get(MemorySegment seg) {
+        return (int)io_cqring_offsets.flags$VH.get(seg);
+    }
+    public static void flags$set( MemorySegment seg, int x) {
+        io_cqring_offsets.flags$VH.set(seg, x);
+    }
+    public static int flags$get(MemorySegment seg, long index) {
+        return (int)io_cqring_offsets.flags$VH.get(seg.asSlice(index*sizeof()));
+    }
+    public static void flags$set(MemorySegment seg, long index, int x) {
+        io_cqring_offsets.flags$VH.set(seg.asSlice(index*sizeof()), x);
+    }
+    static final VarHandle resv1$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("resv1"));
+    public static VarHandle resv1$VH() {
+        return io_cqring_offsets.resv1$VH;
+    }
+    public static int resv1$get(MemorySegment seg) {
+        return (int)io_cqring_offsets.resv1$VH.get(seg);
+    }
+    public static void resv1$set( MemorySegment seg, int x) {
+        io_cqring_offsets.resv1$VH.set(seg, x);
+    }
+    public static int resv1$get(MemorySegment seg, long index) {
+        return (int)io_cqring_offsets.resv1$VH.get(seg.asSlice(index*sizeof()));
+    }
+    public static void resv1$set(MemorySegment seg, long index, int x) {
+        io_cqring_offsets.resv1$VH.set(seg.asSlice(index*sizeof()), x);
+    }
+    static final VarHandle resv2$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("resv2"));
+    public static VarHandle resv2$VH() {
+        return io_cqring_offsets.resv2$VH;
+    }
+    public static long resv2$get(MemorySegment seg) {
+        return (long)io_cqring_offsets.resv2$VH.get(seg);
+    }
+    public static void resv2$set( MemorySegment seg, long x) {
+        io_cqring_offsets.resv2$VH.set(seg, x);
+    }
+    public static long resv2$get(MemorySegment seg, long index) {
+        return (long)io_cqring_offsets.resv2$VH.get(seg.asSlice(index*sizeof()));
+    }
+    public static void resv2$set(MemorySegment seg, long index, long x) {
+        io_cqring_offsets.resv2$VH.set(seg.asSlice(index*sizeof()), x);
     }
     public static long sizeof() { return $LAYOUT().byteSize(); }
     public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }

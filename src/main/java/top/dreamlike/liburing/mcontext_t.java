@@ -10,31 +10,31 @@ import static java.lang.foreign.ValueLayout.*;
 public class mcontext_t {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        MemoryLayout.sequenceLayout(23, Constants$root.C_LONG_LONG$LAYOUT).withName("gregs"),
-        Constants$root.C_POINTER$LAYOUT.withName("fpregs"),
+        MemoryLayout.sequenceLayout(23, Constants$root.C_LONG_LONG$LAYOUT).withName("__gregs"),
+        Constants$root.C_POINTER$LAYOUT.withName("__fpregs"),
         MemoryLayout.sequenceLayout(8, Constants$root.C_LONG_LONG$LAYOUT).withName("__reserved1")
     );
     public static MemoryLayout $LAYOUT() {
         return mcontext_t.$struct$LAYOUT;
     }
-    public static MemorySegment gregs$slice(MemorySegment seg) {
+    public static MemorySegment __gregs$slice(MemorySegment seg) {
         return seg.asSlice(0, 184);
     }
-    static final VarHandle fpregs$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("fpregs"));
-    public static VarHandle fpregs$VH() {
-        return mcontext_t.fpregs$VH;
+    static final VarHandle __fpregs$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("__fpregs"));
+    public static VarHandle __fpregs$VH() {
+        return mcontext_t.__fpregs$VH;
     }
-    public static MemoryAddress fpregs$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress)mcontext_t.fpregs$VH.get(seg);
+    public static MemoryAddress __fpregs$get(MemorySegment seg) {
+        return (java.lang.foreign.MemoryAddress)mcontext_t.__fpregs$VH.get(seg);
     }
-    public static void fpregs$set( MemorySegment seg, MemoryAddress x) {
-        mcontext_t.fpregs$VH.set(seg, x);
+    public static void __fpregs$set( MemorySegment seg, MemoryAddress x) {
+        mcontext_t.__fpregs$VH.set(seg, x);
     }
-    public static MemoryAddress fpregs$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress)mcontext_t.fpregs$VH.get(seg.asSlice(index*sizeof()));
+    public static MemoryAddress __fpregs$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemoryAddress)mcontext_t.__fpregs$VH.get(seg.asSlice(index*sizeof()));
     }
-    public static void fpregs$set(MemorySegment seg, long index, MemoryAddress x) {
-        mcontext_t.fpregs$VH.set(seg.asSlice(index*sizeof()), x);
+    public static void __fpregs$set(MemorySegment seg, long index, MemoryAddress x) {
+        mcontext_t.__fpregs$VH.set(seg.asSlice(index*sizeof()), x);
     }
     public static MemorySegment __reserved1$slice(MemorySegment seg) {
         return seg.asSlice(192, 64);

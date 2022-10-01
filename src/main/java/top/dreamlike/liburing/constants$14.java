@@ -9,31 +9,6 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$14 {
 
-    static final FunctionDescriptor strftime_l$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle strftime_l$MH = RuntimeHelper.downcallHandle(
-        "strftime_l",
-        constants$14.strftime_l$FUNC
-    );
-    static final FunctionDescriptor gmtime$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle gmtime$MH = RuntimeHelper.downcallHandle(
-        "gmtime",
-        constants$14.gmtime$FUNC
-    );
-    static final FunctionDescriptor localtime$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle localtime$MH = RuntimeHelper.downcallHandle(
-        "localtime",
-        constants$14.localtime$FUNC
-    );
     static final FunctionDescriptor gmtime_r$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
@@ -56,6 +31,29 @@ class constants$14 {
     static final MethodHandle asctime$MH = RuntimeHelper.downcallHandle(
         "asctime",
         constants$14.asctime$FUNC
+    );
+    static final FunctionDescriptor ctime$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle ctime$MH = RuntimeHelper.downcallHandle(
+        "ctime",
+        constants$14.ctime$FUNC
+    );
+    static final FunctionDescriptor asctime_r$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle asctime_r$MH = RuntimeHelper.downcallHandle(
+        "asctime_r",
+        constants$14.asctime_r$FUNC
+    );
+    static final FunctionDescriptor ctime_r$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle ctime_r$MH = RuntimeHelper.downcallHandle(
+        "ctime_r",
+        constants$14.ctime_r$FUNC
     );
 }
 

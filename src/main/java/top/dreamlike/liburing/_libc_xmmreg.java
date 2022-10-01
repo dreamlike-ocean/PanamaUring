@@ -10,12 +10,12 @@ import static java.lang.foreign.ValueLayout.*;
 public class _libc_xmmreg {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        MemoryLayout.sequenceLayout(4, Constants$root.C_INT$LAYOUT).withName("element")
+        MemoryLayout.sequenceLayout(4, Constants$root.C_INT$LAYOUT).withName("__element")
     ).withName("_libc_xmmreg");
     public static MemoryLayout $LAYOUT() {
         return _libc_xmmreg.$struct$LAYOUT;
     }
-    public static MemorySegment element$slice(MemorySegment seg) {
+    public static MemorySegment __element$slice(MemorySegment seg) {
         return seg.asSlice(0, 16);
     }
     public static long sizeof() { return $LAYOUT().byteSize(); }

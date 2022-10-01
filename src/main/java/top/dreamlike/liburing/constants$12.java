@@ -9,38 +9,6 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$12 {
 
-    static final FunctionDescriptor __libc_current_sigrtmax$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT);
-    static final MethodHandle __libc_current_sigrtmax$MH = RuntimeHelper.downcallHandle(
-        "__libc_current_sigrtmax",
-        constants$12.__libc_current_sigrtmax$FUNC
-    );
-    static final FunctionDescriptor imaxabs$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
-    );
-    static final MethodHandle imaxabs$MH = RuntimeHelper.downcallHandle(
-        "imaxabs",
-        constants$12.imaxabs$FUNC
-    );
-    static final FunctionDescriptor imaxdiv$FUNC = FunctionDescriptor.of(MemoryLayout.structLayout(
-        Constants$root.C_LONG_LONG$LAYOUT.withName("quot"),
-        Constants$root.C_LONG_LONG$LAYOUT.withName("rem")
-    ),
-        Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
-    );
-    static final MethodHandle imaxdiv$MH = RuntimeHelper.downcallHandle(
-        "imaxdiv",
-        constants$12.imaxdiv$FUNC
-    );
-    static final FunctionDescriptor strtoimax$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle strtoimax$MH = RuntimeHelper.downcallHandle(
-        "strtoimax",
-        constants$12.strtoimax$FUNC
-    );
     static final FunctionDescriptor strtoumax$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
@@ -58,6 +26,34 @@ class constants$12 {
     static final MethodHandle wcstoimax$MH = RuntimeHelper.downcallHandle(
         "wcstoimax",
         constants$12.wcstoimax$FUNC
+    );
+    static final FunctionDescriptor wcstoumax$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle wcstoumax$MH = RuntimeHelper.downcallHandle(
+        "wcstoumax",
+        constants$12.wcstoumax$FUNC
+    );
+    static final FunctionDescriptor __sysconf$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle __sysconf$MH = RuntimeHelper.downcallHandle(
+        "__sysconf",
+        constants$12.__sysconf$FUNC
+    );
+    static final FunctionDescriptor clock$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT);
+    static final MethodHandle clock$MH = RuntimeHelper.downcallHandle(
+        "clock",
+        constants$12.clock$FUNC
+    );
+    static final FunctionDescriptor time$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle time$MH = RuntimeHelper.downcallHandle(
+        "time",
+        constants$12.time$FUNC
     );
 }
 

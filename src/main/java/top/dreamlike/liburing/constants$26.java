@@ -9,39 +9,54 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$26 {
 
-    static final FunctionDescriptor io_uring_cq_ready$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle io_uring_cq_ready$MH = RuntimeHelper.downcallHandle(
-        "io_uring_cq_ready",
-        constants$26.io_uring_cq_ready$FUNC
-    );
-    static final FunctionDescriptor __io_uring_peek_cqe$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor io_uring_register_eventfd_async$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_register_eventfd_async$MH = RuntimeHelper.downcallHandle(
+        "io_uring_register_eventfd_async",
+        constants$26.io_uring_register_eventfd_async$FUNC
+    );
+    static final FunctionDescriptor io_uring_unregister_eventfd$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle __io_uring_peek_cqe$MH = RuntimeHelper.downcallHandle(
-        "__io_uring_peek_cqe",
-        constants$26.__io_uring_peek_cqe$FUNC
+    static final MethodHandle io_uring_unregister_eventfd$MH = RuntimeHelper.downcallHandle(
+        "io_uring_unregister_eventfd",
+        constants$26.io_uring_unregister_eventfd$FUNC
     );
-    static final FunctionDescriptor io_uring_peek_cqe$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor io_uring_register_probe$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle io_uring_peek_cqe$MH = RuntimeHelper.downcallHandle(
-        "io_uring_peek_cqe",
-        constants$26.io_uring_peek_cqe$FUNC
-    );
-    static final FunctionDescriptor io_uring_wait_cqe$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_register_probe$MH = RuntimeHelper.downcallHandle(
+        "io_uring_register_probe",
+        constants$26.io_uring_register_probe$FUNC
+    );
+    static final FunctionDescriptor io_uring_register_personality$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle io_uring_wait_cqe$MH = RuntimeHelper.downcallHandle(
-        "io_uring_wait_cqe",
-        constants$26.io_uring_wait_cqe$FUNC
+    static final MethodHandle io_uring_register_personality$MH = RuntimeHelper.downcallHandle(
+        "io_uring_register_personality",
+        constants$26.io_uring_register_personality$FUNC
     );
-    static final MemorySegment __FD_ZERO_STOS$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("stosq");
-    static final MemoryAddress SIG_ERR$ADDR = MemoryAddress.ofLong(-1L);
+    static final FunctionDescriptor io_uring_unregister_personality$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_unregister_personality$MH = RuntimeHelper.downcallHandle(
+        "io_uring_unregister_personality",
+        constants$26.io_uring_unregister_personality$FUNC
+    );
+    static final FunctionDescriptor io_uring_register_restrictions$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_register_restrictions$MH = RuntimeHelper.downcallHandle(
+        "io_uring_register_restrictions",
+        constants$26.io_uring_register_restrictions$FUNC
+    );
 }
 
 

@@ -9,60 +9,47 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$19 {
 
-    static final FunctionDescriptor timespec_get$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
+    static final FunctionDescriptor __fswab32$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle timespec_get$MH = RuntimeHelper.downcallHandle(
-        "timespec_get",
-        constants$19.timespec_get$FUNC
+    static final MethodHandle __fswab32$MH = RuntimeHelper.downcallHandle(
+        "__fswab32",
+        constants$19.__fswab32$FUNC
     );
-    static final FunctionDescriptor io_uring_setup$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor __fswab64$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT
     );
-    static final MethodHandle io_uring_setup$MH = RuntimeHelper.downcallHandle(
-        "io_uring_setup",
-        constants$19.io_uring_setup$FUNC
+    static final MethodHandle __fswab64$MH = RuntimeHelper.downcallHandle(
+        "__fswab64",
+        constants$19.__fswab64$FUNC
     );
-    static final FunctionDescriptor io_uring_enter$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle io_uring_enter$MH = RuntimeHelper.downcallHandle(
-        "io_uring_enter",
-        constants$19.io_uring_enter$FUNC
-    );
-    static final FunctionDescriptor io_uring_register$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
+    static final FunctionDescriptor __fswahw32$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle io_uring_register$MH = RuntimeHelper.downcallHandle(
-        "io_uring_register",
-        constants$19.io_uring_register$FUNC
+    static final MethodHandle __fswahw32$MH = RuntimeHelper.downcallHandle(
+        "__fswahw32",
+        constants$19.__fswahw32$FUNC
     );
-    static final FunctionDescriptor io_uring_queue_init_params$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle io_uring_queue_init_params$MH = RuntimeHelper.downcallHandle(
-        "io_uring_queue_init_params",
-        constants$19.io_uring_queue_init_params$FUNC
-    );
-    static final FunctionDescriptor io_uring_queue_init$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
+    static final FunctionDescriptor __fswahb32$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle io_uring_queue_init$MH = RuntimeHelper.downcallHandle(
-        "io_uring_queue_init",
-        constants$19.io_uring_queue_init$FUNC
+    static final MethodHandle __fswahb32$MH = RuntimeHelper.downcallHandle(
+        "__fswahb32",
+        constants$19.__fswahb32$FUNC
+    );
+    static final FunctionDescriptor __swab$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT
+    );
+    static final MethodHandle __swab$MH = RuntimeHelper.downcallHandle(
+        "__swab",
+        constants$19.__swab$FUNC
+    );
+    static final FunctionDescriptor __swab16p$FUNC = FunctionDescriptor.of(Constants$root.C_SHORT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle __swab16p$MH = RuntimeHelper.downcallHandle(
+        "__swab16p",
+        constants$19.__swab16p$FUNC
     );
 }
 

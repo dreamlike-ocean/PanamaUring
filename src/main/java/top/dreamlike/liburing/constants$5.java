@@ -9,49 +9,60 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$5 {
 
-    static final FunctionDescriptor readv$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+    static final FunctionDescriptor __xstat$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle __xstat$MH = RuntimeHelper.downcallHandle(
+        "__xstat",
+        constants$5.__xstat$FUNC
+    );
+    static final FunctionDescriptor __lxstat$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle __lxstat$MH = RuntimeHelper.downcallHandle(
+        "__lxstat",
+        constants$5.__lxstat$FUNC
+    );
+    static final FunctionDescriptor __fxstatat$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle readv$MH = RuntimeHelper.downcallHandle(
-        "readv",
-        constants$5.readv$FUNC
+    static final MethodHandle __fxstatat$MH = RuntimeHelper.downcallHandle(
+        "__fxstatat",
+        constants$5.__fxstatat$FUNC
     );
-    static final FunctionDescriptor writev$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle writev$MH = RuntimeHelper.downcallHandle(
-        "writev",
-        constants$5.writev$FUNC
-    );
-    static final FunctionDescriptor preadv$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+    static final FunctionDescriptor __xmknod$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
+        Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle preadv$MH = RuntimeHelper.downcallHandle(
-        "preadv",
-        constants$5.preadv$FUNC
+    static final MethodHandle __xmknod$MH = RuntimeHelper.downcallHandle(
+        "__xmknod",
+        constants$5.__xmknod$FUNC
     );
-    static final FunctionDescriptor pwritev$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
+    static final FunctionDescriptor __xmknodat$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
+        Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle pwritev$MH = RuntimeHelper.downcallHandle(
-        "pwritev",
-        constants$5.pwritev$FUNC
+    static final MethodHandle __xmknodat$MH = RuntimeHelper.downcallHandle(
+        "__xmknodat",
+        constants$5.__xmknodat$FUNC
     );
-    static final FunctionDescriptor __sighandler_t$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle __sighandler_t$MH = RuntimeHelper.downcallHandle(
-        constants$5.__sighandler_t$FUNC
+    static final FunctionDescriptor __errno_location$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT);
+    static final MethodHandle __errno_location$MH = RuntimeHelper.downcallHandle(
+        "__errno_location",
+        constants$5.__errno_location$FUNC
     );
 }
 

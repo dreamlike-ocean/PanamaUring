@@ -9,12 +9,55 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$27 {
 
-    static final MemoryAddress SIG_DFL$ADDR = MemoryAddress.ofLong(0L);
-    static final MemoryAddress SIG_IGN$ADDR = MemoryAddress.ofLong(1L);
-    static final MemorySegment __PRI64_PREFIX$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("l");
-    static final MemorySegment __PRIPTR_PREFIX$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("l");
-    static final MemorySegment PRId8$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("d");
-    static final MemorySegment PRId16$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("d");
+    static final FunctionDescriptor io_uring_enable_rings$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle io_uring_enable_rings$MH = RuntimeHelper.downcallHandle(
+        "io_uring_enable_rings",
+        constants$27.io_uring_enable_rings$FUNC
+    );
+    static final FunctionDescriptor __io_uring_sqring_wait$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle __io_uring_sqring_wait$MH = RuntimeHelper.downcallHandle(
+        "__io_uring_sqring_wait",
+        constants$27.__io_uring_sqring_wait$FUNC
+    );
+    static final FunctionDescriptor __io_uring_get_cqe$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle __io_uring_get_cqe$MH = RuntimeHelper.downcallHandle(
+        "__io_uring_get_cqe",
+        constants$27.__io_uring_get_cqe$FUNC
+    );
+    static final FunctionDescriptor io_uring_cq_advance$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_cq_advance$MH = RuntimeHelper.downcallHandle(
+        "io_uring_cq_advance",
+        constants$27.io_uring_cq_advance$FUNC
+    );
+    static final FunctionDescriptor io_uring_cqe_seen$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle io_uring_cqe_seen$MH = RuntimeHelper.downcallHandle(
+        "io_uring_cqe_seen",
+        constants$27.io_uring_cqe_seen$FUNC
+    );
+    static final FunctionDescriptor io_uring_sqe_set_data$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle io_uring_sqe_set_data$MH = RuntimeHelper.downcallHandle(
+        "io_uring_sqe_set_data",
+        constants$27.io_uring_sqe_set_data$FUNC
+    );
 }
 
 

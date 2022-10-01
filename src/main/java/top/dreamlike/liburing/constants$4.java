@@ -9,56 +9,54 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$4 {
 
-    static final FunctionDescriptor setsockopt$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle setsockopt$MH = RuntimeHelper.downcallHandle(
-        "setsockopt",
-        constants$4.setsockopt$FUNC
-    );
-    static final FunctionDescriptor listen$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor fchmod$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle listen$MH = RuntimeHelper.downcallHandle(
-        "listen",
-        constants$4.listen$FUNC
+    static final MethodHandle fchmod$MH = RuntimeHelper.downcallHandle(
+        "fchmod",
+        constants$4.fchmod$FUNC
     );
-    static final FunctionDescriptor accept$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor umask$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle umask$MH = RuntimeHelper.downcallHandle(
+        "umask",
+        constants$4.umask$FUNC
+    );
+    static final FunctionDescriptor mkdir$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle mkdir$MH = RuntimeHelper.downcallHandle(
+        "mkdir",
+        constants$4.mkdir$FUNC
+    );
+    static final FunctionDescriptor mknod$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT
+    );
+    static final MethodHandle mknod$MH = RuntimeHelper.downcallHandle(
+        "mknod",
+        constants$4.mknod$FUNC
+    );
+    static final FunctionDescriptor mkfifo$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle mkfifo$MH = RuntimeHelper.downcallHandle(
+        "mkfifo",
+        constants$4.mkfifo$FUNC
+    );
+    static final FunctionDescriptor __fxstat$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle accept$MH = RuntimeHelper.downcallHandle(
-        "accept",
-        constants$4.accept$FUNC
-    );
-    static final FunctionDescriptor shutdown$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle shutdown$MH = RuntimeHelper.downcallHandle(
-        "shutdown",
-        constants$4.shutdown$FUNC
-    );
-    static final FunctionDescriptor sockatmark$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle sockatmark$MH = RuntimeHelper.downcallHandle(
-        "sockatmark",
-        constants$4.sockatmark$FUNC
-    );
-    static final FunctionDescriptor isfdtype$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle isfdtype$MH = RuntimeHelper.downcallHandle(
-        "isfdtype",
-        constants$4.isfdtype$FUNC
+    static final MethodHandle __fxstat$MH = RuntimeHelper.downcallHandle(
+        "__fxstat",
+        constants$4.__fxstat$FUNC
     );
 }
 

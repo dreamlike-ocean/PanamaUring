@@ -9,47 +9,49 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 class constants$7 {
 
-    static final FunctionDescriptor gsignal$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle gsignal$MH = RuntimeHelper.downcallHandle(
-        "gsignal",
-        constants$7.gsignal$FUNC
-    );
-    static final FunctionDescriptor psignal$FUNC = FunctionDescriptor.ofVoid(
+    static final FunctionDescriptor killpg$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle killpg$MH = RuntimeHelper.downcallHandle(
+        "killpg",
+        constants$7.killpg$FUNC
+    );
+    static final FunctionDescriptor raise$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle raise$MH = RuntimeHelper.downcallHandle(
+        "raise",
+        constants$7.raise$FUNC
+    );
+    static final FunctionDescriptor sigpause$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle sigpause$MH = RuntimeHelper.downcallHandle(
+        "sigpause",
+        constants$7.sigpause$FUNC
+    );
+    static final FunctionDescriptor sigemptyset$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
-    static final MethodHandle psignal$MH = RuntimeHelper.downcallHandle(
-        "psignal",
-        constants$7.psignal$FUNC
+    static final MethodHandle sigemptyset$MH = RuntimeHelper.downcallHandle(
+        "sigemptyset",
+        constants$7.sigemptyset$FUNC
     );
-    static final FunctionDescriptor psiginfo$FUNC = FunctionDescriptor.ofVoid(
+    static final FunctionDescriptor sigfillset$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle sigfillset$MH = RuntimeHelper.downcallHandle(
+        "sigfillset",
+        constants$7.sigfillset$FUNC
+    );
+    static final FunctionDescriptor sigaddset$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle psiginfo$MH = RuntimeHelper.downcallHandle(
-        "psiginfo",
-        constants$7.psiginfo$FUNC
-    );
-    static final FunctionDescriptor sigblock$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_INT$LAYOUT
     );
-    static final MethodHandle sigblock$MH = RuntimeHelper.downcallHandle(
-        "sigblock",
-        constants$7.sigblock$FUNC
-    );
-    static final FunctionDescriptor sigsetmask$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle sigsetmask$MH = RuntimeHelper.downcallHandle(
-        "sigsetmask",
-        constants$7.sigsetmask$FUNC
-    );
-    static final FunctionDescriptor siggetmask$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT);
-    static final MethodHandle siggetmask$MH = RuntimeHelper.downcallHandle(
-        "siggetmask",
-        constants$7.siggetmask$FUNC
+    static final MethodHandle sigaddset$MH = RuntimeHelper.downcallHandle(
+        "sigaddset",
+        constants$7.sigaddset$FUNC
     );
 }
 
