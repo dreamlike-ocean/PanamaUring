@@ -25,4 +25,12 @@ public class AsyncFile {
         return future;
     }
 
+
+    public CompletableFuture<Integer> write(int offset,MemorySegment memorySegment){
+        CompletableFuture<Integer> future = new CompletableFuture<>();
+        uring.prep_writeV(fd,offset, memorySegment, future::complete);
+        uring.submit();
+        return future;
+    }
+
 }

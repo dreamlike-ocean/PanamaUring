@@ -3424,12 +3424,13 @@ public class liburing_h extends liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$24.io_uring_prep_writev$MH,"io_uring_prep_writev");
     }
     public static void io_uring_prep_writev ( Addressable sqe,  int fd,  Addressable iovecs,  int nr_vecs,  long offset) {
-        var mh$ = io_uring_prep_writev$MH();
-        try {
-            mh$.invokeExact(sqe, fd, iovecs, nr_vecs, offset);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
+//        var mh$ = io_uring_prep_writev$MH();
+//        try {
+//            mh$.invokeExact(sqe, fd, iovecs, nr_vecs, offset);
+//        } catch (Throwable ex$) {
+//            throw new AssertionError("should not reach here", ex$);
+//        }
+        io_uring_prep_rw(IORING_OP_WRITEV(), sqe,fd,iovecs,nr_vecs,offset);
     }
     public static MethodHandle io_uring_prep_write_fixed$MH() {
         return RuntimeHelper.requireNonNull(constants$24.io_uring_prep_write_fixed$MH,"io_uring_prep_write_fixed");
