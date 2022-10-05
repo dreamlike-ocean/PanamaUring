@@ -3,7 +3,7 @@ package top.dreamlike.asyncFile;
 import java.lang.foreign.MemorySegment;
 import java.util.concurrent.CompletableFuture;
 
-import static top.dreamlike.fcntl.fcntl_h.*;
+import static top.dreamlike.nativeLib.fcntl.fcntl_h.*;
 public class AsyncFile {
     IOUring uring;
     int fd;

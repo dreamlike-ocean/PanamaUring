@@ -1,14 +1,13 @@
 package top.dreamlike.asyncFile;
 
-import top.dreamlike.unistd.unistd_h;
+import top.dreamlike.nativeLib.unistd.unistd_h;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
-import java.nio.charset.StandardCharsets;
-import java.util.UUID;
 
-import static top.dreamlike.fcntl.fcntl_h.*;
-import static top.dreamlike.unistd.unistd_h.*;
+
+import static top.dreamlike.nativeLib.fcntl.fcntl_h.*;
+import static top.dreamlike.nativeLib.unistd.unistd_h.*;
 
 public class SignalPipe implements AutoCloseable{
     int writeFd;
