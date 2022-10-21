@@ -9,12 +9,12 @@ import java.lang.foreign.ValueLayout;
 import static top.dreamlike.nativeLib.fcntl.fcntl_h.*;
 import static top.dreamlike.nativeLib.unistd.unistd_h.*;
 
-public class SignalPipe implements AutoCloseable{
+public class UringSignalPipe implements AutoCloseable{
     int writeFd;
     int readFd;
     MemorySegment signalBuffer;
 
-    SignalPipe(IOUring uring){
+    UringSignalPipe(IOUring uring){
         MemorySegment pipes = uring.allocator.allocateArray(ValueLayout.JAVA_INT, 2);
         int i = pipe(pipes);
         if (i == -1) {

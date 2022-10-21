@@ -37,7 +37,11 @@ public class IOUring implements AutoCloseable{
 
     private final AtomicLong count;
 
+
     public IOUring(int ringSize){
+        this(ringSize,16);
+    }
+    public IOUring(int ringSize,int autoBuffer){
         if (ringSize <= 0) {
             throw new IllegalArgumentException("ring size <= 0");
         }
@@ -49,8 +53,7 @@ public class IOUring implements AutoCloseable{
             throw new IllegalStateException("io_uring init fail!");
         }
         gid =(byte) new Random(System.currentTimeMillis()).nextInt(100);
-        //TODO 写死了 稍后一改
-        selectedBuffer = new MemorySegment[4];
+        selectedBuffer = new MemorySegment[autoBuffer];
         for (int i = 0; i < selectedBuffer.length; i++) {
             selectedBuffer[i] = allocator.allocate(1024);
         }
@@ -117,16 +120,18 @@ public class IOUring implements AutoCloseable{
         MemoryAddress sqe = getSqe();
         if (sqe == null) return false;
         //byte*,len
-        MemorySegment iovecStruct = iovec.allocate(allocator);
-        iovec.iov_base$set(iovecStruct, buffer.address());
-        iovec.iov_len$set(iovecStruct,buffer.byteSize());
-        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
-        io_uring_prep_readv(sqe,fd,iovecStruct, 1, offset);
+        try (MemorySession allocator = MemorySession.openConfined()) {
+            MemorySegment iovecStruct = iovec.allocate(allocator);
+            iovec.iov_base$set(iovecStruct, buffer.address());
+            iovec.iov_len$set(iovecStruct, buffer.byteSize());
+            MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
+            io_uring_prep_readv(sqe, fd, iovecStruct, 1, offset);
 
-        long opsCount = count.getAndIncrement();
-        io_uring_sqe.user_data$set(sqeSegment,opsCount);
-        context.put(opsCount, new IOOpResult(fd, -1,buffer,(res, __) -> callback.accept(res)));
-        return true;
+            long opsCount = count.getAndIncrement();
+            io_uring_sqe.user_data$set(sqeSegment, opsCount);
+            context.put(opsCount, new IOOpResult(fd, -1, buffer, (res, __) -> callback.accept(res)));
+            return true;
+        }
     }
 
     private MemoryAddress getSqe() {
@@ -144,16 +149,18 @@ public class IOUring implements AutoCloseable{
     public boolean prep_writeV(int fd,int offset,MemorySegment buffer,IntConsumer callback){
         MemoryAddress sqe = getSqe();
         if (sqe == null) return false;
-        MemorySegment iovecStruct = iovec.allocate(allocator);
-        iovec.iov_base$set(iovecStruct, buffer.address());
-        iovec.iov_len$set(iovecStruct,buffer.byteSize());
-        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
-        io_uring_prep_writev(sqe,fd,iovecStruct, 1, offset);
+        try (MemorySession allocator = MemorySession.openConfined()) {
+            MemorySegment iovecStruct = iovec.allocate(allocator);
+            iovec.iov_base$set(iovecStruct, buffer.address());
+            iovec.iov_len$set(iovecStruct, buffer.byteSize());
+            MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
+            io_uring_prep_writev(sqe, fd, iovecStruct, 1, offset);
 
-        long opsCount = count.getAndIncrement();
-        io_uring_sqe.user_data$set(sqeSegment,opsCount);
-        context.put(opsCount, new IOOpResult(fd, -1,buffer,(res, __) -> callback.accept(res)));
-        return true;
+            long opsCount = count.getAndIncrement();
+            io_uring_sqe.user_data$set(sqeSegment, opsCount);
+            context.put(opsCount, new IOOpResult(fd, -1, buffer, (res, __) -> callback.accept(res)));
+            return true;
+        }
     }
 
 
