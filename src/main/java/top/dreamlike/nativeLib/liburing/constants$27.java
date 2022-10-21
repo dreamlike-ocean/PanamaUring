@@ -7,6 +7,15 @@ import java.lang.foreign.*;
 
 class constants$27 {
 
+    static final FunctionDescriptor io_uring_register_restrictions$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_register_restrictions$MH = RuntimeHelper.downcallHandle(
+        "io_uring_register_restrictions",
+        constants$27.io_uring_register_restrictions$FUNC
+    );
     static final FunctionDescriptor io_uring_enable_rings$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
@@ -47,14 +56,6 @@ class constants$27 {
     static final MethodHandle io_uring_cqe_seen$MH = RuntimeHelper.downcallHandle(
         "io_uring_cqe_seen",
         constants$27.io_uring_cqe_seen$FUNC
-    );
-    static final FunctionDescriptor io_uring_sqe_set_data$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle io_uring_sqe_set_data$MH = RuntimeHelper.downcallHandle(
-        "io_uring_sqe_set_data",
-        constants$27.io_uring_sqe_set_data$FUNC
     );
 }
 

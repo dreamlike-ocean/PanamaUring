@@ -6,12 +6,12 @@ import java.lang.foreign.*;
 
 class constants$61 {
 
+    static final MemorySegment SCNxFAST16$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("lx");
     static final MemorySegment SCNxFAST32$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("lx");
     static final MemorySegment SCNxFAST64$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("lx");
     static final MemorySegment SCNdMAX$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("ld");
     static final MemorySegment SCNiMAX$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("li");
     static final MemorySegment SCNoMAX$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("lo");
-    static final MemorySegment SCNuMAX$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("lu");
 }
 
 

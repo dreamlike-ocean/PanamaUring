@@ -6,12 +6,12 @@ import java.lang.foreign.*;
 
 class constants$41 {
 
+    static final MemorySegment PRIiFAST16$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("li");
     static final MemorySegment PRIiFAST32$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("li");
     static final MemorySegment PRIiFAST64$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("li");
     static final MemorySegment PRIo8$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("o");
     static final MemorySegment PRIo16$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("o");
     static final MemorySegment PRIo32$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("o");
-    static final MemorySegment PRIo64$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("lo");
 }
 
 

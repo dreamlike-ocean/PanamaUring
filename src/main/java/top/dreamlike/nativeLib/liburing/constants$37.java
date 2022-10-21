@@ -6,12 +6,12 @@ import java.lang.foreign.*;
 
 class constants$37 {
 
+    static final MemoryAddress SIG_HOLD$ADDR = MemoryAddress.ofLong(2L);
     static final MemorySegment __PRI64_PREFIX$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("l");
     static final MemorySegment __PRIPTR_PREFIX$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("l");
     static final MemorySegment PRId8$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("d");
     static final MemorySegment PRId16$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("d");
     static final MemorySegment PRId32$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("d");
-    static final MemorySegment PRId64$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("ld");
 }
 
 

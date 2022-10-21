@@ -6,6 +6,7 @@ import java.lang.foreign.*;
 
 class constants$63 {
 
+    static final MemorySegment SCNxPTR$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("lx");
     static final MemoryAddress NULL$ADDR = MemoryAddress.ofLong(0L);
     static final MemorySegment FSCRYPT_KEY_DESC_PREFIX$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("fscrypt:");
     static final MemorySegment FS_KEY_DESC_PREFIX$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("fscrypt:");

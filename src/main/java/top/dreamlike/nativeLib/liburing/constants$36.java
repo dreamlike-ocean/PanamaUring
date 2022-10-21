@@ -7,6 +7,15 @@ import java.lang.foreign.*;
 
 class constants$36 {
 
+    static final FunctionDescriptor io_uring_wait_cqe_nr$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_wait_cqe_nr$MH = RuntimeHelper.downcallHandle(
+        "io_uring_wait_cqe_nr",
+        constants$36.io_uring_wait_cqe_nr$FUNC
+    );
     static final FunctionDescriptor io_uring_peek_cqe$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
@@ -26,7 +35,6 @@ class constants$36 {
     static final MemoryAddress SIG_ERR$ADDR = MemoryAddress.ofLong(-1L);
     static final MemoryAddress SIG_DFL$ADDR = MemoryAddress.ofLong(0L);
     static final MemoryAddress SIG_IGN$ADDR = MemoryAddress.ofLong(1L);
-    static final MemoryAddress SIG_HOLD$ADDR = MemoryAddress.ofLong(2L);
 }
 
 

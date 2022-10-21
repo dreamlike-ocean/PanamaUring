@@ -7,6 +7,14 @@ import java.lang.foreign.*;
 
 class constants$26 {
 
+    static final FunctionDescriptor io_uring_register_eventfd$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_register_eventfd$MH = RuntimeHelper.downcallHandle(
+        "io_uring_register_eventfd",
+        constants$26.io_uring_register_eventfd$FUNC
+    );
     static final FunctionDescriptor io_uring_register_eventfd_async$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT
@@ -45,15 +53,6 @@ class constants$26 {
     static final MethodHandle io_uring_unregister_personality$MH = RuntimeHelper.downcallHandle(
         "io_uring_unregister_personality",
         constants$26.io_uring_unregister_personality$FUNC
-    );
-    static final FunctionDescriptor io_uring_register_restrictions$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle io_uring_register_restrictions$MH = RuntimeHelper.downcallHandle(
-        "io_uring_register_restrictions",
-        constants$26.io_uring_register_restrictions$FUNC
     );
 }
 

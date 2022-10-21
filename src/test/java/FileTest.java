@@ -3,6 +3,8 @@ import top.dreamlike.asyncFile.AsyncFile;
 import top.dreamlike.asyncFile.IOOpResult;
 import top.dreamlike.asyncFile.IOUring;
 import top.dreamlike.epoll.Epoll;
+import top.dreamlike.nativeLib.liburing.io_uring;
+import top.dreamlike.nativeLib.liburing.io_uring_probe;
 
 
 import java.lang.foreign.*;
@@ -11,6 +13,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.IntStream;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
@@ -82,11 +87,45 @@ public class FileTest {
             List<IOOpResult> x = uring.peekCqe(64);
             System.out.println(x);
             IOOpResult ioOpResult = x.get(0);
-            ioOpResult.callback.accept(ioOpResult.res);
+            ioOpResult.callback.consumer(ioOpResult.res,ioOpResult.bid);
 
             x = uring.peekCqe(64);
             System.out.println("End "+x);
         }
 
     }
+
+
+    //static inline int io_uring_opcode_supported(const struct io_uring_probe *p, int op)
+    //{
+    //	if (op > p->last_op)
+    //		return 0;
+    //	return (p->ops[op].flags & IO_URING_OP_SUPPORTED) != 0;
+    //}
+    @Test
+    public void testUringIORING_OP_PROVIDE_BUFFERS() throws ExecutionException, InterruptedException {
+        System.load("/home/dreamlike/uringDemo/src/main/resources/liburing.so");
+        IOUring ioUring = new IOUring(16);
+
+        AsyncFile file = ioUring.openFile("demo.txt",O_RDONLY());
+
+        new Thread(()->{
+            while (true){
+                for (IOOpResult ioOpResult : ioUring.waitFd()) {
+                    ioOpResult.callback.consumer(ioOpResult.res,ioOpResult.bid);
+                }
+            }
+        }).start();
+        for (int i = 0; i < 6; i++) {
+            CompletableFuture<byte[]> read = file.read(0, 1024);
+            read.thenAccept(c -> {
+                System.out.println(new String(c));
+                System.out.println("_________________________________________");
+            });
+            read.get();
+        }
+
+
+    }
+
 }

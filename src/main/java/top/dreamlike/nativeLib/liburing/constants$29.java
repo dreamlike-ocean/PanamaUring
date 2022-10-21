@@ -7,6 +7,17 @@ import java.lang.foreign.*;
 
 class constants$29 {
 
+    static final FunctionDescriptor io_uring_prep_readv$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_readv$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_readv",
+        constants$29.io_uring_prep_readv$FUNC
+    );
     static final FunctionDescriptor io_uring_prep_read_fixed$FUNC = FunctionDescriptor.ofVoid(
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT,
@@ -61,15 +72,6 @@ class constants$29 {
     static final MethodHandle io_uring_prep_sendmsg$MH = RuntimeHelper.downcallHandle(
         "io_uring_prep_sendmsg",
         constants$29.io_uring_prep_sendmsg$FUNC
-    );
-    static final FunctionDescriptor io_uring_prep_poll_add$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle io_uring_prep_poll_add$MH = RuntimeHelper.downcallHandle(
-        "io_uring_prep_poll_add",
-        constants$29.io_uring_prep_poll_add$FUNC
     );
 }
 

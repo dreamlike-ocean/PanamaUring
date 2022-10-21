@@ -7,6 +7,14 @@ import java.lang.foreign.*;
 
 class constants$23 {
 
+    static final FunctionDescriptor io_uring_opcode_supported_ring$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_opcode_supported_ring$MH = RuntimeHelper.downcallHandle(
+        "io_uring_opcode_supported_ring",
+        constants$23.io_uring_opcode_supported_ring$FUNC
+    );
     static final FunctionDescriptor io_uring_opcode_supported$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT
@@ -48,13 +56,6 @@ class constants$23 {
     static final MethodHandle io_uring_ring_dontfork$MH = RuntimeHelper.downcallHandle(
         "io_uring_ring_dontfork",
         constants$23.io_uring_ring_dontfork$FUNC
-    );
-    static final FunctionDescriptor io_uring_queue_exit$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle io_uring_queue_exit$MH = RuntimeHelper.downcallHandle(
-        "io_uring_queue_exit",
-        constants$23.io_uring_queue_exit$FUNC
     );
 }
 

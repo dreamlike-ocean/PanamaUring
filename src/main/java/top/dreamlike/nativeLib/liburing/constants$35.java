@@ -7,6 +7,13 @@ import java.lang.foreign.*;
 
 class constants$35 {
 
+    static final FunctionDescriptor io_uring_sq_ready$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle io_uring_sq_ready$MH = RuntimeHelper.downcallHandle(
+        "io_uring_sq_ready",
+        constants$35.io_uring_sq_ready$FUNC
+    );
     static final FunctionDescriptor io_uring_sq_space_left$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
     );
@@ -42,15 +49,6 @@ class constants$35 {
     static final MethodHandle io_uring_cq_eventfd_toggle$MH = RuntimeHelper.downcallHandle(
         "io_uring_cq_eventfd_toggle",
         constants$35.io_uring_cq_eventfd_toggle$FUNC
-    );
-    static final FunctionDescriptor io_uring_wait_cqe_nr$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle io_uring_wait_cqe_nr$MH = RuntimeHelper.downcallHandle(
-        "io_uring_wait_cqe_nr",
-        constants$35.io_uring_wait_cqe_nr$FUNC
     );
 }
 

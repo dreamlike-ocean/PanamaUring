@@ -5,8 +5,22 @@ package top.dreamlike.nativeLib.liburing;
 import java.lang.invoke.MethodHandle;
 import java.lang.foreign.*;
 
+import static top.dreamlike.nativeLib.liburing.liburing_h.IORING_OP_PROVIDE_BUFFERS;
+import static top.dreamlike.nativeLib.liburing.liburing_h.io_uring_prep_rw;
+
 class liburing_h_1 {
 
+    public static MethodHandle io_uring_prep_timeout$MH() {
+        return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_timeout$MH,"io_uring_prep_timeout");
+    }
+    public static void io_uring_prep_timeout ( Addressable sqe,  Addressable ts,  int count,  int flags) {
+        var mh$ = io_uring_prep_timeout$MH();
+        try {
+            mh$.invokeExact(sqe, ts, count, flags);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
     public static MethodHandle io_uring_prep_timeout_remove$MH() {
         return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_timeout_remove$MH,"io_uring_prep_timeout_remove");
     }
@@ -19,7 +33,7 @@ class liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_prep_timeout_update$MH() {
-        return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_timeout_update$MH,"io_uring_prep_timeout_update");
+        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_timeout_update$MH,"io_uring_prep_timeout_update");
     }
     public static void io_uring_prep_timeout_update ( Addressable sqe,  Addressable ts,  long user_data,  int flags) {
         var mh$ = io_uring_prep_timeout_update$MH();
@@ -85,7 +99,7 @@ class liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_prep_fallocate$MH() {
-        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_fallocate$MH,"io_uring_prep_fallocate");
+        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_fallocate$MH,"io_uring_prep_fallocate");
     }
     public static void io_uring_prep_fallocate ( Addressable sqe,  int fd,  int mode,  long offset,  long len) {
         var mh$ = io_uring_prep_fallocate$MH();
@@ -151,7 +165,7 @@ class liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_prep_fadvise$MH() {
-        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_fadvise$MH,"io_uring_prep_fadvise");
+        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_fadvise$MH,"io_uring_prep_fadvise");
     }
     public static void io_uring_prep_fadvise ( Addressable sqe,  int fd,  long offset,  long len,  int advice) {
         var mh$ = io_uring_prep_fadvise$MH();
@@ -217,15 +231,11 @@ class liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_prep_provide_buffers$MH() {
-        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_provide_buffers$MH,"io_uring_prep_provide_buffers");
+        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_provide_buffers$MH,"io_uring_prep_provide_buffers");
     }
     public static void io_uring_prep_provide_buffers ( Addressable sqe,  Addressable addr,  int len,  int nr,  int bgid,  int bid) {
-        var mh$ = io_uring_prep_provide_buffers$MH();
-        try {
-            mh$.invokeExact(sqe, addr, len, nr, bgid, bid);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
+        io_uring_prep_rw(IORING_OP_PROVIDE_BUFFERS(),sqe,nr,addr,len,bid);
+        io_uring_sqe.buf_group$set(io_uring_sqe.ofAddress(sqe.address(),MemorySession.global()), (short) bgid);
     }
     public static MethodHandle io_uring_prep_remove_buffers$MH() {
         return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_remove_buffers$MH,"io_uring_prep_remove_buffers");
@@ -283,7 +293,7 @@ class liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_sq_ready$MH() {
-        return RuntimeHelper.requireNonNull(constants$34.io_uring_sq_ready$MH,"io_uring_sq_ready");
+        return RuntimeHelper.requireNonNull(constants$35.io_uring_sq_ready$MH,"io_uring_sq_ready");
     }
     public static int io_uring_sq_ready ( Addressable ring) {
         var mh$ = io_uring_sq_ready$MH();
@@ -349,7 +359,7 @@ class liburing_h_1 {
         }
     }
     public static MethodHandle io_uring_wait_cqe_nr$MH() {
-        return RuntimeHelper.requireNonNull(constants$35.io_uring_wait_cqe_nr$MH,"io_uring_wait_cqe_nr");
+        return RuntimeHelper.requireNonNull(constants$36.io_uring_wait_cqe_nr$MH,"io_uring_wait_cqe_nr");
     }
     public static int io_uring_wait_cqe_nr ( Addressable ring,  Addressable cqe_ptr,  int wait_nr) {
         var mh$ = io_uring_wait_cqe_nr$MH();
@@ -649,7 +659,7 @@ class liburing_h_1 {
         return constants$36.SIG_IGN$ADDR;
     }
     public static MemoryAddress SIG_HOLD() {
-        return constants$36.SIG_HOLD$ADDR;
+        return constants$37.SIG_HOLD$ADDR;
     }
     public static int SIGIO() {
         return (int)29L;
@@ -856,7 +866,7 @@ class liburing_h_1 {
         return constants$37.PRId32$SEGMENT;
     }
     public static MemorySegment PRId64() {
-        return constants$37.PRId64$SEGMENT;
+        return constants$38.PRId64$SEGMENT;
     }
     public static MemorySegment PRIdLEAST8() {
         return constants$38.PRIdLEAST8$SEGMENT;
@@ -874,7 +884,7 @@ class liburing_h_1 {
         return constants$38.PRIdFAST8$SEGMENT;
     }
     public static MemorySegment PRIdFAST16() {
-        return constants$38.PRIdFAST16$SEGMENT;
+        return constants$39.PRIdFAST16$SEGMENT;
     }
     public static MemorySegment PRIdFAST32() {
         return constants$39.PRIdFAST32$SEGMENT;
@@ -892,7 +902,7 @@ class liburing_h_1 {
         return constants$39.PRIi32$SEGMENT;
     }
     public static MemorySegment PRIi64() {
-        return constants$39.PRIi64$SEGMENT;
+        return constants$40.PRIi64$SEGMENT;
     }
     public static MemorySegment PRIiLEAST8() {
         return constants$40.PRIiLEAST8$SEGMENT;
@@ -910,7 +920,7 @@ class liburing_h_1 {
         return constants$40.PRIiFAST8$SEGMENT;
     }
     public static MemorySegment PRIiFAST16() {
-        return constants$40.PRIiFAST16$SEGMENT;
+        return constants$41.PRIiFAST16$SEGMENT;
     }
     public static MemorySegment PRIiFAST32() {
         return constants$41.PRIiFAST32$SEGMENT;
@@ -928,7 +938,7 @@ class liburing_h_1 {
         return constants$41.PRIo32$SEGMENT;
     }
     public static MemorySegment PRIo64() {
-        return constants$41.PRIo64$SEGMENT;
+        return constants$42.PRIo64$SEGMENT;
     }
     public static MemorySegment PRIoLEAST8() {
         return constants$42.PRIoLEAST8$SEGMENT;
@@ -946,7 +956,7 @@ class liburing_h_1 {
         return constants$42.PRIoFAST8$SEGMENT;
     }
     public static MemorySegment PRIoFAST16() {
-        return constants$42.PRIoFAST16$SEGMENT;
+        return constants$43.PRIoFAST16$SEGMENT;
     }
     public static MemorySegment PRIoFAST32() {
         return constants$43.PRIoFAST32$SEGMENT;
@@ -964,7 +974,7 @@ class liburing_h_1 {
         return constants$43.PRIu32$SEGMENT;
     }
     public static MemorySegment PRIu64() {
-        return constants$43.PRIu64$SEGMENT;
+        return constants$44.PRIu64$SEGMENT;
     }
     public static MemorySegment PRIuLEAST8() {
         return constants$44.PRIuLEAST8$SEGMENT;
@@ -982,7 +992,7 @@ class liburing_h_1 {
         return constants$44.PRIuFAST8$SEGMENT;
     }
     public static MemorySegment PRIuFAST16() {
-        return constants$44.PRIuFAST16$SEGMENT;
+        return constants$45.PRIuFAST16$SEGMENT;
     }
     public static MemorySegment PRIuFAST32() {
         return constants$45.PRIuFAST32$SEGMENT;
@@ -1000,7 +1010,7 @@ class liburing_h_1 {
         return constants$45.PRIx32$SEGMENT;
     }
     public static MemorySegment PRIx64() {
-        return constants$45.PRIx64$SEGMENT;
+        return constants$46.PRIx64$SEGMENT;
     }
     public static MemorySegment PRIxLEAST8() {
         return constants$46.PRIxLEAST8$SEGMENT;
@@ -1018,7 +1028,7 @@ class liburing_h_1 {
         return constants$46.PRIxFAST8$SEGMENT;
     }
     public static MemorySegment PRIxFAST16() {
-        return constants$46.PRIxFAST16$SEGMENT;
+        return constants$47.PRIxFAST16$SEGMENT;
     }
     public static MemorySegment PRIxFAST32() {
         return constants$47.PRIxFAST32$SEGMENT;
@@ -1036,7 +1046,7 @@ class liburing_h_1 {
         return constants$47.PRIX32$SEGMENT;
     }
     public static MemorySegment PRIX64() {
-        return constants$47.PRIX64$SEGMENT;
+        return constants$48.PRIX64$SEGMENT;
     }
     public static MemorySegment PRIXLEAST8() {
         return constants$48.PRIXLEAST8$SEGMENT;
@@ -1054,7 +1064,7 @@ class liburing_h_1 {
         return constants$48.PRIXFAST8$SEGMENT;
     }
     public static MemorySegment PRIXFAST16() {
-        return constants$48.PRIXFAST16$SEGMENT;
+        return constants$49.PRIXFAST16$SEGMENT;
     }
     public static MemorySegment PRIXFAST32() {
         return constants$49.PRIXFAST32$SEGMENT;
@@ -1072,7 +1082,7 @@ class liburing_h_1 {
         return constants$49.PRIoMAX$SEGMENT;
     }
     public static MemorySegment PRIuMAX() {
-        return constants$49.PRIuMAX$SEGMENT;
+        return constants$50.PRIuMAX$SEGMENT;
     }
     public static MemorySegment PRIxMAX() {
         return constants$50.PRIxMAX$SEGMENT;
@@ -1090,7 +1100,7 @@ class liburing_h_1 {
         return constants$50.PRIoPTR$SEGMENT;
     }
     public static MemorySegment PRIuPTR() {
-        return constants$50.PRIuPTR$SEGMENT;
+        return constants$51.PRIuPTR$SEGMENT;
     }
     public static MemorySegment PRIxPTR() {
         return constants$51.PRIxPTR$SEGMENT;
@@ -1108,7 +1118,7 @@ class liburing_h_1 {
         return constants$51.SCNd32$SEGMENT;
     }
     public static MemorySegment SCNd64() {
-        return constants$51.SCNd64$SEGMENT;
+        return constants$52.SCNd64$SEGMENT;
     }
     public static MemorySegment SCNdLEAST8() {
         return constants$52.SCNdLEAST8$SEGMENT;
@@ -1126,7 +1136,7 @@ class liburing_h_1 {
         return constants$52.SCNdFAST8$SEGMENT;
     }
     public static MemorySegment SCNdFAST16() {
-        return constants$52.SCNdFAST16$SEGMENT;
+        return constants$53.SCNdFAST16$SEGMENT;
     }
     public static MemorySegment SCNdFAST32() {
         return constants$53.SCNdFAST32$SEGMENT;
@@ -1144,7 +1154,7 @@ class liburing_h_1 {
         return constants$53.SCNi32$SEGMENT;
     }
     public static MemorySegment SCNi64() {
-        return constants$53.SCNi64$SEGMENT;
+        return constants$54.SCNi64$SEGMENT;
     }
     public static MemorySegment SCNiLEAST8() {
         return constants$54.SCNiLEAST8$SEGMENT;
@@ -1162,7 +1172,7 @@ class liburing_h_1 {
         return constants$54.SCNiFAST8$SEGMENT;
     }
     public static MemorySegment SCNiFAST16() {
-        return constants$54.SCNiFAST16$SEGMENT;
+        return constants$55.SCNiFAST16$SEGMENT;
     }
     public static MemorySegment SCNiFAST32() {
         return constants$55.SCNiFAST32$SEGMENT;
@@ -1180,7 +1190,7 @@ class liburing_h_1 {
         return constants$55.SCNu32$SEGMENT;
     }
     public static MemorySegment SCNu64() {
-        return constants$55.SCNu64$SEGMENT;
+        return constants$56.SCNu64$SEGMENT;
     }
     public static MemorySegment SCNuLEAST8() {
         return constants$56.SCNuLEAST8$SEGMENT;
@@ -1198,7 +1208,7 @@ class liburing_h_1 {
         return constants$56.SCNuFAST8$SEGMENT;
     }
     public static MemorySegment SCNuFAST16() {
-        return constants$56.SCNuFAST16$SEGMENT;
+        return constants$57.SCNuFAST16$SEGMENT;
     }
     public static MemorySegment SCNuFAST32() {
         return constants$57.SCNuFAST32$SEGMENT;
@@ -1216,7 +1226,7 @@ class liburing_h_1 {
         return constants$57.SCNo32$SEGMENT;
     }
     public static MemorySegment SCNo64() {
-        return constants$57.SCNo64$SEGMENT;
+        return constants$58.SCNo64$SEGMENT;
     }
     public static MemorySegment SCNoLEAST8() {
         return constants$58.SCNoLEAST8$SEGMENT;
@@ -1234,7 +1244,7 @@ class liburing_h_1 {
         return constants$58.SCNoFAST8$SEGMENT;
     }
     public static MemorySegment SCNoFAST16() {
-        return constants$58.SCNoFAST16$SEGMENT;
+        return constants$59.SCNoFAST16$SEGMENT;
     }
     public static MemorySegment SCNoFAST32() {
         return constants$59.SCNoFAST32$SEGMENT;
@@ -1252,7 +1262,7 @@ class liburing_h_1 {
         return constants$59.SCNx32$SEGMENT;
     }
     public static MemorySegment SCNx64() {
-        return constants$59.SCNx64$SEGMENT;
+        return constants$60.SCNx64$SEGMENT;
     }
     public static MemorySegment SCNxLEAST8() {
         return constants$60.SCNxLEAST8$SEGMENT;
@@ -1270,7 +1280,7 @@ class liburing_h_1 {
         return constants$60.SCNxFAST8$SEGMENT;
     }
     public static MemorySegment SCNxFAST16() {
-        return constants$60.SCNxFAST16$SEGMENT;
+        return constants$61.SCNxFAST16$SEGMENT;
     }
     public static MemorySegment SCNxFAST32() {
         return constants$61.SCNxFAST32$SEGMENT;
@@ -1288,7 +1298,7 @@ class liburing_h_1 {
         return constants$61.SCNoMAX$SEGMENT;
     }
     public static MemorySegment SCNuMAX() {
-        return constants$61.SCNuMAX$SEGMENT;
+        return constants$62.SCNuMAX$SEGMENT;
     }
     public static MemorySegment SCNxMAX() {
         return constants$62.SCNxMAX$SEGMENT;
@@ -1306,7 +1316,7 @@ class liburing_h_1 {
         return constants$62.SCNuPTR$SEGMENT;
     }
     public static MemorySegment SCNxPTR() {
-        return constants$62.SCNxPTR$SEGMENT;
+        return constants$63.SCNxPTR$SEGMENT;
     }
     public static MemoryAddress NULL() {
         return constants$63.NULL$ADDR;

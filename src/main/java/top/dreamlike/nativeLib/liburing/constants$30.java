@@ -7,6 +7,15 @@ import java.lang.foreign.*;
 
 class constants$30 {
 
+    static final FunctionDescriptor io_uring_prep_poll_add$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_poll_add$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_poll_add",
+        constants$30.io_uring_prep_poll_add$FUNC
+    );
     static final FunctionDescriptor io_uring_prep_poll_remove$FUNC = FunctionDescriptor.ofVoid(
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT
@@ -49,16 +58,6 @@ class constants$30 {
     static final MethodHandle io_uring_prep_timeout_remove$MH = RuntimeHelper.downcallHandle(
         "io_uring_prep_timeout_remove",
         constants$30.io_uring_prep_timeout_remove$FUNC
-    );
-    static final FunctionDescriptor io_uring_prep_timeout_update$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle io_uring_prep_timeout_update$MH = RuntimeHelper.downcallHandle(
-        "io_uring_prep_timeout_update",
-        constants$30.io_uring_prep_timeout_update$FUNC
     );
 }
 

@@ -7,6 +7,17 @@ import java.lang.foreign.*;
 
 class constants$33 {
 
+    static final FunctionDescriptor io_uring_prep_fadvise$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_INT$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_fadvise$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_fadvise",
+        constants$33.io_uring_prep_fadvise$FUNC
+    );
     static final FunctionDescriptor io_uring_prep_madvise$FUNC = FunctionDescriptor.ofVoid(
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
@@ -59,18 +70,6 @@ class constants$33 {
     static final MethodHandle io_uring_prep_epoll_ctl$MH = RuntimeHelper.downcallHandle(
         "io_uring_prep_epoll_ctl",
         constants$33.io_uring_prep_epoll_ctl$FUNC
-    );
-    static final FunctionDescriptor io_uring_prep_provide_buffers$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle io_uring_prep_provide_buffers$MH = RuntimeHelper.downcallHandle(
-        "io_uring_prep_provide_buffers",
-        constants$33.io_uring_prep_provide_buffers$FUNC
     );
 }
 

@@ -7,6 +7,17 @@ import java.lang.foreign.*;
 
 class constants$32 {
 
+    static final FunctionDescriptor io_uring_prep_fallocate$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_INT$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT,
+        Constants$root.C_LONG_LONG$LAYOUT
+    );
+    static final MethodHandle io_uring_prep_fallocate$MH = RuntimeHelper.downcallHandle(
+        "io_uring_prep_fallocate",
+        constants$32.io_uring_prep_fallocate$FUNC
+    );
     static final FunctionDescriptor io_uring_prep_openat$FUNC = FunctionDescriptor.ofVoid(
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_INT$LAYOUT,
@@ -59,17 +70,6 @@ class constants$32 {
     static final MethodHandle io_uring_prep_statx$MH = RuntimeHelper.downcallHandle(
         "io_uring_prep_statx",
         constants$32.io_uring_prep_statx$FUNC
-    );
-    static final FunctionDescriptor io_uring_prep_fadvise$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_INT$LAYOUT
-    );
-    static final MethodHandle io_uring_prep_fadvise$MH = RuntimeHelper.downcallHandle(
-        "io_uring_prep_fadvise",
-        constants$32.io_uring_prep_fadvise$FUNC
     );
 }
 

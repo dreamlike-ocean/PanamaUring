@@ -7,6 +7,13 @@ import java.lang.foreign.*;
 
 class constants$24 {
 
+    static final FunctionDescriptor io_uring_queue_exit$FUNC = FunctionDescriptor.ofVoid(
+        Constants$root.C_POINTER$LAYOUT
+    );
+    static final MethodHandle io_uring_queue_exit$MH = RuntimeHelper.downcallHandle(
+        "io_uring_queue_exit",
+        constants$24.io_uring_queue_exit$FUNC
+    );
     static final FunctionDescriptor io_uring_peek_batch_cqe$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
         Constants$root.C_POINTER$LAYOUT,
@@ -50,13 +57,6 @@ class constants$24 {
     static final MethodHandle io_uring_submit_and_wait$MH = RuntimeHelper.downcallHandle(
         "io_uring_submit_and_wait",
         constants$24.io_uring_submit_and_wait$FUNC
-    );
-    static final FunctionDescriptor io_uring_get_sqe$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
-    );
-    static final MethodHandle io_uring_get_sqe$MH = RuntimeHelper.downcallHandle(
-        "io_uring_get_sqe",
-        constants$24.io_uring_get_sqe$FUNC
     );
 }
 
