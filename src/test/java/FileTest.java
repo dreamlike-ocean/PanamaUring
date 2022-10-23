@@ -1,10 +1,10 @@
 import org.junit.Test;
-import top.dreamlike.asyncFile.AsyncFile;
-import top.dreamlike.asyncFile.IOOpResult;
-import top.dreamlike.asyncFile.IOUring;
+import top.dreamlike.async.file.AsyncFile;
+import top.dreamlike.async.IOOpResult;
+import top.dreamlike.async.IOUring;
+import top.dreamlike.async.socket.AsyncServerSocket;
+import top.dreamlike.async.socket.AsyncSocket;
 import top.dreamlike.epoll.Epoll;
-import top.dreamlike.nativeLib.liburing.io_uring;
-import top.dreamlike.nativeLib.liburing.io_uring_probe;
 
 
 import java.lang.foreign.*;
@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.IntStream;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
@@ -84,12 +83,12 @@ public class FileTest {
             ArrayList<Epoll.Event> select = epoll.select(-1);
             int eventfd = select.get(0).fd;
             eventfd_read(eventfd,allocate);
-            List<IOOpResult> x = uring.peekCqe(64);
+            List<IOOpResult> x = uring.batchGetCqe(64);
             System.out.println(x);
             IOOpResult ioOpResult = x.get(0);
             ioOpResult.callback.consumer(ioOpResult.res,ioOpResult.bid);
 
-            x = uring.peekCqe(64);
+            x = uring.batchGetCqe(64);
             System.out.println("End "+x);
         }
 
@@ -128,4 +127,46 @@ public class FileTest {
 
     }
 
+    @Test
+    public void testByteArrayWrite() throws ExecutionException, InterruptedException {
+        System.load("/home/dreamlike/uringDemo/src/main/resources/liburing.so");
+        IOUring ioUring = new IOUring(16,4);
+
+        AsyncFile file = ioUring.openFile("demo.txt",O_RDWR()|O_APPEND());
+
+        new Thread(()->{
+            while (true){
+                for (IOOpResult ioOpResult : ioUring.waitFd()) {
+                    ioOpResult.callback.consumer(ioOpResult.res,ioOpResult.bid);
+                }
+            }
+        }).start();
+        var wantWrite = "测试新的api接口".getBytes(StandardCharsets.UTF_8);
+        System.out.println(file.write(-1, wantWrite, 0, wantWrite.length).get());
+
+    }
+
+    @Test
+    public void testAsyncServer() throws ExecutionException, InterruptedException {
+        System.load("/home/dreamlike/uringDemo/src/main/resources/liburing.so");
+        IOUring ioUring = new IOUring(16,4);
+        AsyncServerSocket serverSocket = new AsyncServerSocket(ioUring, "127.0.0.1", 4399);
+        new Thread(()->{
+            while (true){
+                for (IOOpResult ioOpResult : ioUring.waitFd()) {
+                    ioOpResult.callback.consumer(ioOpResult.res,ioOpResult.bid);
+                }
+            }
+        }).start();
+
+        AsyncSocket asyncSocket = serverSocket.acceptAsync().get();
+
+        System.out.println(asyncSocket);
+
+        byte[] bytes = asyncSocket.read(1024).get();
+
+
+        System.out.println("Write:"+asyncSocket.write(bytes, 0, bytes.length).get());
+
+    }
 }

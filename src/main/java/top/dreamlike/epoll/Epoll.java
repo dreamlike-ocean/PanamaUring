@@ -57,37 +57,9 @@ public class Epoll implements AutoCloseable{
 
         return fds;
     }
-    public static int serverListen(String host, int port){
-        int listenfd  = socket(AF_INET(), SOCK_STREAM(), 0);
-        if (listenfd  == -1) throw new IllegalStateException("open listen socket fail");
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment serverAddr = sockaddr_in.allocate(session);
-            bzero(serverAddr,sockaddr_in.sizeof());
-            sockaddr_in.sin_family$set(serverAddr, (short) AF_INET());
-            inet_pton(AF_INET(),session.allocateUtf8String(host),sockaddr_in.sin_addr$slice(serverAddr));
-            sockaddr_in.sin_port$set(serverAddr,htons((short) port));
-            if (bind(listenfd,serverAddr, (int) sockaddr_in.sizeof()) == -1) {
-                int errorNo = errno_h.__errno_location().get(ValueLayout.JAVA_INT, 0);
-                throw new IllegalStateException("bind error!"+errorNo);
-            }
-        }
-        listen(listenfd, 64);
-        makeNoBlocking(listenfd);
-        return listenfd;
-    }
 
 
-    public static int makeNoBlocking(int fd){
-        int flags = fcntl(fd, F_GETFL(), 0);
-        if (flags == -1){
-            return errno_h.__errno_location().get(ValueLayout.JAVA_INT, 0);
-        }
-        int res = fcntl(fd, F_SETFL(), flags | O_NONBLOCK());
-        if (res == -1){
-            return errno_h.__errno_location().get(ValueLayout.JAVA_INT, 0);
-        }
-        return 0;
-    }
+
 
     @Override
     public void close() throws Exception {

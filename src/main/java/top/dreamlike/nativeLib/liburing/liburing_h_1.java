@@ -5,8 +5,7 @@ package top.dreamlike.nativeLib.liburing;
 import java.lang.invoke.MethodHandle;
 import java.lang.foreign.*;
 
-import static top.dreamlike.nativeLib.liburing.liburing_h.IORING_OP_PROVIDE_BUFFERS;
-import static top.dreamlike.nativeLib.liburing.liburing_h.io_uring_prep_rw;
+import static top.dreamlike.nativeLib.liburing.liburing_h.*;
 
 class liburing_h_1 {
 
@@ -46,13 +45,12 @@ class liburing_h_1 {
     public static MethodHandle io_uring_prep_accept$MH() {
         return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_accept$MH,"io_uring_prep_accept");
     }
+
+    //io_uring_prep_rw(IORING_OP_ACCEPT, sqe, fd, addr, 0,
+    //				(__u64) (unsigned long) addrlen);
+    //	sqe->accept_flags = flags;
     public static void io_uring_prep_accept ( Addressable sqe,  int fd,  Addressable addr,  Addressable addrlen,  int flags) {
-        var mh$ = io_uring_prep_accept$MH();
-        try {
-            mh$.invokeExact(sqe, fd, addr, addrlen, flags);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
+        io_uring_prep_rw(IORING_OP_ACCEPT(),sqe,fd,addr,0,addrlen.address().toRawLongValue());
     }
     public static MethodHandle io_uring_prep_cancel$MH() {
         return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_cancel$MH,"io_uring_prep_cancel");
@@ -135,23 +133,13 @@ class liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_read$MH,"io_uring_prep_read");
     }
     public static void io_uring_prep_read ( Addressable sqe,  int fd,  Addressable buf,  int nbytes,  long offset) {
-        var mh$ = io_uring_prep_read$MH();
-        try {
-            mh$.invokeExact(sqe, fd, buf, nbytes, offset);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
+       io_uring_prep_rw(IORING_OP_READ(), sqe, fd,buf, nbytes, offset);
     }
     public static MethodHandle io_uring_prep_write$MH() {
         return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_write$MH,"io_uring_prep_write");
     }
     public static void io_uring_prep_write ( Addressable sqe,  int fd,  Addressable buf,  int nbytes,  long offset) {
-        var mh$ = io_uring_prep_write$MH();
-        try {
-            mh$.invokeExact(sqe, fd, buf, nbytes, offset);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
+        io_uring_prep_rw(IORING_OP_WRITE(), sqe, fd, buf, nbytes, offset);
     }
     public static MethodHandle io_uring_prep_statx$MH() {
         return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_statx$MH,"io_uring_prep_statx");
@@ -190,23 +178,16 @@ class liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_send$MH,"io_uring_prep_send");
     }
     public static void io_uring_prep_send ( Addressable sqe,  int sockfd,  Addressable buf,  long len,  int flags) {
-        var mh$ = io_uring_prep_send$MH();
-        try {
-            mh$.invokeExact(sqe, sockfd, buf, len, flags);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
+//       io_uring_prep_rw(IORING_OP_SEND, sqe, sockfd, buf, len, 0);
+        io_uring_prep_rw(IORING_OP_SEND(), sqe,sockfd, buf, (int)len, 0);
     }
     public static MethodHandle io_uring_prep_recv$MH() {
         return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_recv$MH,"io_uring_prep_recv");
     }
     public static void io_uring_prep_recv ( Addressable sqe,  int sockfd,  Addressable buf,  long len,  int flags) {
-        var mh$ = io_uring_prep_recv$MH();
-        try {
-            mh$.invokeExact(sqe, sockfd, buf, len, flags);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
+        //io_uring_prep_rw(IORING_OP_RECV, sqe, sockfd, buf, len, 0);
+        //	sqe->msg_flags = flags;
+        io_uring_prep_rw(IORING_OP_RECV(), sqe, sockfd,buf,(int) len, 0);
     }
     public static MethodHandle io_uring_prep_openat2$MH() {
         return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_openat2$MH,"io_uring_prep_openat2");
