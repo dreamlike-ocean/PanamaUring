@@ -18,7 +18,9 @@ public class AsyncServerSocket {
 
     public CompletableFuture<AsyncSocket> acceptAsync(){
         CompletableFuture<AsyncSocket> res = new CompletableFuture<>();
-        uring.prep_accept(serverFd, res::complete);
+        if (!uring.prep_accept(serverFd, res::complete)) {
+            res.completeExceptionally(new Exception("没有空闲的sqe"));
+        }
         return res;
     }
 }

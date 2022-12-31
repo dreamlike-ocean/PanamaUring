@@ -14,6 +14,7 @@ import java.io.*;
 import java.lang.foreign.*;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
@@ -44,6 +45,8 @@ public class IOUring implements AutoCloseable{
 
     private final int ringSize;
 
+    private static final int MIN_RING_SIZE = 32;
+
 
     public IOUring(int ringSize){
         this(ringSize,16);
@@ -52,7 +55,9 @@ public class IOUring implements AutoCloseable{
         if (ringSize <= 0) {
             throw new IllegalArgumentException("ring size <= 0");
         }
-        context = new HashMap<>();
+        if (ringSize < MIN_RING_SIZE) ringSize = MIN_RING_SIZE;
+
+        context = new ConcurrentHashMap<>();
         allocator = MemorySession.openShared();
         this.ring = io_uring.allocate(allocator);
         var ret= io_uring_queue_init(ringSize, ring, 0);
@@ -66,16 +71,15 @@ public class IOUring implements AutoCloseable{
             selectedBuffer[i] = allocator.allocate(1024);
         }
 
-        for (int i = 0; i < selectedBuffer.length; i++) {
+        for (int i = 0; i < selectedBuffer.length;) {
             if (!provideBuffer(selectedBuffer[i],i,false)) {
                 submit();
+                continue;
             }
+            i++;
         }
         submit();
         count = new AtomicLong();
-
-       eventfd = eventfd_h.eventfd(0, 0);
-        io_uring_register_eventfd(ring,eventfd);
     }
 
 
@@ -229,11 +233,14 @@ public class IOUring implements AutoCloseable{
 
     protected MemoryAddress getSqe() {
         int i = 0;
-        MemoryAddress sqe = null;
-        while (sqe == null){
+        MemoryAddress sqe = MemoryAddress.NULL;
+        //空指针
+        while (sqe.toRawLongValue() == 0){
             sqe = io_uring_get_sqe(ring);
             i++;
-            if (i == max_loop) return null;
+            if (i >= max_loop && sqe.toRawLongValue() == 0) {
+                return null;
+            }
         }
         return sqe;
     }
@@ -284,7 +291,9 @@ public class IOUring implements AutoCloseable{
 
     public boolean provideBuffer(MemorySegment buffer,int bid,boolean needSubmit){
         MemoryAddress sqe = getSqe();
-        if (sqe == null) return false;
+        if (sqe == null) {
+            return false;
+        }
 
         io_uring_prep_provide_buffers(sqe, buffer,(int) buffer.byteSize(),1,gid, bid);
         MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());

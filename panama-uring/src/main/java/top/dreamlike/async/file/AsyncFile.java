@@ -1,6 +1,8 @@
 package top.dreamlike.async.file;
 
 import top.dreamlike.async.uring.IOUring;
+import top.dreamlike.nativeLib.fcntl.fcntl_h;
+import top.dreamlike.nativeLib.unistd.unistd_h;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
@@ -33,7 +35,9 @@ public class AsyncFile {
      */
     public CompletableFuture<Integer> read(int offset, MemorySegment memorySegment){
         CompletableFuture<Integer> future = new CompletableFuture<>();
-        uring.prep_read(fd,offset, memorySegment, future::complete);
+        if (!uring.prep_read(fd, offset, memorySegment, future::complete)) {
+            future.completeExceptionally(new Exception("没有空闲的sqe"));
+        }
         return future;
     }
 
@@ -51,7 +55,9 @@ public class AsyncFile {
 
     public CompletableFuture<byte[]> readSelected(int offset, int length){
         CompletableFuture<byte[]> future = new CompletableFuture<>();
-        uring.prep_selected_read(fd,offset,length, future);
+        if (!uring.prep_selected_read(fd, offset, length, future)) {
+            future.completeExceptionally(new Exception("没有空闲的sqe"));
+        }
         return future;
     }
 
@@ -67,7 +73,10 @@ public class AsyncFile {
         CompletableFuture<Integer> future = new CompletableFuture<>();
         MemorySegment memorySegment = session.allocate(bufferLength);
         MemorySegment.copy(buffer, bufferOffset, memorySegment, JAVA_BYTE, 0, bufferLength);
-        uring.prep_write(fd,fileOffset, memorySegment, future::complete);
+        if (!uring.prep_write(fd, fileOffset, memorySegment, future::complete)) {
+            future.completeExceptionally(new Exception("没有空闲的sqe"));
+            return future;
+        }
         return future.thenApply( res -> {
             session.close();
             return res;
@@ -83,17 +92,23 @@ public class AsyncFile {
      */
     public CompletableFuture<Integer> write(int offset,MemorySegment memorySegment){
         CompletableFuture<Integer> future = new CompletableFuture<>();
-        uring.prep_write(fd,offset, memorySegment, future::complete);
+        if (!uring.prep_write(fd, offset, memorySegment, future::complete)) {
+            future.completeExceptionally(new Exception("没有空闲的sqe"));
+        }
         return future;
     }
 
     public CompletableFuture<Integer> fsync(){
         CompletableFuture<Integer> future = new CompletableFuture<>();
-        uring.prep_fsync(fd,0, future::complete);
-
+        if (!uring.prep_fsync(fd, 0, future::complete)) {
+            future.completeExceptionally(new Exception("没有空闲的sqe"));
+        }
         return future;
     }
 
+    public void close() {
+        unistd_h.close(fd);
+    }
 
 
 }

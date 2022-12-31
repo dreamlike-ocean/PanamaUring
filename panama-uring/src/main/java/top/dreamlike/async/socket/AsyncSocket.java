@@ -27,7 +27,9 @@ public class AsyncSocket {
 
     public CompletableFuture<byte[]> read(int size){
         CompletableFuture<byte[]> completableFuture = new CompletableFuture<>();
-        ring.prep_selected_recv(fd, size, completableFuture);
+        if (!ring.prep_selected_recv(fd, size, completableFuture)) {
+            completableFuture.completeExceptionally(new Exception("没有空闲的sqe"));
+        }
         return completableFuture;
     }
 
@@ -39,7 +41,9 @@ public class AsyncSocket {
         CompletableFuture<Integer> future = new CompletableFuture<>();
         MemorySegment memorySegment = session.allocate(length);
         MemorySegment.copy(buffer, offset, memorySegment, JAVA_BYTE, 0, length);
-        ring.prep_send(fd, memorySegment, future::complete);
+        if (!ring.prep_send(fd, memorySegment, future::complete)) {
+            future.completeExceptionally(new Exception("没有空闲的sqe"));
+        }
         return future.thenApply( res -> {
             session.close();
             return res;
