@@ -4,7 +4,7 @@ import top.dreamlike.helper.BiIntConsumer;
 
 import java.lang.foreign.MemorySegment;
 
-public class IOOpResult{
+public class IOOpResult {
     public final int fd;
     public int res;
     public  MemorySegment segment;

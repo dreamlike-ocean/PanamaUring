@@ -1,6 +1,6 @@
 package top.dreamlike.async.file;
 
-import top.dreamlike.async.IOUring;
+import top.dreamlike.async.uring.IOUring;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
@@ -25,10 +25,15 @@ public class AsyncFile {
     }
 
 
+    /**
+     *
+     * @param offset 读取文件的偏移量
+     * @param memorySegment 要保证有效的memory
+     * @return 读取了多少字节
+     */
     public CompletableFuture<Integer> read(int offset,MemorySegment memorySegment){
         CompletableFuture<Integer> future = new CompletableFuture<>();
         uring.prep_readV(fd,offset, memorySegment, future::complete);
-        uring.submit();
         return future;
     }
 
@@ -36,7 +41,6 @@ public class AsyncFile {
     public CompletableFuture<byte[]> read(int offset,int length){
         CompletableFuture<byte[]> future = new CompletableFuture<>();
         uring.prep_selected_read(fd,offset,length, future);
-        uring.submit();
         return future;
     }
 
@@ -51,7 +55,6 @@ public class AsyncFile {
         MemorySegment memorySegment = session.allocate(bufferLength);
         MemorySegment.copy(buffer, bufferOffset, memorySegment, JAVA_BYTE, 0, bufferLength);
         uring.prep_write(fd,fileOffset, memorySegment, future::complete);
-        uring.submit();
         return future.thenApply( res -> {
             session.close();
             return res;
@@ -68,7 +71,6 @@ public class AsyncFile {
     public CompletableFuture<Integer> write(int offset,MemorySegment memorySegment){
         CompletableFuture<Integer> future = new CompletableFuture<>();
         uring.prep_write(fd,offset, memorySegment, future::complete);
-        uring.submit();
         return future;
     }
 

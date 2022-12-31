@@ -1,13 +1,9 @@
 package top.dreamlike.async.socket;
 
-import top.dreamlike.async.IOUring;
+import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.helper.SocketHelper;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
-
-import static top.dreamlike.nativeLib.socket.socket_h.accept;
 
 public class AsyncServerSocket {
 
@@ -23,7 +19,6 @@ public class AsyncServerSocket {
     public CompletableFuture<AsyncSocket> acceptAsync(){
         CompletableFuture<AsyncSocket> res = new CompletableFuture<>();
         uring.prep_accept(serverFd, res::complete);
-        uring.submit();
         return res;
     }
 }

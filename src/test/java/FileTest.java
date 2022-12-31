@@ -1,15 +1,18 @@
 import org.junit.Test;
 import top.dreamlike.async.file.AsyncFile;
 import top.dreamlike.async.IOOpResult;
-import top.dreamlike.async.IOUring;
+import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.async.socket.AsyncServerSocket;
 import top.dreamlike.async.socket.AsyncSocket;
 import top.dreamlike.epoll.Epoll;
+import top.dreamlike.nativeLib.eventfd.eventfd_h;
 
 
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -110,21 +113,50 @@ public class FileTest {
 
         new Thread(()->{
             while (true){
-                for (IOOpResult ioOpResult : ioUring.waitFd()) {
-                    ioOpResult.callback.consumer(ioOpResult.res,ioOpResult.bid);
+                ioUring.waitComplete();
+                for (IOOpResult ioOpResult : ioUring.batchGetCqe(1024)) {
+                    ioOpResult.callback.consumer(ioOpResult.res, ioOpResult.bid);
                 }
             }
         }).start();
+        ArrayList<CompletableFuture<byte[]>> futures = new ArrayList<>();
+
         for (int i = 0; i < 6; i++) {
             CompletableFuture<byte[]> read = file.read(0, 1024);
             read.thenAccept(c -> {
                 System.out.println(new String(c));
                 System.out.println("_________________________________________");
             });
-            read.get();
+            futures.add(read);
+        }
+
+        ioUring.submit();
+
+        for (CompletableFuture<byte[]> future : futures) {
+            future.get();
         }
 
 
+    }
+
+    @Test
+    public void eventfd(){
+        int eventfd = eventfd_h.eventfd(0, 0);
+        MemorySession memorySession = MemorySession.openShared();
+
+        new Thread(()->{
+            MemorySegment c1 = memorySession.allocate(eventfd_h.C_LONG);
+            c1.set(eventfd_h.C_LONG,0,1);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            long read = write(eventfd, c1, eventfd_h.C_LONG.byteSize());
+        }).start();
+        MemorySegment count = memorySession.allocate(eventfd_h.C_LONG);
+        long read = read(eventfd, count, eventfd_h.C_LONG.byteSize());
+        System.out.println(count.get(eventfd_h.C_LONG,0));
     }
 
     @Test
@@ -168,5 +200,69 @@ public class FileTest {
 
         System.out.println("Write:"+asyncSocket.write(bytes, 0, bytes.length).get());
 
+    }
+
+    @Test
+    public void testNOOP() throws ExecutionException, InterruptedException {
+        System.load("/home/dreamlike/uringDemo/src/main/resources/liburing.so");
+        IOUring ioUring = new IOUring(16,4);
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        ioUring.prep_no_op(() -> {
+         future.complete(null);
+        });
+        new Thread(()->{
+            while (true){
+                ioUring.waitComplete();
+                for (IOOpResult ioOpResult : ioUring.batchGetCqe(1024)) {
+                    ioOpResult.callback.consumer(ioOpResult.res, ioOpResult.bid);
+                }
+            }
+        }).start();
+        ioUring.submit();
+        future.thenAccept(v -> System.out.println("no_op end"))
+                .get();
+
+        var future2 = new CompletableFuture<>();
+        ioUring.prep_no_op(() -> {
+            future2.complete(null);
+        });
+        ioUring.submit();
+
+        future2.thenAccept(v -> System.out.println("no_op end 2"))
+                .get();
+
+    }
+
+    @Test
+    public void testTimeout() throws ExecutionException, InterruptedException {
+        System.load("/home/dreamlike/uringDemo/src/main/resources/liburing.so");
+        IOUring ioUring = new IOUring(16,4);
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        ioUring.prep_time_out(2000,() -> {
+            future.complete(null);
+        });
+        LocalDateTime now = LocalDateTime.now();
+        new Thread(()->{
+            while (true){
+                ioUring.waitComplete();
+                for (IOOpResult ioOpResult : ioUring.batchGetCqe(1024)) {
+                    ioOpResult.callback.consumer(ioOpResult.res, ioOpResult.bid);
+                }
+            }
+        }).start();
+        ioUring.submit();
+        ioUring.prep_no_op(() -> {
+            future.complete(null);
+        });
+        new Thread(() -> {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } ioUring.submit();
+        }).start();
+        future.thenAccept(v -> {
+            System.out.println("timeout "+ Duration.between(now, LocalDateTime.now()).getSeconds());
+        }).get();
     }
 }

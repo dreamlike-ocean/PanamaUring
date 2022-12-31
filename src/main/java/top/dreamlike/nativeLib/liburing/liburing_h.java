@@ -4286,12 +4286,7 @@ public class liburing_h extends liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_nop$MH,"io_uring_prep_nop");
     }
     public static void io_uring_prep_nop ( Addressable sqe) {
-        var mh$ = io_uring_prep_nop$MH();
-        try {
-            mh$.invokeExact(sqe);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
+       io_uring_prep_rw(IORING_OP_NOP(),sqe,-1,MemoryAddress.NULL,0,0);
     }
 }
 

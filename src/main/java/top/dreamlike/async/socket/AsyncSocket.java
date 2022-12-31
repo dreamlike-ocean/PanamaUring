@@ -1,9 +1,11 @@
 package top.dreamlike.async.socket;
 
-import top.dreamlike.async.IOUring;
+import top.dreamlike.async.uring.IOUring;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.concurrent.CompletableFuture;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
@@ -26,7 +28,6 @@ public class AsyncSocket {
     public CompletableFuture<byte[]> read(int size){
         CompletableFuture<byte[]> completableFuture = new CompletableFuture<>();
         ring.prep_selected_recv(fd, size, completableFuture);
-        ring.submit();
         return completableFuture;
     }
 
@@ -38,8 +39,7 @@ public class AsyncSocket {
         CompletableFuture<Integer> future = new CompletableFuture<>();
         MemorySegment memorySegment = session.allocate(length);
         MemorySegment.copy(buffer, offset, memorySegment, JAVA_BYTE, 0, length);
-        ring.prep_send(fd,offset, memorySegment, future::complete);
-        ring.submit();
+        ring.prep_send(fd, memorySegment, future::complete);
         return future.thenApply( res -> {
             session.close();
             return res;
@@ -54,5 +54,10 @@ public class AsyncSocket {
                 ", port=" + port +
                 ", ring=" + ring +
                 '}';
+    }
+
+
+    public SocketAddress getAddress(){
+        return InetSocketAddress.createUnresolved(host, port);
     }
 }

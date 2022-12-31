@@ -1,20 +1,15 @@
-package top.dreamlike.async;
+package top.dreamlike.async.uring;
 
+import top.dreamlike.async.IOOpResult;
 import top.dreamlike.async.file.AsyncFile;
 import top.dreamlike.async.socket.AsyncSocket;
 import top.dreamlike.epoll.Epoll;
 import top.dreamlike.nativeLib.eventfd.eventfd_h;
 import top.dreamlike.nativeLib.in.sockaddr_in;
-import top.dreamlike.nativeLib.liburing.io_uring;
-import top.dreamlike.nativeLib.liburing.io_uring_cqe;
-import top.dreamlike.nativeLib.liburing.io_uring_sqe;
-import top.dreamlike.nativeLib.liburing.iovec;
+import top.dreamlike.nativeLib.liburing.*;
 import top.dreamlike.nativeLib.socket.sockaddr;
 
-import java.lang.foreign.MemoryAddress;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
-import java.lang.foreign.ValueLayout;
+import java.lang.foreign.*;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
@@ -28,6 +23,7 @@ import static top.dreamlike.nativeLib.eventfd.eventfd_h.EFD_NONBLOCK;
 import static top.dreamlike.nativeLib.inet.inet_h.inet_ntoa;
 import static top.dreamlike.nativeLib.liburing.liburing_h.*;
 import static top.dreamlike.nativeLib.string.string_h.strlen;
+import static top.dreamlike.nativeLib.unistd.unistd_h.read;
 
 public class IOUring implements AutoCloseable{
     private final MemorySegment ring;
@@ -39,7 +35,7 @@ public class IOUring implements AutoCloseable{
 
     private final byte gid;
 
-    private final Map<Long,IOOpResult> context;
+    private final Map<Long, IOOpResult> context;
 
     private final MemorySegment[] selectedBuffer;
 
@@ -51,7 +47,7 @@ public class IOUring implements AutoCloseable{
     public IOUring(int ringSize){
         this(ringSize,16);
     }
-    public IOUring(int ringSize,int autoBuffer){
+    public IOUring(int ringSize,int autoBufferSize){
         if (ringSize <= 0) {
             throw new IllegalArgumentException("ring size <= 0");
         }
@@ -64,7 +60,7 @@ public class IOUring implements AutoCloseable{
         }
         this.ringSize = ringSize;
         gid =(byte) new Random(System.currentTimeMillis()).nextInt(100);
-        selectedBuffer = new MemorySegment[autoBuffer];
+        selectedBuffer = new MemorySegment[autoBufferSize];
         for (int i = 0; i < selectedBuffer.length; i++) {
             selectedBuffer[i] = allocator.allocate(1024);
         }
@@ -76,6 +72,9 @@ public class IOUring implements AutoCloseable{
         }
         submit();
         count = new AtomicLong();
+
+       eventfd = eventfd_h.eventfd(0, 0);
+        io_uring_register_eventfd(ring,eventfd);
     }
 
 
@@ -153,7 +152,7 @@ public class IOUring implements AutoCloseable{
         return true;
     }
 
-    public boolean prep_send(int socketFd, int offset, MemorySegment buffer, IntConsumer callback){
+    public boolean prep_send(int socketFd, MemorySegment buffer, IntConsumer callback){
         MemoryAddress sqe = getSqe();
         if (sqe == null) return false;
         io_uring_prep_send(sqe,socketFd,buffer,buffer.byteSize(), 0);
@@ -175,7 +174,6 @@ public class IOUring implements AutoCloseable{
         long opsCount = count.getAndIncrement();
         MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
         io_uring_sqe.user_data$set(sqeSegment, opsCount);
-        //todo
         context.put(opsCount, new IOOpResult(fd, -1, null, (res, __) -> {
             if (res < 0){
                 callback.accept(new AsyncSocket(res,"" , -1,this));
@@ -208,7 +206,23 @@ public class IOUring implements AutoCloseable{
         }
     }
 
-    private MemoryAddress getSqe() {
+    public boolean prep_time_out(long waitMs,Runnable runnable){
+        MemoryAddress sqe = getSqe();
+        if (sqe == null) return false;
+        try (MemorySession allocator = MemorySession.openConfined()) {
+            MemorySegment ts = __kernel_timespec.allocate(allocator);
+            __kernel_timespec.tv_sec$set(ts,waitMs/1000);
+            __kernel_timespec.tv_nsec$set(ts, (waitMs % 1000) * 1000000);
+            MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
+            io_uring_prep_timeout(sqeSegment,ts,0,0);
+            long opsCount = count.getAndIncrement();
+            io_uring_sqe.user_data$set(sqeSegment, opsCount);
+            context.put(opsCount, new IOOpResult(-1, -1, null, (res, __) -> runnable.run()));
+        }
+        return true;
+    }
+
+    protected MemoryAddress getSqe() {
         int i = 0;
         MemoryAddress sqe = null;
         while (sqe == null){
@@ -233,6 +247,25 @@ public class IOUring implements AutoCloseable{
         return true;
     }
 
+    public boolean prep_no_op(Runnable runnable){
+        MemoryAddress sqe = getSqe();
+        if (sqe == null) return false;
+        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
+        io_uring_prep_nop(sqeSegment);
+        long opsCount = count.getAndIncrement();
+        io_uring_sqe.user_data$set(sqeSegment, opsCount);
+        context.put(opsCount, new IOOpResult(-1, -1, null, (res, __) -> runnable.run()));
+        return true;
+    }
+
+    public boolean wakeup(){
+        if (prep_no_op(() -> {})) {
+            submit();
+            return true;
+        }
+        return false;
+    }
+
 
     public boolean provideBuffer(MemorySegment buffer,int bid,boolean needSubmit){
         MemoryAddress sqe = getSqe();
@@ -253,6 +286,11 @@ public class IOUring implements AutoCloseable{
     }
 
 
+    /**
+     * 非阻塞获取事件
+     * @param max 本次最大获取事件数量
+     * @return
+     */
     public List<IOOpResult> batchGetCqe(int max){
         try (MemorySession tmp = MemorySession.openConfined()) {
             MemorySegment ref = tmp.allocate(C_POINTER.byteSize());
@@ -262,6 +300,10 @@ public class IOUring implements AutoCloseable{
                 MemoryAddress cqePoint = ref.get(C_POINTER, 0);
                 MemorySegment cqe = io_uring_cqe.ofAddress(cqePoint, MemorySession.global());
                 long opsCount = io_uring_cqe.user_data$get(cqe);
+                if (opsCount < 0){
+                    io_uring_cqe_seen(ring,cqe);
+                    continue;
+                }
                 IOOpResult result = context.remove(opsCount);
                 result.res = io_uring_cqe.res$get(cqe);
                 result.bid = io_uring_cqe.flags$get(cqe) >> IORING_CQE_BUFFER_SHIFT();
@@ -274,6 +316,10 @@ public class IOUring implements AutoCloseable{
     }
 
 
+    /**
+     * 等待一个事件
+     * @return
+     */
     public List<IOOpResult> waitFd(){
         //及时释放内存
         //太弱智了 不支持栈上分配
@@ -295,6 +341,13 @@ public class IOUring implements AutoCloseable{
             return List.of(result);
         }
 
+    }
+
+    public void waitComplete(){
+        try (MemorySession memorySession = MemorySession.openConfined()) {
+            MemorySegment count = memorySession.allocate(eventfd_h.C_LONG);
+            long read = read(eventfd, count, eventfd_h.C_LONG.byteSize());
+        }
     }
 
     @Override

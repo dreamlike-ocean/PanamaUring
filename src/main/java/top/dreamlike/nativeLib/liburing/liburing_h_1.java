@@ -13,12 +13,15 @@ class liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_timeout$MH,"io_uring_prep_timeout");
     }
     public static void io_uring_prep_timeout ( Addressable sqe,  Addressable ts,  int count,  int flags) {
-        var mh$ = io_uring_prep_timeout$MH();
-        try {
-            mh$.invokeExact(sqe, ts, count, flags);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
+        //static inline void io_uring_prep_timeout(struct io_uring_sqe *sqe,
+        //					 struct __kernel_timespec *ts,
+        //					 unsigned count, unsigned flags)
+        //{
+        //	io_uring_prep_rw(IORING_OP_TIMEOUT, sqe, -1, ts, 1, count);
+        //	sqe->timeout_flags = flags;
+        //}
+        io_uring_prep_rw(IORING_OP_TIMEOUT(), sqe, -1, ts,1, count);
+        io_uring_sqe.timeout_flags$set((MemorySegment) sqe,flags);
     }
     public static MethodHandle io_uring_prep_timeout_remove$MH() {
         return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_timeout_remove$MH,"io_uring_prep_timeout_remove");
