@@ -263,6 +263,17 @@ public class IOUring implements AutoCloseable{
         return true;
     }
 
+    public boolean prep_fsync(int fd,int fsyncflag,Consumer<Integer> runnable){
+        MemoryAddress sqe = getSqe();
+        if (sqe == null) return false;
+        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
+        io_uring_prep_fsync(sqe, fd,fsyncflag);
+        long opsCount = count.getAndIncrement();
+        io_uring_sqe.user_data$set(sqeSegment, opsCount);
+        context.put(opsCount, new IOOpResult(-1, -1, null, (res, __) -> runnable.accept(res)));
+        return true;
+    }
+
     public boolean wakeup(){
         if (prep_no_op(() -> {})) {
             submit();
@@ -270,7 +281,6 @@ public class IOUring implements AutoCloseable{
         }
         return false;
     }
-
 
     public boolean provideBuffer(MemorySegment buffer,int bid,boolean needSubmit){
         MemoryAddress sqe = getSqe();

@@ -4275,12 +4275,11 @@ public class liburing_h extends liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_fsync$MH,"io_uring_prep_fsync");
     }
     public static void io_uring_prep_fsync ( Addressable sqe,  int fd,  int fsync_flags) {
-        var mh$ = io_uring_prep_fsync$MH();
-        try {
-            mh$.invokeExact(sqe, fd, fsync_flags);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
+//        io_uring_prep_rw(IORING_OP_FSYNC, sqe, fd, NULL, 0, 0);
+//	sqe->fsync_flags = fsync_flags;
+        io_uring_prep_rw(IORING_OP_FSYNC(), sqe, fd,MemoryAddress.NULL, 0,0);
+        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof(), MemorySession.global());
+        io_uring_sqe.fsync_flags$set(sqeSegment, fsync_flags);
     }
     public static MethodHandle io_uring_prep_nop$MH() {
         return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_nop$MH,"io_uring_prep_nop");

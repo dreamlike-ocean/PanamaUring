@@ -16,6 +16,10 @@ public class main {
         Integer res = asyncFile.write(-1, MemorySession.global().allocateUtf8String("追加的元素"))
                 .get();
         System.out.println(res);
+        asyncFile.fsync()
+                        .thenAccept(i -> System.out.println("fsync:"+i))
+                                .get();
+       eventLoop.shutdown();
 
     }
 

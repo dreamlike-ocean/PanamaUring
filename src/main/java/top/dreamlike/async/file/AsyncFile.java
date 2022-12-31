@@ -87,4 +87,13 @@ public class AsyncFile {
         return future;
     }
 
+    public CompletableFuture<Integer> fsync(){
+        CompletableFuture<Integer> future = new CompletableFuture<>();
+        uring.prep_fsync(fd,0, future::complete);
+
+        return future;
+    }
+
+
+
 }
