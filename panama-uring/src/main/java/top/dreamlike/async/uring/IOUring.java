@@ -23,7 +23,8 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static top.dreamlike.nativeLib.epoll.epoll_h.EPOLLIN;
 import static top.dreamlike.nativeLib.eventfd.eventfd_h.EFD_NONBLOCK;
-import static top.dreamlike.nativeLib.inet.inet_h.inet_ntoa;
+import static top.dreamlike.nativeLib.inet.inet_h.*;
+import static top.dreamlike.nativeLib.inet.inet_h.C_POINTER;
 import static top.dreamlike.nativeLib.liburing.liburing_h.*;
 import static top.dreamlike.nativeLib.string.string_h.strlen;
 
@@ -187,8 +188,9 @@ public class IOUring implements AutoCloseable{
             if (res < 0){
                 callback.accept(new AsyncSocket(res,"" , -1,this));
             }else {
-                short port = sockaddr_in.sin_port$get(client_addr);
-                MemoryAddress remoteHost = inet_ntoa(top.dreamlike.nativeLib.inet.sockaddr_in.sin_addr$slice(client_addr));
+                short sin_port = sockaddr_in.sin_port$get(client_addr);
+                int port = Short.toUnsignedInt(ntohs(sin_port));
+                MemoryAddress remoteHost = inet_ntoa(sockaddr_in.sin_addr$slice(client_addr));
                 long strlen = strlen(remoteHost);
                 String host = new String(MemorySegment.ofAddress(remoteHost, strlen, MemorySession.global()).toArray(JAVA_BYTE));
                 callback.accept(new AsyncSocket(res,host , port,this));
