@@ -31,18 +31,31 @@ public class AsyncFile {
      * @param memorySegment 要保证有效的memory
      * @return 读取了多少字节
      */
-    public CompletableFuture<Integer> read(int offset,MemorySegment memorySegment){
+    public CompletableFuture<Integer> read(int offset, MemorySegment memorySegment){
         CompletableFuture<Integer> future = new CompletableFuture<>();
-        uring.prep_readV(fd,offset, memorySegment, future::complete);
+        uring.prep_read(fd,offset, memorySegment, future::complete);
         return future;
     }
 
 
-    public CompletableFuture<byte[]> read(int offset,int length){
+    public CompletableFuture<byte[]> read(int offset, int length){
+        MemorySession memorySession = MemorySession.openShared();
+        MemorySegment buffer = memorySession.allocate(length);
+        return read(offset, buffer)
+                .thenApply(i ->{
+                    byte[] bytes = buffer.asSlice(0, i).toArray(JAVA_BYTE);
+                    memorySession.close();
+                    return bytes;
+                } );
+    }
+
+    public CompletableFuture<byte[]> readSelected(int offset, int length){
         CompletableFuture<byte[]> future = new CompletableFuture<>();
         uring.prep_selected_read(fd,offset,length, future);
         return future;
     }
+
+
 
 
 

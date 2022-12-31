@@ -9,7 +9,7 @@ public class IOOpResult {
     public int res;
     public  MemorySegment segment;
 
-    public BiIntConsumer callback;
+    public final BiIntConsumer callback;
 
     public int bid;
 
@@ -21,6 +21,9 @@ public class IOOpResult {
     }
 
 
+    public void doCallBack(){
+        callback.consumer(res,bid);
+    }
 
 
     @Override

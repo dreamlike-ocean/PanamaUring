@@ -2,6 +2,7 @@ package top.dreamlike.async.uring;
 
 import top.dreamlike.async.IOOpResult;
 import top.dreamlike.async.file.AsyncFile;
+import top.dreamlike.async.socket.AsyncServerSocket;
 import top.dreamlike.async.socket.AsyncSocket;
 import top.dreamlike.epoll.Epoll;
 import top.dreamlike.nativeLib.eventfd.eventfd_h;
@@ -9,6 +10,7 @@ import top.dreamlike.nativeLib.in.sockaddr_in;
 import top.dreamlike.nativeLib.liburing.*;
 import top.dreamlike.nativeLib.socket.sockaddr;
 
+import java.io.*;
 import java.lang.foreign.*;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -23,7 +25,6 @@ import static top.dreamlike.nativeLib.eventfd.eventfd_h.EFD_NONBLOCK;
 import static top.dreamlike.nativeLib.inet.inet_h.inet_ntoa;
 import static top.dreamlike.nativeLib.liburing.liburing_h.*;
 import static top.dreamlike.nativeLib.string.string_h.strlen;
-import static top.dreamlike.nativeLib.unistd.unistd_h.read;
 
 public class IOUring implements AutoCloseable{
     private final MemorySegment ring;
@@ -91,6 +92,10 @@ public class IOUring implements AutoCloseable{
 
     public AsyncFile openFile(String path, int ops){
         return new AsyncFile(path,this,ops);
+    }
+
+    public AsyncServerSocket openServer(String host,int port){
+        return new AsyncServerSocket(this,host,port);
     }
 
     public boolean checkSupport(int op){
@@ -189,7 +194,7 @@ public class IOUring implements AutoCloseable{
         return true;
     }
 
-    public boolean prep_readV(int fd, int offset, MemorySegment buffer, IntConsumer callback){
+    public boolean prep_read(int fd, int offset, MemorySegment buffer, IntConsumer callback){
         MemoryAddress sqe = getSqe();
         if (sqe == null) return false;
         //byte*,len
@@ -198,7 +203,7 @@ public class IOUring implements AutoCloseable{
             iovec.iov_base$set(iovecStruct, buffer.address());
             iovec.iov_len$set(iovecStruct, buffer.byteSize());
             MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
-            io_uring_prep_readv(sqe, fd, iovecStruct, 1, offset);
+            io_uring_prep_read(sqe,fd,buffer,(int) buffer.byteSize(), offset);
             long opsCount = count.getAndIncrement();
             io_uring_sqe.user_data$set(sqeSegment, opsCount);
             context.put(opsCount, new IOOpResult(fd, -1, buffer, (res, __) -> callback.accept(res)));
@@ -342,16 +347,49 @@ public class IOUring implements AutoCloseable{
         }
 
     }
-
     public void waitComplete(){
+        waitComplete(-1);
+    }
+
+    public void waitComplete(long waitMs){
         try (MemorySession memorySession = MemorySession.openConfined()) {
-            MemorySegment count = memorySession.allocate(eventfd_h.C_LONG);
-            long read = read(eventfd, count, eventfd_h.C_LONG.byteSize());
+            MemorySegment cqe_ptr = memorySession.allocate(C_POINTER.byteSize());
+            if (waitMs == -1){
+                io_uring_wait_cqe(ring, cqe_ptr);
+                return;
+            }
+
+            MemorySegment ts = __kernel_timespec.allocate(allocator);
+            __kernel_timespec.tv_sec$set(ts,waitMs/1000);
+            __kernel_timespec.tv_nsec$set(ts, (waitMs % 1000) * 1000000);
+            io_uring_wait_cqe_timeout(ring,cqe_ptr,ts);
         }
     }
 
     @Override
     public void close() throws Exception {
         io_uring_queue_exit(ring);
+        allocator.close();
+    }
+
+    static {
+//        System.load("/home/dreamlike/uringDemo/src/main/resources/liburing.so");
+        try {
+            InputStream is = IOUring.class.getResourceAsStream("/liburing.so");
+            File file = File.createTempFile("liburing", ".so");
+            OutputStream os = new FileOutputStream(file);
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = is.read(buffer)) != -1) {
+                os.write(buffer, 0, length);
+            }
+            is.close();
+            os.close();
+            System.load(file.getAbsolutePath());
+            file.deleteOnExit();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 }

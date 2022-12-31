@@ -122,7 +122,7 @@ public class FileTest {
         ArrayList<CompletableFuture<byte[]>> futures = new ArrayList<>();
 
         for (int i = 0; i < 6; i++) {
-            CompletableFuture<byte[]> read = file.read(0, 1024);
+            CompletableFuture<byte[]> read = file.readSelected(0, 1024);
             read.thenAccept(c -> {
                 System.out.println(new String(c));
                 System.out.println("_________________________________________");
@@ -237,32 +237,14 @@ public class FileTest {
     public void testTimeout() throws ExecutionException, InterruptedException {
         System.load("/home/dreamlike/uringDemo/src/main/resources/liburing.so");
         IOUring ioUring = new IOUring(16,4);
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        ioUring.prep_time_out(2000,() -> {
-            future.complete(null);
-        });
-        LocalDateTime now = LocalDateTime.now();
-        new Thread(()->{
-            while (true){
-                ioUring.waitComplete();
-                for (IOOpResult ioOpResult : ioUring.batchGetCqe(1024)) {
-                    ioOpResult.callback.consumer(ioOpResult.res, ioOpResult.bid);
-                }
-            }
-        }).start();
-        ioUring.submit();
-        ioUring.prep_no_op(() -> {
-            future.complete(null);
-        });
-        new Thread(() -> {
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } ioUring.submit();
-        }).start();
-        future.thenAccept(v -> {
-            System.out.println("timeout "+ Duration.between(now, LocalDateTime.now()).getSeconds());
-        }).get();
+        ioUring.waitComplete(-1);
+        LocalDateTime start = LocalDateTime.now();
+        for (IOOpResult ioOpResult : ioUring.batchGetCqe(16)) {
+            System.out.println(ioOpResult.fd);
+        }
+
+        ioUring.waitComplete(6_000);
+
+        System.out.println(Duration.between(start,LocalDateTime.now()).getSeconds());
     }
 }
