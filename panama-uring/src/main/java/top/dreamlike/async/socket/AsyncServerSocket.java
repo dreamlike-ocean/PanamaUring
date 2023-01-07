@@ -1,7 +1,7 @@
 package top.dreamlike.async.socket;
 
 import top.dreamlike.async.uring.IOUring;
-import top.dreamlike.helper.SocketHelper;
+import top.dreamlike.helper.NativeHelper;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -12,7 +12,7 @@ public class AsyncServerSocket {
 
     public AsyncServerSocket(IOUring uring,String host,int port){
         this.uring = uring;
-        this.serverFd = SocketHelper.serverListen(host, port);
+        this.serverFd = NativeHelper.serverListen(host, port);
     }
 
 

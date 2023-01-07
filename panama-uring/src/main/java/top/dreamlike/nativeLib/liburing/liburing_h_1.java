@@ -49,11 +49,9 @@ class liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_accept$MH,"io_uring_prep_accept");
     }
 
-    //io_uring_prep_rw(IORING_OP_ACCEPT, sqe, fd, addr, 0,
-    //				(__u64) (unsigned long) addrlen);
-    //	sqe->accept_flags = flags;
     public static void io_uring_prep_accept ( Addressable sqe,  int fd,  Addressable addr,  Addressable addrlen,  int flags) {
         io_uring_prep_rw(IORING_OP_ACCEPT(),sqe,fd,addr,0,addrlen.address().toRawLongValue());
+
     }
     public static MethodHandle io_uring_prep_cancel$MH() {
         return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_cancel$MH,"io_uring_prep_cancel");
@@ -81,12 +79,7 @@ class liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_connect$MH,"io_uring_prep_connect");
     }
     public static void io_uring_prep_connect ( Addressable sqe,  int fd,  Addressable addr,  int addrlen) {
-        var mh$ = io_uring_prep_connect$MH();
-        try {
-            mh$.invokeExact(sqe, fd, addr, addrlen);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
+      io_uring_prep_rw(IORING_OP_CONNECT(), sqe,fd,addr,0,addrlen);
     }
     public static MethodHandle io_uring_prep_files_update$MH() {
         return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_files_update$MH,"io_uring_prep_files_update");
@@ -181,7 +174,6 @@ class liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_send$MH,"io_uring_prep_send");
     }
     public static void io_uring_prep_send ( Addressable sqe,  int sockfd,  Addressable buf,  long len,  int flags) {
-//       io_uring_prep_rw(IORING_OP_SEND, sqe, sockfd, buf, len, 0);
         io_uring_prep_rw(IORING_OP_SEND(), sqe,sockfd, buf, (int)len, 0);
     }
     public static MethodHandle io_uring_prep_recv$MH() {

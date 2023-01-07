@@ -4,7 +4,9 @@ import org.jctools.queues.MpscLinkedQueue;
 import top.dreamlike.async.IOOpResult;
 import top.dreamlike.async.file.AsyncFile;
 import top.dreamlike.async.socket.AsyncServerSocket;
+import top.dreamlike.async.socket.AsyncSocket;
 
+import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,7 +33,7 @@ public class EventLoop implements Runnable, Executor {
     public EventLoop(int ringSize, int autoBufferSize,long autoSubmitDuration) {
         ioUring = new IOUring(ringSize, autoBufferSize);
         tasks = new MpscLinkedQueue<>();
-        worker = new Thread(this,"io-uring-eventloop-"+atomicInteger.getAndIncrement());
+        worker = new Thread(this,"io-uring-eventloop-"+ atomicInteger.getAndIncrement());
         this.autoSubmitDuration = new AtomicLong(autoSubmitDuration);
         close = new AtomicBoolean(false);
         lastSubmitTimeStamp = System.currentTimeMillis();
@@ -96,5 +98,11 @@ public class EventLoop implements Runnable, Executor {
 
     public AsyncServerSocket openServer(String host, int port) {
         return ioUring.openServer(host, port);
+    }
+
+
+    public AsyncSocket openSocket(String host,int port) {
+        InetSocketAddress address = new InetSocketAddress(host, port);
+        return new AsyncSocket(address, ioUring);
     }
 }

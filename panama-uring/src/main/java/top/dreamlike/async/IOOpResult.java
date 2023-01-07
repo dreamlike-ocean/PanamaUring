@@ -1,8 +1,10 @@
 package top.dreamlike.async;
 
+import top.dreamlike.async.uring.Op;
 import top.dreamlike.helper.BiIntConsumer;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.reflect.Type;
 
 public class IOOpResult {
     public final int fd;
@@ -13,11 +15,14 @@ public class IOOpResult {
 
     public int bid;
 
-    public IOOpResult(int fd, int res, MemorySegment segment, BiIntConsumer callback) {
+    public final Op op;
+
+    public IOOpResult(int fd, int res,Op op, MemorySegment segment, BiIntConsumer callback) {
         this.fd = fd;
         this.res = res;
         this.segment = segment;
         this.callback = callback;
+        this.op = op;
     }
 
 
