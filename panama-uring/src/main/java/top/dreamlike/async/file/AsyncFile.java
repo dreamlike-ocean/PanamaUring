@@ -1,6 +1,7 @@
 package top.dreamlike.async.file;
 
 import top.dreamlike.async.uring.IOUring;
+import top.dreamlike.helper.NativeUnsafe;
 import top.dreamlike.nativeLib.fcntl.fcntl_h;
 import top.dreamlike.nativeLib.unistd.unistd_h;
 
@@ -33,6 +34,7 @@ public class AsyncFile {
      * @param memorySegment 要保证有效的memory
      * @return 读取了多少字节
      */
+    @NativeUnsafe("memory segment要保证有效")
     public CompletableFuture<Integer> read(int offset, MemorySegment memorySegment){
         CompletableFuture<Integer> future = new CompletableFuture<>();
         if (!uring.prep_read(fd, offset, memorySegment, future::complete)) {

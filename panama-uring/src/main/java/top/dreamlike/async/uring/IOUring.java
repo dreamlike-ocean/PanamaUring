@@ -6,21 +6,21 @@ import top.dreamlike.async.socket.AsyncServerSocket;
 import top.dreamlike.async.socket.AsyncSocket;
 import top.dreamlike.epoll.Epoll;
 import top.dreamlike.helper.NativeHelper;
+import top.dreamlike.helper.Pair;
 import top.dreamlike.nativeLib.eventfd.eventfd_h;
-import top.dreamlike.nativeLib.in.in_addr;
 import top.dreamlike.nativeLib.in.sockaddr_in;
 import top.dreamlike.nativeLib.inet.inet_h;
 import top.dreamlike.nativeLib.liburing.*;
 import top.dreamlike.nativeLib.socket.sockaddr;
 
 import java.io.*;
-import java.lang.annotation.Native;
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.net.*;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -304,7 +304,7 @@ public class IOUring implements AutoCloseable{
         return true;
     }
 
-    public boolean prep_connect(AsyncSocket socket,IntConsumer callback) throws UnknownHostException {
+    public boolean prep_connect(AsyncSocket socket, IntConsumer callback) throws UnknownHostException {
         int fd = getFd(socket);
         MemoryAddress sqe;
         if ((sqe = getSqe()) == null || fd == -1) {
@@ -313,65 +313,59 @@ public class IOUring implements AutoCloseable{
         InetSocketAddress inetAddress = socket.getInetAddress();
         try (MemorySession session = MemorySession.openConfined()) {
 
-//            InetAddress dnsRes = InetAddress.getByName(inetAddress.getHostString());
-//            String host = dnsRes.getHostAddress();
-            String host = "61.147.236.46";
+            String host = inetAddress.getHostString();
             int port = inetAddress.getPort();
-            MemorySegment sockaddrSegement = sockaddr_in.allocate(session);
-            memset(sockaddrSegement, 0, sockaddr_in.sizeof());
-
-            sockaddr_in.sin_family$set(sockaddrSegement, (short) inet_h.AF_INET());
-            sockaddr_in.sin_port$set(sockaddrSegement, htons((short) port));
-            int inet_addr = inet_addr(session.allocateUtf8String(host));
-            in_addr.s_addr$set(sockaddr_in.sin_addr$slice(sockaddrSegement), inet_addr);
-
+            Pair<MemorySegment, Boolean> socketInfo = NativeHelper.getSockAddr(session, host, port);
+            MemorySegment sockaddrSegement =  socketInfo.t1();
 //            inet_ntoa()函数将其转换为char *类型
-            {
-                MemoryAddress memoryAddress = inet_ntoa(sockaddr_in.sin_addr$slice(sockaddrSegement));
-                long strlen = strlen(memoryAddress);
-                String ipv4 = new String(MemorySegment.ofAddress(memoryAddress, strlen, MemorySession.global()).toArray(JAVA_BYTE));
-                System.out.println(ipv4);
-                System.out.println("port:" + Short.toUnsignedInt(ntohs(sockaddr_in.sin_port$get(sockaddrSegement))));
-            }
+//            {
+//                MemoryAddress memoryAddress = inet_ntoa(sockaddr_in.sin_addr$slice(sockaddrSegement));
+//                long strlen = strlen(memoryAddress);
+//                String ipv4 = new String(MemorySegment.ofAddress(memoryAddress, strlen, MemorySession.global()).toArray(JAVA_BYTE));
+//                System.out.println(ipv4);
+//                System.out.println("port:" + Short.toUnsignedInt(ntohs(sockaddr_in.sin_port$get(sockaddrSegement))));
+//            }
             long opsCount = count.getAndIncrement();
             MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
             context.put(opsCount, new IOOpResult(-1, -1, Op.CONNECT,null, (res, __) -> callback.accept(res)));
 //             int connect_res = inet_h.connect(fd, sockaddrSegement, (int) sockaddr.sizeof());
 ////            这个返回0
 //            System.out.println("connect_res :"+connect_res);
-            io_uring_prep_connect(sqe,fd,sockaddrSegement, (int) sockaddr.sizeof());
+//            System.out.println("Err:"+NativeHelper.getNowError());
+
+//            NativeHelper.setSocket(fd, inet_h.SO_REUSEADDR());
+//            NativeHelper.setSocket(fd, inet_h.SO_REUSEPORT());
+            io_uring_prep_connect(sqe,fd,sockaddrSegement,(int) sockaddrSegement.byteSize());
             io_uring_sqe.user_data$set(sqeSegment, opsCount);
         }
         return true;
     }
 
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
-        EventLoop eventLoop = new EventLoop(128, 6, 1000);
-        AsyncSocket socket = eventLoop.openSocket("www.bilibili.com", 80);
+        IOUringEventLoop IOUringEventLoop = new IOUringEventLoop(128, 6, 1000);
+//        //240e:95d:1003::42
+        AsyncSocket socket = IOUringEventLoop.openSocket("www.baidu.com", 80);
         CompletableFuture<Integer> connect = socket.connect();
-
-        Thread.sleep(2_000);
-        eventLoop.start();
+        IOUringEventLoop.submitAndWait(10).forEach(IOOpResult::doCallBack);
         System.out.println("eventloop start");
         Integer integer = connect.get();
         System.out.println("socket res:"+NativeHelper.getErrorStr(-integer));
-//        eventLoop.shutdown();
 
-//        MemorySession session = MemorySession.global();
-//        MemorySegment ipv4String = session.allocateUtf8String("61.147.236.46");
-//
-//        int ipv4 = inet_addr(ipv4String);
-//        System.out.println(ipv4);
-//        String[] ipString = new String[4];
-//        for (int j = 0; j < 4; j++) {
-//            int pos = j*8;
-//            int and = ipv4 & (255 << pos);
-//            ipString[j] = String.valueOf(and >>> pos);
-//        }
-//
-//        System.out.println(String.join(".", ipString));
+        Thread.sleep(1000);
+
+
+//        int tcpClientSocket = NativeHelper.tcpClientSocket();
+//        InetSocketAddress address = new InetSocketAddress("ipv6.google.com", 80);
+//        Pair<MemorySegment, Boolean> sockAddr = NativeHelper.getSockAddr(MemorySession.global(), address.getHostString(), 80);
+//        int connect = inet_h.connect(tcpClientSocket, sockAddr.t1(), (int) sockAddr.t1().byteSize());
+//        System.out.println(connect);
+//        System.out.println(NativeHelper.getNowError());
+//        Thread.sleep(100000);
+
     }
 
+
+//todo 感觉还有并发问题
     public boolean wakeup(){
         if (prep_no_op(() -> {})) {
             submit();

@@ -5,10 +5,7 @@ import top.dreamlike.helper.NativeHelper;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.net.UnixDomainSocketAddress;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.util.concurrent.CompletableFuture;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
@@ -31,13 +28,13 @@ public class AsyncSocket {
     }
 
 
-    public AsyncSocket(SocketAddress address,IOUring ring){
+    public AsyncSocket(SocketAddress address,IOUring ring) {
         this.ring = ring;
         switch (address) {
             case InetSocketAddress remote -> {
                 host = remote.getHostString();
                 port = remote.getPort();
-                fd = NativeHelper.tcpClientSocket();
+                fd = remote.getAddress() instanceof Inet6Address ? NativeHelper.tcpClientSocketV6() : NativeHelper.tcpClientSocket();
             }
             case UnixDomainSocketAddress local -> {
                 //todo uds有空再做

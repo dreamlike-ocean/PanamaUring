@@ -1,7 +1,7 @@
 import org.junit.Test;
 import top.dreamlike.async.file.AsyncFile;
 import top.dreamlike.async.IOOpResult;
-import top.dreamlike.async.uring.EventLoop;
+import top.dreamlike.async.uring.IOUringEventLoop;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.async.socket.AsyncServerSocket;
 import top.dreamlike.async.socket.AsyncSocket;
@@ -178,10 +178,10 @@ public class FileTest {
 
     @Test
     public void testAsyncServer() throws ExecutionException, InterruptedException {
-        EventLoop eventLoop = new EventLoop(32, 16,1000);
+        IOUringEventLoop IOUringEventLoop = new IOUringEventLoop(32, 16,1000);
 
-        AsyncServerSocket serverSocket = eventLoop.openServer("127.0.0.1", 4399);
-        eventLoop.start();
+        AsyncServerSocket serverSocket = IOUringEventLoop.openServer("127.0.0.1", 4399);
+        IOUringEventLoop.start();
 
         AsyncSocket asyncSocket = serverSocket.acceptAsync().get();
 

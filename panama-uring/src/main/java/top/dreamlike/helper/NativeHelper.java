@@ -1,16 +1,25 @@
 package top.dreamlike.helper;
 
+import top.dreamlike.async.uring.IOUringEventLoop;
+import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.nativeLib.errno.errno_h;
 import top.dreamlike.nativeLib.in.sockaddr_in;
+import top.dreamlike.nativeLib.inet.in_addr;
 import top.dreamlike.nativeLib.inet.inet_h;
+import top.dreamlike.nativeLib.inet.sockaddr_in6;
 
-import java.lang.foreign.MemoryAddress;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
-import java.lang.foreign.ValueLayout;
+import java.lang.foreign.*;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.lang.reflect.Field;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static top.dreamlike.nativeLib.fcntl.fcntl_h.*;
-import static top.dreamlike.nativeLib.fcntl.fcntl_h.O_NONBLOCK;
 import static top.dreamlike.nativeLib.inet.inet_h.*;
 import static top.dreamlike.nativeLib.socket.socket_h.listen;
 import static top.dreamlike.nativeLib.string.string_h.*;
@@ -46,6 +55,59 @@ public class NativeHelper {
     }
 
 
+    public static int tcpClientSocketV6(){
+        int socketFd = inet_h.socket(inet_h.AF_INET6(), inet_h.SOCK_STREAM(), 0);
+        if (socketFd  == -1) throw new IllegalStateException("open listen socket fail");
+        return socketFd;
+    }
+
+    /**
+     *
+     * @param session
+     * @param host
+     * @param port
+     * @return sockAddr to isIpv4
+     * @throws UnknownHostException
+     */
+    public static Pair<MemorySegment,Boolean> getSockAddr(MemorySession session,String host,int port) throws UnknownHostException {
+        InetAddress inetAddress = InetAddress.getByName(host);
+        return switch (inetAddress) {
+            case Inet6Address address -> new Pair<>(ipv6(session, address.getHostAddress(),port),false);
+            case Inet4Address address -> new Pair<>(ipv4(session,address.getHostAddress(),port),true);
+            case InetAddress address -> new Pair<>(ipv4(session,address.getHostAddress(),port),true);
+        };
+    }
+
+    private static MemorySegment ipv6(MemorySession session,String ipv6,int port){
+        MemorySegment sockaddrSegement = sockaddr_in6.allocate(session);
+        bzero(sockaddrSegement, sockaddr_in6.sizeof());
+        sockaddr_in6.sin6_family$set(sockaddrSegement,(short)inet_h.AF_INET6());
+        sockaddr_in6.sin6_port$set(sockaddrSegement,htons((short) port));
+        int res = inet_pton(AF_INET6(), session.allocateUtf8String(ipv6), sockaddr_in6.sin6_addr$slice(sockaddrSegement));
+        if (res < 0){
+            throw new IllegalStateException("inet_pton fail!,err:"+getNowError());
+        }
+        return sockaddrSegement;
+    }
+
+    private static MemorySegment ipv4(MemorySession session,String ipv4,int port){
+        MemorySegment sockaddrSegement = sockaddr_in.allocate(session);
+        bzero(sockaddrSegement,  sockaddr_in.sizeof());
+        sockaddr_in.sin_family$set(sockaddrSegement, (short) inet_h.AF_INET());
+        sockaddr_in.sin_port$set(sockaddrSegement, htons((short) port));
+        int res = inet_pton(AF_INET(), session.allocateUtf8String(ipv4), sockaddr_in.sin_addr$slice(sockaddrSegement));
+        if (res < 0){
+            throw new IllegalStateException("inet_pton fail!,err:"+getNowError());
+        }
+        return sockaddrSegement;
+    }
+
+    public static int setSocket(int fd,int optName){
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment val = session.allocate(JAVA_INT, 1);
+            return setsockopt(fd, SOL_SOCKET(), optName, val, (int) val.byteSize());
+        }
+    }
 
     public static int getErrorNo(){
         return  errno_h.__errno_location().get(ValueLayout.JAVA_INT, 0);
@@ -59,17 +121,6 @@ public class NativeHelper {
         return errNo < errStr.length ? errStr[errNo] : "Unknown error "+errNo;
     }
 
-    static {
-        errStr = new String[257];
-        for (int errNo = 0; errNo <= 256; errNo++) {
-            MemoryAddress memoryAddress = strerror(errNo);
-            long strlen = strlen(memoryAddress);
-            MemorySegment memorySegment = MemorySegment.ofAddress(memoryAddress, strlen, MemorySession.global());
-            errStr[errNo] = new String(memorySegment.toArray(ValueLayout.JAVA_BYTE));
-        }
-    }
-
-
     public static int makeNoBlocking(int fd){
         int flags = fcntl(fd, F_GETFL(), 0);
         if (flags == -1){
@@ -81,4 +132,53 @@ public class NativeHelper {
         }
         return 0;
     }
+
+    public static String getIpV4Host(MemorySegment sockaddrSegement){
+        MemoryAddress memoryAddress = inet_ntoa(sockaddr_in.sin_addr$slice(sockaddrSegement));
+        long strlen = strlen(memoryAddress);
+        return new String(MemorySegment.ofAddress(memoryAddress, strlen, MemorySession.global()).toArray(JAVA_BYTE));
+    }
+
+    public static int getIpv4Port(MemorySegment sockaddrSegement){
+        return Short.toUnsignedInt(ntohs(sockaddr_in.sin_port$get(sockaddrSegement)));
+    }
+
+    @NativeUnsafe("存在段错误风险")
+    public static MemorySegment unsafePointConvertor(MemoryAddress p){
+        return MemorySegment.ofAddress(p, Long.MAX_VALUE, MemorySession.global());
+    }
+
+
+    @NativeUnsafe("反射内部实现，测试使用")
+    public IOUring getIOUring(IOUringEventLoop IOUringEventLoop){
+        return (IOUring) IO_URING_VAR_HANDLER.get(IOUringEventLoop);
+    }
+
+
+    static {
+        errStr = new String[257];
+        for (int errNo = 0; errNo <= 256; errNo++) {
+            MemoryAddress memoryAddress = strerror(errNo);
+            long strlen = strlen(memoryAddress);
+            MemorySegment memorySegment = MemorySegment.ofAddress(memoryAddress, strlen, MemorySession.global());
+            errStr[errNo] = new String(memorySegment.toArray(JAVA_BYTE));
+        }
+
+
+        try {
+            //不破坏封装
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            Field field = IOUringEventLoop.class.getDeclaredField("ioUring");
+            field.setAccessible(true);
+            IO_URING_VAR_HANDLER = MethodHandles.privateLookupIn(IOUringEventLoop.class, lookup)
+                    .unreflectVarHandle(field);
+        } catch (Exception e) {
+            throw new InternalError(e);
+        }
+
+    }
+
+    private static final VarHandle IO_URING_VAR_HANDLER;
+
+
 }

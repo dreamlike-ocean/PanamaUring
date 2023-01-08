@@ -5,16 +5,18 @@ import top.dreamlike.async.IOOpResult;
 import top.dreamlike.async.file.AsyncFile;
 import top.dreamlike.async.socket.AsyncServerSocket;
 import top.dreamlike.async.socket.AsyncSocket;
+import top.dreamlike.helper.NativeUnsafe;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class EventLoop implements Runnable, Executor {
+public class IOUringEventLoop implements Runnable, Executor {
 
-    private final IOUring ioUring;
+    final IOUring ioUring;
 
     private final MpscLinkedQueue<Runnable> tasks;
 
@@ -30,7 +32,7 @@ public class EventLoop implements Runnable, Executor {
 
     private final AtomicBoolean start = new AtomicBoolean(false);
 
-    public EventLoop(int ringSize, int autoBufferSize,long autoSubmitDuration) {
+    public IOUringEventLoop(int ringSize, int autoBufferSize, long autoSubmitDuration) {
         ioUring = new IOUring(ringSize, autoBufferSize);
         tasks = new MpscLinkedQueue<>();
         worker = new Thread(this,"io-uring-eventloop-"+ atomicInteger.getAndIncrement());
@@ -104,5 +106,12 @@ public class EventLoop implements Runnable, Executor {
     public AsyncSocket openSocket(String host,int port) {
         InetSocketAddress address = new InetSocketAddress(host, port);
         return new AsyncSocket(address, ioUring);
+    }
+
+    @NativeUnsafe("并发问题，不推荐直接使用")
+    public List<IOOpResult> submitAndWait(int max) {
+        ioUring.submit();
+        ioUring.waitComplete();
+        return ioUring.batchGetCqe(max);
     }
 }
