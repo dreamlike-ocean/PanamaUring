@@ -313,76 +313,63 @@ public class IOUring implements AutoCloseable{
         InetSocketAddress inetAddress = socket.getInetAddress();
         try (MemorySession session = MemorySession.openConfined()) {
 
-            InetAddress dnsRes = InetAddress.getByName(inetAddress.getHostString());
-            String host = dnsRes.getHostAddress();
+//            InetAddress dnsRes = InetAddress.getByName(inetAddress.getHostString());
+//            String host = dnsRes.getHostAddress();
+            String host = "61.147.236.46";
             int port = inetAddress.getPort();
             MemorySegment sockaddrSegement = sockaddr_in.allocate(session);
             memset(sockaddrSegement, 0, sockaddr_in.sizeof());
-            //int socketFd = inet_h.socket(inet_h.AF_INET(), inet_h.SOCK_STREAM(), IPPROTO_TCP());
+
             sockaddr_in.sin_family$set(sockaddrSegement, (short) inet_h.AF_INET());
             sockaddr_in.sin_port$set(sockaddrSegement, htons((short) port));
-            inet_pton(inet_h.AF_INET(), session.allocateUtf8String(host), sockaddr_in.sin_addr$slice(sockaddrSegement));
+            int inet_addr = inet_addr(session.allocateUtf8String(host));
+            in_addr.s_addr$set(sockaddr_in.sin_addr$slice(sockaddrSegement), inet_addr);
+
 //            inet_ntoa()函数将其转换为char *类型
             {
-            MemoryAddress memoryAddress = inet_ntoa(sockaddr_in.sin_addr$slice(sockaddrSegement));
-            long strlen = strlen(memoryAddress);
-            String ipv4 = new String(MemorySegment.ofAddress(memoryAddress, strlen, MemorySession.global()).toArray(JAVA_BYTE));
-            System.out.println(ipv4);
-            System.out.println("port:" + Short.toUnsignedInt(ntohs(sockaddr_in.sin_port$get(sockaddrSegement))));
+                MemoryAddress memoryAddress = inet_ntoa(sockaddr_in.sin_addr$slice(sockaddrSegement));
+                long strlen = strlen(memoryAddress);
+                String ipv4 = new String(MemorySegment.ofAddress(memoryAddress, strlen, MemorySession.global()).toArray(JAVA_BYTE));
+                System.out.println(ipv4);
+                System.out.println("port:" + Short.toUnsignedInt(ntohs(sockaddr_in.sin_port$get(sockaddrSegement))));
             }
-
-
             long opsCount = count.getAndIncrement();
             MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
             context.put(opsCount, new IOOpResult(-1, -1, Op.CONNECT,null, (res, __) -> callback.accept(res)));
 //             int connect_res = inet_h.connect(fd, sockaddrSegement, (int) sockaddr.sizeof());
-//            System.out.println("connect _res :"+connect_res);
-            io_uring_prep_connect(sqe,fd,sockaddrSegement, (int) sockaddr_in.sizeof());
+////            这个返回0
+//            System.out.println("connect_res :"+connect_res);
+            io_uring_prep_connect(sqe,fd,sockaddrSegement, (int) sockaddr.sizeof());
             io_uring_sqe.user_data$set(sqeSegment, opsCount);
-        } catch (UnknownHostException e) {
-            throw e;
         }
         return true;
     }
 
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
         EventLoop eventLoop = new EventLoop(128, 6, 1000);
-
-
-        AsyncSocket socket = eventLoop.openSocket("www.baidu.com", 80);
+        AsyncSocket socket = eventLoop.openSocket("www.bilibili.com", 80);
         CompletableFuture<Integer> connect = socket.connect();
-        Thread.sleep(5_000);
+
+        Thread.sleep(2_000);
         eventLoop.start();
         System.out.println("eventloop start");
         Integer integer = connect.get();
         System.out.println("socket res:"+NativeHelper.getErrorStr(-integer));
-        eventLoop.shutdown();
+//        eventLoop.shutdown();
 
-
-//        String host = InetAddress.getByName("www.baidu.com").getHostAddress();
-//        int socket = NativeHelper.tcpClientSocket();
-//        InetSocketAddress inetAddress = InetSocketAddress.createUnresolved("www.baidu.com",80 );
-//        String host = InetAddress.getByName(inetAddress.getHostString()).getHostAddress();
 //        MemorySession session = MemorySession.global();
-//        int port = inetAddress.getPort();
-//        MemorySegment sockaddrSegement = sockaddr_in.allocate(session);
-//        memset(sockaddrSegement, 0, sockaddr_in.sizeof());
-//        sockaddr_in.sin_family$set(sockaddrSegement, (short) inet_h.AF_INET());
-//        sockaddr_in.sin_port$set(sockaddrSegement, htons((short) port));
-//        inet_pton(inet_h.AF_INET(), session.allocateUtf8String(host), sockaddr_in.sin_addr$slice(sockaddrSegement));
+//        MemorySegment ipv4String = session.allocateUtf8String("61.147.236.46");
 //
-//        {
-//        //inet_ntoa()函数将其转换为char *类型
-//        MemoryAddress memoryAddress = inet_ntoa(sockaddr_in.sin_addr$slice(sockaddrSegement));
-//        long strlen = strlen(memoryAddress);
-//        String ipv4 = new String(MemorySegment.ofAddress(memoryAddress, strlen, session).toArray(JAVA_BYTE));
+//        int ipv4 = inet_addr(ipv4String);
 //        System.out.println(ipv4);
-//        System.out.println("port:" + Short.toUnsignedInt(ntohs(sockaddr_in.sin_port$get(sockaddrSegement))));
+//        String[] ipString = new String[4];
+//        for (int j = 0; j < 4; j++) {
+//            int pos = j*8;
+//            int and = ipv4 & (255 << pos);
+//            ipString[j] = String.valueOf(and >>> pos);
 //        }
 //
-//        int connect_res = inet_h.connect(socket, sockaddrSegement, (int) sockaddr.sizeof());
-//        System.out.println("connect res :"+connect_res+" error:"+  NativeHelper.getNowError());
-
+//        System.out.println(String.join(".", ipString));
     }
 
     public boolean wakeup(){

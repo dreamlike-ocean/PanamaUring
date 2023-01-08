@@ -78,6 +78,7 @@ class liburing_h_1 {
     public static MethodHandle io_uring_prep_connect$MH() {
         return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_connect$MH,"io_uring_prep_connect");
     }
+
     public static void io_uring_prep_connect ( Addressable sqe,  int fd,  Addressable addr,  int addrlen) {
       io_uring_prep_rw(IORING_OP_CONNECT(), sqe,fd,addr,0,addrlen);
     }

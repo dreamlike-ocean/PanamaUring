@@ -40,7 +40,7 @@ public class NativeHelper {
     }
 
     public static int tcpClientSocket(){
-        int socketFd = inet_h.socket(inet_h.AF_INET(), inet_h.SOCK_STREAM(), IPPROTO_TCP());
+        int socketFd = inet_h.socket(inet_h.AF_INET(), inet_h.SOCK_STREAM(), 0);
         if (socketFd  == -1) throw new IllegalStateException("open listen socket fail");
         return socketFd;
     }
@@ -67,7 +67,6 @@ public class NativeHelper {
             MemorySegment memorySegment = MemorySegment.ofAddress(memoryAddress, strlen, MemorySession.global());
             errStr[errNo] = new String(memorySegment.toArray(ValueLayout.JAVA_BYTE));
         }
-
     }
 
 
