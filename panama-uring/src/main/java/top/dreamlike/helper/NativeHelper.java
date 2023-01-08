@@ -16,6 +16,9 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.concurrent.Future;
+import java.util.concurrent.locks.LockSupport;
+import java.util.function.Consumer;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
@@ -149,10 +152,7 @@ public class NativeHelper {
     }
 
 
-    @NativeUnsafe("反射内部实现，测试使用")
-    public IOUring getIOUring(IOUringEventLoop IOUringEventLoop){
-        return (IOUring) IO_URING_VAR_HANDLER.get(IOUringEventLoop);
-    }
+
 
 
     static {
@@ -163,22 +163,8 @@ public class NativeHelper {
             MemorySegment memorySegment = MemorySegment.ofAddress(memoryAddress, strlen, MemorySession.global());
             errStr[errNo] = new String(memorySegment.toArray(JAVA_BYTE));
         }
-
-
-        try {
-            //不破坏封装
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            Field field = IOUringEventLoop.class.getDeclaredField("ioUring");
-            field.setAccessible(true);
-            IO_URING_VAR_HANDLER = MethodHandles.privateLookupIn(IOUringEventLoop.class, lookup)
-                    .unreflectVarHandle(field);
-        } catch (Exception e) {
-            throw new InternalError(e);
-        }
-
     }
 
-    private static final VarHandle IO_URING_VAR_HANDLER;
 
 
 }

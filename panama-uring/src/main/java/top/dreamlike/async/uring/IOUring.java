@@ -5,6 +5,7 @@ import top.dreamlike.async.file.AsyncFile;
 import top.dreamlike.async.socket.AsyncServerSocket;
 import top.dreamlike.async.socket.AsyncSocket;
 import top.dreamlike.epoll.Epoll;
+import top.dreamlike.helper.DebugHelper;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Pair;
 import top.dreamlike.nativeLib.eventfd.eventfd_h;
@@ -317,22 +318,10 @@ public class IOUring implements AutoCloseable{
             int port = inetAddress.getPort();
             Pair<MemorySegment, Boolean> socketInfo = NativeHelper.getSockAddr(session, host, port);
             MemorySegment sockaddrSegement =  socketInfo.t1();
-//            inet_ntoa()函数将其转换为char *类型
-//            {
-//                MemoryAddress memoryAddress = inet_ntoa(sockaddr_in.sin_addr$slice(sockaddrSegement));
-//                long strlen = strlen(memoryAddress);
-//                String ipv4 = new String(MemorySegment.ofAddress(memoryAddress, strlen, MemorySession.global()).toArray(JAVA_BYTE));
-//                System.out.println(ipv4);
-//                System.out.println("port:" + Short.toUnsignedInt(ntohs(sockaddr_in.sin_port$get(sockaddrSegement))));
-//            }
             long opsCount = count.getAndIncrement();
             MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
             context.put(opsCount, new IOOpResult(-1, -1, Op.CONNECT,null, (res, __) -> callback.accept(res)));
-//             int connect_res = inet_h.connect(fd, sockaddrSegement, (int) sockaddr.sizeof());
-////            这个返回0
-//            System.out.println("connect_res :"+connect_res);
-//            System.out.println("Err:"+NativeHelper.getNowError());
-
+//            DebugHelper.connect(fd,sockaddrSegement);
 //            NativeHelper.setSocket(fd, inet_h.SO_REUSEADDR());
 //            NativeHelper.setSocket(fd, inet_h.SO_REUSEPORT());
             io_uring_prep_connect(sqe,fd,sockaddrSegement,(int) sockaddrSegement.byteSize());
@@ -341,30 +330,7 @@ public class IOUring implements AutoCloseable{
         return true;
     }
 
-    public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
-        IOUringEventLoop IOUringEventLoop = new IOUringEventLoop(128, 6, 1000);
-//        //240e:95d:1003::42
-        AsyncSocket socket = IOUringEventLoop.openSocket("www.baidu.com", 80);
-        CompletableFuture<Integer> connect = socket.connect();
-        IOUringEventLoop.submitAndWait(10).forEach(IOOpResult::doCallBack);
-        System.out.println("eventloop start");
-        Integer integer = connect.get();
-        System.out.println("socket res:"+NativeHelper.getErrorStr(-integer));
-
-        Thread.sleep(1000);
-
-
-//        int tcpClientSocket = NativeHelper.tcpClientSocket();
-//        InetSocketAddress address = new InetSocketAddress("ipv6.google.com", 80);
-//        Pair<MemorySegment, Boolean> sockAddr = NativeHelper.getSockAddr(MemorySession.global(), address.getHostString(), 80);
-//        int connect = inet_h.connect(tcpClientSocket, sockAddr.t1(), (int) sockAddr.t1().byteSize());
-//        System.out.println(connect);
-//        System.out.println(NativeHelper.getNowError());
-//        Thread.sleep(100000);
-
-    }
-
-
+   
 //todo 感觉还有并发问题
     public boolean wakeup(){
         if (prep_no_op(() -> {})) {
