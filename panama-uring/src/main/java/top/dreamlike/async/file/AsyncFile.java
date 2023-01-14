@@ -1,6 +1,9 @@
 package top.dreamlike.async.file;
 
+import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.uring.IOUring;
+import top.dreamlike.async.uring.IOUringEventLoop;
+import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Unsafe;
 import top.dreamlike.nativeLib.unistd.unistd_h;
 
@@ -9,21 +12,25 @@ import java.lang.foreign.MemorySession;
 import java.util.concurrent.CompletableFuture;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static top.dreamlike.nativeLib.fcntl.fcntl_h.*;
+import static top.dreamlike.nativeLib.fcntl.fcntl_h.open;
 public class AsyncFile {
-    IOUring uring;
-    int fd;
+    private final IOUring uring;
+    private final int fd;
+
+    private final IOUringEventLoop eventLoop;
 
 
-    public AsyncFile(String path,IOUring uring,int ops){
+    public AsyncFile(String path,IOUringEventLoop eventLoop, int ops){
         try (MemorySession allocator = MemorySession.openConfined()) {
             MemorySegment filePath = allocator.allocateUtf8String(path);
             fd = open(filePath,ops);
             if (fd < 0){
-                throw new IllegalStateException("fd open error");
+                throw new IllegalStateException("fd open error:"+ NativeHelper.getNowError());
             }
+
         }
-        this.uring = uring;
+        this.eventLoop = eventLoop;
+        this.uring = AccessHelper.fetchIOURing.apply(eventLoop);
     }
 
 
@@ -36,9 +43,11 @@ public class AsyncFile {
     @Unsafe("memory segment要保证有效")
     public CompletableFuture<Integer> read(int offset, MemorySegment memorySegment){
         CompletableFuture<Integer> future = new CompletableFuture<>();
-        if (!uring.prep_read(fd, offset, memorySegment, future::complete)) {
-            future.completeExceptionally(new Exception("没有空闲的sqe"));
-        }
+        eventLoop.runOnEventLoop(() -> {
+            if (!uring.prep_read(fd, offset, memorySegment, future::complete)){
+                future.completeExceptionally(new Exception("没有空闲的sqe"));
+            }
+        });
         return future;
     }
 
@@ -56,15 +65,13 @@ public class AsyncFile {
 
     public CompletableFuture<byte[]> readSelected(int offset, int length){
         CompletableFuture<byte[]> future = new CompletableFuture<>();
-        if (!uring.prep_selected_read(fd, offset, length, future)) {
-            future.completeExceptionally(new Exception("没有空闲的sqe"));
-        }
+        eventLoop.runOnEventLoop(() -> {
+           if (!uring.prep_selected_read(fd, offset, length, future)) {
+               future.completeExceptionally(new Exception("没有空闲的sqe"));
+           }
+       });
         return future;
     }
-
-
-
-
 
     public CompletableFuture<Integer> write(int fileOffset,byte[] buffer,int bufferOffset,int bufferLength){
         if (bufferOffset + bufferLength > buffer.length){
@@ -74,13 +81,13 @@ public class AsyncFile {
         CompletableFuture<Integer> future = new CompletableFuture<>();
         MemorySegment memorySegment = session.allocate(bufferLength);
         MemorySegment.copy(buffer, bufferOffset, memorySegment, JAVA_BYTE, 0, bufferLength);
-        if (!uring.prep_write(fd, fileOffset, memorySegment, future::complete)) {
-            future.completeExceptionally(new Exception("没有空闲的sqe"));
-            return future;
-        }
-        return future.thenApply( res -> {
+        eventLoop.runOnEventLoop(() -> {
+            if (!uring.prep_write(fd, fileOffset, memorySegment, future::complete)) {
+                future.completeExceptionally(new Exception("没有空闲的sqe"));
+            }
+        });
+        return future.whenComplete((res,t) -> {
             session.close();
-            return res;
         });
     }
 
@@ -93,17 +100,21 @@ public class AsyncFile {
      */
     public CompletableFuture<Integer> write(int offset,MemorySegment memorySegment){
         CompletableFuture<Integer> future = new CompletableFuture<>();
-        if (!uring.prep_write(fd, offset, memorySegment, future::complete)) {
-            future.completeExceptionally(new Exception("没有空闲的sqe"));
-        }
+        eventLoop.runOnEventLoop(() -> {
+            if (!uring.prep_write(fd, offset, memorySegment, future::complete)) {
+                future.completeExceptionally(new Exception("没有空闲的sqe"));
+            }
+        });
         return future;
     }
 
     public CompletableFuture<Integer> fsync(){
         CompletableFuture<Integer> future = new CompletableFuture<>();
-        if (!uring.prep_fsync(fd, 0, future::complete)) {
-            future.completeExceptionally(new Exception("没有空闲的sqe"));
-        }
+        eventLoop.runOnEventLoop(() -> {
+            if (!uring.prep_fsync(fd, 0, future::complete)) {
+                future.completeExceptionally(new Exception("没有空闲的sqe"));
+            }
+        });
         return future;
     }
 
@@ -111,5 +122,8 @@ public class AsyncFile {
         unistd_h.close(fd);
     }
 
+    static {
+        AccessHelper.fetchFileFd = (f) -> f.fd;
+    }
 
 }

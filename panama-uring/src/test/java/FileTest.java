@@ -1,13 +1,13 @@
 import org.junit.Test;
-import top.dreamlike.async.file.AsyncFile;
+import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.IOOpResult;
-import top.dreamlike.async.uring.IOUringEventLoop;
-import top.dreamlike.async.uring.IOUring;
+import top.dreamlike.async.file.AsyncFile;
 import top.dreamlike.async.socket.AsyncServerSocket;
 import top.dreamlike.async.socket.AsyncSocket;
+import top.dreamlike.async.uring.IOUring;
+import top.dreamlike.async.uring.IOUringEventLoop;
 import top.dreamlike.epoll.Epoll;
 import top.dreamlike.nativeLib.eventfd.eventfd_h;
-
 
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
@@ -24,7 +24,6 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static top.dreamlike.nativeLib.eventfd.eventfd_h.eventfd_read;
 import static top.dreamlike.nativeLib.fcntl.fcntl_h.*;
-import static top.dreamlike.nativeLib.fcntl.fcntl_h.O_APPEND;
 import static top.dreamlike.nativeLib.unistd.unistd_h.*;
 
 public class FileTest {
@@ -71,10 +70,14 @@ public class FileTest {
     public void epollAndIoUring(){
         MemorySession session = MemorySession.openImplicit();
         Epoll epoll = new Epoll();
-        IOUring uring = new IOUring(4);
+
+        IOUringEventLoop loop = new IOUringEventLoop(16, 4, -1);
+        //不启动
+        IOUring uring = AccessHelper.fetchIOURing.apply(loop);
         uring.registerToEpoll(epoll);
+
         //异步文件读取
-        AsyncFile file = uring.openFile("demo.txt",O_WRONLY()|O_APPEND());
+        AsyncFile file = loop.openFile("demo.txt",O_WRONLY()|O_APPEND());
         var str = "modeifa async write \n".getBytes(StandardCharsets.UTF_8);
         MemorySegment waitWrite = session.allocateArray(ValueLayout.JAVA_BYTE, str.length);
         waitWrite.copyFrom(MemorySegment.ofArray(str));
@@ -106,9 +109,10 @@ public class FileTest {
     //}
     @Test
     public void testUringIORING_OP_PROVIDE_BUFFERS() throws ExecutionException, InterruptedException {
-        IOUring ioUring = new IOUring(16);
+        IOUringEventLoop loop = new IOUringEventLoop(16, 8, -1);
+        IOUring ioUring = AccessHelper.fetchIOURing.apply(loop);
 
-        AsyncFile file = ioUring.openFile("demo.txt",O_RDONLY());
+        AsyncFile file = loop.openFile("demo.txt",O_RDONLY());
 
         new Thread(()->{
             while (true){
@@ -160,9 +164,10 @@ public class FileTest {
 
     @Test
     public void testByteArrayWrite() throws ExecutionException, InterruptedException {
-        IOUring ioUring = new IOUring(16,4);
+        IOUringEventLoop loop = new IOUringEventLoop(16, 8, -1);
+        IOUring ioUring = AccessHelper.fetchIOURing.apply(loop);
 
-        AsyncFile file = ioUring.openFile("demo.txt",O_RDWR()|O_APPEND());
+        AsyncFile file = loop.openFile("demo.txt",O_RDWR()|O_APPEND());
 
         new Thread(()->{
             while (true){
@@ -183,11 +188,11 @@ public class FileTest {
         AsyncServerSocket serverSocket = IOUringEventLoop.openServer("127.0.0.1", 4399);
         IOUringEventLoop.start();
 
-        AsyncSocket asyncSocket = serverSocket.acceptAsync().get();
+        AsyncSocket asyncSocket = serverSocket.accept().get();
 
         System.out.println(asyncSocket);
 
-        byte[] bytes = asyncSocket.read(1024).get();
+        byte[] bytes = asyncSocket.readSelected(1024).get();
 
 
         System.out.println("Write:"+asyncSocket.write(bytes, 0, bytes.length).get());

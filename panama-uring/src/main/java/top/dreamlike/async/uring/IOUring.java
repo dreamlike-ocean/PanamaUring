@@ -1,35 +1,30 @@
 package top.dreamlike.async.uring;
 
 import top.dreamlike.async.IOOpResult;
-import top.dreamlike.async.file.AsyncFile;
-import top.dreamlike.async.socket.AsyncServerSocket;
-import top.dreamlike.async.socket.AsyncSocket;
 import top.dreamlike.epoll.Epoll;
-import top.dreamlike.helper.DebugHelper;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Pair;
+import top.dreamlike.helper.SocketInfo;
 import top.dreamlike.helper.Unsafe;
 import top.dreamlike.nativeLib.eventfd.EventFd;
 import top.dreamlike.nativeLib.eventfd.eventfd_h;
 import top.dreamlike.nativeLib.in.sockaddr_in;
-import top.dreamlike.nativeLib.inet.inet_h;
 import top.dreamlike.nativeLib.liburing.*;
 import top.dreamlike.nativeLib.socket.sockaddr;
 
-import javax.swing.plaf.basic.BasicTextAreaUI;
 import java.io.*;
-import java.lang.annotation.Native;
-import java.lang.foreign.*;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.lang.reflect.Field;
-import java.net.*;
-import java.nio.ByteBuffer;
-import java.util.*;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.ValueLayout;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
@@ -37,17 +32,17 @@ import java.util.function.IntConsumer;
 import static java.lang.foreign.ValueLayout.*;
 import static top.dreamlike.nativeLib.epoll.epoll_h.EPOLLIN;
 import static top.dreamlike.nativeLib.eventfd.eventfd_h.EFD_NONBLOCK;
-import static top.dreamlike.nativeLib.inet.inet_h.*;
 import static top.dreamlike.nativeLib.inet.inet_h.C_POINTER;
+import static top.dreamlike.nativeLib.inet.inet_h.*;
 import static top.dreamlike.nativeLib.liburing.liburing_h.*;
-import static top.dreamlike.nativeLib.string.string_h.*;
+import static top.dreamlike.nativeLib.string.string_h.strlen;
 
 /**
  * 不要并发submit和prep
  * 会监听一个eventfd来做wakeUp
  */
 @Unsafe("不是线程安全的")
-public class IOUring implements AutoCloseable{
+public class IOUring implements AutoCloseable {
     private MemorySegment ring;
 
     //完成事件的eventfd
@@ -64,7 +59,7 @@ public class IOUring implements AutoCloseable{
 
     private AtomicLong count;
 
-    private int ringSize;
+    private final int ringSize;
 
     private static final int MIN_RING_SIZE = 16;
 
@@ -81,7 +76,9 @@ public class IOUring implements AutoCloseable{
             throw new IllegalArgumentException("ring size <= 0");
         }
         if (ringSize < MIN_RING_SIZE) {
-            ringSize = MIN_RING_SIZE;
+            this.ringSize = MIN_RING_SIZE;
+        }else  {
+            this.ringSize = ringSize;
         }
         initContext();
         initRing();
@@ -100,7 +97,6 @@ public class IOUring implements AutoCloseable{
         if (ret < 0){
             throw new IllegalStateException("io_uring init fail!");
         }
-        this.ringSize = ringSize;
     }
 
     private void initSelectedBuffer(int autoBufferSize){
@@ -153,13 +149,7 @@ public class IOUring implements AutoCloseable{
         System.out.println("register :"+eventfd);
     }
 
-    public AsyncFile openFile(String path, int ops){
-        return new AsyncFile(path,this,ops);
-    }
 
-    public AsyncServerSocket openServer(String host,int port){
-        return new AsyncServerSocket(this,host,port);
-    }
 
     public boolean checkSupport(int op){
         return io_uring_opcode_supported_ring(ring, op) == 1;
@@ -236,7 +226,7 @@ public class IOUring implements AutoCloseable{
     }
 
 
-    public boolean prep_accept(int fd, Consumer<AsyncSocket> callback){
+    public boolean prep_accept(int serverFd, Consumer<SocketInfo> callback){
         MemoryAddress sqe = getSqe();
         if (sqe == null) return false;
         MemorySession tmp = MemorySession.openShared();
@@ -246,20 +236,20 @@ public class IOUring implements AutoCloseable{
         long opsCount = count.getAndIncrement();
         MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
 
-        context.put(opsCount, new IOOpResult(fd, -1,Op.ACCEPT, null, (res, __) -> {
+        context.put(opsCount, new IOOpResult(serverFd, -1,Op.ACCEPT, null, (res, __) -> {
             if (res < 0){
-                callback.accept(new AsyncSocket(res,"" , -1,this));
+                callback.accept(new SocketInfo(-1,"", -1));
             }else {
                 short sin_port = sockaddr_in.sin_port$get(client_addr);
                 int port = Short.toUnsignedInt(ntohs(sin_port));
                 MemoryAddress remoteHost = inet_ntoa(sockaddr_in.sin_addr$slice(client_addr));
                 long strlen = strlen(remoteHost);
                 String host = new String(MemorySegment.ofAddress(remoteHost, strlen, MemorySession.global()).toArray(JAVA_BYTE));
-                callback.accept(new AsyncSocket(res,host , port,this));
+                callback.accept(new SocketInfo(res,host,port));
             }
             tmp.close();
         }));
-        io_uring_prep_accept(sqe,fd,client_addr,client_addr_len,0);
+        io_uring_prep_accept(sqe,serverFd,client_addr,client_addr_len,0);
         io_uring_sqe.user_data$set(sqeSegment, opsCount);
 
         return true;
@@ -348,13 +338,13 @@ public class IOUring implements AutoCloseable{
         return true;
     }
 
-    public boolean prep_connect(AsyncSocket socket, IntConsumer callback) throws UnknownHostException {
-        int fd = getFd(socket);
+    public boolean prep_connect(SocketInfo info, IntConsumer callback) throws UnknownHostException {
+        int fd = info.fd();
         MemoryAddress sqe;
-        if ((sqe = getSqe()) == null || fd == -1) {
+        if (fd == -1 || (sqe = getSqe()) == null) {
             return false;
         }
-        InetSocketAddress inetAddress = socket.getInetAddress();
+        InetSocketAddress inetAddress = InetSocketAddress.createUnresolved(info.host(), info.port());
         try (MemorySession session = MemorySession.openConfined()) {
 
             String host = inetAddress.getHostString();
@@ -480,10 +470,6 @@ public class IOUring implements AutoCloseable{
         }
     }
 
-    private static int getFd(AsyncSocket socket){
-        //不需要内存语义
-        return ((int) SOCKET_FD_VAR_HANDLE.get(socket));
-    }
 
     @Override
     public void close() throws Exception {
@@ -509,17 +495,7 @@ public class IOUring implements AutoCloseable{
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        try {
-            //不破坏封装
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            Field field = AsyncSocket.class.getDeclaredField("fd");
-            field.setAccessible(true);
-            SOCKET_FD_VAR_HANDLE = MethodHandles.privateLookupIn(AsyncSocket.class, lookup)
-                    .unreflectVarHandle(field);
-        } catch (Exception e) {
-            throw new InternalError(e);
-        }
     }
 
-    private static final VarHandle SOCKET_FD_VAR_HANDLE;
+
 }

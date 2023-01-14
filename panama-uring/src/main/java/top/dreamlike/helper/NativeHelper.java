@@ -1,12 +1,14 @@
 package top.dreamlike.helper;
 
-import com.sun.jdi.NativeMethodException;
 import top.dreamlike.nativeLib.errno.errno_h;
 import top.dreamlike.nativeLib.in.sockaddr_in;
 import top.dreamlike.nativeLib.inet.inet_h;
 import top.dreamlike.nativeLib.inet.sockaddr_in6;
 
-import java.lang.foreign.*;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.ValueLayout;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;

@@ -1,6 +1,7 @@
 package top.dreamlike.async.uring;
 
 import org.jctools.queues.MpscLinkedQueue;
+import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.IOOpResult;
 import top.dreamlike.async.file.AsyncFile;
 import top.dreamlike.async.socket.AsyncServerSocket;
@@ -49,18 +50,18 @@ public class IOUringEventLoop implements Runnable, Executor {
 
     @Override
     public void run() {
-        while (!close.get()){
-            long duration= autoSubmitDuration.getAcquire();
-            ioUring.waitComplete(duration);
-            wakeupFlag.setRelease(true);
-            if (duration != -1 && System.currentTimeMillis() - lastSubmitTimeStamp > duration){
-                flush();
-            }
-            ioUring.batchGetCqe(1024).forEach(IOOpResult::doCallBack);
-            while (!tasks.isEmpty()) {
-                tasks.poll().run();
-            }
-        }
+           while (!close.get()){
+               long duration= autoSubmitDuration.getAcquire();
+               ioUring.waitComplete(duration);
+               wakeupFlag.setRelease(true);
+               if (duration != -1 && System.currentTimeMillis() - lastSubmitTimeStamp > duration){
+                   flush();
+               }
+               ioUring.batchGetCqe(1024).forEach(IOOpResult::doCallBack);
+               while (!tasks.isEmpty()) {
+                   tasks.poll().run();
+               }
+           }
         try {
             ioUring.close();
         } catch (Exception e) {
@@ -94,6 +95,7 @@ public class IOUringEventLoop implements Runnable, Executor {
     @Override
     public void execute(Runnable command) {
         tasks.offer(command);
+        wakeup();
     }
 
     public void shutdown(){
@@ -101,17 +103,17 @@ public class IOUringEventLoop implements Runnable, Executor {
     }
 
     public AsyncFile openFile(String path, int ops) {
-        return ioUring.openFile(path, ops);
+        return new AsyncFile(path, this, ops);
     }
 
     public AsyncServerSocket openServer(String host, int port) {
-        return ioUring.openServer(host, port);
+        return new AsyncServerSocket(this,host, port);
     }
 
 
     public AsyncSocket openSocket(String host,int port) {
         InetSocketAddress address = new InetSocketAddress(host, port);
-        return new AsyncSocket(address, ioUring);
+        return new AsyncSocket(address,this);
     }
 
     @Unsafe("并发问题，不推荐直接使用")
@@ -119,5 +121,21 @@ public class IOUringEventLoop implements Runnable, Executor {
         ioUring.submit();
         ioUring.waitComplete();
         return ioUring.batchGetCqe(max);
+    }
+
+    public boolean inEventLoop(){
+        return Thread.currentThread() == worker;
+    }
+
+    public void runOnEventLoop(Runnable runnable){
+        if (inEventLoop()) {
+            runnable.run();
+            return;
+        }
+        execute(runnable);
+    }
+
+    static {
+        AccessHelper.fetchIOURing = loop -> loop.ioUring;
     }
 }
