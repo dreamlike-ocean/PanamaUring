@@ -1,27 +1,24 @@
 package top.dreamlike.helper;
 
-import top.dreamlike.async.uring.IOUringEventLoop;
-import top.dreamlike.async.uring.IOUring;
+import com.sun.jdi.NativeMethodException;
 import top.dreamlike.nativeLib.errno.errno_h;
 import top.dreamlike.nativeLib.in.sockaddr_in;
-import top.dreamlike.nativeLib.inet.in_addr;
 import top.dreamlike.nativeLib.inet.inet_h;
 import top.dreamlike.nativeLib.inet.sockaddr_in6;
 
 import java.lang.foreign.*;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.lang.reflect.Field;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.concurrent.Future;
-import java.util.concurrent.locks.LockSupport;
-import java.util.function.Consumer;
+import java.util.Objects;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static top.dreamlike.nativeLib.eventfd.eventfd_h.EFD_NONBLOCK;
+import static top.dreamlike.nativeLib.eventfd.eventfd_h.eventfd;
 import static top.dreamlike.nativeLib.fcntl.fcntl_h.*;
 import static top.dreamlike.nativeLib.inet.inet_h.*;
 import static top.dreamlike.nativeLib.socket.socket_h.listen;
@@ -29,6 +26,8 @@ import static top.dreamlike.nativeLib.string.string_h.*;
 
 public class NativeHelper {
     private static final String[] errStr;
+
+    private static Executor defaultCallbackExecutor = ForkJoinPool.commonPool();
 
     //todo ipv6支持 有空会做
 
@@ -146,14 +145,28 @@ public class NativeHelper {
         return Short.toUnsignedInt(ntohs(sockaddr_in.sin_port$get(sockaddrSegement)));
     }
 
-    @NativeUnsafe("存在段错误风险")
+    @Unsafe("存在段错误风险")
     public static MemorySegment unsafePointConvertor(MemoryAddress p){
         return MemorySegment.ofAddress(p, Long.MAX_VALUE, MemorySession.global());
     }
 
 
+    public static int createEventFd(){
+        int eventfd = eventfd(0, EFD_NONBLOCK());
+        if (eventfd < 0){
+            throw new NativeCallException(getNowError());
+        }
+        return eventfd;
+    }
 
+    public static Executor getDefaultCallbackExecutor() {
+        return defaultCallbackExecutor;
+    }
 
+    public static void setDefaultCallbackExecutor(Executor defaultCallbackExecutor) {
+        Objects.requireNonNull(defaultCallbackExecutor);
+        NativeHelper.defaultCallbackExecutor = defaultCallbackExecutor;
+    }
 
     static {
         errStr = new String[257];

@@ -5,7 +5,7 @@ import top.dreamlike.async.IOOpResult;
 import top.dreamlike.async.file.AsyncFile;
 import top.dreamlike.async.socket.AsyncServerSocket;
 import top.dreamlike.async.socket.AsyncSocket;
-import top.dreamlike.helper.NativeUnsafe;
+import top.dreamlike.helper.Unsafe;
 
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -32,6 +32,8 @@ public class IOUringEventLoop implements Runnable, Executor {
 
     private final AtomicBoolean start = new AtomicBoolean(false);
 
+    private final AtomicBoolean wakeupFlag = new AtomicBoolean(true);
+
     public IOUringEventLoop(int ringSize, int autoBufferSize, long autoSubmitDuration) {
         ioUring = new IOUring(ringSize, autoBufferSize);
         tasks = new MpscLinkedQueue<>();
@@ -50,6 +52,7 @@ public class IOUringEventLoop implements Runnable, Executor {
         while (!close.get()){
             long duration= autoSubmitDuration.getAcquire();
             ioUring.waitComplete(duration);
+            wakeupFlag.setRelease(true);
             if (duration != -1 && System.currentTimeMillis() - lastSubmitTimeStamp > duration){
                 flush();
             }
@@ -82,6 +85,9 @@ public class IOUringEventLoop implements Runnable, Executor {
     }
 
     public void wakeup(){
+        if (!wakeupFlag.compareAndSet(false, true)){
+            return;
+        }
         ioUring.wakeup();
     }
 
@@ -108,7 +114,7 @@ public class IOUringEventLoop implements Runnable, Executor {
         return new AsyncSocket(address, ioUring);
     }
 
-    @NativeUnsafe("并发问题，不推荐直接使用")
+    @Unsafe("并发问题，不推荐直接使用")
     public List<IOOpResult> submitAndWait(int max) {
         ioUring.submit();
         ioUring.waitComplete();

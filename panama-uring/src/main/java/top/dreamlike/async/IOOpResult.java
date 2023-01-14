@@ -2,9 +2,11 @@ package top.dreamlike.async;
 
 import top.dreamlike.async.uring.Op;
 import top.dreamlike.helper.BiIntConsumer;
+import top.dreamlike.helper.NativeHelper;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.reflect.Type;
+import java.util.concurrent.Executor;
 
 public class IOOpResult {
     public final int fd;
@@ -24,7 +26,6 @@ public class IOOpResult {
         this.callback = callback;
         this.op = op;
     }
-
 
     public void doCallBack(){
         callback.consumer(res,bid);

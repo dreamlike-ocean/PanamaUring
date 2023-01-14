@@ -19,7 +19,7 @@ public class DebugHelper {
         return connect_res;
     }
 
-    @NativeUnsafe("反射内部实现，测试使用")
+    @Unsafe("反射内部实现，测试使用")
     public IOUring getIOUring(IOUringEventLoop IOUringEventLoop){
         return (IOUring) IO_URING_VAR_HANDLER.get(IOUringEventLoop);
     }

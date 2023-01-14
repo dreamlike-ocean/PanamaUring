@@ -8,18 +8,23 @@ import top.dreamlike.epoll.Epoll;
 import top.dreamlike.helper.DebugHelper;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Pair;
+import top.dreamlike.helper.Unsafe;
+import top.dreamlike.nativeLib.eventfd.EventFd;
 import top.dreamlike.nativeLib.eventfd.eventfd_h;
 import top.dreamlike.nativeLib.in.sockaddr_in;
 import top.dreamlike.nativeLib.inet.inet_h;
 import top.dreamlike.nativeLib.liburing.*;
 import top.dreamlike.nativeLib.socket.sockaddr;
 
+import javax.swing.plaf.basic.BasicTextAreaUI;
 import java.io.*;
+import java.lang.annotation.Native;
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.net.*;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -29,8 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.*;
 import static top.dreamlike.nativeLib.epoll.epoll_h.EPOLLIN;
 import static top.dreamlike.nativeLib.eventfd.eventfd_h.EFD_NONBLOCK;
 import static top.dreamlike.nativeLib.inet.inet_h.*;
@@ -40,26 +44,33 @@ import static top.dreamlike.nativeLib.string.string_h.*;
 
 /**
  * 不要并发submit和prep
+ * 会监听一个eventfd来做wakeUp
  */
+@Unsafe("不是线程安全的")
 public class IOUring implements AutoCloseable{
-    private final MemorySegment ring;
+    private MemorySegment ring;
 
+    //完成事件的eventfd
     private int eventfd = -1;
-    final  MemorySession allocator;
+    MemorySession allocator;
 
     private static final int max_loop = 1024;
 
-    private final byte gid;
+    private byte gid;
 
-    private final Map<Long, IOOpResult> context;
+    private Map<Long, IOOpResult> context;
 
-    private final MemorySegment[] selectedBuffer;
+    private MemorySegment[] selectedBuffer;
 
-    private final AtomicLong count;
+    private AtomicLong count;
 
-    private final int ringSize;
+    private int ringSize;
 
-    private static final int MIN_RING_SIZE = 32;
+    private static final int MIN_RING_SIZE = 16;
+
+    //用于wakeup的fd
+    private EventFd wakeUpFd;
+    private MemorySegment wakeUpReadBuffer;
 
 
     public IOUring(int ringSize){
@@ -69,9 +80,20 @@ public class IOUring implements AutoCloseable{
         if (ringSize <= 0) {
             throw new IllegalArgumentException("ring size <= 0");
         }
-        if (ringSize < MIN_RING_SIZE) ringSize = MIN_RING_SIZE;
+        if (ringSize < MIN_RING_SIZE) {
+            ringSize = MIN_RING_SIZE;
+        }
+        initContext();
+        initRing();
+        initSelectedBuffer(autoBufferSize);
+        initWakeEventFd();
+    }
 
+    private void initContext(){
         context = new ConcurrentHashMap<>();
+        count = new AtomicLong();
+    }
+    private void initRing(){
         allocator = MemorySession.openShared();
         this.ring = io_uring.allocate(allocator);
         var ret= io_uring_queue_init(ringSize, ring, 0);
@@ -79,12 +101,17 @@ public class IOUring implements AutoCloseable{
             throw new IllegalStateException("io_uring init fail!");
         }
         this.ringSize = ringSize;
+    }
+
+    private void initSelectedBuffer(int autoBufferSize){
         gid =(byte) new Random(System.currentTimeMillis()).nextInt(100);
         selectedBuffer = new MemorySegment[autoBufferSize];
         for (int i = 0; i < selectedBuffer.length; i++) {
             selectedBuffer[i] = allocator.allocate(1024);
         }
 
+        //fixme CQE溢出问题 当前先不修，因为selectedBuffer api有点复杂
+        //      当前先假装不出问题
         for (int i = 0; i < selectedBuffer.length;) {
             if (!provideBuffer(selectedBuffer[i],i,false)) {
                 submit();
@@ -93,9 +120,27 @@ public class IOUring implements AutoCloseable{
             i++;
         }
         submit();
-        count = new AtomicLong();
     }
 
+
+    private void initWakeEventFd() {
+        wakeUpFd = new EventFd();
+        MemoryAddress sqe;
+        while ((sqe = getSqe()) == null){
+            Thread.onSpinWait();
+        }
+        wakeUpReadBuffer = allocator.allocate(JAVA_LONG);
+        multiShotReadEventfd();
+    }
+
+    private void multiShotReadEventfd(){
+        prep_read(wakeUpFd.getFd(), 0, wakeUpReadBuffer,(__) -> {
+            //轮询到了直接再注册一个可读事件
+            wakeUpFd.read(wakeUpReadBuffer);
+            multiShotReadEventfd();
+        });
+        submit();
+    }
 
     public void registerToEpoll(Epoll epoll){
         int uring_event_fd = eventfd_h.eventfd(0, EFD_NONBLOCK());
@@ -155,7 +200,6 @@ public class IOUring implements AutoCloseable{
     public boolean prep_selected_recv(int socketFd, int length, CompletableFuture<byte[]> recvBufferPromise){
         MemoryAddress sqe = getSqe();
         if (sqe == null) return false;
-
         MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
         io_uring_sqe.flags$set(sqeSegment, 0L, (byte) IOSQE_BUFFER_SELECT());
         io_uring_sqe.buf_group$set(sqeSegment, gid);
@@ -234,7 +278,6 @@ public class IOUring implements AutoCloseable{
             io_uring_prep_read(sqe,fd,buffer,(int) buffer.byteSize(), offset);
             io_uring_sqe.user_data$set(sqeSegment, opsCount);
             context.put(opsCount, new IOOpResult(fd, -1,Op.FILE_READ, buffer, (res, __) -> callback.accept(res)));
-
             return true;
         }
     }
@@ -331,13 +374,9 @@ public class IOUring implements AutoCloseable{
     }
 
    
-//todo 感觉还有并发问题
-    public boolean wakeup(){
-        if (prep_no_op(() -> {})) {
-            submit();
-            return true;
-        }
-        return false;
+
+    public void wakeup(){
+        wakeUpFd.write(1);
     }
 
     public boolean provideBuffer(MemorySegment buffer,int bid,boolean needSubmit){

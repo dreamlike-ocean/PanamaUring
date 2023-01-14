@@ -19,8 +19,9 @@
     <dependencies>
         <dependency>
             <groupId>top.dreamlike</groupId>
-            <artifactId>panama-uring</artifactId>
+            <artifactId>panama-uring-linux-x86_64</artifactId>
             <version>1.0</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
