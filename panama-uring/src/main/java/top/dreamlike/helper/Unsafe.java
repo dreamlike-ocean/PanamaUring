@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
  * 无作用 标识为unsafe操作
  *
  */
-@Retention(RetentionPolicy.SOURCE)
+@Retention(RetentionPolicy.CLASS)
 @Target({ElementType.METHOD,ElementType.TYPE})
 public @interface Unsafe {
     String value();

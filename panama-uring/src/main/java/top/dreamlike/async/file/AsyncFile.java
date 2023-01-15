@@ -40,7 +40,7 @@ public class AsyncFile {
      * @param memorySegment 要保证有效的memory
      * @return 读取了多少字节
      */
-    @Unsafe("memory segment要保证有效")
+    @Unsafe("memory segment要保证有效且为share范围的session")
     public CompletableFuture<Integer> read(int offset, MemorySegment memorySegment){
         CompletableFuture<Integer> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {

@@ -15,7 +15,7 @@ public class FileOp {
     public static void main(String[] args) throws ExecutionException, InterruptedException {
 
         IOUringEventLoop ioUringEventLoop = new IOUringEventLoop(32, 16, 100);
-        AsyncFile appendFile = ioUringEventLoop.openFile("demo.txt", O_APPEND() | O_WRONLY());
+        AsyncFile appendFile = ioUringEventLoop.openFile("demo.txt", O_APPEND() | O_WRONLY() | O_CREAT() );
 
         ioUringEventLoop.start();
 
@@ -24,15 +24,16 @@ public class FileOp {
 
 
         Integer integer = write.get();
-        System.out.println("async read res:"+integer);
+        System.out.println("async write res:"+integer);
         AsyncFile readFile = ioUringEventLoop.openFile("demo.txt", O_RDONLY());
-        try (MemorySession memorySession = MemorySession.openConfined()) {
+        try (MemorySession memorySession = MemorySession.openShared()) {
             MemorySegment memorySegment = memorySession.allocate(1024);
             CompletableFuture<Integer> read = readFile.read(0, memorySegment);
             Integer length = read.get();
             byte[] res = memorySegment.asSlice(0, length).toArray(ValueLayout.JAVA_BYTE);
             System.out.println("read all :"+new String(res));
         }
+        ioUringEventLoop.shutdown();
     }
 
 }
