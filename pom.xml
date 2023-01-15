@@ -11,6 +11,7 @@
     <modules>
         <module>panama-uring</module>
         <module>example</module>
+        <module>liburing</module>
     </modules>
 
     <properties>
