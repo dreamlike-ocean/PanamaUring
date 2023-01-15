@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "socket.h": "c",
+        "timerfd.h": "c",
+        "ucontext.h": "c"
+    }
+}
