@@ -33,6 +33,15 @@ public class AsyncFile {
         this.uring = AccessHelper.fetchIOURing.apply(eventLoop);
     }
 
+    public AsyncFile(int fd,IOUringEventLoop eventLoop){
+        this.fd = fd;
+        if (fd < 0){
+            throw new IllegalStateException("fd open error:"+ NativeHelper.getNowError());
+        }
+        this.eventLoop = eventLoop;
+        this.uring = AccessHelper.fetchIOURing.apply(eventLoop);
+    }
+
 
     /**
      *

@@ -106,6 +106,10 @@ public class IOUringEventLoop implements Runnable, Executor {
         return new AsyncFile(path, this, ops);
     }
 
+    public AsyncFile openFile(int fd){
+        return new AsyncFile(fd,this);
+    }
+
     public AsyncServerSocket openServer(String host, int port) {
         return new AsyncServerSocket(this,host, port);
     }
