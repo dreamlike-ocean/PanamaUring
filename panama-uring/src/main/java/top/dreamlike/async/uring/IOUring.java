@@ -121,10 +121,6 @@ public class IOUring implements AutoCloseable {
 
     private void initWakeEventFd() {
         wakeUpFd = new EventFd();
-        MemoryAddress sqe;
-        while ((sqe = getSqe()) == null){
-            Thread.onSpinWait();
-        }
         wakeUpReadBuffer = allocator.allocate(JAVA_LONG);
         multiShotReadEventfd();
     }
