@@ -2,9 +2,13 @@
 
 package top.dreamlike.nativeLib.liburing;
 
+import top.dreamlike.async.uring.IOUringEventLoop;
+import top.dreamlike.helper.NativeHelper;
+
+import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
-import java.lang.foreign.*;
+
 import static java.lang.foreign.ValueLayout.*;
 public class liburing_h extends liburing_h_1 {
 
@@ -4169,6 +4173,12 @@ public class liburing_h extends liburing_h_1 {
             mh$.invokeExact(op, sqe, fd, addr, len, offset);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
+        }
+        Thread currentThread = Thread.currentThread();
+        if (currentThread instanceof IOUringEventLoop thread && thread.isStartLinked()) {
+            MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe.address());
+            byte b = io_uring_sqe.flags$get(sqeSegment);
+            io_uring_sqe.flags$set(sqeSegment, 0L, ((byte) (b | (byte) IOSQE_IO_LINK())));
         }
     }
     public static MethodHandle io_uring_prep_splice$MH() {

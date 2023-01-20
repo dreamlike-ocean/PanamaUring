@@ -13,13 +13,16 @@ import static top.dreamlike.nativeLib.unistd.unistd_h.write;
  * 用于唤醒阻塞在wait上的io_uring事件循环线程的pipe fd实现
  * 目前转为使用eventfd实现 maybe性能会好一点？
  * Applications can use an eventfd file descriptor instead of a pipe (see pipe(2)) in all cases where a pipe is used simply to signal events.
+ *
+ * @deprecated 目前转为使用eventfd实现 wakeup的功能 {@link top.dreamlike.nativeLib.eventfd.EventFd }
  */
-public class UringSignalPipe implements AutoCloseable{
+@Deprecated
+public class UringSignalPipe implements AutoCloseable {
     int writeFd;
     int readFd;
     MemorySegment signalBuffer;
 
-    UringSignalPipe(IOUring uring){
+    UringSignalPipe(IOUring uring) {
         MemorySegment pipes = uring.allocator.allocateArray(ValueLayout.JAVA_INT, 2);
         int i = pipe(pipes);
         if (i == -1) {

@@ -28,11 +28,16 @@ public class EventFd implements AutoCloseable {
 
     @Unsafe("需要segment一直有效")
     public void read(MemorySegment segment) {
+        MemorySession memorySession = segment.session();
+        if (!memorySession.isAlive() || memorySession.ownerThread() != null) {
+            throw new NativeCallException("illegal memory segment");
+        }
+
         if (segment.byteSize() != JAVA_LONG.byteSize()) {
             throw new NativeCallException("segment.byteSize() != JAVA_LONG.byteSize()");
         }
         int res = eventfd_h.eventfd_read(fd, segment);
-        if (res < 0){
+        if (res < 0) {
             throw new NativeCallException(NativeHelper.getNowError());
         }
     }

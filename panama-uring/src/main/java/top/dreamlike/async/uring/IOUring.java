@@ -164,7 +164,7 @@ public class IOUring implements AutoCloseable {
             iovec.iov_len$set(iovecStruct,length);
             MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
 
-            io_uring_sqe.flags$set(sqeSegment, 0L, (byte) IOSQE_BUFFER_SELECT());
+            io_uring_sqe.flags$set(sqeSegment, 0L, ((byte) (io_uring_sqe.flags$get(sqeSegment) | (byte) IOSQE_BUFFER_SELECT())));
 
             io_uring_sqe.buf_group$set(sqeSegment, gid);
             IOOpResult result = new IOOpResult(fd, -1,Op.FILE_SELECTED_READ, null, (res,bid) -> {
@@ -187,20 +187,22 @@ public class IOUring implements AutoCloseable {
         return true;
     }
 
-    public boolean prep_selected_recv(int socketFd, int length, CompletableFuture<byte[]> recvBufferPromise){
+    public boolean prep_selected_recv(int socketFd, int length, CompletableFuture<byte[]> recvBufferPromise) {
         MemoryAddress sqe = getSqe();
         if (sqe == null) return false;
         MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
-        io_uring_sqe.flags$set(sqeSegment, 0L, (byte) IOSQE_BUFFER_SELECT());
+
+        io_uring_sqe.flags$set(sqeSegment, 0L, ((byte) (io_uring_sqe.flags$get(sqeSegment) | (byte) IOSQE_BUFFER_SELECT())));
+
         io_uring_sqe.buf_group$set(sqeSegment, gid);
         long opsCount = count.getAndIncrement();
-        IOOpResult result = new IOOpResult(socketFd, -1, Op.SOCKET_SELECTED_READ,null, (res,bid) -> {
-            if (res == -ENOBUFS()){
+        IOOpResult result = new IOOpResult(socketFd, -1, Op.SOCKET_SELECTED_READ, null, (res, bid) -> {
+            if (res == -ENOBUFS()) {
                 recvBufferPromise.completeExceptionally(new Exception(String.format("gid: %d 不存在空余的内存了", gid)));
                 return;
             }
             MemorySegment buffer = selectedBuffer[bid];
-            recvBufferPromise.complete(buffer.asSlice(0,res).toArray(ValueLayout.JAVA_BYTE));
+            recvBufferPromise.complete(buffer.asSlice(0, res).toArray(ValueLayout.JAVA_BYTE));
             provideBuffer(buffer, bid,true);
         });
         io_uring_prep_recv(sqe,socketFd, MemoryAddress.NULL, length,0);
@@ -376,6 +378,7 @@ public class IOUring implements AutoCloseable {
         }
 
         io_uring_prep_provide_buffers(sqe, buffer,(int) buffer.byteSize(),1,gid, bid);
+
         MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
         io_uring_sqe.user_data$set(sqeSegment, -IORING_OP_PROVIDE_BUFFERS());
         if (needSubmit){

@@ -1,8 +1,13 @@
 package top.dreamlike.async.file;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import top.dreamlike.access.AccessHelper;
+import top.dreamlike.access.EventLoopAccess;
+import top.dreamlike.async.AsyncFd;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.async.uring.IOUringEventLoop;
+import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Unsafe;
 import top.dreamlike.nativeLib.unistd.unistd_h;
@@ -13,14 +18,17 @@ import java.util.concurrent.CompletableFuture;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static top.dreamlike.nativeLib.fcntl.fcntl_h.open;
-public class AsyncFile {
+
+public non-sealed class AsyncFile implements AsyncFd, EventLoopAccess {
+    private static final Logger log = LoggerFactory.getLogger(AsyncFile.class);
+
     private final IOUring uring;
     private final int fd;
 
     private final IOUringEventLoop eventLoop;
 
 
-    public AsyncFile(String path,IOUringEventLoop eventLoop, int ops){
+    public AsyncFile(String path, IOUringEventLoop eventLoop, int ops) {
         try (MemorySession allocator = MemorySession.openConfined()) {
             MemorySegment filePath = allocator.allocateUtf8String(path);
             fd = open(filePath,ops);
@@ -50,10 +58,14 @@ public class AsyncFile {
      * @return 读取了多少字节
      */
     @Unsafe("memory segment要保证有效且为share范围的session")
-    public CompletableFuture<Integer> read(int offset, MemorySegment memorySegment){
+    public CompletableFuture<Integer> read(int offset, MemorySegment memorySegment) {
+        MemorySession memorySession = memorySegment.session();
+        if (!memorySession.isAlive() || memorySession.ownerThread() != null) {
+            throw new NativeCallException("illegal memory segment");
+        }
         CompletableFuture<Integer> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
-            if (!uring.prep_read(fd, offset, memorySegment, future::complete)){
+            if (!uring.prep_read(fd, offset, memorySegment, future::complete)) {
                 future.completeExceptionally(new Exception("没有空闲的sqe"));
             }
         });
@@ -135,4 +147,8 @@ public class AsyncFile {
         AccessHelper.fetchFileFd = (f) -> f.fd;
     }
 
+    @Override
+    public IOUringEventLoop fetchEventLoop() {
+        return eventLoop;
+    }
 }

@@ -1,6 +1,8 @@
 package top.dreamlike.async.socket;
 
 import top.dreamlike.access.AccessHelper;
+import top.dreamlike.access.EventLoopAccess;
+import top.dreamlike.async.AsyncFd;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.async.uring.IOUringEventLoop;
 import top.dreamlike.helper.NativeHelper;
@@ -14,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 
-public class AsyncSocket {
+public non-sealed class AsyncSocket implements EventLoopAccess, AsyncFd {
     //todo 区分本地地址和远端地址
     // 目前是靠对于用途对host和port解释不同
     private final int fd;
@@ -111,11 +113,16 @@ public class AsyncSocket {
         return InetSocketAddress.createUnresolved(host, port);
     }
 
-    public InetSocketAddress getInetAddress(){
+    public InetSocketAddress getInetAddress() {
         return InetSocketAddress.createUnresolved(host, port);
     }
 
     static {
         AccessHelper.fetchSocketFd = a -> a.fd;
+    }
+
+    @Override
+    public IOUringEventLoop fetchEventLoop() {
+        return eventLoop;
     }
 }
