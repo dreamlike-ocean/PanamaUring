@@ -66,7 +66,7 @@ public non-sealed class AsyncFile implements AsyncFd, EventLoopAccess {
         CompletableFuture<Integer> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
             if (!uring.prep_read(fd, offset, memorySegment, future::complete)) {
-                future.completeExceptionally(new Exception("没有空闲的sqe"));
+                future.completeExceptionally(new NativeCallException("没有空闲的sqe"));
             }
         });
         return future;
@@ -77,18 +77,19 @@ public non-sealed class AsyncFile implements AsyncFd, EventLoopAccess {
         MemorySession memorySession = MemorySession.openShared();
         MemorySegment buffer = memorySession.allocate(length);
         return read(offset, buffer)
-                .thenApply(i ->{
+                .thenCompose(i -> i < 0 ? CompletableFuture.failedStage(new NativeCallException(NativeHelper.getErrorStr(-i))) : CompletableFuture.completedFuture(i))
+                .thenApply(i -> {
                     byte[] bytes = buffer.asSlice(0, i).toArray(JAVA_BYTE);
                     memorySession.close();
                     return bytes;
-                } );
+                });
     }
 
     public CompletableFuture<byte[]> readSelected(int offset, int length){
         CompletableFuture<byte[]> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
            if (!uring.prep_selected_read(fd, offset, length, future)) {
-               future.completeExceptionally(new Exception("没有空闲的sqe"));
+               future.completeExceptionally(new NativeCallException("没有空闲的sqe"));
            }
        });
         return future;

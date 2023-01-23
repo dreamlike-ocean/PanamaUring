@@ -2,10 +2,7 @@ package top.dreamlike.async.uring;
 
 import top.dreamlike.async.IOOpResult;
 import top.dreamlike.epoll.Epoll;
-import top.dreamlike.helper.NativeHelper;
-import top.dreamlike.helper.Pair;
-import top.dreamlike.helper.SocketInfo;
-import top.dreamlike.helper.Unsafe;
+import top.dreamlike.helper.*;
 import top.dreamlike.nativeLib.eventfd.EventFd;
 import top.dreamlike.nativeLib.eventfd.eventfd_h;
 import top.dreamlike.nativeLib.in.sockaddr_in;
@@ -164,13 +161,19 @@ public class IOUring implements AutoCloseable {
 
             io_uring_sqe.buf_group$set(sqeSegment, gid);
             IOOpResult result = new IOOpResult(fd, -1,Op.FILE_SELECTED_READ, null, (res,bid) -> {
-                if (res == -ENOBUFS()){
-                    readBufferPromise.completeExceptionally(new Exception(String.format("gid: %d 不存在空余的内存了", gid)));
+                if (res == -ENOBUFS()) {
+                    readBufferPromise.completeExceptionally(new NativeCallException(String.format("gid: %d 不存在空余的内存了", gid)));
                     return;
                 }
+
+                if (res < 0) {
+                    readBufferPromise.completeExceptionally(new NativeCallException(NativeHelper.getErrorStr(-res)));
+                    return;
+                }
+
                 MemorySegment buffer = selectedBuffer[bid];
-                readBufferPromise.complete(buffer.asSlice(0,res).toArray(ValueLayout.JAVA_BYTE));
-                provideBuffer(buffer, bid,true);
+                readBufferPromise.complete(buffer.asSlice(0, res).toArray(ValueLayout.JAVA_BYTE));
+                provideBuffer(buffer, bid, true);
             });
             long opsCount = count.getAndIncrement();
 
