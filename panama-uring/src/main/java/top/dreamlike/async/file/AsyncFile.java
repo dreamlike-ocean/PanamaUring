@@ -109,7 +109,7 @@ public non-sealed class AsyncFile implements AsyncFd, EventLoopAccess {
         return future;
     }
 
-    public CompletableFuture<Integer> write(int fileOffset,byte[] buffer,int bufferOffset,int bufferLength) {
+    public CompletableFuture<Integer> write(int fileOffset, byte[] buffer, int bufferOffset, int bufferLength) {
         if (bufferOffset + bufferLength > buffer.length) {
             throw new ArrayIndexOutOfBoundsException();
         }
@@ -134,12 +134,11 @@ public non-sealed class AsyncFile implements AsyncFd, EventLoopAccess {
 
 
     /**
-     *
-     * @param offset 文件偏移量
+     * @param offset        文件偏移量
      * @param memorySegment 需要调用者保证一直有效
      * @return
      */
-    public CompletableFuture<Integer> write(int offset,MemorySegment memorySegment) {
+    public CompletableFuture<Integer> write(int offset, MemorySegment memorySegment) {
         if (closed.get()) {
             throw new NativeCallException("file has closed");
         }

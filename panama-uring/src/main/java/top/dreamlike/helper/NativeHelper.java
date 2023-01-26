@@ -50,14 +50,14 @@ public class NativeHelper {
         if (socketFd == -1) throw new IllegalStateException("open listen socket fail");
         try (MemorySession session = MemorySession.openConfined()) {
             MemorySegment serverAddr = sockaddr_in.allocate(session);
-            bzero(serverAddr,sockaddr_in.sizeof());
+            bzero(serverAddr, sockaddr_in.sizeof());
             sockaddr_in.sin_family$set(serverAddr, (short) AF_INET());
-            inet_pton(AF_INET(),session.allocateUtf8String(host),sockaddr_in.sin_addr$slice(serverAddr));
-            sockaddr_in.sin_port$set(serverAddr,htons((short) port));
+            inet_pton(AF_INET(), session.allocateUtf8String(host), sockaddr_in.sin_addr$slice(serverAddr));
+            sockaddr_in.sin_port$set(serverAddr, htons((short) port));
             int bind = bind(socketFd, serverAddr, (int) sockaddr_in.sizeof());
             if (bind == -1) {
                 int errorNo = errno_h.__errno_location().get(ValueLayout.JAVA_INT, 0);
-                throw new IllegalStateException("bind error!"+errorNo);
+                throw new IllegalStateException("bind error!" + errorNo);
             }
         }
         listen(socketFd, 64);

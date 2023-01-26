@@ -21,6 +21,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <panama.version>1.2.2</panama.version>
         <vertx.version>4.3.7</vertx.version>
+        <vertx-async.version>1.0</vertx-async.version>
     </properties>
     <dependencies>
         <!-- https://mvnrepository.com/artifact/junit/junit -->

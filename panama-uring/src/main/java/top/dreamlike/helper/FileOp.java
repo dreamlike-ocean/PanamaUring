@@ -1,7 +1,5 @@
 package top.dreamlike.helper;
-
 import static top.dreamlike.nativeLib.fcntl.fcntl_h.*;
-
 public enum FileOp {
     CREATE(O_CREAT()),
     CREATE_NEW(O_CREAT() | O_TRUNC()),

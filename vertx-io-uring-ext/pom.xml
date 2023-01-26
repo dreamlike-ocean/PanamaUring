@@ -21,6 +21,7 @@
         </dependencies>
     </dependencyManagement>
     <artifactId>vertx-io-uring-ext</artifactId>
+    <version>${vertx-async.version}</version>
 
     <properties>
         <maven.compiler.source>19</maven.compiler.source>
