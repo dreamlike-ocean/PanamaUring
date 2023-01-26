@@ -482,6 +482,12 @@ public class IOUring implements AutoCloseable {
     static {
 //        System.load("/home/dreamlike/uringDemo/src/main/resources/liburing.so");
         try {
+
+            if (!NativeHelper.isLinux() || !NativeHelper.isX86_64() || !NativeHelper.compareWithCurrentLinuxVersion(5, 10)) {
+                throw new NativeCallException("please check os version(need linux >= 5.10) and CPU Arch(need X86_64)");
+            }
+
+
             InputStream is = IOUring.class.getResourceAsStream("/liburing.so");
             File file = File.createTempFile("liburing", ".so");
             OutputStream os = new FileOutputStream(file);

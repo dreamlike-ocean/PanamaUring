@@ -29,13 +29,25 @@ import static top.dreamlike.nativeLib.string.string_h.*;
 public class NativeHelper {
     private static final String[] errStr;
 
+    private static final String osVersion;
+
+    private static final String arch;
+
+    private static final String osName;
+
+    private static final int currentLinuxMajor;
+
+    private static final int currentLinuxMinor;
+
+    private static final boolean osLinux;
+
     private static Executor defaultCallbackExecutor = ForkJoinPool.commonPool();
 
     //todo ipv6支持 有空会做
 
-    public static int serverListen(String host, int port){
-        int socketFd  = socket(AF_INET(), SOCK_STREAM(), 0);
-        if (socketFd  == -1) throw new IllegalStateException("open listen socket fail");
+    public static int serverListen(String host, int port) {
+        int socketFd = socket(AF_INET(), SOCK_STREAM(), 0);
+        if (socketFd == -1) throw new IllegalStateException("open listen socket fail");
         try (MemorySession session = MemorySession.openConfined()) {
             MemorySegment serverAddr = sockaddr_in.allocate(session);
             bzero(serverAddr,sockaddr_in.sizeof());
@@ -170,7 +182,59 @@ public class NativeHelper {
         NativeHelper.defaultCallbackExecutor = defaultCallbackExecutor;
     }
 
+
+    public static boolean compareWithCurrentLinuxVersion(int major, int minor) {
+        return currentLinuxMajor > major || (currentLinuxMajor == major && currentLinuxMinor >= minor);
+    }
+
+    public static boolean isLinux() {
+        return osLinux;
+    }
+
+    public static boolean isX86_64() {
+        return arch.equals("x86_64");
+    }
+
+
+    public static int parseFlag(FileOp... ops) {
+        int res = 0;
+        for (FileOp op : ops) {
+            res |= op.op;
+        }
+        return res;
+    }
+
     static {
+        osVersion = System.getProperty("os.version", "");
+        osName = System.getProperty("os.name", "");
+        String arch0 = System.getProperty("os.arch", "x86_64" /*most java users are x86_64*/);
+        if (arch0.equals("amd64")) {
+            arch0 = "x86_64";
+        }
+        arch = arch0;
+        String os = osName.toLowerCase();
+        osLinux = os.contains("linux");
+        int major = -1;
+        int minor = -1;
+        if (osLinux) {
+            String[] split = osVersion.split("\\.");
+            if (split.length >= 2) {
+                try {
+                    major = Integer.parseInt(split[0]);
+                    minor = Integer.parseInt(split[1]);
+                } catch (NumberFormatException ignore) {
+                }
+            }
+            if (minor == -1) {
+                major = -1;
+            }
+
+
+        }
+
+        currentLinuxMajor = major;
+        currentLinuxMinor = minor;
+
         errStr = new String[257];
         for (int errNo = 0; errNo <= 256; errNo++) {
             MemoryAddress memoryAddress = strerror(errNo);

@@ -15,6 +15,7 @@ import top.dreamlike.nativeLib.unistd.unistd_h;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static top.dreamlike.nativeLib.fcntl.fcntl_h.open;
@@ -27,13 +28,15 @@ public non-sealed class AsyncFile implements AsyncFd, EventLoopAccess {
 
     private final IOUringEventLoop eventLoop;
 
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+
 
     public AsyncFile(String path, IOUringEventLoop eventLoop, int ops) {
         try (MemorySession allocator = MemorySession.openConfined()) {
             MemorySegment filePath = allocator.allocateUtf8String(path);
-            fd = open(filePath,ops);
-            if (fd < 0){
-                throw new IllegalStateException("fd open error:"+ NativeHelper.getNowError());
+            fd = open(filePath, ops);
+            if (fd < 0) {
+                throw new IllegalStateException("fd open error:" + NativeHelper.getNowError());
             }
 
         }
@@ -63,6 +66,11 @@ public non-sealed class AsyncFile implements AsyncFd, EventLoopAccess {
         if (!memorySession.isAlive() || memorySession.ownerThread() != null) {
             throw new NativeCallException("illegal memory segment");
         }
+
+        if (closed.get()) {
+            throw new NativeCallException("file has closed");
+        }
+
         CompletableFuture<Integer> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
             if (!uring.prep_read(fd, offset, memorySegment, future::complete)) {
@@ -73,7 +81,10 @@ public non-sealed class AsyncFile implements AsyncFd, EventLoopAccess {
     }
 
 
-    public CompletableFuture<byte[]> read(int offset, int length){
+    public CompletableFuture<byte[]> read(int offset, int length) {
+        if (closed.get()) {
+            throw new NativeCallException("file has closed");
+        }
         MemorySession memorySession = MemorySession.openShared();
         MemorySegment buffer = memorySession.allocate(length);
         return read(offset, buffer)
@@ -85,20 +96,28 @@ public non-sealed class AsyncFile implements AsyncFd, EventLoopAccess {
                 });
     }
 
-    public CompletableFuture<byte[]> readSelected(int offset, int length){
+    public CompletableFuture<byte[]> readSelected(int offset, int length) {
+        if (closed.get()) {
+            throw new NativeCallException("file has closed");
+        }
         CompletableFuture<byte[]> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
-           if (!uring.prep_selected_read(fd, offset, length, future)) {
-               future.completeExceptionally(new NativeCallException("没有空闲的sqe"));
-           }
-       });
+            if (!uring.prep_selected_read(fd, offset, length, future)) {
+                future.completeExceptionally(new NativeCallException("没有空闲的sqe"));
+            }
+        });
         return future;
     }
 
-    public CompletableFuture<Integer> write(int fileOffset,byte[] buffer,int bufferOffset,int bufferLength){
-        if (bufferOffset + bufferLength > buffer.length){
+    public CompletableFuture<Integer> write(int fileOffset,byte[] buffer,int bufferOffset,int bufferLength) {
+        if (bufferOffset + bufferLength > buffer.length) {
             throw new ArrayIndexOutOfBoundsException();
         }
+
+        if (closed.get()) {
+            throw new NativeCallException("file has closed");
+        }
+
         MemorySession session = MemorySession.openShared();
         CompletableFuture<Integer> future = new CompletableFuture<>();
         MemorySegment memorySegment = session.allocate(bufferLength);
@@ -120,7 +139,10 @@ public non-sealed class AsyncFile implements AsyncFd, EventLoopAccess {
      * @param memorySegment 需要调用者保证一直有效
      * @return
      */
-    public CompletableFuture<Integer> write(int offset,MemorySegment memorySegment){
+    public CompletableFuture<Integer> write(int offset,MemorySegment memorySegment) {
+        if (closed.get()) {
+            throw new NativeCallException("file has closed");
+        }
         CompletableFuture<Integer> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
             if (!uring.prep_write(fd, offset, memorySegment, future::complete)) {
@@ -130,7 +152,10 @@ public non-sealed class AsyncFile implements AsyncFd, EventLoopAccess {
         return future;
     }
 
-    public CompletableFuture<Integer> fsync(){
+    public CompletableFuture<Integer> fsync() {
+        if (closed.get()) {
+            throw new NativeCallException("file has closed");
+        }
         CompletableFuture<Integer> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
             if (!uring.prep_fsync(fd, 0, future::complete)) {
@@ -141,7 +166,18 @@ public non-sealed class AsyncFile implements AsyncFd, EventLoopAccess {
     }
 
     public void close() {
-        unistd_h.close(fd);
+        if (closed.compareAndSet(false, true)) {
+            try {
+                unistd_h.close(fd);
+            } catch (RuntimeException e) {
+                closed.set(false);
+                throw e;
+            }
+        }
+    }
+
+    public boolean closed() {
+        return closed.get();
     }
 
     static {

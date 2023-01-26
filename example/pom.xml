@@ -20,7 +20,7 @@
         <dependency>
             <groupId>top.dreamlike</groupId>
             <artifactId>panama-uring-linux-x86_64</artifactId>
-            <version>1.2</version>
+            <version>${panama.version}</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

@@ -11,11 +11,11 @@ import java.util.concurrent.ExecutionException;
 
 import static top.dreamlike.nativeLib.fcntl.fcntl_h.*;
 
-public class FileOp {
+public class FileOpExample {
     public static void main(String[] args) throws ExecutionException, InterruptedException {
 
         IOUringEventLoop ioUringEventLoop = new IOUringEventLoop(32, 16, 100);
-        AsyncFile appendFile = ioUringEventLoop.openFile("demo.txt", O_APPEND() | O_WRONLY() | O_CREAT() );
+        AsyncFile appendFile = ioUringEventLoop.openFile("demo.txt", O_APPEND() | O_WRONLY() | O_CREAT());
 
         ioUringEventLoop.start();
 

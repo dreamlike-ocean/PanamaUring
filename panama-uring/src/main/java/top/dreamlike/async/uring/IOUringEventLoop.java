@@ -79,7 +79,7 @@ public class IOUringEventLoop extends Thread implements Executor {
 
     public void start() {
         if (start.compareAndSet(false, true)) {
-            worker.start();
+            super.start();
         }
     }
 

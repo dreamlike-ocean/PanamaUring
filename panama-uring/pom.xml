@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>panama-uring-linux-x86_64</artifactId>
-    <version>1.2</version>
+    <version>${panama.version}</version>
 
     <properties>
         <maven.compiler.source>19</maven.compiler.source>
