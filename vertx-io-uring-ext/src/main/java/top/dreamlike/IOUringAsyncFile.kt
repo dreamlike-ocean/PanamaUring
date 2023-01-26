@@ -3,6 +3,7 @@ package top.dreamlike
 import io.netty.buffer.Unpooled
 import io.vertx.core.Future
 import io.vertx.core.Handler
+import io.vertx.core.Promise
 import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.file.impl.AsyncFileImpl
@@ -10,13 +11,15 @@ import io.vertx.core.impl.ContextInternal
 import io.vertx.core.streams.ReadStream
 import io.vertx.core.streams.impl.InboundBuffer
 import top.dreamlike.async.uring.IOUringEventLoop
+import java.util.concurrent.atomic.AtomicBoolean
 
 class IOUringAsyncFile(
     path: String,
     private val eventLoop: IOUringEventLoop,
     ops: Int,
     private val vertx: Vertx,
-    private val readBufferSize: Int = AsyncFileImpl.DEFAULT_READ_BUFFER_SIZE
+    private val readBufferSize: Int = AsyncFileImpl.DEFAULT_READ_BUFFER_SIZE,
+    private val fetchLockTimeOut: Long = -1
 ) : ReadStream<Buffer> {
     val context = vertx.orCreateContext as ContextInternal
     val file = eventLoop.openFile(path, ops)
@@ -37,7 +40,6 @@ class IOUringAsyncFile(
     private var lwm = maxWrites / 2
     private val overflow = false
     private var drainHandler: Handler<Void>? = null
-
 
     init {
         queue.handler {
@@ -163,5 +165,41 @@ class IOUringAsyncFile(
         }
 
         return this
+    }
+
+
+    fun getFileLock(): Future<FileLock> {
+        val promise = context.promise<FileLock>()
+        getFileLock0(promise)
+        return promise.future()
+    }
+
+    private fun getFileLock0(promise: Promise<FileLock>) {
+        try {
+            if (file.tryLock()) {
+                promise.complete(FileLock())
+            } else {
+                vertx.setTimer(100L) {
+                    getFileLock0(promise)
+                }
+            }
+        } catch (t: Throwable) {
+            promise.fail(t)
+        }
+    }
+
+    inner class FileLock {
+        private val lock = AtomicBoolean(false)
+
+        fun unlock(): Future<Unit> {
+            val promise = context.promise<Unit>()
+            context.runOnContext {
+                if (lock.compareAndSet(false, true)) {
+                    file.tryUnLock()
+                }
+                promise.complete()
+            }
+            return promise.future()
+        }
     }
 }

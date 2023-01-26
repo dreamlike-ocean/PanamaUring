@@ -18,7 +18,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static top.dreamlike.nativeLib.fcntl.fcntl_h.open;
+import static top.dreamlike.nativeLib.errno.errno_h.EWOULDBLOCK;
+import static top.dreamlike.nativeLib.fcntl.fcntl_h.*;
+import static top.dreamlike.nativeLib.flock.file_h.flock;
 
 public non-sealed class AsyncFile implements AsyncFd, EventLoopAccess {
     private static final Logger log = LoggerFactory.getLogger(AsyncFile.class);
@@ -187,4 +189,25 @@ public non-sealed class AsyncFile implements AsyncFd, EventLoopAccess {
     public IOUringEventLoop fetchEventLoop() {
         return eventLoop;
     }
+
+    public boolean tryLock() {
+        int res = flock(fd, LOCK_EX() | LOCK_NB());
+        if (res == 0) {
+            return true;
+        }
+        if (NativeHelper.getErrorNo() == EWOULDBLOCK()) {
+            return false;
+        }
+        throw new NativeCallException(NativeHelper.getNowError());
+    }
+
+    public boolean tryUnLock() {
+        int res = flock(fd, LOCK_NB() | LOCK_UN());
+
+        if (res == 0) {
+            return true;
+        }
+        throw new NativeCallException(NativeHelper.getNowError());
+    }
+
 }

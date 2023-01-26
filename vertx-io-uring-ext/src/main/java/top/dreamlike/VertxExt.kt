@@ -37,9 +37,12 @@ class DeferrableScope {
     companion object {
         inline fun <T> deferrableScope(fn: DeferrableScope.() -> T): T {
             val scope = DeferrableScope()
-            return fn(scope).also {
+            try {
+                return fn(scope)
+            } finally {
                 scope.end()
             }
+
         }
     }
 
