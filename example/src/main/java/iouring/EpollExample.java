@@ -13,7 +13,7 @@ import static top.dreamlike.nativeLib.unistd.unistd_h.read;
 /**
  * 用epoll监听console事件
  */
-public class NativeDemo {
+public class EpollExample {
     public static void main(String[] args) {
         try (MemorySession allocator = MemorySession.openConfined()) {
             MemorySegment memorySegment = allocator.allocate(1024);

@@ -40,7 +40,6 @@
         <dependency>
             <groupId>top.dreamlike</groupId>
             <artifactId>panama-uring-linux-x86_64</artifactId>
-            <version>${panama.version}</version>
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>

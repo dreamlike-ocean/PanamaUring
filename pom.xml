@@ -8,13 +8,6 @@
     <artifactId>uringDemo</artifactId>
     <packaging>pom</packaging>
     <version>1.0</version>
-    <modules>
-        <module>panama-uring</module>
-        <module>example</module>
-        <module>liburing</module>
-        <module>vertx-io-uring-ext</module>
-    </modules>
-
     <properties>
         <maven.compiler.source>19</maven.compiler.source>
         <maven.compiler.target>19</maven.compiler.target>
@@ -23,6 +16,29 @@
         <vertx.version>4.3.7</vertx.version>
         <vertx-async.version>1.0</vertx-async.version>
     </properties>
+    <modules>
+        <module>panama-uring</module>
+        <module>example</module>
+        <module>liburing</module>
+        <module>vertx-io-uring-ext</module>
+    </modules>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>top.dreamlike</groupId>
+                <artifactId>panama-uring-linux-x86_64</artifactId>
+                <version>${panama.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>top.dreamlike</groupId>
+                <artifactId>vertx-io-uring-ext</artifactId>
+                <version>${vertx-async.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+
     <dependencies>
         <!-- https://mvnrepository.com/artifact/junit/junit -->
         <dependency>

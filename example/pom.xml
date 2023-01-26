@@ -19,8 +19,12 @@
     <dependencies>
         <dependency>
             <groupId>top.dreamlike</groupId>
+            <artifactId>vertx-io-uring-ext</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>top.dreamlike</groupId>
             <artifactId>panama-uring-linux-x86_64</artifactId>
-            <version>${panama.version}</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
