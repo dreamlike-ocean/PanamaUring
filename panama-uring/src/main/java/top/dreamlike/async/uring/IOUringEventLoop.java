@@ -5,13 +5,17 @@ import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.AsyncFd;
 import top.dreamlike.async.IOOpResult;
 import top.dreamlike.async.file.AsyncFile;
+import top.dreamlike.async.file.AsyncWatchService;
 import top.dreamlike.async.socket.AsyncServerSocket;
 import top.dreamlike.async.socket.AsyncSocket;
 import top.dreamlike.helper.Unsafe;
 
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
+import java.time.Duration;
+import java.util.Comparator;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,6 +28,8 @@ public class IOUringEventLoop extends Thread implements Executor {
     final IOUring ioUring;
 
     private final MpscLinkedQueue<Runnable> tasks;
+
+    private final PriorityQueue<TimerTask> timerTasks;
 
     private final Thread worker;
 
@@ -48,8 +54,30 @@ public class IOUringEventLoop extends Thread implements Executor {
         setName("io-uring-eventloop-" + atomicInteger.getAndIncrement());
         worker = this;
         this.autoSubmitDuration = new AtomicLong(autoSubmitDuration);
+        timerTasks = new PriorityQueue<>(Comparator.comparingLong(TimerTask::getDeadline));
+        timerTasks.offer(new TimerTask(this::autoFlushTask, System.currentTimeMillis() + autoSubmitDuration));
         close = new AtomicBoolean(false);
         lastSubmitTimeStamp = System.currentTimeMillis();
+    }
+
+    private void autoFlushTask() {
+        flush();
+        timerTasks.offer(new TimerTask(this::autoFlushTask, System.currentTimeMillis() + autoSubmitDuration.get()));
+    }
+
+
+    public CompletableFuture<Void> scheduleTask(Runnable runnable, Duration duration) {
+        CompletableFuture<Void> res = new CompletableFuture<>();
+        runOnEventLoop(() -> {
+            long millis = duration.toMillis();
+            TimerTask task = new TimerTask(() -> {
+                runnable.run();
+                res.complete(null);
+            }, System.currentTimeMillis() + millis);
+            task.future = res;
+            timerTasks.offer(task);
+        });
+        return res;
     }
 
     public void setAutoSubmitDuration(long autoSubmitDuration) {
@@ -59,12 +87,20 @@ public class IOUringEventLoop extends Thread implements Executor {
     @Override
     public void run() {
         while (!close.get()) {
-            long duration = autoSubmitDuration.getAcquire();
+            long duration = autoSubmitDuration.get();
+            TimerTask peek = timerTasks.peek();
+            if (peek != null) {
+                //过期任务
+                if (peek.deadline <= System.currentTimeMillis()) {
+                    runAllTimerTask();
+                }
+                //最近的一个定时任务
+                duration = peek.deadline - System.currentTimeMillis();
+            }
             ioUring.waitComplete(duration);
             wakeupFlag.setRelease(true);
-            if (duration != -1 && System.currentTimeMillis() - lastSubmitTimeStamp > duration) {
-                flush();
-            }
+            //到期的任务
+            runAllTimerTask();
             ioUring.batchGetCqe(1024).forEach(IOOpResult::doCallBack);
             while (!tasks.isEmpty()) {
                 tasks.poll().run();
@@ -74,6 +110,21 @@ public class IOUringEventLoop extends Thread implements Executor {
             ioUring.close();
         } catch (Exception e) {
             //ignore
+        } finally {
+            for (TimerTask task : timerTasks) {
+                if (task.future != null) {
+                    task.future.cancel(true);
+                }
+            }
+            //若当前的io uring关闭 可能会导致有些服务不能结束
+            tasks.forEach(Runnable::run);
+        }
+    }
+
+    private void runAllTimerTask() {
+        while (timerTasks.peek().deadline <= System.currentTimeMillis()) {
+            TimerTask timerTask = timerTasks.poll();
+            timerTask.runnable.run();
         }
     }
 
@@ -122,6 +173,10 @@ public class IOUringEventLoop extends Thread implements Executor {
         return new AsyncServerSocket(this, host, port);
     }
 
+    public AsyncWatchService openWatchService() {
+        return new AsyncWatchService(this);
+    }
+
 
     public AsyncSocket openSocket(String host, int port) {
         InetSocketAddress address = new InetSocketAddress(host, port);
@@ -143,7 +198,6 @@ public class IOUringEventLoop extends Thread implements Executor {
      * 不校验任何fd是否属于这个eventLoop！
      *
      * @param ops 在这里面写各个对应的async op
-     * @param <T>
      * @return ops返回的future代表的结果
      */
     @Unsafe("不校验任何fd是否属于这个eventLoop")
@@ -211,10 +265,40 @@ public class IOUringEventLoop extends Thread implements Executor {
         execute(runnable);
     }
 
+
+    public <T> CompletableFuture<T> runOnEventLoop(Supplier<T> fn) {
+        CompletableFuture<T> res = new CompletableFuture<>();
+        runOnEventLoop(() -> {
+            try {
+                res.complete(fn.get());
+            } catch (Exception e) {
+                res.completeExceptionally(e);
+            }
+        });
+        return res;
+    }
+
+
     static {
         AccessHelper.fetchIOURing = loop -> loop.ioUring;
     }
 
 
+    private class TimerTask {
+        public Runnable runnable;
+        //绝对值 ms
+        public long deadline;
+
+        public CompletableFuture future;
+
+        public TimerTask(Runnable runnable, long deadline) {
+            this.runnable = runnable;
+            this.deadline = deadline;
+        }
+
+        public long getDeadline() {
+            return deadline;
+        }
+    }
 
 }

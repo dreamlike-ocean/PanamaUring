@@ -14,6 +14,8 @@ import top.dreamlike.nativeLib.unistd.unistd_h;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
+import java.time.Duration;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -31,6 +33,8 @@ public non-sealed class AsyncFile implements AsyncFd, EventLoopAccess {
     private final IOUringEventLoop eventLoop;
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
+
+    private final AtomicBoolean hasLocked = new AtomicBoolean(false);
 
 
     public AsyncFile(String path, IOUringEventLoop eventLoop, int ops) {
@@ -193,6 +197,7 @@ public non-sealed class AsyncFile implements AsyncFd, EventLoopAccess {
     public boolean tryLock() {
         int res = flock(fd, LOCK_EX() | LOCK_NB());
         if (res == 0) {
+            hasLocked.set(true);
             return true;
         }
         if (NativeHelper.getErrorNo() == EWOULDBLOCK()) {
@@ -202,12 +207,46 @@ public non-sealed class AsyncFile implements AsyncFd, EventLoopAccess {
     }
 
     public boolean tryUnLock() {
+        if (!hasLocked.get()) {
+            return false;
+        }
+
         int res = flock(fd, LOCK_NB() | LOCK_UN());
 
         if (res == 0) {
+            hasLocked.set(false);
             return true;
         }
         throw new NativeCallException(NativeHelper.getNowError());
+    }
+
+
+    public CompletableFuture<Boolean> lock() {
+        if (hasLocked.get()) {
+            return CompletableFuture.completedFuture(true);
+        }
+
+        //fast path
+        if (tryLock()) {
+            return CompletableFuture.completedFuture(true);
+        }
+        CompletableFuture<Boolean> res = new CompletableFuture<>();
+        lock0(res, Duration.ofMillis(1000));
+        return res.whenComplete((__, t) -> {
+            if (t instanceof CancellationException) {
+                tryUnLock();
+            }
+        });
+    }
+
+
+    private void lock0(CompletableFuture<Boolean> completableFuture, Duration duration) {
+        boolean b = tryLock();
+        if (b) {
+            completableFuture.complete(true);
+            return;
+        }
+        eventLoop.scheduleTask(() -> lock0(completableFuture, duration), duration);
     }
 
 }

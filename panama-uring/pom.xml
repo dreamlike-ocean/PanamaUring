@@ -19,7 +19,10 @@
     </properties>
 
     <dependencies>
-
+        <dependency>
+            <groupId>top.dreamlike</groupId>
+            <artifactId>native-lib</artifactId>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/org.slf4j/jul-to-slf4j -->
         <dependency>
             <groupId>org.slf4j</groupId>
