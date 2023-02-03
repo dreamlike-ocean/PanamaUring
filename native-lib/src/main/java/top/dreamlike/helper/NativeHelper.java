@@ -179,18 +179,23 @@ public class NativeHelper {
     }
 
     @Unsafe("存在段错误风险")
-    public static MemorySegment unsafePointConvertor(MemoryAddress p){
+    public static MemorySegment unsafePointConvertor(MemoryAddress p) {
         return MemorySegment.ofAddress(p, Long.MAX_VALUE, MemorySession.global());
     }
 
 
-    public static int createEventFd(){
-        int eventfd = eventfd(0, EFD_NONBLOCK());
-        if (eventfd < 0){
+    public static int createEventFd() {
+        return createEventFd(EFD_NONBLOCK());
+    }
+
+    public static int createEventFd(int flag) {
+        int eventfd = eventfd(0, flag);
+        if (eventfd < 0) {
             throw new NativeCallException(getNowError());
         }
         return eventfd;
     }
+
 
     public static Executor getDefaultCallbackExecutor() {
         return defaultCallbackExecutor;

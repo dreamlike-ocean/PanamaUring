@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
-public class IOUringEventLoop extends Thread implements Executor {
+public class IOUringEventLoop extends Thread implements Executor, AutoCloseable {
 
     final IOUring ioUring;
 
@@ -67,6 +67,10 @@ public class IOUringEventLoop extends Thread implements Executor {
 
 
     public CompletableFuture<Void> scheduleTask(Runnable runnable, Duration duration) {
+        if (close.get()) {
+            throw new IllegalStateException("eventloop has closed");
+        }
+
         CompletableFuture<Void> res = new CompletableFuture<>();
         runOnEventLoop(() -> {
             long millis = duration.toMillis();
@@ -117,7 +121,9 @@ public class IOUringEventLoop extends Thread implements Executor {
                 }
             }
             //若当前的io uring关闭 可能会导致有些服务不能结束
-            tasks.forEach(Runnable::run);
+            while (!tasks.isEmpty()) {
+                tasks.poll().run();
+            }
         }
     }
 
@@ -153,6 +159,9 @@ public class IOUringEventLoop extends Thread implements Executor {
 
     @Override
     public void execute(Runnable command) {
+        if (close.get()) {
+            throw new IllegalStateException("eventloop has closed");
+        }
         tasks.offer(command);
         wakeup();
     }
@@ -283,8 +292,13 @@ public class IOUringEventLoop extends Thread implements Executor {
         AccessHelper.fetchIOURing = loop -> loop.ioUring;
     }
 
+    @Override
+    public void close() throws Exception {
+        shutdown();
+    }
 
-    private class TimerTask {
+
+    private static class TimerTask {
         public Runnable runnable;
         //绝对值 ms
         public long deadline;

@@ -28,10 +28,6 @@ public class AsyncFile extends PlainAsyncFd {
     private final IOUring uring;
     private final int fd;
 
-    private IOUringEventLoop eventLoop;
-
-    private final AtomicBoolean closed = new AtomicBoolean(false);
-
     private final AtomicBoolean hasLocked = new AtomicBoolean(false);
 
 
@@ -60,7 +56,7 @@ public class AsyncFile extends PlainAsyncFd {
 
     @Unsafe("memory segment要保证有效且为share范围的session")
     public CompletableFuture<Integer> readUnsafe(int offset, MemorySegment memorySegment) {
-        return super.read(offset, memorySegment);
+        return super.readUnsafe(offset, memorySegment);
     }
 
 
@@ -79,23 +75,9 @@ public class AsyncFile extends PlainAsyncFd {
     }
 
 
-    /**
-     * @param offset        文件偏移量
-     * @param memorySegment 需要调用者保证一直有效
-     * @return
-     */
-    @Unsafe("memorySegment 需要调用者保证一直有效")
+    @Override
     public CompletableFuture<Integer> writeUnsafe(int offset, MemorySegment memorySegment) {
-        if (closed.get()) {
-            throw new NativeCallException("file has closed");
-        }
-        CompletableFuture<Integer> future = new CompletableFuture<>();
-        eventLoop.runOnEventLoop(() -> {
-            if (!uring.prep_write(fd, offset, memorySegment, future::complete)) {
-                future.completeExceptionally(new Exception("没有空闲的sqe"));
-            }
-        });
-        return future;
+        return super.writeUnsafe(offset, memorySegment);
     }
 
     public CompletableFuture<Integer> fsync() {
@@ -122,12 +104,9 @@ public class AsyncFile extends PlainAsyncFd {
         }
     }
 
-    public boolean closed() {
-        return closed.get();
-    }
 
     @Override
-    protected int fd() {
+    protected int readFd() {
         return fd;
     }
 

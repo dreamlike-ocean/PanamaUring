@@ -33,9 +33,11 @@ IO_Uring
 
 - 任意数量的IOSQE_IO_LINK
 
-WatcheService
+其余的异步fd
 
-- 异步的文件监听
+- 异步的文件监听 inotify
+- 异步的eventfd读写
+- 异步的pipefd
 
 其他Native封装
 
