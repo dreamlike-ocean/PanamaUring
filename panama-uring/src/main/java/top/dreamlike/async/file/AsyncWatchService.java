@@ -16,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
-non-sealed public class AsyncWatchService implements AsyncFd {
+non-sealed public class AsyncWatchService extends AsyncFd {
     private final IOUring uring;
 
     private final WatchService watchService;
@@ -28,6 +28,7 @@ non-sealed public class AsyncWatchService implements AsyncFd {
     private final int ifd;
 
     public AsyncWatchService(IOUringEventLoop eventLoop) {
+        super(eventLoop);
         this.watchService = new WatchService();
         watchService.makeNoBlock();
         this.ifd = AccessHelper.fetchINotifyFd.apply(watchService);
@@ -37,7 +38,7 @@ non-sealed public class AsyncWatchService implements AsyncFd {
 
     @Override
     public IOUringEventLoop fetchEventLoop() {
-        return null;
+        return eventLoop;
     }
 
     public CompletableFuture<Integer> register(Path path, int mask) {

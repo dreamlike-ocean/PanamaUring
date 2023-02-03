@@ -81,7 +81,7 @@ public class FileTest {
         var str = "modeifa async write \n".getBytes(StandardCharsets.UTF_8);
         MemorySegment waitWrite = session.allocateArray(ValueLayout.JAVA_BYTE, str.length);
         waitWrite.copyFrom(MemorySegment.ofArray(str));
-        file.write(0,waitWrite)
+        file.writeUnsafe(0, waitWrite)
                 .thenAccept(System.out::println);
 
         MemorySegment allocate = session.allocate(JAVA_LONG);

@@ -17,6 +17,7 @@ AsyncFile:
 - 异步写入
 - IOSQE_BUFFER_SELECT模式的异步读取
 - 异步fsync
+- 通过flock和定时任务实现的文件锁
 
 AsyncSocket
 
@@ -31,6 +32,10 @@ AsyncServerSocket
 IO_Uring
 
 - 任意数量的IOSQE_IO_LINK
+
+WatcheService
+
+- 异步的文件监听
 
 其他Native封装
 

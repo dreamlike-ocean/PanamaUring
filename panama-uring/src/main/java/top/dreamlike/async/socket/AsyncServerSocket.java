@@ -1,7 +1,6 @@
 package top.dreamlike.async.socket;
 
 import top.dreamlike.access.AccessHelper;
-import top.dreamlike.access.EventLoopAccess;
 import top.dreamlike.async.AsyncFd;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.async.uring.IOUringEventLoop;
@@ -10,16 +9,16 @@ import top.dreamlike.helper.SocketInfo;
 
 import java.util.concurrent.CompletableFuture;
 
-public non-sealed class AsyncServerSocket implements EventLoopAccess, AsyncFd {
+public non-sealed class AsyncServerSocket extends AsyncFd {
 
     private final IOUring uring;
     private final int serverFd;
 
-    private final IOUringEventLoop ioUringEventLoop;
+    private IOUringEventLoop ioUringEventLoop;
 
     public AsyncServerSocket(IOUringEventLoop ioUringEventLoop, String host, int port) {
+        super(ioUringEventLoop);
         this.uring = AccessHelper.fetchIOURing.apply(ioUringEventLoop);
-        this.ioUringEventLoop = ioUringEventLoop;
         this.serverFd = NativeHelper.serverListen(host, port);
     }
 

@@ -1,7 +1,6 @@
 package top.dreamlike.async.socket;
 
 import top.dreamlike.access.AccessHelper;
-import top.dreamlike.access.EventLoopAccess;
 import top.dreamlike.async.AsyncFd;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.async.uring.IOUringEventLoop;
@@ -16,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 
-public non-sealed class AsyncSocket implements EventLoopAccess, AsyncFd {
+public non-sealed class AsyncSocket extends AsyncFd {
     //todo 区分本地地址和远端地址
     // 目前是靠对于用途对host和port解释不同
     private final int fd;
@@ -28,6 +27,7 @@ public non-sealed class AsyncSocket implements EventLoopAccess, AsyncFd {
     private final IOUringEventLoop eventLoop;
 
     public AsyncSocket(int fd, String host, int port, IOUringEventLoop eventLoop) {
+        super(eventLoop);
         this.fd = fd;
         this.host = host;
         this.port = port;
@@ -37,6 +37,7 @@ public non-sealed class AsyncSocket implements EventLoopAccess, AsyncFd {
 
 
     public AsyncSocket(SocketAddress address, IOUringEventLoop eventLoop) {
+        super(eventLoop);
         this.ring = AccessHelper.fetchIOURing.apply(eventLoop);
         this.eventLoop = eventLoop;
         switch (address) {

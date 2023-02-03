@@ -28,7 +28,7 @@ public class FileOpExample {
         AsyncFile readFile = ioUringEventLoop.openFile("demo.txt", O_RDONLY());
         try (MemorySession memorySession = MemorySession.openShared()) {
             MemorySegment memorySegment = memorySession.allocate(1024);
-            CompletableFuture<Integer> read = readFile.read(0, memorySegment);
+            CompletableFuture<Integer> read = readFile.readUnsafe(0, memorySegment);
             Integer length = read.get();
             byte[] res = memorySegment.asSlice(0, length).toArray(ValueLayout.JAVA_BYTE);
             System.out.println("read all :"+new String(res));
