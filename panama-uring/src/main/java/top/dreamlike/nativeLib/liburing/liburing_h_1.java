@@ -2,8 +2,11 @@
 
 package top.dreamlike.nativeLib.liburing;
 
+import java.lang.foreign.Addressable;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
 import java.lang.invoke.MethodHandle;
-import java.lang.foreign.*;
 
 import static top.dreamlike.nativeLib.liburing.liburing_h.*;
 
@@ -181,8 +184,6 @@ class liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_recv$MH,"io_uring_prep_recv");
     }
     public static void io_uring_prep_recv ( Addressable sqe,  int sockfd,  Addressable buf,  long len,  int flags) {
-        //io_uring_prep_rw(IORING_OP_RECV, sqe, sockfd, buf, len, 0);
-        //	sqe->msg_flags = flags;
         io_uring_prep_rw(IORING_OP_RECV(), sqe, sockfd,buf,(int) len, 0);
     }
     public static MethodHandle io_uring_prep_openat2$MH() {

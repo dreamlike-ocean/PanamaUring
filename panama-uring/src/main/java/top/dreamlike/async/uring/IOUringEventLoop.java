@@ -37,16 +37,13 @@ public class IOUringEventLoop extends Thread implements Executor, AutoCloseable 
 
     private final AtomicBoolean close;
 
-    private long lastSubmitTimeStamp;
-
     private static final AtomicInteger atomicInteger = new AtomicInteger();
 
     private final AtomicBoolean start = new AtomicBoolean(false);
 
     private final AtomicBoolean wakeupFlag = new AtomicBoolean(true);
 
-    //todo jdk20之后更换为ScopeLocal实现
-    public static final ThreadLocal<Boolean> startLinked = ThreadLocal.withInitial(() -> false);
+
 
     public IOUringEventLoop(int ringSize, int autoBufferSize, long autoSubmitDuration) {
         ioUring = new IOUring(ringSize, autoBufferSize);
@@ -57,7 +54,6 @@ public class IOUringEventLoop extends Thread implements Executor, AutoCloseable 
         timerTasks = new PriorityQueue<>(Comparator.comparingLong(TimerTask::getDeadline));
         timerTasks.offer(new TimerTask(this::autoFlushTask, System.currentTimeMillis() + autoSubmitDuration));
         close = new AtomicBoolean(false);
-        lastSubmitTimeStamp = System.currentTimeMillis();
     }
 
     private void autoFlushTask() {
@@ -85,7 +81,7 @@ public class IOUringEventLoop extends Thread implements Executor, AutoCloseable 
     }
 
     public void setAutoSubmitDuration(long autoSubmitDuration) {
-        this.autoSubmitDuration.setRelease(autoSubmitDuration);
+        this.autoSubmitDuration.set(autoSubmitDuration);
     }
 
     @Override
@@ -128,7 +124,8 @@ public class IOUringEventLoop extends Thread implements Executor, AutoCloseable 
     }
 
     private void runAllTimerTask() {
-        while (timerTasks.peek().deadline <= System.currentTimeMillis()) {
+        //这玩意不会空 因为至少会有一个flush的任务
+        while (timerTasks.peek() != null && timerTasks.peek().deadline <= System.currentTimeMillis()) {
             TimerTask timerTask = timerTasks.poll();
             timerTask.runnable.run();
         }
@@ -146,7 +143,6 @@ public class IOUringEventLoop extends Thread implements Executor, AutoCloseable 
             execute(this::flush);
             return;
         }
-        lastSubmitTimeStamp = System.currentTimeMillis();
         ioUring.submit();
     }
 
@@ -214,7 +210,7 @@ public class IOUringEventLoop extends Thread implements Executor, AutoCloseable 
         CompletableFuture<T> future = new CompletableFuture<>();
         runOnEventLoop(() -> {
             try {
-                startLinked.set(true);
+                IOUring.startLinked.set(true);
                 ops.get()
                         .whenComplete((r, t) -> {
                             if (t != null) {
@@ -227,7 +223,7 @@ public class IOUringEventLoop extends Thread implements Executor, AutoCloseable 
             } catch (Throwable e) {
                 future.completeExceptionally(e);
             } finally {
-                startLinked.set(false);
+                IOUring.startLinked.set(false);
             }
         });
         return future;
@@ -260,11 +256,6 @@ public class IOUringEventLoop extends Thread implements Executor, AutoCloseable 
 
         return true;
     }
-
-    public boolean isStartLinked() {
-        return startLinked.get();
-    }
-
 
     public void runOnEventLoop(Runnable runnable) {
         if (inEventLoop()) {

@@ -4,7 +4,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.net.SocketAddress;
 import top.dreamlike.async.socket.AsyncSocket;
 import top.dreamlike.async.uring.IOUringEventLoop;
-import top.dreamlike.helper.NativeHelper;
 
 import java.util.concurrent.ExecutionException;
 
@@ -16,18 +15,27 @@ public class AsyncSocketExample {
         vertx.createNetServer()
                 .connectHandler(socket -> {
                     SocketAddress x = socket.remoteAddress();
-                    System.out.println(x.hostAddress() + "port:" + x.port());
+                    socket.handler(b -> System.out.println("server recv:" + b));
+                    System.out.println("remote connect!:" + x.hostAddress() + "port:" + x.port());
+                    socket.write("hello io_uring!");
                 })
                 .listen(port).toCompletionStage().toCompletableFuture().get();
         try (IOUringEventLoop eventLoop = new IOUringEventLoop(32, 8, 100)) {
             AsyncSocket asyncSocket = eventLoop.openSocket("localhost", port);
             eventLoop.start();
             Integer integer = asyncSocket.connect().get();
-            if (integer < 0) {
-                System.out.println(NativeHelper.getErrorStr(-integer));
-            }
+            //write示例
+            byte[] writeBuf = "hello im io_uring!".getBytes();
+            Integer writeRes = asyncSocket.write(writeBuf, 0, writeBuf.length).get();
 
-//            vertx.close();
+            //recv示例
+//            String s = new String(asyncSocket.recvSelected(1024).get());
+            byte[] buf = new byte[1024];
+            Integer recvRes = asyncSocket.recv(buf).get();
+            String hello = new String(buf, 0, recvRes);
+            System.out.println("client recv:" + hello);
+
+            vertx.close();
         } catch (Exception e) {
         }
     }

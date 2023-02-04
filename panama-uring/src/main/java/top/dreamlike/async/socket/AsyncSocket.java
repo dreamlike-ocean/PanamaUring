@@ -4,6 +4,7 @@ import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.AsyncFd;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.async.uring.IOUringEventLoop;
+import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.SocketInfo;
 
@@ -55,7 +56,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
     }
 
 
-    public CompletableFuture<byte[]> readSelected(int size){
+    public CompletableFuture<byte[]> recvSelected(int size) {
         CompletableFuture<byte[]> completableFuture = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
             if (!ring.prep_selected_recv(fd, size, completableFuture)) {
@@ -65,11 +66,31 @@ public non-sealed class AsyncSocket extends AsyncFd {
         return completableFuture;
     }
 
+    public CompletableFuture<Integer> recv(byte[] buffer) {
+        CompletableFuture<Integer> completableFuture = new CompletableFuture<>();
+        MemorySession malloc = MemorySession.openShared();
+        MemorySegment buf = malloc.allocateArray(JAVA_BYTE, buffer.length);
+        eventLoop.runOnEventLoop(() -> {
+            boolean res = ring.prep_recv(fd, buf, completableFuture::complete);
+            if (!res) {
+                completableFuture.completeExceptionally(new Exception("没有空闲的sqe"));
+            }
+        });
+        return completableFuture
+                .thenCompose(res -> res < 0 ? CompletableFuture.failedFuture(new NativeCallException(NativeHelper.getErrorStr(-res))) : CompletableFuture.completedFuture(res))
+                .thenApply(i -> {
+                    MemorySegment.copy(buf, 0, MemorySegment.ofArray(buffer), 0, i);
+                    return i;
+                })
+                .whenComplete((__, ___) -> malloc.close());
+    }
+
+
     public CompletableFuture<Integer> connect() {
         CompletableFuture<Integer> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
             try {
-                if (!ring.prep_connect(new SocketInfo(fd,host,port), future::complete)){
+                if (!ring.prep_connect(new SocketInfo(fd, host, port), future::complete)) {
                     future.completeExceptionally(new Exception("没有空闲的sqe"));
                 }
             } catch (UnknownHostException e) {

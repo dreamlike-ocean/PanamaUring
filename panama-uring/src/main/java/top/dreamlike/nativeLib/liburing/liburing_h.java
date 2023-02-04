@@ -2,7 +2,6 @@
 
 package top.dreamlike.nativeLib.liburing;
 
-import top.dreamlike.async.uring.IOUringEventLoop;
 import top.dreamlike.helper.NativeHelper;
 
 import java.lang.foreign.*;
@@ -4168,18 +4167,19 @@ public class liburing_h extends liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$28.io_uring_prep_rw$MH,"io_uring_prep_rw");
     }
     public static void io_uring_prep_rw ( int op,  Addressable sqe,  int fd,  Addressable addr,  int len,  long offset) {
-        var mh$ = io_uring_prep_rw$MH();
-        try {
-            mh$.invokeExact(op, sqe, fd, addr, len, offset);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-        Thread currentThread = Thread.currentThread();
-        if (currentThread instanceof IOUringEventLoop thread && thread.isStartLinked()) {
-            MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe.address());
-            byte b = io_uring_sqe.flags$get(sqeSegment);
-            io_uring_sqe.flags$set(sqeSegment, 0L, ((byte) (b | (byte) IOSQE_IO_LINK())));
-        }
+        MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe.address());
+        io_uring_sqe.opcode$set(sqeSegment, (byte) op);
+        //暂时不填充 防止覆盖用户的操作
+//        io_uring_sqe.flags$get(sqeSegment,0);
+        io_uring_sqe.ioprio$set(sqeSegment, (short) 0);
+        io_uring_sqe.fd$set(sqeSegment, fd);
+        io_uring_sqe.off$set(sqeSegment, offset);
+        io_uring_sqe.addr$set(sqeSegment, addr.address().toRawLongValue());
+        io_uring_sqe.len$set(sqeSegment, len);
+        //暂时不填充 防止覆盖用户的操作
+//        io_uring_sqe.rw_flags$set(sqeSegment, 0);
+//        io_uring_sqe.user_data$set(sqeSegment, 0);
+        io_uring_sqe.__pad2$slice(sqeSegment).fill((byte) 0);
     }
     public static MethodHandle io_uring_prep_splice$MH() {
         return RuntimeHelper.requireNonNull(constants$28.io_uring_prep_splice$MH,"io_uring_prep_splice");

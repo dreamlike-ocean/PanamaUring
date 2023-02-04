@@ -2,18 +2,18 @@
 
 package top.dreamlike.nativeLib.liburing;
 
-import java.lang.invoke.VarHandle;
 import java.lang.foreign.*;
+import java.lang.invoke.VarHandle;
 
 public class io_uring_sqe {
 
-    static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        Constants$root.C_CHAR$LAYOUT.withName("opcode"),
-        Constants$root.C_CHAR$LAYOUT.withName("flags"),
-        Constants$root.C_SHORT$LAYOUT.withName("ioprio"),
-        Constants$root.C_INT$LAYOUT.withName("fd"),
-        MemoryLayout.unionLayout(
-            Constants$root.C_LONG_LONG$LAYOUT.withName("off"),
+    static final GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
+            Constants$root.C_CHAR$LAYOUT.withName("opcode"),
+            Constants$root.C_CHAR$LAYOUT.withName("flags"),
+            Constants$root.C_SHORT$LAYOUT.withName("ioprio"),
+            Constants$root.C_INT$LAYOUT.withName("fd"),
+            MemoryLayout.unionLayout(
+                    Constants$root.C_LONG_LONG$LAYOUT.withName("off"),
             Constants$root.C_LONG_LONG$LAYOUT.withName("addr2")
         ).withName("$anon$0"),
         MemoryLayout.unionLayout(
@@ -70,23 +70,35 @@ public class io_uring_sqe {
     public static void opcode$set(MemorySegment seg, long index, byte x) {
         io_uring_sqe.opcode$VH.set(seg.asSlice(index*sizeof()), x);
     }
+
     static final VarHandle flags$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("flags"));
+
     public static VarHandle flags$VH() {
         return io_uring_sqe.flags$VH;
     }
+
     public static byte flags$get(MemorySegment seg) {
-        return (byte)io_uring_sqe.flags$VH.get(seg);
+        return (byte) io_uring_sqe.flags$VH.get(seg);
     }
-    public static void flags$set( MemorySegment seg, byte x) {
+
+    public static void flags$set(MemorySegment seg, byte x) {
         io_uring_sqe.flags$VH.set(seg, x);
     }
+
+    public static void flags$and(MemorySegment seg, byte x) {
+        io_uring_sqe.flags$set(seg, ((byte) (io_uring_sqe.flags$get(seg) | x)));
+    }
+
     public static byte flags$get(MemorySegment seg, long index) {
-        return (byte)io_uring_sqe.flags$VH.get(seg.asSlice(index*sizeof()));
+        return (byte) io_uring_sqe.flags$VH.get(seg.asSlice(index * sizeof()));
     }
+
     public static void flags$set(MemorySegment seg, long index, byte x) {
-        io_uring_sqe.flags$VH.set(seg.asSlice(index*sizeof()), x);
+        io_uring_sqe.flags$VH.set(seg.asSlice(index * sizeof()), x);
     }
+
     static final VarHandle ioprio$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("ioprio"));
+
     public static VarHandle ioprio$VH() {
         return io_uring_sqe.ioprio$VH;
     }
