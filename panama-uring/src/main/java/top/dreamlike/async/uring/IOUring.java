@@ -347,19 +347,18 @@ public class IOUring implements AutoCloseable {
         }
         InetSocketAddress inetAddress = InetSocketAddress.createUnresolved(info.host(), info.port());
         try (MemorySession session = MemorySession.openConfined()) {
-
             String host = inetAddress.getHostString();
             int port = inetAddress.getPort();
             Pair<MemorySegment, Boolean> socketInfo = NativeHelper.getSockAddr(session, host, port);
-            MemorySegment sockaddrSegement =  socketInfo.t1();
+            MemorySegment sockaddrSegement = socketInfo.t1();
             long opsCount = count.getAndIncrement();
             MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
-            context.put(opsCount, new IOOpResult(-1, -1, Op.CONNECT,null, (res, __) -> callback.accept(res)));
-//            DebugHelper.connect(fd,sockaddrSegement);
-//            NativeHelper.setSocket(fd, inet_h.SO_REUSEADDR());
-//            NativeHelper.setSocket(fd, inet_h.SO_REUSEPORT());
-            io_uring_prep_connect(sqe,fd,sockaddrSegement,(int) sockaddrSegement.byteSize());
+            context.put(opsCount, new IOOpResult(-1, -1, Op.CONNECT, null, (res, __) -> callback.accept(res)));
+            io_uring_prep_connect(sqe, fd, sockaddrSegement, (int) sockaddrSegement.byteSize());
             io_uring_sqe.user_data$set(sqeSegment, opsCount);
+            //todo 如果不提交则会导致异步的submit时sockaddr被释放了导致入参不对
+            //思考一下能不能不提交
+            submit();
         }
         return true;
     }
