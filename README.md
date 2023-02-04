@@ -60,7 +60,7 @@
 构建非常简单
 
 ```shell
-mvn clean package 
+mvn clean package -DskipTests
 ```
 
 ### 设计细节
