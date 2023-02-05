@@ -1,7 +1,7 @@
 package iouring;
 
 import top.dreamlike.async.file.AsyncPipe;
-import top.dreamlike.async.uring.IOUringEventLoop;
+import top.dreamlike.eventloop.IOUringEventLoop;
 import top.dreamlike.helper.NativeHelper;
 
 import java.lang.foreign.MemorySegment;

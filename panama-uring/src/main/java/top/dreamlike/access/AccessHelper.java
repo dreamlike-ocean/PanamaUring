@@ -5,8 +5,8 @@ import top.dreamlike.async.file.AsyncFile;
 import top.dreamlike.async.socket.AsyncServerSocket;
 import top.dreamlike.async.socket.AsyncSocket;
 import top.dreamlike.async.uring.IOUring;
-import top.dreamlike.async.uring.IOUringEventLoop;
 import top.dreamlike.epoll.Epoll;
+import top.dreamlike.eventloop.IOUringEventLoop;
 import top.dreamlike.helper.Unsafe;
 
 import java.lang.foreign.MemorySegment;

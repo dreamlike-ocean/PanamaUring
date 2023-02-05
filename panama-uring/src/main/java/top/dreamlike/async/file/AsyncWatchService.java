@@ -4,7 +4,7 @@ import top.dreamlike.FileSystem.WatchService;
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.AsyncFd;
 import top.dreamlike.async.uring.IOUring;
-import top.dreamlike.async.uring.IOUringEventLoop;
+import top.dreamlike.eventloop.IOUringEventLoop;
 import top.dreamlike.helper.FileEvent;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
@@ -58,14 +58,19 @@ non-sealed public class AsyncWatchService extends AsyncFd {
         });
     }
 
-
     public synchronized CompletableFuture<List<FileEvent>> select() {
+        return select(false);
+    }
+
+    public synchronized CompletableFuture<List<FileEvent>> select(boolean enablefast) {
         var future = new CompletableFuture<List<FileEvent>>();
-        List<FileEvent> fastRes = watchService.selectEvent();
-        //立刻读一下 快速路径
-        if (!fastRes.isEmpty()) {
-            future.complete(fastRes);
-            return future;
+        if (enablefast) {
+            List<FileEvent> fastRes = watchService.selectEvent();
+            //立刻读一下 快速路径
+            if (!fastRes.isEmpty()) {
+                future.complete(fastRes);
+                return future;
+            }
         }
         eventLoop.runOnEventLoop(() -> {
             MemorySegment buf = AccessHelper.fetchBuffer.apply(watchService);

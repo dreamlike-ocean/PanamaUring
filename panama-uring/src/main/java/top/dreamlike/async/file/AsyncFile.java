@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.PlainAsyncFd;
 import top.dreamlike.async.uring.IOUring;
-import top.dreamlike.async.uring.IOUringEventLoop;
+import top.dreamlike.eventloop.IOUringEventLoop;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Unsafe;

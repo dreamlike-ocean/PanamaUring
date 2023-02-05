@@ -2,7 +2,7 @@ package top.dreamlike.async;
 
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.uring.IOUring;
-import top.dreamlike.async.uring.IOUringEventLoop;
+import top.dreamlike.eventloop.IOUringEventLoop;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.nativeLib.unistd.unistd_h;

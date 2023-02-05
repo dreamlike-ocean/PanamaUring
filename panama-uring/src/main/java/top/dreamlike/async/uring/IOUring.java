@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
@@ -121,24 +122,26 @@ public class IOUring implements AutoCloseable {
         multiShotReadEventfd();
     }
 
-    private void multiShotReadEventfd(){
-        prep_read(wakeUpFd.getFd(), 0, wakeUpReadBuffer,(__) -> {
+    private void multiShotReadEventfd() {
+        BooleanSupplier prepFn = () -> prep_read(wakeUpFd.getFd(), 0, wakeUpReadBuffer, (__) -> {
             //轮询到了直接再注册一个可读事件
-            wakeUpFd.read(wakeUpReadBuffer);
             multiShotReadEventfd();
         });
-        submit();
+        //不提交 自动提交 ->  select(-1)
+        while (!prepFn.getAsBoolean()) {
+            submit();
+        }
     }
 
-    public void registerToEpoll(Epoll epoll){
+
+    public void registerToEpoll(Epoll epoll) {
         int uring_event_fd = eventfd_h.eventfd(0, EFD_NONBLOCK());
-        if (eventfd !=-1) {
+        if (eventfd != -1) {
             io_uring_unregister_eventfd(ring);
         }
         eventfd = uring_event_fd;
-        io_uring_register_eventfd(ring,eventfd);
+        io_uring_register_eventfd(ring, eventfd);
         epoll.register(eventfd, EPOLLIN());
-//        System.out.println("register :"+eventfd);
     }
 
 
@@ -353,7 +356,7 @@ public class IOUring implements AutoCloseable {
             return false;
         }
         InetSocketAddress inetAddress = InetSocketAddress.createUnresolved(info.host(), info.port());
-        MemorySession session = MemorySession.openShared();
+        MemorySession session = MemorySession.openConfined();
         String host = inetAddress.getHostString();
         int port = inetAddress.getPort();
         Pair<MemorySegment, Boolean> socketInfo = NativeHelper.getSockAddr(session, host, port);
@@ -492,7 +495,7 @@ public class IOUring implements AutoCloseable {
 
 
     static {
-//        System.load("/home/dreamlike/uringDemo/src/main/resources/liburing.so");
+
         try {
 
             if (!NativeHelper.isLinux() || !NativeHelper.isX86_64() || !NativeHelper.compareWithCurrentLinuxVersion(5, 10)) {

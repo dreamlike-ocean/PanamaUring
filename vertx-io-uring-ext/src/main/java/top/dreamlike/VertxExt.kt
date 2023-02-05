@@ -2,7 +2,7 @@ package top.dreamlike
 
 import io.vertx.core.Vertx
 import io.vertx.core.impl.VertxImpl
-import top.dreamlike.async.uring.IOUringEventLoop
+import top.dreamlike.eventloop.IOUringEventLoop
 import top.dreamlike.helper.FileOp
 import top.dreamlike.helper.NativeHelper
 import java.util.concurrent.ConcurrentHashMap
@@ -14,7 +14,11 @@ private val hasStartIOUring = ConcurrentHashMap<Vertx, IOUringEventLoop>()
 
 fun Vertx.startIOUring(option: IOUringOption): IOUringEventLoop {
     return hasStartIOUring.computeIfAbsent(this) {
-        IOUringEventLoop(option.sqeSize, option.bufferPoolSize, option.autoSubmitDuration)
+        IOUringEventLoop(
+            option.sqeSize,
+            option.bufferPoolSize,
+            option.autoSubmitDuration
+        )
             .also { eventLoop ->
                 eventLoop.start()
                 (this as VertxImpl).addCloseHook {

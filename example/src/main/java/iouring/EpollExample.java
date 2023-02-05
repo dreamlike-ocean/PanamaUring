@@ -24,7 +24,7 @@ public class EpollExample {
             int register = epoll.register(0, EPOLLIN());
 
             ArrayList<Epoll.Event> events = epoll.select(-1);
-            System.out.println(events.get(0).fd);
+            System.out.println(events.get(0).fd());
 
             long read = read(0, memorySegment, memorySegment.byteSize());
             System.out.println(read);

@@ -40,6 +40,15 @@ public class Epoll implements AutoCloseable{
         }
     }
 
+    public int modify(int fd, int event) {
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment epollEvent = epoll_event.allocate(session);
+            epoll_event.events$set(epollEvent, event);
+            epoll_data.fd$set(epoll_event.data$slice(epollEvent), fd);
+            return epoll_ctl(epollFd, EPOLL_CTL_MOD(), fd, epollEvent);
+        }
+    }
+
     public int unRegister(int fd) {
         return epoll_ctl(epollFd, EPOLL_CTL_DEL(), fd, MemoryAddress.NULL);
     }
@@ -79,15 +88,7 @@ public class Epoll implements AutoCloseable{
         allocator.close();
     }
 
-    public static class Event {
-        public final int fd;
-        public final int event;
-
-        public Event(int fd, int event) {
-            this.fd = fd;
-            this.event = event;
-        }
-
+    public record Event(int fd, int event) {
         @Override
         public String toString() {
             return "Event{" +

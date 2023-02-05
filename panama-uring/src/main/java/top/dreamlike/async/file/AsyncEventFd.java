@@ -1,7 +1,7 @@
 package top.dreamlike.async.file;
 
 import top.dreamlike.async.PlainAsyncFd;
-import top.dreamlike.async.uring.IOUringEventLoop;
+import top.dreamlike.eventloop.IOUringEventLoop;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 

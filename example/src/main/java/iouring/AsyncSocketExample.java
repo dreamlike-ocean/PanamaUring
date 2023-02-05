@@ -3,7 +3,7 @@ package iouring;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.SocketAddress;
 import top.dreamlike.async.socket.AsyncSocket;
-import top.dreamlike.async.uring.IOUringEventLoop;
+import top.dreamlike.eventloop.IOUringEventLoop;
 
 import java.util.concurrent.ExecutionException;
 

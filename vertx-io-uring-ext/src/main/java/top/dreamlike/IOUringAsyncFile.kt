@@ -10,7 +10,7 @@ import io.vertx.core.file.impl.AsyncFileImpl
 import io.vertx.core.impl.ContextInternal
 import io.vertx.core.streams.ReadStream
 import io.vertx.core.streams.impl.InboundBuffer
-import top.dreamlike.async.uring.IOUringEventLoop
+import top.dreamlike.eventloop.IOUringEventLoop
 import java.util.concurrent.atomic.AtomicBoolean
 
 class IOUringAsyncFile(

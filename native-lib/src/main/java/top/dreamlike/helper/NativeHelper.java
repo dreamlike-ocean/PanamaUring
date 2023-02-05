@@ -13,6 +13,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 
@@ -26,6 +27,8 @@ import static top.dreamlike.nativeLib.socket.socket_h.listen;
 import static top.dreamlike.nativeLib.string.string_h.*;
 
 public class NativeHelper {
+
+    private static final CompletableFuture<Void> voidCompletableFuture = CompletableFuture.completedFuture(null);
     private static final String[] errStr;
 
     private static final String osVersion;
@@ -186,6 +189,14 @@ public class NativeHelper {
 
     public static int createEventFd() {
         return createEventFd(EFD_NONBLOCK());
+    }
+
+    public static CompletableFuture<Void> errorNoTransform(Integer res) {
+        if (res < 0) {
+            return CompletableFuture.failedFuture(new NativeCallException(NativeHelper.getErrorStr(-res)));
+        }
+
+        return voidCompletableFuture;
     }
 
     public static int createEventFd(int flag) {

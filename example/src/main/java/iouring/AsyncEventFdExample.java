@@ -1,7 +1,7 @@
 package iouring;
 
 import top.dreamlike.async.file.AsyncEventFd;
-import top.dreamlike.async.uring.IOUringEventLoop;
+import top.dreamlike.eventloop.IOUringEventLoop;
 
 import static top.dreamlike.nativeLib.eventfd.eventfd_h.EFD_SEMAPHORE;
 

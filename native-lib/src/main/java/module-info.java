@@ -1,4 +1,4 @@
-module nativeLib {
+module top.dreamlike.nativeLib {
     exports top.dreamlike.helper;
     exports top.dreamlike.nativeLib;
     exports top.dreamlike.nativeLib.inotify;

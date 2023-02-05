@@ -1,6 +1,5 @@
-package top.dreamlike.async.uring;
+package top.dreamlike.eventloop;
 
-import org.jctools.queues.MpscLinkedQueue;
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.AsyncFd;
 import top.dreamlike.async.IOOpResult;
@@ -8,6 +7,7 @@ import top.dreamlike.async.file.AsyncFile;
 import top.dreamlike.async.file.AsyncWatchService;
 import top.dreamlike.async.socket.AsyncServerSocket;
 import top.dreamlike.async.socket.AsyncSocket;
+import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.helper.Unsafe;
 
 import java.lang.reflect.Field;
@@ -17,118 +17,39 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
-public class IOUringEventLoop extends Thread implements Executor, AutoCloseable {
+public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
 
     final IOUring ioUring;
 
-    private final MpscLinkedQueue<Runnable> tasks;
-
-    private final PriorityQueue<TimerTask> timerTasks;
-
-    private final Thread worker;
-
     private final AtomicLong autoSubmitDuration;
-
-    private final AtomicBoolean close;
-
     private static final AtomicInteger atomicInteger = new AtomicInteger();
 
     private final AtomicBoolean start = new AtomicBoolean(false);
 
-    private final AtomicBoolean wakeupFlag = new AtomicBoolean(true);
-
-
-
     public IOUringEventLoop(int ringSize, int autoBufferSize, long autoSubmitDuration) {
+        super();
         ioUring = new IOUring(ringSize, autoBufferSize);
-        tasks = new MpscLinkedQueue<>();
         setName("io-uring-eventloop-" + atomicInteger.getAndIncrement());
-        worker = this;
         this.autoSubmitDuration = new AtomicLong(autoSubmitDuration);
         timerTasks = new PriorityQueue<>(Comparator.comparingLong(TimerTask::getDeadline));
-        timerTasks.offer(new TimerTask(this::autoFlushTask, System.currentTimeMillis() + autoSubmitDuration));
-        close = new AtomicBoolean(false);
+        scheduleTask(this::autoFlushTask, Duration.ofMillis(autoSubmitDuration));
     }
 
     private void autoFlushTask() {
         flush();
-        timerTasks.offer(new TimerTask(this::autoFlushTask, System.currentTimeMillis() + autoSubmitDuration.get()));
+        scheduleTask(this::autoFlushTask, Duration.ofMillis(autoSubmitDuration.get()));
     }
 
 
-    public CompletableFuture<Void> scheduleTask(Runnable runnable, Duration duration) {
-        if (close.get()) {
-            throw new IllegalStateException("eventloop has closed");
-        }
 
-        CompletableFuture<Void> res = new CompletableFuture<>();
-        runOnEventLoop(() -> {
-            long millis = duration.toMillis();
-            TimerTask task = new TimerTask(() -> {
-                runnable.run();
-                res.complete(null);
-            }, System.currentTimeMillis() + millis);
-            task.future = res;
-            timerTasks.offer(task);
-        });
-        return res;
-    }
 
     public void setAutoSubmitDuration(long autoSubmitDuration) {
         this.autoSubmitDuration.set(autoSubmitDuration);
-    }
-
-    @Override
-    public void run() {
-        while (!close.get()) {
-            long duration = autoSubmitDuration.get();
-            TimerTask peek = timerTasks.peek();
-            if (peek != null) {
-                //过期任务
-                if (peek.deadline <= System.currentTimeMillis()) {
-                    runAllTimerTask();
-                }
-                //最近的一个定时任务
-                duration = peek.deadline - System.currentTimeMillis();
-            }
-            ioUring.waitComplete(duration);
-            wakeupFlag.setRelease(true);
-            //到期的任务
-            runAllTimerTask();
-            ioUring.batchGetCqe(1024).forEach(IOOpResult::doCallBack);
-            while (!tasks.isEmpty()) {
-                tasks.poll().run();
-            }
-        }
-        try {
-            ioUring.close();
-        } catch (Exception e) {
-            //ignore
-        } finally {
-            for (TimerTask task : timerTasks) {
-                if (task.future != null) {
-                    task.future.cancel(true);
-                }
-            }
-            //若当前的io uring关闭 可能会导致有些服务不能结束
-            while (!tasks.isEmpty()) {
-                tasks.poll().run();
-            }
-        }
-    }
-
-    private void runAllTimerTask() {
-        //这玩意不会空 因为至少会有一个flush的任务
-        while (timerTasks.peek() != null && timerTasks.peek().deadline <= System.currentTimeMillis()) {
-            TimerTask timerTask = timerTasks.poll();
-            timerTask.runnable.run();
-        }
     }
 
     public void start() {
@@ -138,8 +59,7 @@ public class IOUringEventLoop extends Thread implements Executor, AutoCloseable 
     }
 
     public void flush() {
-        Thread currentThread = Thread.currentThread();
-        if (currentThread != worker) {
+        if (!inEventLoop()) {
             execute(this::flush);
             return;
         }
@@ -147,20 +67,15 @@ public class IOUringEventLoop extends Thread implements Executor, AutoCloseable 
     }
 
     public void wakeup() {
-        if (!wakeupFlag.compareAndSet(false, true)) {
-            return;
-        }
         ioUring.wakeup();
     }
 
     @Override
-    public void execute(Runnable command) {
-        if (close.get()) {
-            throw new IllegalStateException("eventloop has closed");
-        }
-        tasks.offer(command);
-        wakeup();
+    protected void selectAndWait(long duration) {
+        ioUring.waitComplete(duration);
+//        ioUring.waitComplete(-1);
     }
+
 
     public void shutdown() {
         close.compareAndSet(false, true);
@@ -193,10 +108,6 @@ public class IOUringEventLoop extends Thread implements Executor, AutoCloseable 
         ioUring.submit();
         ioUring.waitComplete();
         return ioUring.batchGetCqe(max);
-    }
-
-    public boolean inEventLoop() {
-        return Thread.currentThread() == this;
     }
 
     /**
@@ -257,27 +168,6 @@ public class IOUringEventLoop extends Thread implements Executor, AutoCloseable 
         return true;
     }
 
-    public void runOnEventLoop(Runnable runnable) {
-        if (inEventLoop()) {
-            runnable.run();
-            return;
-        }
-        execute(runnable);
-    }
-
-
-    public <T> CompletableFuture<T> runOnEventLoop(Supplier<T> fn) {
-        CompletableFuture<T> res = new CompletableFuture<>();
-        runOnEventLoop(() -> {
-            try {
-                res.complete(fn.get());
-            } catch (Exception e) {
-                res.completeExceptionally(e);
-            }
-        });
-        return res;
-    }
-
 
     static {
         AccessHelper.fetchIOURing = loop -> loop.ioUring;
@@ -288,22 +178,26 @@ public class IOUringEventLoop extends Thread implements Executor, AutoCloseable 
         shutdown();
     }
 
-
-    private static class TimerTask {
-        public Runnable runnable;
-        //绝对值 ms
-        public long deadline;
-
-        public CompletableFuture future;
-
-        public TimerTask(Runnable runnable, long deadline) {
-            this.runnable = runnable;
-            this.deadline = deadline;
-        }
-
-        public long getDeadline() {
-            return deadline;
-        }
+    @Override
+    protected void afterSelect() {
+        ioUring.batchGetCqe(1024).forEach(IOOpResult::doCallBack);
     }
 
+    @Override
+    protected void close0() throws Exception {
+        ioUring.close();
+    }
+
+    @Override
+    protected void afterClose() {
+        for (TimerTask task : timerTasks) {
+            if (task.future != null) {
+                task.future.cancel(true);
+            }
+        }
+        //若当前的io uring关闭 可能会导致有些服务不能结束
+        while (!tasks.isEmpty()) {
+            tasks.poll().run();
+        }
+    }
 }
