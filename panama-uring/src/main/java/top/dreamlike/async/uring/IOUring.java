@@ -25,7 +25,6 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 import static java.lang.foreign.ValueLayout.*;
-import static top.dreamlike.nativeLib.epoll.epoll_h.EPOLLIN;
 import static top.dreamlike.nativeLib.eventfd.eventfd_h.EFD_NONBLOCK;
 import static top.dreamlike.nativeLib.inet.inet_h.C_POINTER;
 import static top.dreamlike.nativeLib.inet.inet_h.*;
@@ -134,16 +133,29 @@ public class IOUring implements AutoCloseable {
     }
 
 
+    @Deprecated
     public void registerToEpoll(Epoll epoll) {
+//        int uring_event_fd = eventfd_h.eventfd(0, EFD_NONBLOCK());
+//        if (eventfd != -1) {
+//            io_uring_unregister_eventfd(ring);
+//        }
+//        eventfd = uring_event_fd;
+//        io_uring_register_eventfd(ring, eventfd);
+//        epoll.register(eventfd, EPOLLIN());
+    }
+
+    public synchronized int registerEventFd() {
+        if (eventfd != -1) {
+            return eventfd;
+        }
         int uring_event_fd = eventfd_h.eventfd(0, EFD_NONBLOCK());
         if (eventfd != -1) {
             io_uring_unregister_eventfd(ring);
         }
         eventfd = uring_event_fd;
-        io_uring_register_eventfd(ring, eventfd);
-        epoll.register(eventfd, EPOLLIN());
+        io_uring_register_eventfd(ring, uring_event_fd);
+        return uring_event_fd;
     }
-
 
 
     public boolean checkSupport(int op){

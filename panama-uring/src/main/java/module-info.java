@@ -7,5 +7,5 @@ module top.dremalike.panama.uring.linux.x86_64 {
     requires jctools.core;
     requires jdk.unsupported;
     requires top.dreamlike.nativeLib;
-    requires slf4j.api;
+    requires org.slf4j;
 }

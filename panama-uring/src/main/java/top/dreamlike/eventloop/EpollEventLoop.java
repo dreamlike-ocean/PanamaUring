@@ -1,5 +1,6 @@
 package top.dreamlike.eventloop;
 
+import top.dreamlike.access.AccessHelper;
 import top.dreamlike.epoll.Epoll;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
@@ -26,6 +27,12 @@ public class EpollEventLoop extends BaseEventLoop {
         eventFd = new EventFd();
     }
 
+    /**
+     * @param fd       需要监听的fd
+     * @param event    事件
+     * @param callback 当epoll被触发时给出的event处理程序的回调
+     * @return 注册结果 要切线程
+     */
     public CompletableFuture<Void> registerEvent(int fd, int event, IntConsumer callback) {
         return runOnEventLoop(() -> {
             int register = epoll.register(fd, event);
@@ -91,5 +98,10 @@ public class EpollEventLoop extends BaseEventLoop {
                 remove.accept(event.event());
             }
         }
+    }
+
+    static {
+//        AccessHelper.setEpollEventLoopTasks = EpollEventLoop::setTaskQueue;
+        AccessHelper.setEpollEventLoopTasks = ((eventLoop, tasks) -> eventLoop.tasks = tasks);
     }
 }

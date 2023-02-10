@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>uringDemo</artifactId>
-        <groupId>top.dreamlike</groupId>
+        <groupId>io.github.dreamlike-ocean</groupId>
         <version>1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -18,12 +18,12 @@
     </properties>
     <dependencies>
         <dependency>
-            <groupId>top.dreamlike</groupId>
+            <groupId>io.github.dreamlike-ocean</groupId>
             <artifactId>vertx-io-uring-ext</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>top.dreamlike</groupId>
+            <groupId>io.github.dreamlike-ocean</groupId>
             <artifactId>panama-uring-linux-x86_64</artifactId>
             <scope>compile</scope>
         </dependency>

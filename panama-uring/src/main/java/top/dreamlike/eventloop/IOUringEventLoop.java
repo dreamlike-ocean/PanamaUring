@@ -73,7 +73,6 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
     @Override
     protected void selectAndWait(long duration) {
         ioUring.waitComplete(duration);
-//        ioUring.waitComplete(-1);
     }
 
 
@@ -102,6 +101,12 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         InetSocketAddress address = new InetSocketAddress(host, port);
         return new AsyncSocket(address, this);
     }
+
+
+    public CompletableFuture<Integer> registerEventFd() {
+        return runOnEventLoop(ioUring::registerEventFd);
+    }
+
 
     @Unsafe("并发问题，不推荐直接使用")
     public List<IOOpResult> submitAndWait(int max) {

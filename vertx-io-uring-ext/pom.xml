@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>top.dreamlike</groupId>
+        <groupId>io.github.dreamlike-ocean</groupId>
         <artifactId>uringDemo</artifactId>
         <version>1.0</version>
     </parent>
@@ -20,6 +20,7 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
     <artifactId>vertx-io-uring-ext</artifactId>
     <version>${vertx-async.version}</version>
 
@@ -38,7 +39,7 @@
             <artifactId>vertx-lang-kotlin-coroutines</artifactId>
         </dependency>
         <dependency>
-            <groupId>top.dreamlike</groupId>
+            <groupId>io.github.dreamlike-ocean</groupId>
             <artifactId>panama-uring-linux-x86_64</artifactId>
         </dependency>
         <dependency>

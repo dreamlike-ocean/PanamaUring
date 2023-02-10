@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>top.dreamlike</groupId>
+    <groupId>io.github.dreamlike-ocean</groupId>
     <artifactId>uringDemo</artifactId>
     <packaging>pom</packaging>
     <version>1.0</version>
@@ -12,11 +12,32 @@
         <maven.compiler.source>19</maven.compiler.source>
         <maven.compiler.target>19</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <panama.version>1.5.0</panama.version>
+        <panama.version>1.7.0</panama.version>
         <vertx.version>4.3.7</vertx.version>
         <vertx-async.version>1.0</vertx-async.version>
         <native-lib>1.1</native-lib>
     </properties>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+    <scm>
+        <url>https://github.com/dreamlike-ocean/PanamaUring</url>
+        <connection>https://github.com/dreamlike-ocean/PanamaUring.git</connection>
+    </scm>
+    <developers>
+        <developer>
+            <name>dreamlike-ocean</name>
+            <id>dreamlike-ocean</id>
+            <email>dreamlike.vertx@gmail.com</email>
+            <roles>
+                <role>owner</role>
+            </roles>
+            <timezone>+8</timezone>
+        </developer>
+    </developers>
     <modules>
         <module>panama-uring</module>
         <module>example</module>
@@ -24,21 +45,101 @@
         <module>vertx-io-uring-ext</module>
         <module>native-lib</module>
     </modules>
+    <profiles>
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.13</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>3.2.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.4.1</version>
+                        <configuration>
+                            <!-- jdk1.8要加上，1.7要去掉，否则会报错 -->
+                            <additionalJOptions>
+                                <additionalJOption>-Xdoclint:none</additionalJOption>
+                                <additonalJOption>--enable-preview</additonalJOption>
+                            </additionalJOptions>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>ossrh</id>
+                    <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+                </snapshotRepository>
+                <repository>
+                    <id>ossrh</id>
+                    <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+    </profiles>
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>top.dreamlike</groupId>
+                <groupId>io.github.dreamlike-ocean</groupId>
                 <artifactId>native-lib</artifactId>
                 <version>${native-lib}</version>
             </dependency>
             <dependency>
-                <groupId>top.dreamlike</groupId>
+                <groupId>io.github.dreamlike-ocean</groupId>
                 <artifactId>panama-uring-linux-x86_64</artifactId>
                 <version>${panama.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>top.dreamlike</groupId>
+                <groupId>io.github.dreamlike-ocean</groupId>
                 <artifactId>vertx-io-uring-ext</artifactId>
                 <version>${vertx-async.version}</version>
             </dependency>

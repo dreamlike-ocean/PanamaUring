@@ -6,10 +6,13 @@ import top.dreamlike.async.socket.AsyncServerSocket;
 import top.dreamlike.async.socket.AsyncSocket;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.epoll.Epoll;
+import top.dreamlike.eventloop.EpollEventLoop;
 import top.dreamlike.eventloop.IOUringEventLoop;
 import top.dreamlike.helper.Unsafe;
 
 import java.lang.foreign.MemorySegment;
+import java.util.Queue;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -37,6 +40,8 @@ public class AccessHelper {
 
     public static Function<WatchService, MemorySegment> fetchBuffer;
 
+
+    public static BiConsumer<EpollEventLoop, Queue<Runnable>> setEpollEventLoopTasks;
 }
 
 

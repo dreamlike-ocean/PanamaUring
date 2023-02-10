@@ -5,6 +5,7 @@ import org.jctools.queues.MpscLinkedQueue;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -12,7 +13,7 @@ import java.util.function.Supplier;
 
 public abstract class BaseEventLoop extends Thread implements Executor {
 
-    protected MpscLinkedQueue<Runnable> tasks;
+    protected Queue<Runnable> tasks;
 
     protected Thread worker;
 
