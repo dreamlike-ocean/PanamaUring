@@ -19,7 +19,6 @@ import java.util.concurrent.ForkJoinPool;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static top.dreamlike.nativeLib.eventfd.eventfd_h.EFD_NONBLOCK;
 import static top.dreamlike.nativeLib.eventfd.eventfd_h.eventfd;
 import static top.dreamlike.nativeLib.fcntl.fcntl_h.*;
 import static top.dreamlike.nativeLib.inet.inet_h.*;
@@ -188,7 +187,7 @@ public class NativeHelper {
 
 
     public static int createEventFd() {
-        return createEventFd(EFD_NONBLOCK());
+        return createEventFd(0);
     }
 
     public static CompletableFuture<Void> errorNoTransform(Integer res) {

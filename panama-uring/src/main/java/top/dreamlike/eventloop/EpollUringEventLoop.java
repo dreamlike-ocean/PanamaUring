@@ -1,8 +1,10 @@
 package top.dreamlike.eventloop;
 
 
-import top.dreamlike.async.socket.AsyncSocket;
+import top.dreamlike.access.AccessHelper;
+import top.dreamlike.epoll.Epoll;
 import top.dreamlike.epoll.async.EpollAsyncSocket;
+import top.dreamlike.helper.Pair;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
@@ -19,18 +21,23 @@ public class EpollUringEventLoop extends IOUringEventLoop {
     public EpollUringEventLoop(int ringSize, int autoBufferSize, long autoSubmitDuration) {
         //todo 异常情况关闭io_uring and epoll,先假定不会出问题 java也没法支持捕获native错误
         super(ringSize, autoBufferSize, autoSubmitDuration);
-        epollEventLoop = new EpollEventLoop();
+        epollEventLoop = new EpollEventLoop() {
+            @Override
+            public boolean inEventLoop() {
+                return true;
+            }
+        };
         epollEventLoop.tasks = tasks;
         ioUringEventFd = ioUring.registerEventFd();
-        epollEventLoop.registerEvent(ioUringEventFd, EPOLLIN(), (__) -> {
+        AccessHelper.registerToEpollDirectly.accept(epollEventLoop, new Pair<>(new Epoll.Event(ioUringEventFd, EPOLLIN()), (__) -> {
             //收割cqe
             super.afterSelect();
-        });
+        }));
     }
 
 
     @Override
-    public AsyncSocket openSocket(String host, int port) {
+    public EpollAsyncSocket openSocket(String host, int port) {
         return new EpollAsyncSocket(new InetSocketAddress(host, port), this);
     }
 
@@ -42,12 +49,23 @@ public class EpollUringEventLoop extends IOUringEventLoop {
         return epollEventLoop.modifyCallBack(fd, callback);
     }
 
+    public CompletableFuture<Void> modifyAll(int fd, int event, IntConsumer callback) {
+        return epollEventLoop.modifyAll(fd, event, callback);
+    }
+
     public CompletableFuture<Void> modifyEvent(int fd, int event) {
         return epollEventLoop.modifyEvent(fd, event);
     }
 
+
     public CompletableFuture<Void> unregisterEvent(int fd) {
         return epollEventLoop.unregisterEvent(fd);
+    }
+
+
+    @Override
+    protected void selectAndWait(long duration) {
+        epollEventLoop.selectAndWait(duration);
     }
 
     @Override

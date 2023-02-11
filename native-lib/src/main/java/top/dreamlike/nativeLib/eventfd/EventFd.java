@@ -27,27 +27,26 @@ public class EventFd implements AutoCloseable {
     }
 
     @Unsafe("需要segment一直有效")
-    public void read(MemorySegment segment) {
-        MemorySession memorySession = segment.session();
-        if (!memorySession.isAlive() || memorySession.ownerThread() != null) {
-            throw new NativeCallException("illegal memory segment");
-        }
-
+    public void readSyncUnsafe(MemorySegment segment) {
         if (segment.byteSize() != JAVA_LONG.byteSize()) {
             throw new NativeCallException("segment.byteSize() != JAVA_LONG.byteSize()");
         }
         int res = eventfd_h.eventfd_read(fd, segment);
-        if (res < 0) {
-            throw new NativeCallException(NativeHelper.getNowError());
+//        if (res < 0) {
+//            throw new NativeCallException(fd+":"+NativeHelper.getNowError());
+//        }
+    }
+
+    public long readSync() {
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment tmp = session.allocate(JAVA_LONG, 0);
+            readSyncUnsafe(tmp);
+            return tmp.get(JAVA_LONG, 0);
         }
     }
 
-    public long read(){
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment tmp = session.allocate(JAVA_LONG, 0);
-            read(tmp);
-            return tmp.get(JAVA_LONG, 0);
-        }
+    public void transToNoBlock() {
+        NativeHelper.makeNoBlocking(fd);
     }
 
     @Override

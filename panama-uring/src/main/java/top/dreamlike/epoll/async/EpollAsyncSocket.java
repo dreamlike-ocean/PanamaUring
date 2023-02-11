@@ -93,8 +93,8 @@ public class EpollAsyncSocket extends AsyncSocket {
                 recvFuture.complete(res);
             });
 
-            if ((event | EPOLLIN()) != 0) {
-                fetchEventLoop().registerEvent(fd, EPOLLIN(), this::handleEvent);
+            if ((event & EPOLLIN()) == 0) {
+                fetchEventLoop().modifyAll(fd, event | EPOLLIN(), this::handleEvent);
             }
         });
 
@@ -125,18 +125,21 @@ public class EpollAsyncSocket extends AsyncSocket {
                     return;
                 }
             }
-           
+
             recvQuest.offer(() -> {
                 connected.set(true);
                 conncetFuture.complete(0);
+                fetchEventLoop().modifyEvent(fd, 0);
+                event = 0;
             });
             fetchEventLoop().registerEvent(fd, EPOLLIN(), this::handleEvent);
+            event |= EPOLLIN();
         });
         return conncetFuture;
     }
 
     private void handleEvent(int event) {
-        if ((event | EPOLLIN()) != 0) {
+        if ((event & EPOLLIN()) != 0) {
             if (connected.get()) {
                 multiShotModeRead();
             } else {
@@ -176,7 +179,7 @@ public class EpollAsyncSocket extends AsyncSocket {
         try (MemorySession session = MemorySession.openConfined()) {
             MemorySegment buff = session.allocate(recvSize);
             long recv = socket_h.recv(fd, buff, recvSize, 0);
-            if (recv != 0 && NativeHelper.getErrorNo() == EAGAIN()) {
+            if (recv < 0 && NativeHelper.getErrorNo() == EAGAIN()) {
                 return;
             }
 

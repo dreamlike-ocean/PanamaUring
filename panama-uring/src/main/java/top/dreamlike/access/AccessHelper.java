@@ -8,6 +8,7 @@ import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.epoll.Epoll;
 import top.dreamlike.eventloop.EpollEventLoop;
 import top.dreamlike.eventloop.IOUringEventLoop;
+import top.dreamlike.helper.Pair;
 import top.dreamlike.helper.Unsafe;
 
 import java.lang.foreign.MemorySegment;
@@ -15,6 +16,7 @@ import java.util.Queue;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntConsumer;
 
 /**
  * 非导出的符号
@@ -42,6 +44,9 @@ public class AccessHelper {
 
 
     public static BiConsumer<EpollEventLoop, Queue<Runnable>> setEpollEventLoopTasks;
+
+    public static BiConsumer<EpollEventLoop, Pair<Epoll.Event, IntConsumer>> registerToEpollDirectly;
+
 }
 
 
