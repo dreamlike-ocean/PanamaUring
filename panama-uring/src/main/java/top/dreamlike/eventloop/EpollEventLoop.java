@@ -4,6 +4,7 @@ import top.dreamlike.access.AccessHelper;
 import top.dreamlike.epoll.Epoll;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
+import top.dreamlike.nativeLib.epoll.epoll_h;
 import top.dreamlike.nativeLib.eventfd.EventFd;
 import top.dreamlike.thirdparty.colletion.IntObjectHashMap;
 
@@ -60,7 +61,7 @@ public class EpollEventLoop extends BaseEventLoop {
             if (fdHandler.get(fd) == null) {
                 throw new NativeCallException("fd need to be registered to epoll");
             }
-            return epoll.unRegister(fd);
+            return epoll.modify(fd, event);
         }).thenCompose(NativeHelper::errorNoTransform);
     }
 
@@ -93,9 +94,9 @@ public class EpollEventLoop extends BaseEventLoop {
     @Override
     protected void afterSelect() {
         for (Epoll.Event event : processingEvent) {
-            var remove = fdHandler.remove(event.fd());
-            if (remove != null) {
-                remove.accept(event.event());
+            var eventHandler = (event.event() | epoll_h.EPOLLONESHOT()) != 0 ? fdHandler.remove(event.fd()) : fdHandler.get(event.fd());
+            if (eventHandler != null) {
+                eventHandler.accept(event.event());
             }
         }
     }

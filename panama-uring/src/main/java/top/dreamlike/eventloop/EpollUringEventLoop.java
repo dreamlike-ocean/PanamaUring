@@ -1,6 +1,10 @@
 package top.dreamlike.eventloop;
 
 
+import top.dreamlike.async.socket.AsyncSocket;
+import top.dreamlike.epoll.async.EpollAsyncSocket;
+
+import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.IntConsumer;
 
@@ -22,6 +26,12 @@ public class EpollUringEventLoop extends IOUringEventLoop {
             //收割cqe
             super.afterSelect();
         });
+    }
+
+
+    @Override
+    public AsyncSocket openSocket(String host, int port) {
+        return new EpollAsyncSocket(new InetSocketAddress(host, port), this);
     }
 
     public CompletableFuture<Void> registerEvent(int fd, int event, IntConsumer callback) {
@@ -54,6 +64,9 @@ public class EpollUringEventLoop extends IOUringEventLoop {
 
     @Override
     public void wakeup() {
-        epollEventLoop.wakeup();
+        //启动时没有
+        if (epollEventLoop != null) {
+            epollEventLoop.wakeup();
+        }
     }
 }

@@ -19,13 +19,13 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 public non-sealed class AsyncSocket extends AsyncFd {
     //todo 区分本地地址和远端地址
     // 目前是靠对于用途对host和port解释不同
-    private final int fd;
-    private final String host;
-    private final int port;
+    protected final int fd;
+    protected final String host;
+    protected final int port;
 
     private final IOUring ring;
 
-    private final IOUringEventLoop eventLoop;
+    protected final IOUringEventLoop eventLoop;
 
     public AsyncSocket(int fd, String host, int port, IOUringEventLoop eventLoop) {
         super(eventLoop);
