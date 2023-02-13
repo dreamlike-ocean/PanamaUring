@@ -10,7 +10,6 @@ import top.dreamlike.nativeLib.socket.socket_h;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
-import java.lang.foreign.ValueLayout;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayDeque;
@@ -20,7 +19,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static top.dreamlike.nativeLib.epoll.epoll_h.EPOLLIN;
+import static top.dreamlike.nativeLib.epoll.epoll_h.EPOLLOUT;
 import static top.dreamlike.nativeLib.errno.errno_h.EAGAIN;
 
 /**
@@ -37,6 +38,8 @@ public class EpollAsyncSocket extends AsyncSocket {
     private final Queue<Runnable> recvQuest;
 
     private final AtomicInteger maxReadBufferQueueLength;
+
+    private final Queue<Buffer> sendBuffers = new ArrayDeque<>();
 
     private int event = 0;
 
@@ -101,6 +104,7 @@ public class EpollAsyncSocket extends AsyncSocket {
         return recvFuture;
     }
 
+
     @Override
     public CompletableFuture<Integer> connect() {
         if (connected.get()) {
@@ -147,7 +151,22 @@ public class EpollAsyncSocket extends AsyncSocket {
             }
         }
 
-        //todo write
+        //写读事件
+        if ((event & EPOLLOUT()) != 0) {
+            while (!sendBuffers.isEmpty()) {
+                Buffer peek = sendBuffers.peek();
+                int expectWrite = peek.base.length - peek.offset;
+                //就是在eventloop上面
+                Integer res = write(peek.base, peek.offset, expectWrite).resultNow();
+                if (res < expectWrite) {
+                    break;
+                }
+            }
+
+            event &= ~EPOLLOUT();
+            fetchEventLoop().modifyEvent(fd, event);
+        }
+
     }
 
     private int readFromBuffer(byte[] buffer) {
@@ -163,9 +182,29 @@ public class EpollAsyncSocket extends AsyncSocket {
 
     @Override
     public CompletableFuture<Integer> write(byte[] buffer, int offset, int length) {
-        return super.write(buffer, offset, length);
+        return eventLoop.runOnEventLoop(() -> {
+            if (!sendBuffers.isEmpty()) {
+                sendBuffers.offer(new Buffer(buffer, 0));
+                return 0;
+            }
+            try (MemorySession session = MemorySession.openConfined()) {
+                MemorySegment writeBuffer = session.allocate(length - offset);
+                writeBuffer.copyFrom(MemorySegment.ofArray(buffer).asSlice(offset));
+                long sendRes = socket_h.send(fd, writeBuffer, length - offset, 0);
+                if (sendRes < length - offset) {
+                    event |= EPOLLOUT();
+                    fetchEventLoop().modifyEvent(fd, event);
+                    sendBuffers.offer(new Buffer(buffer, offset + length));
+                }
+                return (int) sendRes;
+            }
+        });
     }
 
+    @Override
+    public CompletableFuture<Integer> write(byte[] buffer) {
+        return write(buffer, 0, buffer.length);
+    }
 
     public void setMaxReadBufferQueueLength(int maxReadBufferQueueLength) {
         if (maxReadBufferQueueLength < 1) {
@@ -183,7 +222,7 @@ public class EpollAsyncSocket extends AsyncSocket {
                 return;
             }
 
-            byte[] base = buff.asSlice(0, recv).toArray(ValueLayout.JAVA_BYTE);
+            byte[] base = buff.asSlice(0, recv).toArray(JAVA_BYTE);
             recvBuffers.offer(new Buffer(base, 0));
             if (recvBuffers.size() == maxReadBufferQueueLength.get()) {
                 // 停止监听 被压策略
