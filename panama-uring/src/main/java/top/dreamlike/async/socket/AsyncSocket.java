@@ -113,11 +113,15 @@ public non-sealed class AsyncSocket extends AsyncFd {
                 future.completeExceptionally(new Exception("没有空闲的sqe"));
             }
         });
-        return future.whenComplete((res,t) -> {
+        return future.whenComplete((res, t) -> {
             session.close();
         });
     }
 
+
+    public CompletableFuture<Integer> write(byte[] buffer) {
+        return write(buffer, 0, buffer.length);
+    }
 
 
     @Override
