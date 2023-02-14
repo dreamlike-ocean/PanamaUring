@@ -11,8 +11,8 @@ import java.util.concurrent.CompletableFuture;
 
 public non-sealed class AsyncServerSocket extends AsyncFd {
 
-    private final IOUring uring;
-    private final int serverFd;
+    protected final IOUring uring;
+    protected final int serverFd;
 
     private IOUringEventLoop ioUringEventLoop;
 
@@ -23,7 +23,8 @@ public non-sealed class AsyncServerSocket extends AsyncFd {
     }
 
 
-    public CompletableFuture<AsyncSocket> accept(){
+    //受限于java泛型限制
+    public CompletableFuture<? extends AsyncSocket> accept() {
         CompletableFuture<SocketInfo> res = new CompletableFuture<>();
         ioUringEventLoop.runOnEventLoop(() -> {
             if (!uring.prep_accept(serverFd, res::complete)) {
