@@ -8,7 +8,7 @@ import top.dreamlike.eventloop.IOUringEventLoop;
 
 sealed public abstract class AsyncFd implements EventLoopAccess permits PlainAsyncFd, AsyncWatchService, AsyncServerSocket, AsyncSocket {
 
-    protected final IOUringEventLoop eventLoop;
+    protected IOUringEventLoop eventLoop;
 
     protected AsyncFd(IOUringEventLoop eventLoop) {
         this.eventLoop = eventLoop;

@@ -14,11 +14,10 @@ public non-sealed class AsyncServerSocket extends AsyncFd {
     protected final IOUring uring;
     protected final int serverFd;
 
-    private IOUringEventLoop ioUringEventLoop;
 
-    public AsyncServerSocket(IOUringEventLoop ioUringEventLoop, String host, int port) {
-        super(ioUringEventLoop);
-        this.uring = AccessHelper.fetchIOURing.apply(ioUringEventLoop);
+    public AsyncServerSocket(IOUringEventLoop eventLoop, String host, int port) {
+        super(eventLoop);
+        this.uring = AccessHelper.fetchIOURing.apply(eventLoop);
         this.serverFd = NativeHelper.serverListen(host, port);
     }
 
@@ -26,22 +25,22 @@ public non-sealed class AsyncServerSocket extends AsyncFd {
     //受限于java泛型限制
     public CompletableFuture<? extends AsyncSocket> accept() {
         CompletableFuture<SocketInfo> res = new CompletableFuture<>();
-        ioUringEventLoop.runOnEventLoop(() -> {
+        eventLoop.runOnEventLoop(() -> {
             if (!uring.prep_accept(serverFd, res::complete)) {
                 res.completeExceptionally(new Exception("没有空闲的sqe"));
             }
         });
         return res
-                .thenApply(si -> new AsyncSocket(si.fd(), si.host(), si.port(), ioUringEventLoop));
+                .thenApply(si -> new AsyncSocket(si.fd(), si.host(), si.port(), eventLoop));
     }
 
     static {
-        AccessHelper.fetchEventLoop = server -> server.ioUringEventLoop;
+        AccessHelper.fetchEventLoop = server -> server.eventLoop;
         AccessHelper.fetchServerFd = server -> server.serverFd;
     }
 
     @Override
     public IOUringEventLoop fetchEventLoop() {
-        return ioUringEventLoop;
+        return eventLoop;
     }
 }
