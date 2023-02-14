@@ -57,8 +57,7 @@ public class NativeHelper {
             sockaddr_in.sin_port$set(serverAddr, htons((short) port));
             int bind = bind(socketFd, serverAddr, (int) sockaddr_in.sizeof());
             if (bind == -1) {
-                int errorNo = errno_h.__errno_location().get(ValueLayout.JAVA_INT, 0);
-                throw new IllegalStateException("bind error!" + errorNo);
+                throw new IllegalStateException("bind error!" + NativeHelper.getNowError());
             }
         }
         listen(socketFd, 64);

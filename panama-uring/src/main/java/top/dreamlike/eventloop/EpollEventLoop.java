@@ -34,7 +34,6 @@ public class EpollEventLoop extends BaseEventLoop {
         registerEvent0(wakeUpFd.getFd(), EPOLLIN(), (__) -> {
             long readSync = wakeUpFd.readSync();
         });
-        System.out.println("wake up fd:" + wakeUpFd.getFd());
     }
 
     /**

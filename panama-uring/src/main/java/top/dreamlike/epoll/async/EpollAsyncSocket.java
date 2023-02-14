@@ -245,4 +245,9 @@ public class EpollAsyncSocket extends AsyncSocket {
             this.offset = offset;
         }
     }
+
+    @Override
+    public String toString() {
+        return super.toString();
+    }
 }

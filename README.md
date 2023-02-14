@@ -38,12 +38,17 @@
 - [x] 异步的文件监听 inotify
 - [x] 异步的eventfd读写
 - [x] 异步的pipefd
+- [x] 基于Epoll的Async socket read,Async socket write,Async socket connect,Async socket accept
 
 #### 其他Native封装
 
 - [x] 完整的Epoll绑定
 - [x] 完整的eventFd绑定
 - [x] 完整的unistd绑定
+
+#### 其余小玩意
+
+- [x] 基于EventFd将IO Uring与Epoll连接在一起,socket api走Epoll驱动,收割cqe也由Epoll驱动,等价于Epoll监听IO Uring
 
 ### 构建/运行指南
 
@@ -152,8 +157,8 @@ private boolean checkCaptureContainAsyncFd(Object ops) {
     } catch (Throwable t) {
         throw new AssertionError("should not reach here", t);
     }
-    return true;
-}
+        return true;
+        }
 ```
 
 #### Epoll
@@ -162,4 +167,5 @@ private boolean checkCaptureContainAsyncFd(Object ops) {
 
 因为最早的实现是，网络IO走epoll不变，文件IO走io_uring，epoll监听io_uring cqe完成事件的eventfd，当epoll轮询到这个eventfd时再去收割cqe。
 
-我愿称之为reactor上面套个reactor
+但是目前我完整实现了这个EventLoop请看[EpollUringEventLoop](panama-uring/src/main/java/top/dreamlike/eventloop/EpollUringEventLoop.java)
+,同时提供了基于Epoll的socket基础操作
