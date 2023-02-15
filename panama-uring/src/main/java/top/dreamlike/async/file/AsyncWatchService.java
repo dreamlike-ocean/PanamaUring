@@ -5,6 +5,7 @@ import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.AsyncFd;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.eventloop.IOUringEventLoop;
+import top.dreamlike.extension.NotEnoughSqException;
 import top.dreamlike.helper.FileEvent;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
@@ -83,7 +84,7 @@ non-sealed public class AsyncWatchService extends AsyncFd {
                 future.complete(fileEvents);
             });
             if (!prep_res) {
-                future.completeExceptionally(new Exception("没有空闲的sqe"));
+                future.completeExceptionally(new NotEnoughSqException());
             }
         });
         return future;

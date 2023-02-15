@@ -4,6 +4,7 @@ import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.AsyncFd;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.eventloop.IOUringEventLoop;
+import top.dreamlike.extension.NotEnoughSqException;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.SocketInfo;
@@ -60,7 +61,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
         CompletableFuture<byte[]> completableFuture = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
             if (!ring.prep_selected_recv(fd, size, completableFuture)) {
-                completableFuture.completeExceptionally(new Exception("没有空闲的sqe"));
+                completableFuture.completeExceptionally(new NotEnoughSqException());
             }
         });
         return completableFuture;
@@ -73,7 +74,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
         eventLoop.runOnEventLoop(() -> {
             boolean res = ring.prep_recv(fd, buf, completableFuture::complete);
             if (!res) {
-                completableFuture.completeExceptionally(new Exception("没有空闲的sqe"));
+                completableFuture.completeExceptionally(new NotEnoughSqException());
             }
         });
         return completableFuture
@@ -91,7 +92,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
         eventLoop.runOnEventLoop(() -> {
             try {
                 if (!ring.prep_connect(new SocketInfo(fd, host, port), future::complete)) {
-                    future.completeExceptionally(new Exception("没有空闲的sqe"));
+                    future.completeExceptionally(new NotEnoughSqException());
                 }
             } catch (UnknownHostException e) {
                 future.completeExceptionally(e);
@@ -110,7 +111,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
         MemorySegment.copy(buffer, offset, memorySegment, JAVA_BYTE, 0, length);
         eventLoop.runOnEventLoop(() -> {
             if (!ring.prep_send(fd, memorySegment, future::complete)) {
-                future.completeExceptionally(new Exception("没有空闲的sqe"));
+                future.completeExceptionally(new NotEnoughSqException());
             }
         });
         return future.whenComplete((res, t) -> {
