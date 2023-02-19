@@ -1,6 +1,6 @@
 module top.dreamlike.nativeLib {
     exports top.dreamlike.helper;
-    exports top.dreamlike.nativeLib;
+    exports top.dreamlike.nativeLib.stdio;
     exports top.dreamlike.nativeLib.inotify;
     exports top.dreamlike.nativeLib.fcntl;
     exports top.dreamlike.nativeLib.epoll;
@@ -12,4 +12,5 @@ module top.dreamlike.nativeLib {
     exports top.dreamlike.nativeLib.string;
     exports top.dreamlike.nativeLib.errno;
     exports top.dreamlike.nativeLib.flock;
+
 }

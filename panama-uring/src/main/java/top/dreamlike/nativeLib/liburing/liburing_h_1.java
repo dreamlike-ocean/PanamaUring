@@ -2,6 +2,9 @@
 
 package top.dreamlike.nativeLib.liburing;
 
+import top.dreamlike.helper.NativeCallException;
+import top.dreamlike.helper.NativeHelper;
+
 import java.lang.foreign.Addressable;
 import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
@@ -48,18 +51,33 @@ class liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_prep_accept$MH() {
-        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_accept$MH,"io_uring_prep_accept");
+        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_accept$MH, "io_uring_prep_accept");
     }
 
-    public static void io_uring_prep_accept ( Addressable sqe,  int fd,  Addressable addr,  Addressable addrlen,  int flags) {
-        io_uring_prep_rw(IORING_OP_ACCEPT(),sqe,fd,addr,0,addrlen.address().toRawLongValue());
-
+    public static void io_uring_prep_accept(Addressable sqe, int fd, Addressable addr, Addressable addrlen, int flags) {
+        io_uring_prep_rw(IORING_OP_ACCEPT(), sqe, fd, addr, 0, addrlen.address().toRawLongValue());
+        MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe.address());
+        io_uring_sqe.accept_flags$set(sqeSegment, flags);
     }
+
+    public static void io_uring_prep_multishot_accept(Addressable sqe, int fd, Addressable addr, Addressable addrlen, int flags) {
+        if (!NativeHelper.compareWithCurrentLinuxVersion(5, 19)) {
+            throw new NativeCallException("need linux kernal > 5.19");
+        }
+        io_uring_prep_accept(sqe, fd, addr, addrlen, flags);
+//        sqe->ioprio |= IORING_ACCEPT_MULTISHOT;
+        MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe.address());
+        short prio = io_uring_sqe.ioprio$get(sqeSegment);
+        io_uring_sqe.ioprio$set(sqeSegment, (short) (prio | IORING_ACCEPT_MULTISHOT()));
+    }
+
     public static MethodHandle io_uring_prep_cancel$MH() {
-        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_cancel$MH,"io_uring_prep_cancel");
+        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_cancel$MH, "io_uring_prep_cancel");
     }
-    public static void io_uring_prep_cancel ( Addressable sqe,  Addressable user_data,  int flags) {
+
+    public static void io_uring_prep_cancel(Addressable sqe, Addressable user_data, int flags) {
         var mh$ = io_uring_prep_cancel$MH();
         try {
             mh$.invokeExact(sqe, user_data, flags);
@@ -1689,24 +1707,35 @@ class liburing_h_1 {
     public static int IORING_SETUP_CQSIZE() {
         return (int)8L;
     }
+
     public static int IORING_SETUP_CLAMP() {
-        return (int)16L;
+        return (int) 16L;
     }
+
     public static int IORING_SETUP_ATTACH_WQ() {
-        return (int)32L;
+        return (int) 32L;
     }
+
     public static int IORING_SETUP_R_DISABLED() {
-        return (int)64L;
+        return (int) 64L;
     }
+
+    public static int IORING_CQE_F_MORE() {
+        return 2;
+    }
+    
     public static int IORING_FSYNC_DATASYNC() {
-        return (int)1L;
+        return (int) 1L;
     }
+
     public static int IORING_TIMEOUT_ABS() {
-        return (int)1L;
+        return (int) 1L;
     }
+
     public static int IORING_TIMEOUT_UPDATE() {
-        return (int)2L;
+        return (int) 2L;
     }
+
     public static int SPLICE_F_FD_IN_FIXED() {
         return (int)2147483648L;
     }

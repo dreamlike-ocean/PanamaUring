@@ -3672,25 +3672,36 @@ public class liburing_h extends liburing_h_1 {
     public static int IORING_RESTRICTION_SQE_OP() {
         return (int)1L;
     }
+
     public static int IORING_RESTRICTION_SQE_FLAGS_ALLOWED() {
-        return (int)2L;
+        return (int) 2L;
     }
+
     public static int IORING_RESTRICTION_SQE_FLAGS_REQUIRED() {
-        return (int)3L;
+        return (int) 3L;
     }
+
     public static int IORING_RESTRICTION_LAST() {
-        return (int)4L;
+        return (int) 4L;
     }
+
+    public static int IORING_ACCEPT_MULTISHOT() {
+        return 1 << 0;
+    }
+
     public static OfLong ptrdiff_t = Constants$root.C_LONG_LONG$LAYOUT;
     public static OfInt wchar_t = Constants$root.C_INT$LAYOUT;
+
     public static int memory_order_relaxed() {
-        return (int)0L;
+        return (int) 0L;
     }
+
     public static int memory_order_consume() {
-        return (int)1L;
+        return (int) 1L;
     }
+
     public static int memory_order_acquire() {
-        return (int)2L;
+        return (int) 2L;
     }
     public static int memory_order_release() {
         return (int)3L;
