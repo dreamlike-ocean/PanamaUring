@@ -36,11 +36,11 @@ public abstract class BaseEventLoop extends Thread implements Executor {
             long duration = -1;
             TimerTask peek = timerTasks.peek();
             if (peek != null) {
-                //过期任务
+                // 过期任务
                 if (peek.deadline <= System.currentTimeMillis()) {
                     runAllTimerTask();
                 }
-                //最近的一个定时任务
+                // 最近的一个定时任务
                 if (timerTasks.peek() != null) {
                     duration = timerTasks.peek().deadline - System.currentTimeMillis();
                 }
@@ -51,7 +51,7 @@ public abstract class BaseEventLoop extends Thread implements Executor {
             wakeUpFlag.set(false);
             selectAndWait(duration);
             wakeUpFlag.set(true);
-            //到期的任务
+            // 到期的任务
             afterSelect();
         }
         try {
@@ -62,7 +62,6 @@ public abstract class BaseEventLoop extends Thread implements Executor {
             afterClose();
         }
     }
-
 
     protected void runAllTimerTask() {
         while (!timerTasks.isEmpty() && timerTasks.peek().deadline <= System.currentTimeMillis()) {
@@ -122,7 +121,6 @@ public abstract class BaseEventLoop extends Thread implements Executor {
         return res;
     }
 
-
     public abstract void wakeup();
 
     protected abstract void selectAndWait(long duration);
@@ -135,10 +133,9 @@ public abstract class BaseEventLoop extends Thread implements Executor {
 
     protected abstract void afterSelect();
 
-
     public static class TimerTask {
         public Runnable runnable;
-        //绝对值 ms
+        // 绝对值 ms
         public long deadline;
 
         public CompletableFuture future;
@@ -152,6 +149,5 @@ public abstract class BaseEventLoop extends Thread implements Executor {
             return deadline;
         }
     }
-
 
 }

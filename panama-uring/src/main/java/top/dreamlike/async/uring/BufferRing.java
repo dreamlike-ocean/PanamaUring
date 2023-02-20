@@ -15,7 +15,8 @@ public class BufferRing {
     /**
      * Create a new buffer ring with the given capacity.
      *
-     * @param capacity the capacity of the ring, will be rounded up to the next power of two
+     * @param capacity the capacity of the ring, will be rounded up to the next
+     *                 power of two
      */
     public BufferRing(int capacity) {
         capacity = roundUpToPowerOfTwo(capacity);
@@ -40,7 +41,7 @@ public class BufferRing {
 
     public void add(MemorySegment buffer, short bid, int buf_offset) {
         var idx = (io_uring_buf_ring.tail$get(buf_ring) + buf_offset) & mask;
-        var buf = buf_ring.asSlice(idx);
+        var buf = buf_ring.asSlice(idx * 16);
         io_uring_buf.addr$set(buf, buffer.address().toRawLongValue());
         io_uring_buf.len$set(buf, (int) buffer.byteSize());
         io_uring_buf.bid$set(buf, bid);

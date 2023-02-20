@@ -2597,7 +2597,8 @@ public class liburing_h extends liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$1.recvfrom$MH, "recvfrom");
     }
 
-    public static long recvfrom(int __fd, Addressable __buf, long __n, int __flags, Addressable __addr, Addressable __addr_len) {
+    public static long recvfrom(int __fd, Addressable __buf, long __n, int __flags, Addressable __addr,
+            Addressable __addr_len) {
         var mh$ = recvfrom$MH();
         try {
             return (long) mh$.invokeExact(__fd, __buf, __n, __flags, __addr, __addr_len);
@@ -3895,7 +3896,8 @@ public class liburing_h extends liburing_h_1 {
     }
 
     public static int __daylight$get() {
-        return (int) constants$15.__daylight$VH.get(RuntimeHelper.requireNonNull(constants$15.__daylight$SEGMENT, "__daylight"));
+        return (int) constants$15.__daylight$VH
+                .get(RuntimeHelper.requireNonNull(constants$15.__daylight$SEGMENT, "__daylight"));
     }
 
     public static void __daylight$set(int x) {
@@ -3915,7 +3917,8 @@ public class liburing_h extends liburing_h_1 {
     }
 
     public static long __timezone$get() {
-        return (long) constants$15.__timezone$VH.get(RuntimeHelper.requireNonNull(constants$15.__timezone$SEGMENT, "__timezone"));
+        return (long) constants$15.__timezone$VH
+                .get(RuntimeHelper.requireNonNull(constants$15.__timezone$SEGMENT, "__timezone"));
     }
 
     public static void __timezone$set(long x) {
@@ -3952,7 +3955,8 @@ public class liburing_h extends liburing_h_1 {
     }
 
     public static int daylight$get() {
-        return (int) constants$15.daylight$VH.get(RuntimeHelper.requireNonNull(constants$15.daylight$SEGMENT, "daylight"));
+        return (int) constants$15.daylight$VH
+                .get(RuntimeHelper.requireNonNull(constants$15.daylight$SEGMENT, "daylight"));
     }
 
     public static void daylight$set(int x) {
@@ -3972,7 +3976,8 @@ public class liburing_h extends liburing_h_1 {
     }
 
     public static long timezone$get() {
-        return (long) constants$16.timezone$VH.get(RuntimeHelper.requireNonNull(constants$16.timezone$SEGMENT, "timezone"));
+        return (long) constants$16.timezone$VH
+                .get(RuntimeHelper.requireNonNull(constants$16.timezone$SEGMENT, "timezone"));
     }
 
     public static void timezone$set(long x) {
@@ -4122,11 +4127,13 @@ public class liburing_h extends liburing_h_1 {
     }
 
     public static int getdate_err$get() {
-        return (int) constants$17.getdate_err$VH.get(RuntimeHelper.requireNonNull(constants$17.getdate_err$SEGMENT, "getdate_err"));
+        return (int) constants$17.getdate_err$VH
+                .get(RuntimeHelper.requireNonNull(constants$17.getdate_err$SEGMENT, "getdate_err"));
     }
 
     public static void getdate_err$set(int x) {
-        constants$17.getdate_err$VH.set(RuntimeHelper.requireNonNull(constants$17.getdate_err$SEGMENT, "getdate_err"), x);
+        constants$17.getdate_err$VH.set(RuntimeHelper.requireNonNull(constants$17.getdate_err$SEGMENT, "getdate_err"),
+                x);
     }
 
     public static MethodHandle getdate$MH() {
@@ -4758,7 +4765,8 @@ public class liburing_h extends liburing_h_1 {
     }
 
     public static MethodHandle atomic_flag_test_and_set_explicit$MH() {
-        return RuntimeHelper.requireNonNull(constants$22.atomic_flag_test_and_set_explicit$MH, "atomic_flag_test_and_set_explicit");
+        return RuntimeHelper.requireNonNull(constants$22.atomic_flag_test_and_set_explicit$MH,
+                "atomic_flag_test_and_set_explicit");
     }
 
     public static boolean atomic_flag_test_and_set_explicit(Addressable x0, int x1) {
@@ -4836,7 +4844,8 @@ public class liburing_h extends liburing_h_1 {
     }
 
     public static MethodHandle io_uring_opcode_supported_ring$MH() {
-        return RuntimeHelper.requireNonNull(constants$23.io_uring_opcode_supported_ring$MH, "io_uring_opcode_supported_ring");
+        return RuntimeHelper.requireNonNull(constants$23.io_uring_opcode_supported_ring$MH,
+                "io_uring_opcode_supported_ring");
     }
 
     public static int io_uring_opcode_supported_ring(Addressable ring, int op) {
@@ -4943,7 +4952,8 @@ public class liburing_h extends liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$24.io_uring_wait_cqes$MH, "io_uring_wait_cqes");
     }
 
-    public static int io_uring_wait_cqes(Addressable ring, Addressable cqe_ptr, int wait_nr, Addressable ts, Addressable sigmask) {
+    public static int io_uring_wait_cqes(Addressable ring, Addressable cqe_ptr, int wait_nr, Addressable ts,
+            Addressable sigmask) {
         var mh$ = io_uring_wait_cqes$MH();
         try {
             return (int) mh$.invokeExact(ring, cqe_ptr, wait_nr, ts, sigmask);
@@ -5057,7 +5067,8 @@ public class liburing_h extends liburing_h_1 {
     }
 
     public static MethodHandle io_uring_register_files_update$MH() {
-        return RuntimeHelper.requireNonNull(constants$25.io_uring_register_files_update$MH, "io_uring_register_files_update");
+        return RuntimeHelper.requireNonNull(constants$25.io_uring_register_files_update$MH,
+                "io_uring_register_files_update");
     }
 
     public static int io_uring_register_files_update(Addressable ring, int off, Addressable files, int nr_files) {
@@ -5083,7 +5094,8 @@ public class liburing_h extends liburing_h_1 {
     }
 
     public static MethodHandle io_uring_register_eventfd_async$MH() {
-        return RuntimeHelper.requireNonNull(constants$26.io_uring_register_eventfd_async$MH, "io_uring_register_eventfd_async");
+        return RuntimeHelper.requireNonNull(constants$26.io_uring_register_eventfd_async$MH,
+                "io_uring_register_eventfd_async");
     }
 
     public static int io_uring_register_eventfd_async(Addressable ring, int fd) {
@@ -5122,7 +5134,8 @@ public class liburing_h extends liburing_h_1 {
     }
 
     public static MethodHandle io_uring_register_personality$MH() {
-        return RuntimeHelper.requireNonNull(constants$26.io_uring_register_personality$MH, "io_uring_register_personality");
+        return RuntimeHelper.requireNonNull(constants$26.io_uring_register_personality$MH,
+                "io_uring_register_personality");
     }
 
     public static int io_uring_register_personality(Addressable ring) {
@@ -5135,7 +5148,8 @@ public class liburing_h extends liburing_h_1 {
     }
 
     public static MethodHandle io_uring_unregister_personality$MH() {
-        return RuntimeHelper.requireNonNull(constants$26.io_uring_unregister_personality$MH, "io_uring_unregister_personality");
+        return RuntimeHelper.requireNonNull(constants$26.io_uring_unregister_personality$MH,
+                "io_uring_unregister_personality");
     }
 
     public static int io_uring_unregister_personality(Addressable ring, int id) {
@@ -5148,7 +5162,8 @@ public class liburing_h extends liburing_h_1 {
     }
 
     public static MethodHandle io_uring_register_restrictions$MH() {
-        return RuntimeHelper.requireNonNull(constants$27.io_uring_register_restrictions$MH, "io_uring_register_restrictions");
+        return RuntimeHelper.requireNonNull(constants$27.io_uring_register_restrictions$MH,
+                "io_uring_register_restrictions");
     }
 
     public static int io_uring_register_restrictions(Addressable ring, Addressable res, int nr_res) {
@@ -5161,11 +5176,13 @@ public class liburing_h extends liburing_h_1 {
     }
 
     public static long io_uring_register_buf_ring(Addressable ring, Addressable reg) {
-        return syscall(__NR_io_uring_register(), io_uring.ring_fd$get(unsafePointConvertor(ring.address())), IORING_REGISTER_PBUF_RING(), reg, 1);
+        return syscall(__NR_io_uring_register(), io_uring.ring_fd$get(unsafePointConvertor(ring.address())),
+                IORING_REGISTER_PBUF_RING(), reg.address().toRawLongValue(), 1);
     }
 
     public static long io_uring_unregister_buf_ring(Addressable ring, Addressable reg) {
-        return syscall(__NR_io_uring_register(), io_uring.ring_fd$get(unsafePointConvertor(ring.address())), IORING_UNREGISTER_PBUF_RING(), reg, 1);
+        return syscall(__NR_io_uring_register(), io_uring.ring_fd$get(unsafePointConvertor(ring.address())),
+                IORING_UNREGISTER_PBUF_RING(), reg.address().toRawLongValue(), 1);
     }
 
     public static long IORING_REGISTER_PBUF_RING() {
@@ -5218,7 +5235,8 @@ public class liburing_h extends liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$27.__io_uring_get_cqe$MH, "__io_uring_get_cqe");
     }
 
-    public static int __io_uring_get_cqe(Addressable ring, Addressable cqe_ptr, int submit, int wait_nr, Addressable sigmask) {
+    public static int __io_uring_get_cqe(Addressable ring, Addressable cqe_ptr, int submit, int wait_nr,
+            Addressable sigmask) {
         var mh$ = __io_uring_get_cqe$MH();
         try {
             return (int) mh$.invokeExact(ring, cqe_ptr, submit, wait_nr, sigmask);
@@ -5299,16 +5317,16 @@ public class liburing_h extends liburing_h_1 {
     public static void io_uring_prep_rw(int op, Addressable sqe, int fd, Addressable addr, int len, long offset) {
         MemorySegment sqeSegment = unsafePointConvertor(sqe.address());
         io_uring_sqe.opcode$set(sqeSegment, (byte) op);
-        //暂时不填充 防止覆盖用户的操作
-//        io_uring_sqe.flags$get(sqeSegment,0);
+        // 暂时不填充 防止覆盖用户的操作
+        // io_uring_sqe.flags$get(sqeSegment,0);
         io_uring_sqe.ioprio$set(sqeSegment, (short) 0);
         io_uring_sqe.fd$set(sqeSegment, fd);
         io_uring_sqe.off$set(sqeSegment, offset);
         io_uring_sqe.addr$set(sqeSegment, addr.address().toRawLongValue());
         io_uring_sqe.len$set(sqeSegment, len);
-        //暂时不填充 防止覆盖用户的操作
-//        io_uring_sqe.rw_flags$set(sqeSegment, 0);
-//        io_uring_sqe.user_data$set(sqeSegment, 0);
+        // 暂时不填充 防止覆盖用户的操作
+        // io_uring_sqe.rw_flags$set(sqeSegment, 0);
+        // io_uring_sqe.user_data$set(sqeSegment, 0);
         io_uring_sqe.__pad2$slice(sqeSegment).fill((byte) 0);
     }
 
@@ -5316,7 +5334,8 @@ public class liburing_h extends liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$28.io_uring_prep_splice$MH, "io_uring_prep_splice");
     }
 
-    public static void io_uring_prep_splice(Addressable sqe, int fd_in, long off_in, int fd_out, long off_out, int nbytes, int splice_flags) {
+    public static void io_uring_prep_splice(Addressable sqe, int fd_in, long off_in, int fd_out, long off_out,
+            int nbytes, int splice_flags) {
         var mh$ = io_uring_prep_splice$MH();
         try {
             mh$.invokeExact(sqe, fd_in, off_in, fd_out, off_out, nbytes, splice_flags);
@@ -5350,7 +5369,8 @@ public class liburing_h extends liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$29.io_uring_prep_read_fixed$MH, "io_uring_prep_read_fixed");
     }
 
-    public static void io_uring_prep_read_fixed(Addressable sqe, int fd, Addressable buf, int nbytes, long offset, int buf_index) {
+    public static void io_uring_prep_read_fixed(Addressable sqe, int fd, Addressable buf, int nbytes, long offset,
+            int buf_index) {
         var mh$ = io_uring_prep_read_fixed$MH();
         try {
             mh$.invokeExact(sqe, fd, buf, nbytes, offset, buf_index);
@@ -5371,7 +5391,8 @@ public class liburing_h extends liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$29.io_uring_prep_write_fixed$MH, "io_uring_prep_write_fixed");
     }
 
-    public static void io_uring_prep_write_fixed(Addressable sqe, int fd, Addressable buf, int nbytes, long offset, int buf_index) {
+    public static void io_uring_prep_write_fixed(Addressable sqe, int fd, Addressable buf, int nbytes, long offset,
+            int buf_index) {
         var mh$ = io_uring_prep_write_fixed$MH();
         try {
             mh$.invokeExact(sqe, fd, buf, nbytes, offset, buf_index);
@@ -5437,10 +5458,11 @@ public class liburing_h extends liburing_h_1 {
     }
 
     public static void io_uring_prep_fsync(Addressable sqe, int fd, int fsync_flags) {
-//        io_uring_prep_rw(IORING_OP_FSYNC, sqe, fd, NULL, 0, 0);
-//	sqe->fsync_flags = fsync_flags;
+        // io_uring_prep_rw(IORING_OP_FSYNC, sqe, fd, NULL, 0, 0);
+        // sqe->fsync_flags = fsync_flags;
         io_uring_prep_rw(IORING_OP_FSYNC(), sqe, fd, MemoryAddress.NULL, 0, 0);
-        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof(), MemorySession.global());
+        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof(),
+                MemorySession.global());
         io_uring_sqe.fsync_flags$set(sqeSegment, fsync_flags);
     }
 
@@ -5452,5 +5474,3 @@ public class liburing_h extends liburing_h_1 {
         io_uring_prep_rw(IORING_OP_NOP(), sqe, -1, MemoryAddress.NULL, 0, 0);
     }
 }
-
-

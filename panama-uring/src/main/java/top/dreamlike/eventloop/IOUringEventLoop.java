@@ -45,9 +45,6 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         scheduleTask(this::autoFlushTask, Duration.ofMillis(autoSubmitDuration.get()));
     }
 
-
-
-
     public void setAutoSubmitDuration(long autoSubmitDuration) {
         this.autoSubmitDuration.set(autoSubmitDuration);
     }
@@ -75,7 +72,6 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         ioUring.waitComplete(duration);
     }
 
-
     public void shutdown() {
         close.compareAndSet(false, true);
     }
@@ -96,17 +92,14 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         return new AsyncWatchService(this);
     }
 
-
     public AsyncSocket openSocket(String host, int port) {
         InetSocketAddress address = new InetSocketAddress(host, port);
         return new AsyncSocket(address, this);
     }
 
-
     public CompletableFuture<Integer> registerEventFd() {
         return runOnEventLoop(ioUring::registerEventFd);
     }
-
 
     @Unsafe("并发问题，不推荐直接使用")
     public List<IOOpResult> submitAndWait(int max) {
@@ -145,14 +138,12 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         return future;
     }
 
-
     public <T> CompletableFuture<T> submitLinkedOpSafe(Supplier<CompletableFuture<T>> ops) {
         checkCaptureContainAsyncFd(ops);
         return submitLinkedOpUnsafe(ops);
     }
 
-
-    //要求全部捕获的参数都得是同一个eventloop才可以
+    // 要求全部捕获的参数都得是同一个eventloop才可以
     private boolean checkCaptureContainAsyncFd(Object ops) {
         try {
             for (Field field : ops.getClass().getDeclaredFields()) {
@@ -172,7 +163,6 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
 
         return true;
     }
-
 
     static {
         AccessHelper.fetchIOURing = loop -> loop.ioUring;
@@ -200,7 +190,7 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
                 task.future.cancel(true);
             }
         }
-        //若当前的io uring关闭 可能会导致有些服务不能结束
+        // 若当前的io uring关闭 可能会导致有些服务不能结束
         while (!tasks.isEmpty()) {
             tasks.poll().run();
         }
