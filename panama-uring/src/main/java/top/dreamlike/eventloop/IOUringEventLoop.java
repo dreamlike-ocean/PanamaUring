@@ -13,9 +13,7 @@ import top.dreamlike.helper.Unsafe;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.time.Duration;
-import java.util.Comparator;
 import java.util.List;
-import java.util.PriorityQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,8 +34,9 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         ioUring = new IOUring(ringSize, autoBufferSize);
         setName("io-uring-eventloop-" + atomicInteger.getAndIncrement());
         this.autoSubmitDuration = new AtomicLong(autoSubmitDuration);
-        timerTasks = new PriorityQueue<>(Comparator.comparingLong(TimerTask::getDeadline));
-        scheduleTask(this::autoFlushTask, Duration.ofMillis(autoSubmitDuration));
+//        scheduleTask(this::autoFlushTask, Duration.ofMillis(autoSubmitDuration));
+        // 直接投递 不用考虑线程安全问题 此时没有竞争
+        timerTasks.offer(new TimerTask(this::autoFlushTask, System.currentTimeMillis() + autoSubmitDuration));
     }
 
     private void autoFlushTask() {

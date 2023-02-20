@@ -4,7 +4,7 @@ import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.AsyncFd;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.eventloop.IOUringEventLoop;
-import top.dreamlike.extension.NotEnoughSqException;
+import top.dreamlike.extension.NotEnoughSqeException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.SocketInfo;
 
@@ -28,7 +28,7 @@ public non-sealed class AsyncServerSocket extends AsyncFd {
         CompletableFuture<SocketInfo> res = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
             if (!uring.prep_accept(serverFd, res::complete)) {
-                res.completeExceptionally(new NotEnoughSqException());
+                res.completeExceptionally(new NotEnoughSqeException());
             }
         });
         return res

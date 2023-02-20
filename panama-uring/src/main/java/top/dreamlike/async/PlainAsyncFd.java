@@ -3,7 +3,7 @@ package top.dreamlike.async;
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.eventloop.IOUringEventLoop;
-import top.dreamlike.extension.NotEnoughSqException;
+import top.dreamlike.extension.NotEnoughSqeException;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.nativeLib.unistd.unistd_h;
@@ -59,7 +59,7 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
         CompletableFuture<Integer> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
             if (!ioUring.prep_read(readFd(), offset, memorySegment, future::complete)) {
-                future.completeExceptionally(new NotEnoughSqException());
+                future.completeExceptionally(new NotEnoughSqeException());
             }
         });
         return future;
@@ -80,7 +80,7 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
         MemorySegment.copy(buffer, bufferOffset, memorySegment, JAVA_BYTE, 0, bufferLength);
         eventLoop.runOnEventLoop(() -> {
             if (!ioUring.prep_write(writeFd(), fileOffset, memorySegment, future::complete)) {
-                future.completeExceptionally(new NotEnoughSqException());
+                future.completeExceptionally(new NotEnoughSqeException());
             }
         });
         return future.whenComplete((res, t) -> {
@@ -100,7 +100,7 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
         CompletableFuture<Integer> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
             if (!ioUring.prep_write(writeFd(), offset, memorySegment, future::complete)) {
-                future.completeExceptionally(new NotEnoughSqException());
+                future.completeExceptionally(new NotEnoughSqeException());
             }
         });
         return future;

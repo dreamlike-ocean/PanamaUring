@@ -6,7 +6,7 @@ import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.PlainAsyncFd;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.eventloop.IOUringEventLoop;
-import top.dreamlike.extension.NotEnoughSqException;
+import top.dreamlike.extension.NotEnoughSqeException;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Unsafe;
@@ -69,7 +69,7 @@ public class AsyncFile extends PlainAsyncFd {
         CompletableFuture<byte[]> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
             if (!uring.prep_selected_read(fd, offset, length, future)) {
-                future.completeExceptionally(new NotEnoughSqException());
+                future.completeExceptionally(new NotEnoughSqeException());
             }
         });
         return future;
@@ -88,7 +88,7 @@ public class AsyncFile extends PlainAsyncFd {
         CompletableFuture<Integer> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
             if (!uring.prep_fsync(fd, 0, future::complete)) {
-                future.completeExceptionally(new NotEnoughSqException());
+                future.completeExceptionally(new NotEnoughSqeException());
             }
         });
         return future;
