@@ -3,6 +3,7 @@ package top.dreamlike.async.uring;
 public enum Op {
     CONNECT,
     ACCEPT,
+    MULTI_SHOT,
     FILE_READ,
     FILE_SELECTED_READ,
     FILE_WRITE,
