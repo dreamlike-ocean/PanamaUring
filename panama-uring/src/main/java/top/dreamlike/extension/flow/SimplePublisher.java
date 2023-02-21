@@ -13,15 +13,15 @@ import java.util.concurrent.Flow;
  */
 public class SimplePublisher<T> implements Flow.Publisher<T>, Flow.Subscription {
 
-    private Flow.Subscriber<? super T> subscriber;
+    protected Flow.Subscriber<? super T> subscriber;
 
     private final Runnable onCancel;
 
-    private int maxBuffer;
+    protected int maxBuffer;
 
-    private int demand;
+    protected int demand;
 
-    private final Deque<T> buffer;
+    protected final Deque<T> buffer;
 
     private boolean cancel = false;
 
@@ -33,6 +33,9 @@ public class SimplePublisher<T> implements Flow.Publisher<T>, Flow.Subscription 
 
     @Override
     public void subscribe(Flow.Subscriber<? super T> subscriber) {
+        if (this.subscriber != null) {
+            throw new IllegalArgumentException("Only one subscriber is allowed to register");
+        }
         this.subscriber = subscriber;
         subscriber.onSubscribe(this);
     }
@@ -46,7 +49,7 @@ public class SimplePublisher<T> implements Flow.Publisher<T>, Flow.Subscription 
     public void request(long n) {
         while (!buffer.isEmpty() && n > 0) {
             T pop = buffer.pop();
-            subscriber.onNext(pop);
+            sendEvent(pop);
             n--;
         }
         if (n > 0) {
@@ -63,6 +66,10 @@ public class SimplePublisher<T> implements Flow.Publisher<T>, Flow.Subscription 
         cancel = !cancel;
     }
 
+    public void sendError(Throwable throwable) {
+        subscriber.onError(throwable);
+    }
+
     public List<T> fetchBuffers() {
         return new ArrayList<>(buffer);
     }
@@ -76,7 +83,7 @@ public class SimplePublisher<T> implements Flow.Publisher<T>, Flow.Subscription 
             return false;
         }
         if (demand > 0) {
-            subscriber.onNext(t);
+            sendEvent(t);
             demand--;
             return true;
         }
@@ -91,5 +98,9 @@ public class SimplePublisher<T> implements Flow.Publisher<T>, Flow.Subscription 
 
     public boolean isCancel() {
         return cancel;
+    }
+
+    protected void sendEvent(T event) {
+        subscriber.onNext(event);
     }
 }

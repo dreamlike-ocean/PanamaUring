@@ -2,6 +2,7 @@ package top.dreamlike.async.uring;
 
 import top.dreamlike.async.IOOpResult;
 import top.dreamlike.epoll.Epoll;
+import top.dreamlike.extension.flow.SimplePublisher;
 import top.dreamlike.helper.*;
 import top.dreamlike.nativeLib.eventfd.EventFd;
 import top.dreamlike.nativeLib.eventfd.eventfd_h;
@@ -257,24 +258,60 @@ public class IOUring implements AutoCloseable {
 
         context.put(opsCount, new IOOpResult(serverFd, -1,Op.ACCEPT, null, (res, __) -> {
             if (res < 0){
-                callback.accept(new SocketInfo(-1,"", -1));
+                callback.accept(new SocketInfo(res, "", -1));
             }else {
                 short sin_port = sockaddr_in.sin_port$get(client_addr);
                 int port = Short.toUnsignedInt(ntohs(sin_port));
                 MemoryAddress remoteHost = inet_ntoa(sockaddr_in.sin_addr$slice(client_addr));
                 long strlen = strlen(remoteHost);
                 String host = new String(MemorySegment.ofAddress(remoteHost, strlen, MemorySession.global()).toArray(JAVA_BYTE));
-                callback.accept(new SocketInfo(res,host,port));
+                callback.accept(new SocketInfo(res, host, port));
             }
             tmp.close();
         }));
-        io_uring_prep_accept(sqe,serverFd,client_addr,client_addr_len,0);
+        io_uring_prep_accept(sqe, serverFd, client_addr, client_addr_len, 0);
         io_uring_sqe.user_data$set(sqeSegment, opsCount);
 
         return true;
     }
 
-    public boolean prep_read(int fd, int offset, MemorySegment buffer, IntConsumer callback){
+
+    public boolean prep_accept_multi(int serverFd, SimplePublisher<SocketInfo> publisher) {
+        MemoryAddress sqe = getSqe();
+        if (sqe == null) return false;
+        MemorySession tmp = MemorySession.openShared();
+        MemorySegment client_addr = sockaddr.allocate(tmp);
+        MemorySegment client_addr_len = tmp.allocate(JAVA_INT, (int) sockaddr.sizeof());
+
+        long opsCount = count.getAndIncrement();
+        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
+
+        context.put(opsCount, new IOOpResult(serverFd, -1, Op.MULTI_SHOT, null, (res, __) -> {
+            if (res < 0) {
+                publisher.sendError(new NativeCallException(NativeHelper.getErrorStr(-res)));
+                tmp.close();
+            } else {
+                short sin_port = sockaddr_in.sin_port$get(client_addr);
+                int port = Short.toUnsignedInt(ntohs(sin_port));
+                MemoryAddress remoteHost = inet_ntoa(sockaddr_in.sin_addr$slice(client_addr));
+                long strlen = strlen(remoteHost);
+                String host = new String(MemorySegment.ofAddress(remoteHost, strlen, MemorySession.global()).toArray(JAVA_BYTE));
+                SocketInfo socketInfo = new SocketInfo(res, host, port);
+                boolean allowOffer = publisher.offer(socketInfo);
+                if (allowOffer) {
+                    //todo 需要实现io uring cancel操作
+                    publisher.cancel();
+                    tmp.close();
+                }
+            }
+        }));
+        io_uring_prep_multishot_accept(sqe, serverFd, client_addr, client_addr_len, 0);
+        io_uring_sqe.user_data$set(sqeSegment, opsCount);
+
+        return true;
+    }
+
+    public boolean prep_read(int fd, int offset, MemorySegment buffer, IntConsumer callback) {
         MemoryAddress sqe = getSqe();
         if (sqe == null) return false;
         //byte*,len
@@ -428,19 +465,22 @@ public class IOUring implements AutoCloseable {
                 MemoryAddress cqePoint = ref.get(C_POINTER, 0);
                 MemorySegment cqe = io_uring_cqe.ofAddress(cqePoint, MemorySession.global());
                 long opsCount = io_uring_cqe.user_data$get(cqe);
-                if (opsCount < 0){
-                    io_uring_cqe_seen(ring,cqe);
+                if (opsCount < 0) {
+                    io_uring_cqe_seen(ring, cqe);
                     continue;
                 }
-                IOOpResult result = context.remove(opsCount);
+                int flag = io_uring_cqe.flags$get(cqe);
+                boolean isMultiOp = (flag & IORING_CQE_F_MORE()) != 0;
+                IOOpResult result = isMultiOp ? context.get(opsCount) : context.remove(opsCount);
+
                 if (result == null) {
-                    System.err.println("result is null,ops:"+opsCount);
-                    io_uring_cqe_seen(ring,cqe);
-                   continue;
+                    System.err.println("result is null,ops:" + opsCount);
+                    io_uring_cqe_seen(ring, cqe);
+                    continue;
                 }
                 result.res = io_uring_cqe.res$get(cqe);
-                result.bid = io_uring_cqe.flags$get(cqe) >> IORING_CQE_BUFFER_SHIFT();
-                io_uring_cqe_seen(ring,cqe);
+                result.bid = flag >> IORING_CQE_BUFFER_SHIFT();
+                io_uring_cqe_seen(ring, cqe);
                 results.add(result);
             }
             return results;
@@ -461,16 +501,19 @@ public class IOUring implements AutoCloseable {
             io_uring_wait_cqe(ring, ref);
             MemoryAddress cqePoint = ref.get(C_POINTER, 0);
             MemorySegment cqe = io_uring_cqe.ofAddress(cqePoint, MemorySession.global());
-            long opeCount = io_uring_cqe.user_data$get(cqe);
-            if (opeCount < 0){
+            long opsCount = io_uring_cqe.user_data$get(cqe);
+            if (opsCount < 0) {
                 //非fd
-                io_uring_cqe_seen(ring,cqe);
+                io_uring_cqe_seen(ring, cqe);
                 return List.of();
             }
-            IOOpResult result = context.remove(opeCount);
+            int flag = io_uring_cqe.flags$get(cqe);
+            boolean isMultiOp = (flag & IORING_CQE_F_MORE()) != 0;
+            IOOpResult result = isMultiOp ? context.get(opsCount) : context.remove(opsCount);
+
             result.res = io_uring_cqe.res$get(cqe);
             result.bid = io_uring_cqe.flags$get(cqe) >> IORING_CQE_BUFFER_SHIFT();
-            io_uring_cqe_seen(ring,cqe);
+            io_uring_cqe_seen(ring, cqe);
             return List.of(result);
         }
 
