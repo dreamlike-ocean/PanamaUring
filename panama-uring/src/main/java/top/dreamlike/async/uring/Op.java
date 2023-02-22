@@ -12,5 +12,6 @@ public enum Op {
     SOCKET_SELECTED_READ,
     SOCKET_WRITE,
     NO,
-    TIMEOUT
+    TIMEOUT,
+    CANCEL
 }

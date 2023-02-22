@@ -78,17 +78,23 @@ class liburing_h_1 {
     }
 
     public static void io_uring_prep_cancel(Addressable sqe, Addressable user_data, int flags) {
-        var mh$ = io_uring_prep_cancel$MH();
-        try {
-            mh$.invokeExact(sqe, user_data, flags);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
+        io_uring_prep_rw(IORING_OP_ASYNC_CANCEL(), sqe, -1, user_data, 0, 0);
+        MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe.address());
+        io_uring_sqe.cancel_flags$set(sqeSegment, flags);
     }
+
+
+    public static void io_uring_prep_cancel(Addressable sqe, long user_data, int flags) {
+        io_uring_prep_rw(IORING_OP_ASYNC_CANCEL(), sqe, -1, MemoryAddress.ofLong(user_data), 0, 0);
+        MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe.address());
+        io_uring_sqe.cancel_flags$set(sqeSegment, flags);
+    }
+
     public static MethodHandle io_uring_prep_link_timeout$MH() {
-        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_link_timeout$MH,"io_uring_prep_link_timeout");
+        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_link_timeout$MH, "io_uring_prep_link_timeout");
     }
-    public static void io_uring_prep_link_timeout ( Addressable sqe,  Addressable ts,  int flags) {
+
+    public static void io_uring_prep_link_timeout(Addressable sqe, Addressable ts, int flags) {
         var mh$ = io_uring_prep_link_timeout$MH();
         try {
             mh$.invokeExact(sqe, ts, flags);
