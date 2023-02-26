@@ -4698,6 +4698,10 @@ public class liburing_h extends liburing_h_1 {
         return (int) 4L;
     }
 
+    public static int IORING_ACCEPT_MULTISHOT() {
+        return 1 << 0;
+    }
+
     public static OfLong ptrdiff_t = Constants$root.C_LONG_LONG$LAYOUT;
     public static OfInt wchar_t = Constants$root.C_INT$LAYOUT;
 

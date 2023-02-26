@@ -8,7 +8,10 @@ import top.dreamlike.async.file.AsyncWatchService;
 import top.dreamlike.async.socket.AsyncServerSocket;
 import top.dreamlike.async.socket.AsyncSocket;
 import top.dreamlike.async.uring.IOUring;
+import top.dreamlike.helper.NativeCallException;
+import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Unsafe;
+import top.dreamlike.nativeLib.errno.errno_h;
 
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
@@ -34,6 +37,8 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         ioUring = new IOUring(ringSize, autoBufferSize);
         setName("io-uring-eventloop-" + atomicInteger.getAndIncrement());
         this.autoSubmitDuration = new AtomicLong(autoSubmitDuration);
+        // scheduleTask(this::autoFlushTask, Duration.ofMillis(autoSubmitDuration));
+        // 直接投递 不用考虑线程安全问题 此时没有竞争
         timerTasks.offer(new TimerTask(this::autoFlushTask, System.currentTimeMillis() + autoSubmitDuration));
     }
 
@@ -41,7 +46,7 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         flush();
         scheduleTask(this::autoFlushTask, Duration.ofMillis(autoSubmitDuration.get()));
     }
-
+    
     public void setAutoSubmitDuration(long autoSubmitDuration) {
         this.autoSubmitDuration.set(autoSubmitDuration);
     }
@@ -140,7 +145,40 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         return submitLinkedOpUnsafe(ops);
     }
 
-    // 要求全部捕获的参数都得是同一个eventloop才可以
+    public CompletableFuture<Integer> cancel(long userData, int flag) {
+        return runOnEventLoop((promise) -> {
+            boolean contain = ioUring.contain(userData);
+            if (!contain) {
+                promise.completeExceptionally(new IllegalStateException("no such user data"));
+                return;
+            }
+            ioUring.prep_cancel(userData, flag, res -> {
+                //errno_h.EALREADY 也算取消成功
+                if (res >= 0) {
+                    promise.complete(res);
+                    return;
+                }
+
+                res = -res;
+                if (res == errno_h.EALREADY) {
+                    promise.complete(0);
+                    return;
+                }
+
+                String errorMsg = switch (res) {
+                    case errno_h.ENOENT -> "user_data could not be located";
+                    case errno_h.EINVAL -> "One of the fields set in the SQE was invalid";
+                    // case errno_h.EALREADY ->
+                    //  " The execution state of the request has progressed far enough that cancellation is no longer possible";
+                    default -> NativeHelper.getErrorStr(res);
+                };
+                promise.completeExceptionally(new NativeCallException(errorMsg));
+            });
+        });
+    }
+
+
+    //要求全部捕获的参数都得是同一个eventloop才可以
     private boolean checkCaptureContainAsyncFd(Object ops) {
         try {
             for (Field field : ops.getClass().getDeclaredFields()) {
@@ -179,6 +217,7 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
     protected void close0() throws Exception {
         ioUring.close();
     }
+
 
     @Override
     protected void afterClose() {
