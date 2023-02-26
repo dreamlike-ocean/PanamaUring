@@ -16,8 +16,19 @@ public class DispatchPublisher<T> extends SimplePublisher<T> {
         dispatcher.execute(() -> super.sendError(throwable));
     }
 
+
+    @Override
+    public void request(long n) {
+        dispatcher.execute(() -> super.request(n));
+    }
+
     @Override
     protected void sendEvent(T event) {
         dispatcher.execute(() -> super.sendEvent(event));
+    }
+
+    @Override
+    public void end() {
+        dispatcher.execute(super::end);
     }
 }

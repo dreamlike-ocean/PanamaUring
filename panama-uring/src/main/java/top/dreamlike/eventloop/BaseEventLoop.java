@@ -10,6 +10,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 public abstract class BaseEventLoop extends Thread implements Executor {
 
@@ -77,6 +78,17 @@ public abstract class BaseEventLoop extends Thread implements Executor {
             return;
         }
         execute(runnable);
+    }
+
+
+    public <T> CompletableFuture<T> runOnEventLoop(Consumer<CompletableFuture<T>> handler) {
+        CompletableFuture<T> promise = new CompletableFuture<>();
+        if (inEventLoop()) {
+            handler.accept(promise);
+        } else {
+            execute(() -> handler.accept(promise));
+        }
+        return promise;
     }
 
     public boolean inEventLoop() {

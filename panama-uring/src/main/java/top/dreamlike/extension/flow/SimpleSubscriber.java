@@ -7,7 +7,7 @@ public class SimpleSubscriber<T> implements Flow.Subscriber<T> {
 
     private Flow.Subscription subscription;
 
-    private boolean cancel = false;
+    private final boolean cancel = false;
 
     // 默认drop
     private Consumer<T> onNext = (t) -> {
@@ -37,18 +37,6 @@ public class SimpleSubscriber<T> implements Flow.Subscriber<T> {
     @Override
     public void onComplete() {
         onComplete.run();
-    }
-
-    public void request(int count) {
-        subscription.request(count);
-    }
-
-    public void cancel() {
-        if (cancel) {
-            return;
-        }
-        subscription.cancel();
-        cancel = !cancel;
     }
 
     public void setConsumer(Consumer<T> consumer) {

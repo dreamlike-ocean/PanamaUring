@@ -83,7 +83,24 @@ class liburing_h_1 {
         io_uring_sqe.cancel_flags$set(sqeSegment, flags);
     }
 
-
+    /**
+     * @param sqe
+     * @param user_data user data
+     * @param flags     IORING_ASYNC_CANCEL_ALL
+     *                  Cancel all requests that match the given criteria, rather
+     *                  than just canceling the first one found. Available since
+     *                  5.19.
+     *                  <p>
+     *                  IORING_ASYNC_CANCEL_FD
+     *                  Match based on the file descriptor used in the original
+     *                  request rather than the user_data. This is what
+     *                  io_uring_prep_cancel_fd(3) sets up. Available since 5.19.
+     *                  <p>
+     *                  IORING_ASYNC_CANCEL_ANY
+     *                  Match any request in the ring, regardless of user_data or
+     *                  file descriptor.  Can be used to cancel any pending
+     *                  request in the ring. Available since 5.19.
+     */
     public static void io_uring_prep_cancel(Addressable sqe, long user_data, int flags) {
         io_uring_prep_rw(IORING_OP_ASYNC_CANCEL(), sqe, -1, MemoryAddress.ofLong(user_data), 0, 0);
         MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe.address());

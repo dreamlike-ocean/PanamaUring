@@ -197,6 +197,14 @@ public class NativeHelper {
         return voidCompletableFuture;
     }
 
+    public static <T> CompletableFuture<T> errorNoTransformGeneric(Integer res, T other) {
+        if (res < 0) {
+            return CompletableFuture.failedFuture(new NativeCallException(NativeHelper.getErrorStr(-res)));
+        }
+        return CompletableFuture.completedFuture(other);
+    }
+
+
     public static int createEventFd(int flag) {
         int eventfd = eventfd(0, flag);
         if (eventfd < 0) {
