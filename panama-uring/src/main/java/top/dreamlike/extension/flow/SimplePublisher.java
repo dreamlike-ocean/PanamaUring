@@ -15,9 +15,9 @@ public class SimplePublisher<T> implements Flow.Publisher<T>, Flow.Subscription 
 
     protected Flow.Subscriber<? super T> subscriber;
 
-    private final Runnable onCancel;
+    protected Runnable onCancel;
 
-    protected int maxBuffer;
+    protected volatile int maxBuffer;
 
     protected int demand;
 
@@ -79,9 +79,6 @@ public class SimplePublisher<T> implements Flow.Publisher<T>, Flow.Subscription 
      * @return 是否
      */
     public boolean offer(T t) {
-        if (cancel) {
-            return false;
-        }
         if (demand > 0) {
             sendEvent(t);
             demand--;

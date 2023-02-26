@@ -1,6 +1,6 @@
 package top.dreamlike.access;
 
-import top.dreamlike.FileSystem.WatchService;
+import top.dreamlike.async.IOOpResult;
 import top.dreamlike.async.file.AsyncFile;
 import top.dreamlike.async.socket.AsyncServerSocket;
 import top.dreamlike.async.socket.AsyncSocket;
@@ -8,10 +8,12 @@ import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.epoll.Epoll;
 import top.dreamlike.eventloop.EpollEventLoop;
 import top.dreamlike.eventloop.IOUringEventLoop;
+import top.dreamlike.fileSystem.WatchService;
 import top.dreamlike.helper.Pair;
 import top.dreamlike.helper.Unsafe;
 
 import java.lang.foreign.MemorySegment;
+import java.util.Map;
 import java.util.Queue;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -47,6 +49,8 @@ public class AccessHelper {
 
     public static BiConsumer<EpollEventLoop, Pair<Epoll.Event, IntConsumer>> registerToEpollDirectly;
 
+
+    public static Function<IOUring, Map<Long, IOOpResult>> fetchContext;
 }
 
 

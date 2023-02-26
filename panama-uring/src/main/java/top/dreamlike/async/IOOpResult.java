@@ -16,6 +16,8 @@ public class IOOpResult {
 
     public final Op op;
 
+    public Runnable afterRemove;
+
     private IOOpResult(Op op, BiIntConsumer callback) {
         this.callback = callback;
         this.op = op;
@@ -34,11 +36,17 @@ public class IOOpResult {
     }
 
     public void doCallBack() {
-       try {
-           callback.consumer(res,bid);
-       }catch (Throwable throwable){
-           //ignore
-       }
+        try {
+            callback.consumer(res, bid);
+        } catch (Throwable throwable) {
+            //ignore
+        }
+    }
+
+    public void runAfterRemove() {
+        if (afterRemove != null) {
+            afterRemove.run();
+        }
     }
 
 

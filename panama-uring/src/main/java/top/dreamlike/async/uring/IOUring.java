@@ -1,5 +1,6 @@
 package top.dreamlike.async.uring;
 
+import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.IOOpResult;
 import top.dreamlike.epoll.Epoll;
 import top.dreamlike.helper.*;
@@ -267,6 +268,34 @@ public class IOUring implements AutoCloseable {
         return prep_accept_and_get_user_data(serverFd, callback) != -1;
     }
 
+    static {
+
+        try {
+
+            if (!NativeHelper.isLinux() || !NativeHelper.isX86_64() || !NativeHelper.compareWithCurrentLinuxVersion(5, 10)) {
+                throw new NativeCallException("please check os version(need linux >= 5.10) and CPU Arch(need X86_64)");
+            }
+
+
+            InputStream is = IOUring.class.getResourceAsStream("/liburing.so");
+            File file = File.createTempFile("liburing", ".so");
+            OutputStream os = new FileOutputStream(file);
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = is.read(buffer)) != -1) {
+                os.write(buffer, 0, length);
+            }
+            is.close();
+            os.close();
+            System.load(file.getAbsolutePath());
+            file.deleteOnExit();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        AccessHelper.fetchContext = uring -> uring.context;
+    }
+
     public long prep_accept_and_get_user_data(int serverFd, Consumer<SocketInfo> callback) {
         MemoryAddress sqe = getSqe();
         if (sqe == null) return -1;
@@ -278,34 +307,25 @@ public class IOUring implements AutoCloseable {
         MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
 
         context.put(opsCount, new IOOpResult(serverFd, -1, Op.ACCEPT, null, (res, __) -> {
-            if (res < 0){
-                callback.accept(new SocketInfo(res, "", -1));
-            }else {
-                short sin_port = sockaddr_in.sin_port$get(client_addr);
-                int port = Short.toUnsignedInt(ntohs(sin_port));
-                MemoryAddress remoteHost = inet_ntoa(sockaddr_in.sin_addr$slice(client_addr));
-                long strlen = strlen(remoteHost);
-                String host = new String(MemorySegment.ofAddress(remoteHost, strlen, MemorySession.global()).toArray(JAVA_BYTE));
-                callback.accept(new SocketInfo(res, host, port));
+            try {
+                if (res < 0) {
+                    callback.accept(new SocketInfo(res, "", -1));
+                } else {
+                    short sin_port = sockaddr_in.sin_port$get(client_addr);
+                    int port = Short.toUnsignedInt(ntohs(sin_port));
+                    MemoryAddress remoteHost = inet_ntoa(sockaddr_in.sin_addr$slice(client_addr));
+                    long strlen = strlen(remoteHost);
+                    String host = new String(MemorySegment.ofAddress(remoteHost, strlen, MemorySession.global()).toArray(JAVA_BYTE));
+                    callback.accept(new SocketInfo(res, host, port));
+                }
+            } finally {
+                tmp.close();
             }
-            tmp.close();
+
         }));
         io_uring_prep_accept(sqe, serverFd, client_addr, client_addr_len, 0);
         io_uring_sqe.user_data$set(sqeSegment, opsCount);
 
-        return opsCount;
-    }
-
-    public long prep_cancel_and_get_user_data(long need_cancel_user_data, int cancel_flags, IntConsumer consumer) {
-        MemoryAddress sqe = getSqe();
-        if (sqe == null) return -1;
-        long opsCount = count.getAndIncrement();
-        MemorySegment sqeStruct = NativeHelper.unsafePointConvertor(sqe);
-        context.put(opsCount, IOOpResult.bindCallBack(Op.CANCEL, (res, __) -> {
-            consumer.accept(res);
-        }));
-        io_uring_prep_cancel(sqe, need_cancel_user_data, cancel_flags);
-        io_uring_sqe.user_data$set(sqeStruct, opsCount);
         return opsCount;
     }
 
@@ -318,33 +338,17 @@ public class IOUring implements AutoCloseable {
         return prep_accept_multi_and_get_user_data(serverFd, callback) != -1;
     }
 
-
-    public long prep_accept_multi_and_get_user_data(int serverFd, Consumer<SocketInfo> callback) {
+    public long prep_cancel_and_get_user_data(long need_cancel_user_data, int cancel_flags, IntConsumer consumer) {
         MemoryAddress sqe = getSqe();
         if (sqe == null) return -1;
-        MemorySession tmp = MemorySession.openShared();
-        MemorySegment client_addr = sockaddr.allocate(tmp);
-        MemorySegment client_addr_len = tmp.allocate(JAVA_INT, (int) sockaddr.sizeof());
-
         long opsCount = count.getAndIncrement();
-        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
-
-        context.put(opsCount, new IOOpResult(serverFd, -1, Op.MULTI_SHOT, null, (res, __) -> {
-            if (res < 0) {
-                callback.accept(new SocketInfo(res, "", -1));
-                tmp.close();
-            } else {
-                short sin_port = sockaddr_in.sin_port$get(client_addr);
-                int port = Short.toUnsignedInt(ntohs(sin_port));
-                MemoryAddress remoteHost = inet_ntoa(sockaddr_in.sin_addr$slice(client_addr));
-                long strlen = strlen(remoteHost);
-                String host = new String(MemorySegment.ofAddress(remoteHost, strlen, MemorySession.global()).toArray(JAVA_BYTE));
-                callback.accept(new SocketInfo(res, host, port));
-            }
+        MemorySegment sqeStruct = NativeHelper.unsafePointConvertor(sqe);
+        context.put(opsCount, IOOpResult.bindCallBack(Op.CANCEL, (res, __) -> {
+            consumer.accept(res);
+//            context.remove(need_cancel_user_data);
         }));
-        io_uring_prep_multishot_accept(sqe, serverFd, client_addr, client_addr_len, 0);
-        io_uring_sqe.user_data$set(sqeSegment, opsCount);
-
+        io_uring_prep_cancel(sqe, need_cancel_user_data, cancel_flags);
+        io_uring_sqe.user_data$set(sqeStruct, opsCount);
         return opsCount;
     }
 
@@ -584,22 +588,52 @@ public class IOUring implements AutoCloseable {
         }
 
     }
-    public void waitComplete(){
+
+    public void waitComplete() {
         waitComplete(-1);
     }
 
-    public void waitComplete(long waitMs){
+    public long prep_accept_multi_and_get_user_data(int serverFd, Consumer<SocketInfo> callback) {
+        MemoryAddress sqe = getSqe();
+        if (sqe == null) return -1;
+        //todo 确定性析构 这里先用gc兜底 IOOpResult来挂载回调
+        MemorySession tmp = MemorySession.openImplicit();
+        MemorySegment client_addr = sockaddr.allocate(tmp);
+        MemorySegment client_addr_len = tmp.allocate(JAVA_INT, (int) sockaddr.sizeof());
+
+        long opsCount = count.getAndIncrement();
+        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe, io_uring_sqe.sizeof(), MemorySession.global());
+
+        context.put(opsCount, new IOOpResult(serverFd, -1, Op.MULTI_SHOT, null, (res, __) -> {
+            if (res < 0) {
+                callback.accept(new SocketInfo(res, "", -1));
+            } else {
+                short sin_port = sockaddr_in.sin_port$get(client_addr);
+                int port = Short.toUnsignedInt(ntohs(sin_port));
+                MemoryAddress remoteHost = inet_ntoa(sockaddr_in.sin_addr$slice(client_addr));
+                long strlen = strlen(remoteHost);
+                String host = new String(MemorySegment.ofAddress(remoteHost, strlen, MemorySession.global()).toArray(JAVA_BYTE));
+                callback.accept(new SocketInfo(res, host, port));
+            }
+        }));
+        io_uring_prep_multishot_accept(sqe, serverFd, client_addr, client_addr_len, 0);
+        io_uring_sqe.user_data$set(sqeSegment, opsCount);
+
+        return opsCount;
+    }
+
+    public void waitComplete(long waitMs) {
         try (MemorySession memorySession = MemorySession.openConfined()) {
             MemorySegment cqe_ptr = memorySession.allocate(C_POINTER.byteSize());
-            if (waitMs == -1){
+            if (waitMs == -1) {
                 io_uring_wait_cqe(ring, cqe_ptr);
                 return;
             }
 
             MemorySegment ts = __kernel_timespec.allocate(allocator);
-            __kernel_timespec.tv_sec$set(ts,waitMs/1000);
+            __kernel_timespec.tv_sec$set(ts, waitMs / 1000);
             __kernel_timespec.tv_nsec$set(ts, (waitMs % 1000) * 1000000);
-            io_uring_wait_cqe_timeout(ring,cqe_ptr,ts);
+            io_uring_wait_cqe_timeout(ring, cqe_ptr, ts);
         }
     }
 
@@ -614,31 +648,8 @@ public class IOUring implements AutoCloseable {
         return startLinked.get();
     }
 
-
-    static {
-
-        try {
-
-            if (!NativeHelper.isLinux() || !NativeHelper.isX86_64() || !NativeHelper.compareWithCurrentLinuxVersion(5, 10)) {
-                throw new NativeCallException("please check os version(need linux >= 5.10) and CPU Arch(need X86_64)");
-            }
-
-
-            InputStream is = IOUring.class.getResourceAsStream("/liburing.so");
-            File file = File.createTempFile("liburing", ".so");
-            OutputStream os = new FileOutputStream(file);
-            byte[] buffer = new byte[1024];
-            int length;
-            while ((length = is.read(buffer)) != -1) {
-                os.write(buffer, 0, length);
-            }
-            is.close();
-            os.close();
-            System.load(file.getAbsolutePath());
-            file.deleteOnExit();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public boolean contain(long userData) {
+        return context.containsKey(userData);
     }
 
 

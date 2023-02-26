@@ -110,32 +110,37 @@ public class errno_h  {
     public static int __WORDSIZE_TIME64_COMPAT32() {
         return (int)1L;
     }
+
+    public final static int ENOENT = 2;
+    public final static int EINVAL = 22;
+    public final static int EALREADY = 114;
+
     public static int __SYSCALL_WORDSIZE() {
-        return (int)64L;
+        return (int) 64L;
     }
+
     public static int __LONG_DOUBLE_USES_FLOAT128() {
-        return (int)0L;
+        return (int) 0L;
     }
+
     public static int __HAVE_GENERIC_SELECTION() {
-        return (int)1L;
+        return (int) 1L;
     }
+
     public static int _BITS_ERRNO_H() {
-        return (int)1L;
+        return (int) 1L;
     }
+
     public static int EPERM() {
-        return (int)1L;
+        return (int) 1L;
     }
+
     public static int ENOENT() {
-        return (int)2L;
+        return (int) 2L;
     }
+
     public static int ESRCH() {
-        return (int)3L;
-    }
-    public static int EINTR() {
-        return (int)4L;
-    }
-    public static int EIO() {
-        return (int)5L;
+        return (int) 3L;
     }
     public static int ENXIO() {
         return (int)6L;
@@ -170,32 +175,45 @@ public class errno_h  {
     public static int EBUSY() {
         return (int)16L;
     }
+
     public static int EEXIST() {
-        return (int)17L;
+        return (int) 17L;
     }
+
     public static int EXDEV() {
-        return (int)18L;
+        return (int) 18L;
     }
+
     public static int ENODEV() {
-        return (int)19L;
+        return (int) 19L;
     }
+
+    public static int EINTR() {
+        return (int) 4L;
+    }
+
+    public static int EIO() {
+        return (int) 5L;
+    }
+
     public static int ENOTDIR() {
-        return (int)20L;
+        return (int) 20L;
     }
+
     public static int EISDIR() {
-        return (int)21L;
+        return (int) 21L;
     }
+
     public static int EINVAL() {
-        return (int)22L;
+        return (int) 22L;
     }
+
     public static int ENFILE() {
-        return (int)23L;
+        return (int) 23L;
     }
+
     public static int EMFILE() {
-        return (int)24L;
-    }
-    public static int ENOTTY() {
-        return (int)25L;
+        return (int) 24L;
     }
     public static int ETXTBSY() {
         return (int)26L;
@@ -440,32 +458,45 @@ public class errno_h  {
     public static int ESHUTDOWN() {
         return (int)108L;
     }
+
     public static int ETOOMANYREFS() {
-        return (int)109L;
+        return (int) 109L;
     }
+
     public static int ETIMEDOUT() {
-        return (int)110L;
+        return (int) 110L;
     }
+
     public static int ECONNREFUSED() {
-        return (int)111L;
+        return (int) 111L;
     }
+
+    public static int ENOTTY() {
+        return (int) 25L;
+    }
+
     public static int EHOSTDOWN() {
-        return (int)112L;
+        return (int) 112L;
     }
+
     public static int EHOSTUNREACH() {
-        return (int)113L;
+        return (int) 113L;
     }
+
     public static int EALREADY() {
-        return (int)114L;
+        return (int) 114L;
     }
+
     public static int EINPROGRESS() {
-        return (int)115L;
+        return (int) 115L;
     }
+
     public static int ESTALE() {
-        return (int)116L;
+        return (int) 116L;
     }
+
     public static int EUCLEAN() {
-        return (int)117L;
+        return (int) 117L;
     }
     public static int ENOTNAM() {
         return (int)118L;
