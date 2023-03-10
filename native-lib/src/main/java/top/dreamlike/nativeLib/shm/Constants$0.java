@@ -23,7 +23,14 @@ public class Constants$0 {
             C_INT$LAYOUT
     );
 
+    private static final FunctionDescriptor shm_unlink$FUNC = FunctionDescriptor.of(C_INT$LAYOUT,
+            C_POINTER$LAYOUT
+    );
+
+
     final static MethodHandle shm_open$MH = downcallHandle("shm_open", shm_open$FUNC);
+
+    final static MethodHandle shm_unlink$MH = downcallHandle("shm_unlink", shm_unlink$FUNC);
 
 
     static MethodHandle downcallHandle(String name, FunctionDescriptor fdesc) {

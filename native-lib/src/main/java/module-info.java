@@ -13,4 +13,5 @@ module top.dreamlike.nativeLib {
     exports top.dreamlike.nativeLib.errno;
     exports top.dreamlike.nativeLib.flock;
     exports top.dreamlike.nativeLib.shm;
+    exports top.dreamlike.nativeLib.mman;
 }

@@ -15,7 +15,7 @@
         <panama.version>1.9.1</panama.version>
         <vertx.version>4.3.7</vertx.version>
         <vertx-async.version>1.0</vertx-async.version>
-        <native-lib>1.4</native-lib>
+        <native-lib>1.4.2</native-lib>
     </properties>
     <licenses>
         <license>

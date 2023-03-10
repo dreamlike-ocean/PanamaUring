@@ -73,6 +73,10 @@ public class WatchService {
 
     public int register(Path path, int mask) {
         String absolutePath = path.toFile().getAbsolutePath();
+        return this.register(absolutePath, mask);
+    }
+
+    public int register(String absolutePath, int mask) {
         try (MemorySession session = MemorySession.openConfined()) {
             MemorySegment file = session.allocateUtf8String(absolutePath);
             int res = inotify_add_watch(ifd, file, mask);
@@ -81,6 +85,16 @@ public class WatchService {
             }
             return res;
         }
+    }
+
+
+    @Unsafe("保证absolutePath 有意义")
+    public int register(MemorySegment absolutePath, int mask) {
+        int res = inotify_add_watch(ifd, absolutePath, mask);
+        if (res <= 0) {
+            throw new NativeCallException(NativeHelper.getNowError());
+        }
+        return res;
     }
 
     public void removeListen(int wd) {
