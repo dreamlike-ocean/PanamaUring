@@ -9,8 +9,8 @@ import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.SocketInfo;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.net.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -69,7 +69,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
 
     public CompletableFuture<Integer> recv(byte[] buffer) {
         CompletableFuture<Integer> completableFuture = new CompletableFuture<>();
-        MemorySession malloc = MemorySession.openShared();
+        Arena malloc = Arena.openShared();
         MemorySegment buf = malloc.allocateArray(JAVA_BYTE, buffer.length);
         eventLoop.runOnEventLoop(() -> {
             boolean res = ring.prep_recv(fd, buf, completableFuture::complete);
@@ -105,7 +105,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
         if (offset + length > buffer.length){
             throw new ArrayIndexOutOfBoundsException();
         }
-        MemorySession session = MemorySession.openShared();
+        Arena session = Arena.openShared();
         CompletableFuture<Integer> future = new CompletableFuture<>();
         MemorySegment memorySegment = session.allocate(length);
         MemorySegment.copy(buffer, offset, memorySegment, JAVA_BYTE, 0, length);

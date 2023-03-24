@@ -2,8 +2,8 @@
 
 package top.dreamlike.nativeLib.liburing;
 
-import java.lang.invoke.VarHandle;
 import java.lang.foreign.*;
+import java.lang.invoke.VarHandle;
 
 public class tm {
 
@@ -178,34 +178,52 @@ public class tm {
     public static void __tm_gmtoff$set( MemorySegment seg, long x) {
         tm.__tm_gmtoff$VH.set(seg, x);
     }
+
     public static long __tm_gmtoff$get(MemorySegment seg, long index) {
-        return (long)tm.__tm_gmtoff$VH.get(seg.asSlice(index*sizeof()));
+        return (long) tm.__tm_gmtoff$VH.get(seg.asSlice(index * sizeof()));
     }
+
     public static void __tm_gmtoff$set(MemorySegment seg, long index, long x) {
-        tm.__tm_gmtoff$VH.set(seg.asSlice(index*sizeof()), x);
+        tm.__tm_gmtoff$VH.set(seg.asSlice(index * sizeof()), x);
     }
+
     static final VarHandle __tm_zone$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("__tm_zone"));
+
     public static VarHandle __tm_zone$VH() {
         return tm.__tm_zone$VH;
     }
-    public static MemoryAddress __tm_zone$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress)tm.__tm_zone$VH.get(seg);
+
+    public static MemorySegment __tm_zone$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) tm.__tm_zone$VH.get(seg);
     }
-    public static void __tm_zone$set( MemorySegment seg, MemoryAddress x) {
+
+    public static void __tm_zone$set(MemorySegment seg, MemorySegment x) {
         tm.__tm_zone$VH.set(seg, x);
     }
-    public static MemoryAddress __tm_zone$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress)tm.__tm_zone$VH.get(seg.asSlice(index*sizeof()));
+
+    public static MemorySegment __tm_zone$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) tm.__tm_zone$VH.get(seg.asSlice(index * sizeof()));
     }
-    public static void __tm_zone$set(MemorySegment seg, long index, MemoryAddress x) {
-        tm.__tm_zone$VH.set(seg.asSlice(index*sizeof()), x);
+
+    public static void __tm_zone$set(MemorySegment seg, long index, MemorySegment x) {
+        tm.__tm_zone$VH.set(seg.asSlice(index * sizeof()), x);
     }
-    public static long sizeof() { return $LAYOUT().byteSize(); }
-    public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
+
+    public static long sizeof() {
+        return $LAYOUT().byteSize();
+    }
+
+    public static MemorySegment allocate(SegmentAllocator allocator) {
+        return allocator.allocate($LAYOUT());
+    }
+
     public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
         return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
     }
-    public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) { return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session); }
+
+    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
+        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
+    }
 }
 
 

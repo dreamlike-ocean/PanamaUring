@@ -308,7 +308,7 @@ public class stat {
         return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
     }
 
-    public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) {
+    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
         return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
     }
 }

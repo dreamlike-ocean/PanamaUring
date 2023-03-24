@@ -19,12 +19,12 @@ final class RuntimeHelper {
     private final static SymbolLookup SYMBOL_LOOKUP;
 
     final static SegmentAllocator CONSTANT_ALLOCATOR =
-            (size, align) -> MemorySegment.allocateNative(size, align, MemorySession.openImplicit());
+            (size, align) -> MemorySegment.allocateNative(size, align, SegmentScope.auto());
 
     static {
 
         SymbolLookup loaderLookup = SymbolLookup.loaderLookup();
-        SYMBOL_LOOKUP = name -> loaderLookup.lookup(name).or(() -> LINKER.defaultLookup().lookup(name));
+        SYMBOL_LOOKUP = name -> loaderLookup.find(name).or(() -> LINKER.defaultLookup().find(name));
     }
 
     static <T> T requireNonNull(T obj, String symbolName) {
@@ -39,11 +39,11 @@ final class RuntimeHelper {
     };
 
     static MemorySegment lookupGlobalVariable(String name, MemoryLayout layout) {
-        return SYMBOL_LOOKUP.lookup(name).map(symbol -> MemorySegment.ofAddress(symbol.address(), layout.byteSize(), MemorySession.openShared())).orElse(null);
+        return SYMBOL_LOOKUP.find(name).map(symbol -> MemorySegment.ofAddress(symbol.address(), layout.byteSize())).orElse(null);
     }
 
     static MethodHandle downcallHandle(String name, FunctionDescriptor fdesc) {
-        return SYMBOL_LOOKUP.lookup(name).
+        return SYMBOL_LOOKUP.find(name).
                 map(addr -> LINKER.downcallHandle(addr, fdesc)).
                 orElse(null);
     }
@@ -53,24 +53,11 @@ final class RuntimeHelper {
     }
 
     static MethodHandle downcallHandleVariadic(String name, FunctionDescriptor fdesc) {
-        return SYMBOL_LOOKUP.lookup(name).
+        return SYMBOL_LOOKUP.find(name).
                 map(addr -> VarargsInvoker.make(addr, fdesc)).
                 orElse(null);
     }
 
-    static <Z> MemorySegment upcallStub(Class<Z> fi, Z z, FunctionDescriptor fdesc, MemorySession session) {
-        try {
-            MethodHandle handle = MH_LOOKUP.findVirtual(fi, "apply", Linker.upcallType(fdesc));
-            handle = handle.bindTo(z);
-            return LINKER.upcallStub(handle, fdesc, session);
-        } catch (Throwable ex) {
-            throw new AssertionError(ex);
-        }
-    }
-
-    static MemorySegment asArray(MemoryAddress addr, MemoryLayout layout, int numElements, MemorySession session) {
-        return MemorySegment.ofAddress(addr, numElements * layout.byteSize(), session);
-    }
 
     // Internals only below this point
 
@@ -110,8 +97,8 @@ final class RuntimeHelper {
 
         static Class<?> carrier(MemoryLayout layout, boolean ret) {
             if (layout instanceof ValueLayout valueLayout) {
-                return (ret || valueLayout.carrier() != MemoryAddress.class) ?
-                        valueLayout.carrier() : Addressable.class;
+                return (ret || valueLayout.carrier() != MemorySegment.class) ?
+                        valueLayout.carrier() : MemorySegment.class;
             } else if (layout instanceof GroupLayout) {
                 return MemorySegment.class;
             } else {
@@ -196,8 +183,8 @@ final class RuntimeHelper {
             if (c.isPrimitive()) {
                 return promote(c);
             }
-            if (MemoryAddress.class.isAssignableFrom(c)) {
-                return MemoryAddress.class;
+            if (MemorySegment.class.isAssignableFrom(c)) {
+                return MemorySegment.class;
             }
             if (MemorySegment.class.isAssignableFrom(c)) {
                 return MemorySegment.class;
@@ -210,7 +197,7 @@ final class RuntimeHelper {
                 return JAVA_LONG;
             } else if (c == double.class) {
                 return JAVA_DOUBLE;
-            } else if (MemoryAddress.class.isAssignableFrom(c)) {
+            } else if (MemorySegment.class.isAssignableFrom(c)) {
                 return ADDRESS;
             } else {
                 throw new IllegalArgumentException("Unhandled variadic argument class: " + c);

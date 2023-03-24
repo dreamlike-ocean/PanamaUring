@@ -6,9 +6,8 @@ import top.dreamlike.nativeLib.epoll.epoll_data;
 import top.dreamlike.nativeLib.epoll.epoll_event;
 import top.dreamlike.nativeLib.unistd.unistd_h;
 
-import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.util.ArrayList;
 
 import static top.dreamlike.nativeLib.epoll.epoll_h.*;
@@ -17,12 +16,12 @@ import static top.dreamlike.nativeLib.epoll.epoll_h.*;
 public class Epoll implements AutoCloseable{
     int epollFd;
 
-    private final MemorySession allocator;
+    private final Arena allocator;
 
     private final MemorySegment events;
 
     public Epoll(){
-        allocator = MemorySession.openShared();
+        allocator = Arena.openShared();
         events = allocator.allocateArray(epoll_event.$LAYOUT(), 1024);
         epollFd = epoll_create1(0);
         if (epollFd == -1 ){
@@ -32,7 +31,7 @@ public class Epoll implements AutoCloseable{
 
 
     public int register(int fd, int event) {
-        try (MemorySession session = MemorySession.openConfined()) {
+        try (Arena session = Arena.openConfined()) {
             MemorySegment epollEvent = epoll_event.allocate(session);
             epoll_event.events$set(epollEvent, event);
             epoll_data.fd$set(epoll_event.data$slice(epollEvent), fd);
@@ -41,7 +40,7 @@ public class Epoll implements AutoCloseable{
     }
 
     public int modify(int fd, int event) {
-        try (MemorySession session = MemorySession.openConfined()) {
+        try (Arena session = Arena.openConfined()) {
             MemorySegment epollEvent = epoll_event.allocate(session);
             epoll_event.events$set(epollEvent, event);
             epoll_data.fd$set(epoll_event.data$slice(epollEvent), fd);
@@ -50,7 +49,7 @@ public class Epoll implements AutoCloseable{
     }
 
     public int unRegister(int fd) {
-        return epoll_ctl(epollFd, EPOLL_CTL_DEL(), fd, MemoryAddress.NULL);
+        return epoll_ctl(epollFd, EPOLL_CTL_DEL(), fd, MemorySegment.NULL);
     }
 
     private void registerStdInput() {

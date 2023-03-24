@@ -8,9 +8,8 @@ import top.dreamlike.nativeLib.mman.mman_h;
 import top.dreamlike.nativeLib.shm.shm;
 import top.dreamlike.nativeLib.unistd.unistd_h;
 
-import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -20,7 +19,7 @@ public class ShmExample {
     public static void main(String[] args) {
 //        /proc/7391/fd
 
-        try (MemorySession session = MemorySession.openConfined()) {
+        try (Arena session = Arena.openConfined()) {
             //整点共享内存
             MemorySegment name = session.allocateUtf8String("testDemo");
             int shm_fd = shm.shm_open(name, fcntl_h.O_RDWR() | fcntl_h.O_CREAT(), 0777);
@@ -39,10 +38,10 @@ public class ShmExample {
             System.out.println("ftruncate:" + ftruncate);
 
             //mmap映射进来 方便操作
-            MemoryAddress memoryAddress = mman_h.mmap(MemoryAddress.NULL, 1024, mman_h.PROT_WRITE() | mman_h.PROT_READ(), mman_h.MAP_SHARED(), shm_fd, 0);
+            MemorySegment memoryAddress = mman_h.mmap(MemorySegment.NULL, 1024, mman_h.PROT_WRITE() | mman_h.PROT_READ(), mman_h.MAP_SHARED(), shm_fd, 0);
             System.out.println("mmap address:" + memoryAddress);
             //前8个字节处理各种写入数据
-            MemorySegment base = MemorySegment.ofAddress(memoryAddress, 1024, MemorySession.global());
+            MemorySegment base = MemorySegment.ofAddress(memoryAddress.address(), 1024);
             MemorySegment shareMemory = base.asSlice(8);
 
             //写入共享内存
@@ -62,7 +61,7 @@ public class ShmExample {
 //                } catch (InterruptedException e) {
 //                    throw new RuntimeException(e);
 //                }
-//                unistd_h.write(shm_fd, MemorySession.global().allocate(JAVA_INT, 1254), 4);
+//                unistd_h.write(shm_fd, Arena.global().allocate(JAVA_INT, 1254), 4);
 //                System.out.println("after write offset:"+unistd_h.lseek(shm_fd, 0, unistd_h.SEEK_CUR()));
 //            }).start();
 

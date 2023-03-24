@@ -8,8 +8,8 @@ import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.nativeLib.unistd.unistd_h;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -35,13 +35,13 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
         if (closed()) {
             throw new NativeCallException("file has closed");
         }
-        MemorySession memorySession = MemorySession.openShared();
-        MemorySegment buffer = memorySession.allocate(length);
+        Arena arena = Arena.openShared();
+        MemorySegment buffer = arena.allocate(length);
         return readUnsafe(offset, buffer)
                 .thenCompose(i -> i < 0 ? CompletableFuture.failedStage(new NativeCallException(NativeHelper.getErrorStr(-i))) : CompletableFuture.completedFuture(i))
                 .thenApply(i -> {
                     byte[] bytes = buffer.asSlice(0, i).toArray(JAVA_BYTE);
-                    memorySession.close();
+                    arena.close();
                     return bytes;
                 });
     }
@@ -74,7 +74,7 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
             throw new NativeCallException("file has closed");
         }
 
-        MemorySession session = MemorySession.openShared();
+        Arena session = Arena.openShared();
         CompletableFuture<Integer> future = new CompletableFuture<>();
         MemorySegment memorySegment = session.allocate(bufferLength);
         MemorySegment.copy(buffer, bufferOffset, memorySegment, JAVA_BYTE, 0, bufferLength);

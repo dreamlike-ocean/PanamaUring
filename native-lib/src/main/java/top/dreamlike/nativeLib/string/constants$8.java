@@ -3,7 +3,7 @@
 package top.dreamlike.nativeLib.string;
 
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
 class constants$8 {
@@ -31,10 +31,10 @@ class constants$8 {
         Constants$root.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle stpncpy$MH = RuntimeHelper.downcallHandle(
-        "stpncpy",
-        constants$8.stpncpy$FUNC
+            "stpncpy",
+            constants$8.stpncpy$FUNC
     );
-    static final MemoryAddress NULL$ADDR = MemoryAddress.ofLong(0L);
+    static final MemorySegment NULL$ADDR = MemorySegment.NULL;
 }
 
 

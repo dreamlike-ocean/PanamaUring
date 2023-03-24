@@ -2,8 +2,8 @@
 
 package top.dreamlike.nativeLib.liburing;
 
-import java.lang.invoke.VarHandle;
 import java.lang.foreign.*;
+import java.lang.invoke.VarHandle;
 
 public class ucontext_t {
 
@@ -58,31 +58,41 @@ public class ucontext_t {
     public static void __uc_flags$set( MemorySegment seg, long x) {
         ucontext_t.__uc_flags$VH.set(seg, x);
     }
+
     public static long __uc_flags$get(MemorySegment seg, long index) {
-        return (long)ucontext_t.__uc_flags$VH.get(seg.asSlice(index*sizeof()));
+        return (long) ucontext_t.__uc_flags$VH.get(seg.asSlice(index * sizeof()));
     }
+
     public static void __uc_flags$set(MemorySegment seg, long index, long x) {
-        ucontext_t.__uc_flags$VH.set(seg.asSlice(index*sizeof()), x);
+        ucontext_t.__uc_flags$VH.set(seg.asSlice(index * sizeof()), x);
     }
+
     static final VarHandle uc_link$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("uc_link"));
+
     public static VarHandle uc_link$VH() {
         return ucontext_t.uc_link$VH;
     }
-    public static MemoryAddress uc_link$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress)ucontext_t.uc_link$VH.get(seg);
+
+    public static MemorySegment uc_link$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) ucontext_t.uc_link$VH.get(seg);
     }
-    public static void uc_link$set( MemorySegment seg, MemoryAddress x) {
+
+    public static void uc_link$set(MemorySegment seg, MemorySegment x) {
         ucontext_t.uc_link$VH.set(seg, x);
     }
-    public static MemoryAddress uc_link$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress)ucontext_t.uc_link$VH.get(seg.asSlice(index*sizeof()));
+
+    public static MemorySegment uc_link$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) ucontext_t.uc_link$VH.get(seg.asSlice(index * sizeof()));
     }
-    public static void uc_link$set(MemorySegment seg, long index, MemoryAddress x) {
-        ucontext_t.uc_link$VH.set(seg.asSlice(index*sizeof()), x);
+
+    public static void uc_link$set(MemorySegment seg, long index, MemorySegment x) {
+        ucontext_t.uc_link$VH.set(seg.asSlice(index * sizeof()), x);
     }
+
     public static MemorySegment uc_stack$slice(MemorySegment seg) {
         return seg.asSlice(16, 24);
     }
+
     public static MemorySegment uc_mcontext$slice(MemorySegment seg) {
         return seg.asSlice(40, 256);
     }
@@ -97,10 +107,14 @@ public class ucontext_t {
     }
     public static long sizeof() { return $LAYOUT().byteSize(); }
     public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
+
     public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
         return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
     }
-    public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) { return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session); }
+
+    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
+        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
+    }
 }
 
 

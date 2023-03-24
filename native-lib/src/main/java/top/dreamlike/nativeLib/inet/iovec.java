@@ -22,24 +22,30 @@ public class iovec {
         return iovec.iov_base$VH;
     }
 
-    public static MemoryAddress iov_base$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress)iovec.iov_base$VH.get(seg);
+    public static MemorySegment iov_base$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) iovec.iov_base$VH.get(seg);
     }
-    public static void iov_base$set( MemorySegment seg, MemoryAddress x) {
+
+    public static void iov_base$set(MemorySegment seg, MemorySegment x) {
         iovec.iov_base$VH.set(seg, x);
     }
-    public static MemoryAddress iov_base$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress)iovec.iov_base$VH.get(seg.asSlice(index*sizeof()));
+
+    public static MemorySegment iov_base$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) iovec.iov_base$VH.get(seg.asSlice(index * sizeof()));
     }
-    public static void iov_base$set(MemorySegment seg, long index, MemoryAddress x) {
-        iovec.iov_base$VH.set(seg.asSlice(index*sizeof()), x);
+
+    public static void iov_base$set(MemorySegment seg, long index, MemorySegment x) {
+        iovec.iov_base$VH.set(seg.asSlice(index * sizeof()), x);
     }
+
     static final VarHandle iov_len$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("iov_len"));
+
     public static VarHandle iov_len$VH() {
         return iovec.iov_len$VH;
     }
+
     public static long iov_len$get(MemorySegment seg) {
-        return (long)iovec.iov_len$VH.get(seg);
+        return (long) iovec.iov_len$VH.get(seg);
     }
     public static void iov_len$set( MemorySegment seg, long x) {
         iovec.iov_len$VH.set(seg, x);
@@ -52,10 +58,14 @@ public class iovec {
     }
     public static long sizeof() { return $LAYOUT().byteSize(); }
     public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
+
     public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
         return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
     }
-    public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) { return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session); }
+
+    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
+        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
+    }
 }
 
 

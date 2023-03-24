@@ -8,8 +8,8 @@ import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Pair;
 import top.dreamlike.nativeLib.socket.socket_h;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayDeque;
@@ -113,7 +113,7 @@ public class EpollAsyncSocket extends AsyncSocket {
         CompletableFuture<Integer> conncetFuture = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
 
-            try (MemorySession session = MemorySession.openConfined()) {
+            try (Arena session = Arena.openConfined()) {
                 Pair<MemorySegment, Boolean> socketInfo = null;
                 try {
                     socketInfo = NativeHelper.getSockAddr(session, host, port);
@@ -187,7 +187,7 @@ public class EpollAsyncSocket extends AsyncSocket {
                 sendBuffers.offer(new Buffer(buffer, 0));
                 return 0;
             }
-            try (MemorySession session = MemorySession.openConfined()) {
+            try (Arena session = Arena.openConfined()) {
                 MemorySegment writeBuffer = session.allocate(length - offset);
                 writeBuffer.copyFrom(MemorySegment.ofArray(buffer).asSlice(offset));
                 long sendRes = socket_h.send(fd, writeBuffer, length - offset, 0);
@@ -215,7 +215,7 @@ public class EpollAsyncSocket extends AsyncSocket {
 
 
     private void multiShotModeRead() {
-        try (MemorySession session = MemorySession.openConfined()) {
+        try (Arena session = Arena.openConfined()) {
             MemorySegment buff = session.allocate(recvSize);
             long recv = socket_h.recv(fd, buff, recvSize, 0);
             if (recv < 0 && NativeHelper.getErrorNo() == EAGAIN()) {

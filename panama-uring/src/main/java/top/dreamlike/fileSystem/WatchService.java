@@ -9,8 +9,8 @@ import top.dreamlike.helper.Unsafe;
 import top.dreamlike.nativeLib.inotify.inotify_event;
 import top.dreamlike.nativeLib.inotify.inotify_h;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +30,7 @@ public class WatchService {
     }
 
     private final int ifd;
-    private final MemorySession memorySession;
+    private final Arena session;
     private final MemorySegment buf;
     private final AtomicBoolean nonBlock = new AtomicBoolean(false);
 
@@ -39,8 +39,8 @@ public class WatchService {
         if (ifd <= 0) {
             throw new NativeCallException(NativeHelper.getNowError());
         }
-        memorySession = MemorySession.openShared();
-        buf = memorySession.allocate(4096);
+        session = Arena.openShared();
+        buf = session.allocate(4096);
 
     }
 
@@ -77,7 +77,7 @@ public class WatchService {
     }
 
     public int register(String absolutePath, int mask) {
-        try (MemorySession session = MemorySession.openConfined()) {
+        try (Arena session = Arena.openConfined()) {
             MemorySegment file = session.allocateUtf8String(absolutePath);
             int res = inotify_add_watch(ifd, file, mask);
             if (res <= 0) {

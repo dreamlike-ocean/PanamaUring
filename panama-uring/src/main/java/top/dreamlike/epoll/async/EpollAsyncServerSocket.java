@@ -8,9 +8,9 @@ import top.dreamlike.nativeLib.in.sockaddr_in;
 import top.dreamlike.nativeLib.socket.sockaddr;
 import top.dreamlike.nativeLib.socket.socket_h;
 
-import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.util.concurrent.CompletableFuture;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
@@ -34,9 +34,9 @@ public class EpollAsyncServerSocket extends AsyncServerSocket {
         var res = new CompletableFuture<EpollAsyncSocket>();
         eventLoop.runOnEventLoop(() -> {
             fetchEventLoop().registerEvent(serverFd, EPOLLIN() | EPOLLONESHOT(), (__) -> {
-                try (MemorySession memorySession = MemorySession.openConfined()) {
-                    MemorySegment client_addr = sockaddr.allocate(memorySession);
-                    MemorySegment client_addr_len = memorySession.allocate(JAVA_INT, (int) sockaddr.sizeof());
+                try (Arena session = Arena.openConfined()) {
+                    MemorySegment client_addr = sockaddr.allocate(session);
+                    MemorySegment client_addr_len = session.allocate(JAVA_INT, (int) sockaddr.sizeof());
                     int fd = socket_h.accept(serverFd, client_addr, client_addr_len);
                     if (fd < -1) {
                         res.completeExceptionally(new NativeCallException(NativeHelper.getNowError()));
@@ -44,9 +44,9 @@ public class EpollAsyncServerSocket extends AsyncServerSocket {
                     }
                     short sin_port = sockaddr_in.sin_port$get(client_addr);
                     int port = Short.toUnsignedInt(ntohs(sin_port));
-                    MemoryAddress remoteHost = inet_ntoa(sockaddr_in.sin_addr$slice(client_addr));
+                    MemorySegment remoteHost = inet_ntoa(sockaddr_in.sin_addr$slice(client_addr));
                     long strlen = strlen(remoteHost);
-                    String host = new String(MemorySegment.ofAddress(remoteHost, strlen, MemorySession.global()).toArray(JAVA_BYTE));
+                    String host = new String(MemorySegment.ofAddress(remoteHost.address(), strlen, SegmentScope.global()).toArray(JAVA_BYTE));
                     res.complete(new EpollAsyncSocket(fd, host, port, fetchEventLoop()));
                 }
             });

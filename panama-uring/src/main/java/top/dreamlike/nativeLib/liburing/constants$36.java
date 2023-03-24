@@ -2,8 +2,9 @@
 
 package top.dreamlike.nativeLib.liburing;
 
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
-import java.lang.foreign.*;
 
 class constants$36 {
 
@@ -22,19 +23,19 @@ class constants$36 {
     );
     static final MethodHandle io_uring_peek_cqe$MH = RuntimeHelper.downcallHandle(
         "io_uring_peek_cqe",
-        constants$36.io_uring_peek_cqe$FUNC
+            constants$36.io_uring_peek_cqe$FUNC
     );
     static final FunctionDescriptor io_uring_wait_cqe$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+            Constants$root.C_POINTER$LAYOUT,
+            Constants$root.C_POINTER$LAYOUT
     );
     static final MethodHandle io_uring_wait_cqe$MH = RuntimeHelper.downcallHandle(
-        "io_uring_wait_cqe",
-        constants$36.io_uring_wait_cqe$FUNC
+            "io_uring_wait_cqe",
+            constants$36.io_uring_wait_cqe$FUNC
     );
-    static final MemoryAddress SIG_ERR$ADDR = MemoryAddress.ofLong(-1L);
-    static final MemoryAddress SIG_DFL$ADDR = MemoryAddress.ofLong(0L);
-    static final MemoryAddress SIG_IGN$ADDR = MemoryAddress.ofLong(1L);
+    static final MemorySegment SIG_ERR$ADDR = MemorySegment.ofAddress(-1L);
+    static final MemorySegment SIG_DFL$ADDR = MemorySegment.NULL;
+    static final MemorySegment SIG_IGN$ADDR = MemorySegment.ofAddress(1L);
 }
 
 

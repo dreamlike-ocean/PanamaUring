@@ -2,7 +2,6 @@
 
 package top.dreamlike.nativeLib.epoll;
 
-import java.lang.foreign.Addressable;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
@@ -403,24 +402,28 @@ public class epoll_h  {
     public static OfLong suseconds_t = Constants$root.C_LONG_LONG$LAYOUT;
     public static OfLong __fd_mask = Constants$root.C_LONG_LONG$LAYOUT;
     public static OfLong fd_mask = Constants$root.C_LONG_LONG$LAYOUT;
+
     public static MethodHandle select$MH() {
-        return RuntimeHelper.requireNonNull(constants$1.select$MH,"select");
+        return RuntimeHelper.requireNonNull(constants$1.select$MH, "select");
     }
-    public static int select ( int __nfds,  Addressable __readfds,  Addressable __writefds,  Addressable __exceptfds,  Addressable __timeout) {
+
+    public static int select(int __nfds, MemorySegment __readfds, MemorySegment __writefds, MemorySegment __exceptfds, MemorySegment __timeout) {
         var mh$ = select$MH();
         try {
-            return (int)mh$.invokeExact(__nfds, __readfds, __writefds, __exceptfds, __timeout);
+            return (int) mh$.invokeExact(__nfds, __readfds, __writefds, __exceptfds, __timeout);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle pselect$MH() {
-        return RuntimeHelper.requireNonNull(constants$1.pselect$MH,"pselect");
+        return RuntimeHelper.requireNonNull(constants$1.pselect$MH, "pselect");
     }
-    public static int pselect ( int __nfds,  Addressable __readfds,  Addressable __writefds,  Addressable __exceptfds,  Addressable __timeout,  Addressable __sigmask) {
+
+    public static int pselect(int __nfds, MemorySegment __readfds, MemorySegment __writefds, MemorySegment __exceptfds, MemorySegment __timeout, MemorySegment __sigmask) {
         var mh$ = pselect$MH();
         try {
-            return (int)mh$.invokeExact(__nfds, __readfds, __writefds, __exceptfds, __timeout, __sigmask);
+            return (int) mh$.invokeExact(__nfds, __readfds, __writefds, __exceptfds, __timeout, __sigmask);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -499,39 +502,46 @@ public class epoll_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle epoll_ctl$MH() {
-        return RuntimeHelper.requireNonNull(constants$1.epoll_ctl$MH,"epoll_ctl");
+        return RuntimeHelper.requireNonNull(constants$1.epoll_ctl$MH, "epoll_ctl");
     }
-    public static int epoll_ctl ( int __epfd,  int __op,  int __fd,  Addressable __event) {
+
+    public static int epoll_ctl(int __epfd, int __op, int __fd, MemorySegment __event) {
         var mh$ = epoll_ctl$MH();
         try {
-            return (int)mh$.invokeExact(__epfd, __op, __fd, __event);
+            return (int) mh$.invokeExact(__epfd, __op, __fd, __event);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle epoll_wait$MH() {
-        return RuntimeHelper.requireNonNull(constants$1.epoll_wait$MH,"epoll_wait");
+        return RuntimeHelper.requireNonNull(constants$1.epoll_wait$MH, "epoll_wait");
     }
-    public static int epoll_wait ( int __epfd,  Addressable __events,  int __maxevents,  int __timeout) {
+
+    public static int epoll_wait(int __epfd, MemorySegment __events, int __maxevents, int __timeout) {
         var mh$ = epoll_wait$MH();
         try {
-            return (int)mh$.invokeExact(__epfd, __events, __maxevents, __timeout);
+            return (int) mh$.invokeExact(__epfd, __events, __maxevents, __timeout);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle epoll_pwait$MH() {
-        return RuntimeHelper.requireNonNull(constants$2.epoll_pwait$MH,"epoll_pwait");
+        return RuntimeHelper.requireNonNull(constants$2.epoll_pwait$MH, "epoll_pwait");
     }
-    public static int epoll_pwait ( int __epfd,  Addressable __events,  int __maxevents,  int __timeout,  Addressable __ss) {
+
+    public static int epoll_pwait(int __epfd, MemorySegment __events, int __maxevents, int __timeout, MemorySegment __ss) {
         var mh$ = epoll_pwait$MH();
         try {
-            return (int)mh$.invokeExact(__epfd, __events, __maxevents, __timeout, __ss);
+            return (int) mh$.invokeExact(__epfd, __events, __maxevents, __timeout, __ss);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static long _POSIX_C_SOURCE() {
         return 200809L;
     }

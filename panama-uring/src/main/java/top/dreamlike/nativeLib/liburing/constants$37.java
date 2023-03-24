@@ -2,11 +2,11 @@
 
 package top.dreamlike.nativeLib.liburing;
 
-import java.lang.foreign.*;
+import java.lang.foreign.MemorySegment;
 
 class constants$37 {
 
-    static final MemoryAddress SIG_HOLD$ADDR = MemoryAddress.ofLong(2L);
+    static final MemorySegment SIG_HOLD$ADDR = MemorySegment.ofAddress(2L);
     static final MemorySegment __PRI64_PREFIX$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("l");
     static final MemorySegment __PRIPTR_PREFIX$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("l");
     static final MemorySegment PRId8$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("d");

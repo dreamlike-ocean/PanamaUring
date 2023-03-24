@@ -2,8 +2,6 @@
 
 package top.dreamlike.nativeLib.stdio;
 
-import java.lang.foreign.Addressable;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
@@ -352,11 +350,11 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$0.stdin$SEGMENT, "stdin");
     }
 
-    public static MemoryAddress stdin$get() {
-        return (java.lang.foreign.MemoryAddress) constants$0.stdin$VH.get(RuntimeHelper.requireNonNull(constants$0.stdin$SEGMENT, "stdin"));
+    public static MemorySegment stdin$get() {
+        return (java.lang.foreign.MemorySegment) constants$0.stdin$VH.get(RuntimeHelper.requireNonNull(constants$0.stdin$SEGMENT, "stdin"));
     }
 
-    public static void stdin$set(MemoryAddress x) {
+    public static void stdin$set(MemorySegment x) {
         constants$0.stdin$VH.set(RuntimeHelper.requireNonNull(constants$0.stdin$SEGMENT, "stdin"), x);
     }
 
@@ -372,11 +370,11 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$0.stdout$SEGMENT, "stdout");
     }
 
-    public static MemoryAddress stdout$get() {
-        return (java.lang.foreign.MemoryAddress) constants$0.stdout$VH.get(RuntimeHelper.requireNonNull(constants$0.stdout$SEGMENT, "stdout"));
+    public static MemorySegment stdout$get() {
+        return (java.lang.foreign.MemorySegment) constants$0.stdout$VH.get(RuntimeHelper.requireNonNull(constants$0.stdout$SEGMENT, "stdout"));
     }
 
-    public static void stdout$set(MemoryAddress x) {
+    public static void stdout$set(MemorySegment x) {
         constants$0.stdout$VH.set(RuntimeHelper.requireNonNull(constants$0.stdout$SEGMENT, "stdout"), x);
     }
 
@@ -392,11 +390,11 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$0.stderr$SEGMENT, "stderr");
     }
 
-    public static MemoryAddress stderr$get() {
-        return (java.lang.foreign.MemoryAddress) constants$0.stderr$VH.get(RuntimeHelper.requireNonNull(constants$0.stderr$SEGMENT, "stderr"));
+    public static MemorySegment stderr$get() {
+        return (java.lang.foreign.MemorySegment) constants$0.stderr$VH.get(RuntimeHelper.requireNonNull(constants$0.stderr$SEGMENT, "stderr"));
     }
 
-    public static void stderr$set(MemoryAddress x) {
+    public static void stderr$set(MemorySegment x) {
         constants$0.stderr$VH.set(RuntimeHelper.requireNonNull(constants$0.stderr$SEGMENT, "stderr"), x);
     }
 
@@ -404,7 +402,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$0.remove$MH, "remove");
     }
 
-    public static int remove(Addressable __filename) {
+    public static int remove(MemorySegment __filename) {
         var mh$ = remove$MH();
         try {
             return (int) mh$.invokeExact(__filename);
@@ -417,7 +415,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$0.rename$MH, "rename");
     }
 
-    public static int rename(Addressable __old, Addressable __new) {
+    public static int rename(MemorySegment __old, MemorySegment __new) {
         var mh$ = rename$MH();
         try {
             return (int) mh$.invokeExact(__old, __new);
@@ -430,7 +428,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$0.renameat$MH, "renameat");
     }
 
-    public static int renameat(int __oldfd, Addressable __old, int __newfd, Addressable __new) {
+    public static int renameat(int __oldfd, MemorySegment __old, int __newfd, MemorySegment __new) {
         var mh$ = renameat$MH();
         try {
             return (int) mh$.invokeExact(__oldfd, __old, __newfd, __new);
@@ -443,10 +441,10 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$1.tmpfile$MH, "tmpfile");
     }
 
-    public static MemoryAddress tmpfile() {
+    public static MemorySegment tmpfile() {
         var mh$ = tmpfile$MH();
         try {
-            return (java.lang.foreign.MemoryAddress) mh$.invokeExact();
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact();
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -456,10 +454,10 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$1.tmpnam$MH, "tmpnam");
     }
 
-    public static MemoryAddress tmpnam(Addressable __s) {
+    public static MemorySegment tmpnam(MemorySegment __s) {
         var mh$ = tmpnam$MH();
         try {
-            return (java.lang.foreign.MemoryAddress) mh$.invokeExact(__s);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__s);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -469,10 +467,10 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$1.tmpnam_r$MH, "tmpnam_r");
     }
 
-    public static MemoryAddress tmpnam_r(Addressable __s) {
+    public static MemorySegment tmpnam_r(MemorySegment __s) {
         var mh$ = tmpnam_r$MH();
         try {
-            return (java.lang.foreign.MemoryAddress) mh$.invokeExact(__s);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__s);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -482,10 +480,10 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$1.tempnam$MH, "tempnam");
     }
 
-    public static MemoryAddress tempnam(Addressable __dir, Addressable __pfx) {
+    public static MemorySegment tempnam(MemorySegment __dir, MemorySegment __pfx) {
         var mh$ = tempnam$MH();
         try {
-            return (java.lang.foreign.MemoryAddress) mh$.invokeExact(__dir, __pfx);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__dir, __pfx);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -495,7 +493,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$1.fclose$MH, "fclose");
     }
 
-    public static int fclose(Addressable __stream) {
+    public static int fclose(MemorySegment __stream) {
         var mh$ = fclose$MH();
         try {
             return (int) mh$.invokeExact(__stream);
@@ -508,7 +506,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$1.fflush$MH, "fflush");
     }
 
-    public static int fflush(Addressable __stream) {
+    public static int fflush(MemorySegment __stream) {
         var mh$ = fflush$MH();
         try {
             return (int) mh$.invokeExact(__stream);
@@ -521,7 +519,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$2.fflush_unlocked$MH, "fflush_unlocked");
     }
 
-    public static int fflush_unlocked(Addressable __stream) {
+    public static int fflush_unlocked(MemorySegment __stream) {
         var mh$ = fflush_unlocked$MH();
         try {
             return (int) mh$.invokeExact(__stream);
@@ -534,10 +532,10 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$2.fopen$MH, "fopen");
     }
 
-    public static MemoryAddress fopen(Addressable __filename, Addressable __modes) {
+    public static MemorySegment fopen(MemorySegment __filename, MemorySegment __modes) {
         var mh$ = fopen$MH();
         try {
-            return (java.lang.foreign.MemoryAddress) mh$.invokeExact(__filename, __modes);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__filename, __modes);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -547,10 +545,10 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$2.freopen$MH, "freopen");
     }
 
-    public static MemoryAddress freopen(Addressable __filename, Addressable __modes, Addressable __stream) {
+    public static MemorySegment freopen(MemorySegment __filename, MemorySegment __modes, MemorySegment __stream) {
         var mh$ = freopen$MH();
         try {
-            return (java.lang.foreign.MemoryAddress) mh$.invokeExact(__filename, __modes, __stream);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__filename, __modes, __stream);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -560,10 +558,10 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$2.fdopen$MH, "fdopen");
     }
 
-    public static MemoryAddress fdopen(int __fd, Addressable __modes) {
+    public static MemorySegment fdopen(int __fd, MemorySegment __modes) {
         var mh$ = fdopen$MH();
         try {
-            return (java.lang.foreign.MemoryAddress) mh$.invokeExact(__fd, __modes);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__fd, __modes);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -573,10 +571,10 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$2.fmemopen$MH, "fmemopen");
     }
 
-    public static MemoryAddress fmemopen(Addressable __s, long __len, Addressable __modes) {
+    public static MemorySegment fmemopen(MemorySegment __s, long __len, MemorySegment __modes) {
         var mh$ = fmemopen$MH();
         try {
-            return (java.lang.foreign.MemoryAddress) mh$.invokeExact(__s, __len, __modes);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__s, __len, __modes);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -586,10 +584,10 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$2.open_memstream$MH, "open_memstream");
     }
 
-    public static MemoryAddress open_memstream(Addressable __bufloc, Addressable __sizeloc) {
+    public static MemorySegment open_memstream(MemorySegment __bufloc, MemorySegment __sizeloc) {
         var mh$ = open_memstream$MH();
         try {
-            return (java.lang.foreign.MemoryAddress) mh$.invokeExact(__bufloc, __sizeloc);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__bufloc, __sizeloc);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -599,7 +597,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$3.setbuf$MH, "setbuf");
     }
 
-    public static void setbuf(Addressable __stream, Addressable __buf) {
+    public static void setbuf(MemorySegment __stream, MemorySegment __buf) {
         var mh$ = setbuf$MH();
         try {
             mh$.invokeExact(__stream, __buf);
@@ -612,7 +610,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$3.setvbuf$MH, "setvbuf");
     }
 
-    public static int setvbuf(Addressable __stream, Addressable __buf, int __modes, long __n) {
+    public static int setvbuf(MemorySegment __stream, MemorySegment __buf, int __modes, long __n) {
         var mh$ = setvbuf$MH();
         try {
             return (int) mh$.invokeExact(__stream, __buf, __modes, __n);
@@ -625,7 +623,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$3.setbuffer$MH, "setbuffer");
     }
 
-    public static void setbuffer(Addressable __stream, Addressable __buf, long __size) {
+    public static void setbuffer(MemorySegment __stream, MemorySegment __buf, long __size) {
         var mh$ = setbuffer$MH();
         try {
             mh$.invokeExact(__stream, __buf, __size);
@@ -638,7 +636,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$3.setlinebuf$MH, "setlinebuf");
     }
 
-    public static void setlinebuf(Addressable __stream) {
+    public static void setlinebuf(MemorySegment __stream) {
         var mh$ = setlinebuf$MH();
         try {
             mh$.invokeExact(__stream);
@@ -651,7 +649,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$3.fprintf$MH, "fprintf");
     }
 
-    public static int fprintf(Addressable __stream, Addressable __format, Object... x2) {
+    public static int fprintf(MemorySegment __stream, MemorySegment __format, Object... x2) {
         var mh$ = fprintf$MH();
         try {
             return (int) mh$.invokeExact(__stream, __format, x2);
@@ -664,7 +662,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$3.printf$MH, "printf");
     }
 
-    public static int printf(Addressable __format, Object... x1) {
+    public static int printf(MemorySegment __format, Object... x1) {
         var mh$ = printf$MH();
         try {
             return (int) mh$.invokeExact(__format, x1);
@@ -677,7 +675,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$4.sprintf$MH, "sprintf");
     }
 
-    public static int sprintf(Addressable __s, Addressable __format, Object... x2) {
+    public static int sprintf(MemorySegment __s, MemorySegment __format, Object... x2) {
         var mh$ = sprintf$MH();
         try {
             return (int) mh$.invokeExact(__s, __format, x2);
@@ -690,7 +688,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$4.vfprintf$MH, "vfprintf");
     }
 
-    public static int vfprintf(Addressable __s, Addressable __format, Addressable __arg) {
+    public static int vfprintf(MemorySegment __s, MemorySegment __format, MemorySegment __arg) {
         var mh$ = vfprintf$MH();
         try {
             return (int) mh$.invokeExact(__s, __format, __arg);
@@ -703,7 +701,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$4.vprintf$MH, "vprintf");
     }
 
-    public static int vprintf(Addressable __format, Addressable __arg) {
+    public static int vprintf(MemorySegment __format, MemorySegment __arg) {
         var mh$ = vprintf$MH();
         try {
             return (int) mh$.invokeExact(__format, __arg);
@@ -716,7 +714,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$4.vsprintf$MH, "vsprintf");
     }
 
-    public static int vsprintf(Addressable __s, Addressable __format, Addressable __arg) {
+    public static int vsprintf(MemorySegment __s, MemorySegment __format, MemorySegment __arg) {
         var mh$ = vsprintf$MH();
         try {
             return (int) mh$.invokeExact(__s, __format, __arg);
@@ -729,7 +727,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$4.snprintf$MH, "snprintf");
     }
 
-    public static int snprintf(Addressable __s, long __maxlen, Addressable __format, Object... x3) {
+    public static int snprintf(MemorySegment __s, long __maxlen, MemorySegment __format, Object... x3) {
         var mh$ = snprintf$MH();
         try {
             return (int) mh$.invokeExact(__s, __maxlen, __format, x3);
@@ -742,7 +740,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$4.vsnprintf$MH, "vsnprintf");
     }
 
-    public static int vsnprintf(Addressable __s, long __maxlen, Addressable __format, Addressable __arg) {
+    public static int vsnprintf(MemorySegment __s, long __maxlen, MemorySegment __format, MemorySegment __arg) {
         var mh$ = vsnprintf$MH();
         try {
             return (int) mh$.invokeExact(__s, __maxlen, __format, __arg);
@@ -755,7 +753,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$5.vdprintf$MH, "vdprintf");
     }
 
-    public static int vdprintf(int __fd, Addressable __fmt, Addressable __arg) {
+    public static int vdprintf(int __fd, MemorySegment __fmt, MemorySegment __arg) {
         var mh$ = vdprintf$MH();
         try {
             return (int) mh$.invokeExact(__fd, __fmt, __arg);
@@ -768,7 +766,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$5.dprintf$MH, "dprintf");
     }
 
-    public static int dprintf(int __fd, Addressable __fmt, Object... x2) {
+    public static int dprintf(int __fd, MemorySegment __fmt, Object... x2) {
         var mh$ = dprintf$MH();
         try {
             return (int) mh$.invokeExact(__fd, __fmt, x2);
@@ -781,7 +779,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$5.fscanf$MH, "fscanf");
     }
 
-    public static int fscanf(Addressable __stream, Addressable __format, Object... x2) {
+    public static int fscanf(MemorySegment __stream, MemorySegment __format, Object... x2) {
         var mh$ = fscanf$MH();
         try {
             return (int) mh$.invokeExact(__stream, __format, x2);
@@ -794,7 +792,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$5.scanf$MH, "scanf");
     }
 
-    public static int scanf(Addressable __format, Object... x1) {
+    public static int scanf(MemorySegment __format, Object... x1) {
         var mh$ = scanf$MH();
         try {
             return (int) mh$.invokeExact(__format, x1);
@@ -807,7 +805,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$5.sscanf$MH, "sscanf");
     }
 
-    public static int sscanf(Addressable __s, Addressable __format, Object... x2) {
+    public static int sscanf(MemorySegment __s, MemorySegment __format, Object... x2) {
         var mh$ = sscanf$MH();
         try {
             return (int) mh$.invokeExact(__s, __format, x2);
@@ -820,7 +818,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$5.vfscanf$MH, "vfscanf");
     }
 
-    public static int vfscanf(Addressable __s, Addressable __format, Addressable __arg) {
+    public static int vfscanf(MemorySegment __s, MemorySegment __format, MemorySegment __arg) {
         var mh$ = vfscanf$MH();
         try {
             return (int) mh$.invokeExact(__s, __format, __arg);
@@ -833,7 +831,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$6.vscanf$MH, "vscanf");
     }
 
-    public static int vscanf(Addressable __format, Addressable __arg) {
+    public static int vscanf(MemorySegment __format, MemorySegment __arg) {
         var mh$ = vscanf$MH();
         try {
             return (int) mh$.invokeExact(__format, __arg);
@@ -846,7 +844,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$6.vsscanf$MH, "vsscanf");
     }
 
-    public static int vsscanf(Addressable __s, Addressable __format, Addressable __arg) {
+    public static int vsscanf(MemorySegment __s, MemorySegment __format, MemorySegment __arg) {
         var mh$ = vsscanf$MH();
         try {
             return (int) mh$.invokeExact(__s, __format, __arg);
@@ -859,7 +857,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$6.fgetc$MH, "fgetc");
     }
 
-    public static int fgetc(Addressable __stream) {
+    public static int fgetc(MemorySegment __stream) {
         var mh$ = fgetc$MH();
         try {
             return (int) mh$.invokeExact(__stream);
@@ -872,7 +870,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$6.getc$MH, "getc");
     }
 
-    public static int getc(Addressable __stream) {
+    public static int getc(MemorySegment __stream) {
         var mh$ = getc$MH();
         try {
             return (int) mh$.invokeExact(__stream);
@@ -898,7 +896,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$6.getc_unlocked$MH, "getc_unlocked");
     }
 
-    public static int getc_unlocked(Addressable __stream) {
+    public static int getc_unlocked(MemorySegment __stream) {
         var mh$ = getc_unlocked$MH();
         try {
             return (int) mh$.invokeExact(__stream);
@@ -924,7 +922,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$7.fgetc_unlocked$MH, "fgetc_unlocked");
     }
 
-    public static int fgetc_unlocked(Addressable __stream) {
+    public static int fgetc_unlocked(MemorySegment __stream) {
         var mh$ = fgetc_unlocked$MH();
         try {
             return (int) mh$.invokeExact(__stream);
@@ -937,7 +935,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$7.fputc$MH, "fputc");
     }
 
-    public static int fputc(int __c, Addressable __stream) {
+    public static int fputc(int __c, MemorySegment __stream) {
         var mh$ = fputc$MH();
         try {
             return (int) mh$.invokeExact(__c, __stream);
@@ -950,7 +948,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$7.putc$MH, "putc");
     }
 
-    public static int putc(int __c, Addressable __stream) {
+    public static int putc(int __c, MemorySegment __stream) {
         var mh$ = putc$MH();
         try {
             return (int) mh$.invokeExact(__c, __stream);
@@ -976,7 +974,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$7.fputc_unlocked$MH, "fputc_unlocked");
     }
 
-    public static int fputc_unlocked(int __c, Addressable __stream) {
+    public static int fputc_unlocked(int __c, MemorySegment __stream) {
         var mh$ = fputc_unlocked$MH();
         try {
             return (int) mh$.invokeExact(__c, __stream);
@@ -989,7 +987,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$8.putc_unlocked$MH, "putc_unlocked");
     }
 
-    public static int putc_unlocked(int __c, Addressable __stream) {
+    public static int putc_unlocked(int __c, MemorySegment __stream) {
         var mh$ = putc_unlocked$MH();
         try {
             return (int) mh$.invokeExact(__c, __stream);
@@ -1015,7 +1013,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$8.getw$MH, "getw");
     }
 
-    public static int getw(Addressable __stream) {
+    public static int getw(MemorySegment __stream) {
         var mh$ = getw$MH();
         try {
             return (int) mh$.invokeExact(__stream);
@@ -1028,7 +1026,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$8.putw$MH, "putw");
     }
 
-    public static int putw(int __w, Addressable __stream) {
+    public static int putw(int __w, MemorySegment __stream) {
         var mh$ = putw$MH();
         try {
             return (int) mh$.invokeExact(__w, __stream);
@@ -1041,10 +1039,10 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$8.fgets$MH, "fgets");
     }
 
-    public static MemoryAddress fgets(Addressable __s, int __n, Addressable __stream) {
+    public static MemorySegment fgets(MemorySegment __s, int __n, MemorySegment __stream) {
         var mh$ = fgets$MH();
         try {
-            return (java.lang.foreign.MemoryAddress) mh$.invokeExact(__s, __n, __stream);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__s, __n, __stream);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -1054,7 +1052,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$8.__getdelim$MH, "__getdelim");
     }
 
-    public static long __getdelim(Addressable __lineptr, Addressable __n, int __delimiter, Addressable __stream) {
+    public static long __getdelim(MemorySegment __lineptr, MemorySegment __n, int __delimiter, MemorySegment __stream) {
         var mh$ = __getdelim$MH();
         try {
             return (long) mh$.invokeExact(__lineptr, __n, __delimiter, __stream);
@@ -1067,7 +1065,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$9.getdelim$MH, "getdelim");
     }
 
-    public static long getdelim(Addressable __lineptr, Addressable __n, int __delimiter, Addressable __stream) {
+    public static long getdelim(MemorySegment __lineptr, MemorySegment __n, int __delimiter, MemorySegment __stream) {
         var mh$ = getdelim$MH();
         try {
             return (long) mh$.invokeExact(__lineptr, __n, __delimiter, __stream);
@@ -1080,7 +1078,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$9.getline$MH, "getline");
     }
 
-    public static long getline(Addressable __lineptr, Addressable __n, Addressable __stream) {
+    public static long getline(MemorySegment __lineptr, MemorySegment __n, MemorySegment __stream) {
         var mh$ = getline$MH();
         try {
             return (long) mh$.invokeExact(__lineptr, __n, __stream);
@@ -1093,7 +1091,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$9.fputs$MH, "fputs");
     }
 
-    public static int fputs(Addressable __s, Addressable __stream) {
+    public static int fputs(MemorySegment __s, MemorySegment __stream) {
         var mh$ = fputs$MH();
         try {
             return (int) mh$.invokeExact(__s, __stream);
@@ -1106,7 +1104,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$9.puts$MH, "puts");
     }
 
-    public static int puts(Addressable __s) {
+    public static int puts(MemorySegment __s) {
         var mh$ = puts$MH();
         try {
             return (int) mh$.invokeExact(__s);
@@ -1119,7 +1117,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$9.ungetc$MH, "ungetc");
     }
 
-    public static int ungetc(int __c, Addressable __stream) {
+    public static int ungetc(int __c, MemorySegment __stream) {
         var mh$ = ungetc$MH();
         try {
             return (int) mh$.invokeExact(__c, __stream);
@@ -1132,7 +1130,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$9.fread$MH, "fread");
     }
 
-    public static long fread(Addressable __ptr, long __size, long __n, Addressable __stream) {
+    public static long fread(MemorySegment __ptr, long __size, long __n, MemorySegment __stream) {
         var mh$ = fread$MH();
         try {
             return (long) mh$.invokeExact(__ptr, __size, __n, __stream);
@@ -1145,7 +1143,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$10.fwrite$MH, "fwrite");
     }
 
-    public static long fwrite(Addressable __ptr, long __size, long __n, Addressable __s) {
+    public static long fwrite(MemorySegment __ptr, long __size, long __n, MemorySegment __s) {
         var mh$ = fwrite$MH();
         try {
             return (long) mh$.invokeExact(__ptr, __size, __n, __s);
@@ -1158,7 +1156,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$10.fread_unlocked$MH, "fread_unlocked");
     }
 
-    public static long fread_unlocked(Addressable __ptr, long __size, long __n, Addressable __stream) {
+    public static long fread_unlocked(MemorySegment __ptr, long __size, long __n, MemorySegment __stream) {
         var mh$ = fread_unlocked$MH();
         try {
             return (long) mh$.invokeExact(__ptr, __size, __n, __stream);
@@ -1171,7 +1169,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$10.fwrite_unlocked$MH, "fwrite_unlocked");
     }
 
-    public static long fwrite_unlocked(Addressable __ptr, long __size, long __n, Addressable __stream) {
+    public static long fwrite_unlocked(MemorySegment __ptr, long __size, long __n, MemorySegment __stream) {
         var mh$ = fwrite_unlocked$MH();
         try {
             return (long) mh$.invokeExact(__ptr, __size, __n, __stream);
@@ -1184,7 +1182,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$10.fseek$MH, "fseek");
     }
 
-    public static int fseek(Addressable __stream, long __off, int __whence) {
+    public static int fseek(MemorySegment __stream, long __off, int __whence) {
         var mh$ = fseek$MH();
         try {
             return (int) mh$.invokeExact(__stream, __off, __whence);
@@ -1197,7 +1195,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$10.ftell$MH, "ftell");
     }
 
-    public static long ftell(Addressable __stream) {
+    public static long ftell(MemorySegment __stream) {
         var mh$ = ftell$MH();
         try {
             return (long) mh$.invokeExact(__stream);
@@ -1210,7 +1208,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$10.rewind$MH, "rewind");
     }
 
-    public static void rewind(Addressable __stream) {
+    public static void rewind(MemorySegment __stream) {
         var mh$ = rewind$MH();
         try {
             mh$.invokeExact(__stream);
@@ -1223,7 +1221,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$11.fseeko$MH, "fseeko");
     }
 
-    public static int fseeko(Addressable __stream, long __off, int __whence) {
+    public static int fseeko(MemorySegment __stream, long __off, int __whence) {
         var mh$ = fseeko$MH();
         try {
             return (int) mh$.invokeExact(__stream, __off, __whence);
@@ -1236,7 +1234,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$11.ftello$MH, "ftello");
     }
 
-    public static long ftello(Addressable __stream) {
+    public static long ftello(MemorySegment __stream) {
         var mh$ = ftello$MH();
         try {
             return (long) mh$.invokeExact(__stream);
@@ -1249,7 +1247,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$11.fgetpos$MH, "fgetpos");
     }
 
-    public static int fgetpos(Addressable __stream, Addressable __pos) {
+    public static int fgetpos(MemorySegment __stream, MemorySegment __pos) {
         var mh$ = fgetpos$MH();
         try {
             return (int) mh$.invokeExact(__stream, __pos);
@@ -1262,7 +1260,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$11.fsetpos$MH, "fsetpos");
     }
 
-    public static int fsetpos(Addressable __stream, Addressable __pos) {
+    public static int fsetpos(MemorySegment __stream, MemorySegment __pos) {
         var mh$ = fsetpos$MH();
         try {
             return (int) mh$.invokeExact(__stream, __pos);
@@ -1275,7 +1273,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$11.clearerr$MH, "clearerr");
     }
 
-    public static void clearerr(Addressable __stream) {
+    public static void clearerr(MemorySegment __stream) {
         var mh$ = clearerr$MH();
         try {
             mh$.invokeExact(__stream);
@@ -1288,7 +1286,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$11.feof$MH, "feof");
     }
 
-    public static int feof(Addressable __stream) {
+    public static int feof(MemorySegment __stream) {
         var mh$ = feof$MH();
         try {
             return (int) mh$.invokeExact(__stream);
@@ -1301,7 +1299,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$12.ferror$MH, "ferror");
     }
 
-    public static int ferror(Addressable __stream) {
+    public static int ferror(MemorySegment __stream) {
         var mh$ = ferror$MH();
         try {
             return (int) mh$.invokeExact(__stream);
@@ -1314,7 +1312,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$12.clearerr_unlocked$MH, "clearerr_unlocked");
     }
 
-    public static void clearerr_unlocked(Addressable __stream) {
+    public static void clearerr_unlocked(MemorySegment __stream) {
         var mh$ = clearerr_unlocked$MH();
         try {
             mh$.invokeExact(__stream);
@@ -1327,7 +1325,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$12.feof_unlocked$MH, "feof_unlocked");
     }
 
-    public static int feof_unlocked(Addressable __stream) {
+    public static int feof_unlocked(MemorySegment __stream) {
         var mh$ = feof_unlocked$MH();
         try {
             return (int) mh$.invokeExact(__stream);
@@ -1340,7 +1338,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$12.ferror_unlocked$MH, "ferror_unlocked");
     }
 
-    public static int ferror_unlocked(Addressable __stream) {
+    public static int ferror_unlocked(MemorySegment __stream) {
         var mh$ = ferror_unlocked$MH();
         try {
             return (int) mh$.invokeExact(__stream);
@@ -1353,7 +1351,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$12.perror$MH, "perror");
     }
 
-    public static void perror(Addressable __s) {
+    public static void perror(MemorySegment __s) {
         var mh$ = perror$MH();
         try {
             mh$.invokeExact(__s);
@@ -1386,7 +1384,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$13.fileno$MH, "fileno");
     }
 
-    public static int fileno(Addressable __stream) {
+    public static int fileno(MemorySegment __stream) {
         var mh$ = fileno$MH();
         try {
             return (int) mh$.invokeExact(__stream);
@@ -1399,7 +1397,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$13.fileno_unlocked$MH, "fileno_unlocked");
     }
 
-    public static int fileno_unlocked(Addressable __stream) {
+    public static int fileno_unlocked(MemorySegment __stream) {
         var mh$ = fileno_unlocked$MH();
         try {
             return (int) mh$.invokeExact(__stream);
@@ -1412,10 +1410,10 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$13.popen$MH, "popen");
     }
 
-    public static MemoryAddress popen(Addressable __command, Addressable __modes) {
+    public static MemorySegment popen(MemorySegment __command, MemorySegment __modes) {
         var mh$ = popen$MH();
         try {
-            return (java.lang.foreign.MemoryAddress) mh$.invokeExact(__command, __modes);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__command, __modes);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -1425,7 +1423,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$13.pclose$MH, "pclose");
     }
 
-    public static int pclose(Addressable __stream) {
+    public static int pclose(MemorySegment __stream) {
         var mh$ = pclose$MH();
         try {
             return (int) mh$.invokeExact(__stream);
@@ -1438,10 +1436,10 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$13.ctermid$MH, "ctermid");
     }
 
-    public static MemoryAddress ctermid(Addressable __s) {
+    public static MemorySegment ctermid(MemorySegment __s) {
         var mh$ = ctermid$MH();
         try {
-            return (java.lang.foreign.MemoryAddress) mh$.invokeExact(__s);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__s);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -1451,7 +1449,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$14.flockfile$MH, "flockfile");
     }
 
-    public static void flockfile(Addressable __stream) {
+    public static void flockfile(MemorySegment __stream) {
         var mh$ = flockfile$MH();
         try {
             mh$.invokeExact(__stream);
@@ -1464,7 +1462,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$14.ftrylockfile$MH, "ftrylockfile");
     }
 
-    public static int ftrylockfile(Addressable __stream) {
+    public static int ftrylockfile(MemorySegment __stream) {
         var mh$ = ftrylockfile$MH();
         try {
             return (int) mh$.invokeExact(__stream);
@@ -1477,7 +1475,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$14.funlockfile$MH, "funlockfile");
     }
 
-    public static void funlockfile(Addressable __stream) {
+    public static void funlockfile(MemorySegment __stream) {
         var mh$ = funlockfile$MH();
         try {
             mh$.invokeExact(__stream);
@@ -1490,7 +1488,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$14.__uflow$MH, "__uflow");
     }
 
-    public static int __uflow(Addressable x0) {
+    public static int __uflow(MemorySegment x0) {
         var mh$ = __uflow$MH();
         try {
             return (int) mh$.invokeExact(x0);
@@ -1503,7 +1501,7 @@ public class stdio_h {
         return RuntimeHelper.requireNonNull(constants$14.__overflow$MH, "__overflow");
     }
 
-    public static int __overflow(Addressable x0, int x1) {
+    public static int __overflow(MemorySegment x0, int x1) {
         var mh$ = __overflow$MH();
         try {
             return (int) mh$.invokeExact(x0, x1);
@@ -1520,7 +1518,7 @@ public class stdio_h {
         return 201706L;
     }
 
-    public static MemoryAddress NULL() {
+    public static MemorySegment NULL() {
         return constants$14.NULL$ADDR;
     }
 

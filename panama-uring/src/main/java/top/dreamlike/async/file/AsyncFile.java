@@ -12,8 +12,8 @@ import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Unsafe;
 import top.dreamlike.nativeLib.unistd.unistd_h;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.time.Duration;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -34,7 +34,7 @@ public class AsyncFile extends PlainAsyncFd {
 
     public AsyncFile(String path, IOUringEventLoop eventLoop, int ops) {
         super(eventLoop);
-        try (MemorySession allocator = MemorySession.openConfined()) {
+        try (Arena allocator = Arena.openConfined()) {
             MemorySegment filePath = allocator.allocateUtf8String(path);
             fd = open(filePath, ops);
             if (fd < 0) {

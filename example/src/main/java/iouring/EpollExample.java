@@ -2,8 +2,8 @@ package iouring;
 
 import top.dreamlike.epoll.Epoll;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.util.ArrayList;
 
 import static top.dreamlike.nativeLib.epoll.epoll_h.EPOLLIN;
@@ -15,7 +15,7 @@ import static top.dreamlike.nativeLib.unistd.unistd_h.read;
  */
 public class EpollExample {
     public static void main(String[] args) {
-        try (MemorySession allocator = MemorySession.openConfined()) {
+        try (Arena allocator = Arena.openConfined()) {
             MemorySegment memorySegment = allocator.allocate(1024);
             int flags = fcntl(0, F_GETFL(), 0);
             int res = fcntl(0, F_SETFL(), flags | O_NONBLOCK());

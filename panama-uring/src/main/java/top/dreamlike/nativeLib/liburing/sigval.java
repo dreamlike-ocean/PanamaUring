@@ -2,8 +2,8 @@
 
 package top.dreamlike.nativeLib.liburing;
 
-import java.lang.invoke.VarHandle;
 import java.lang.foreign.*;
+import java.lang.invoke.VarHandle;
 
 public class sigval {
 
@@ -24,34 +24,52 @@ public class sigval {
     public static void sival_int$set( MemorySegment seg, int x) {
         sigval.sival_int$VH.set(seg, x);
     }
+
     public static int sival_int$get(MemorySegment seg, long index) {
-        return (int)sigval.sival_int$VH.get(seg.asSlice(index*sizeof()));
+        return (int) sigval.sival_int$VH.get(seg.asSlice(index * sizeof()));
     }
+
     public static void sival_int$set(MemorySegment seg, long index, int x) {
-        sigval.sival_int$VH.set(seg.asSlice(index*sizeof()), x);
+        sigval.sival_int$VH.set(seg.asSlice(index * sizeof()), x);
     }
+
     static final VarHandle sival_ptr$VH = $union$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("sival_ptr"));
+
     public static VarHandle sival_ptr$VH() {
         return sigval.sival_ptr$VH;
     }
-    public static MemoryAddress sival_ptr$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress)sigval.sival_ptr$VH.get(seg);
+
+    public static MemorySegment sival_ptr$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) sigval.sival_ptr$VH.get(seg);
     }
-    public static void sival_ptr$set( MemorySegment seg, MemoryAddress x) {
+
+    public static void sival_ptr$set(MemorySegment seg, MemorySegment x) {
         sigval.sival_ptr$VH.set(seg, x);
     }
-    public static MemoryAddress sival_ptr$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress)sigval.sival_ptr$VH.get(seg.asSlice(index*sizeof()));
+
+    public static MemorySegment sival_ptr$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) sigval.sival_ptr$VH.get(seg.asSlice(index * sizeof()));
     }
-    public static void sival_ptr$set(MemorySegment seg, long index, MemoryAddress x) {
-        sigval.sival_ptr$VH.set(seg.asSlice(index*sizeof()), x);
+
+    public static void sival_ptr$set(MemorySegment seg, long index, MemorySegment x) {
+        sigval.sival_ptr$VH.set(seg.asSlice(index * sizeof()), x);
     }
-    public static long sizeof() { return $LAYOUT().byteSize(); }
-    public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
+
+    public static long sizeof() {
+        return $LAYOUT().byteSize();
+    }
+
+    public static MemorySegment allocate(SegmentAllocator allocator) {
+        return allocator.allocate($LAYOUT());
+    }
+
     public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
         return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
     }
-    public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) { return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session); }
+
+    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
+        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
+    }
 }
 
 

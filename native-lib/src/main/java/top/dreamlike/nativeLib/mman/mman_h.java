@@ -2,8 +2,7 @@
 
 package top.dreamlike.nativeLib.mman;
 
-import java.lang.foreign.Addressable;
-import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.ValueLayout.*;
@@ -455,10 +454,10 @@ public class mman_h {
         return RuntimeHelper.requireNonNull(constants$0.mmap$MH, "mmap");
     }
 
-    public static MemoryAddress mmap(Addressable __addr, long __len, int __prot, int __flags, int __fd, long __offset) {
+    public static MemorySegment mmap(MemorySegment __addr, long __len, int __prot, int __flags, int __fd, long __offset) {
         var mh$ = mmap$MH();
         try {
-            return (java.lang.foreign.MemoryAddress) mh$.invokeExact(__addr, __len, __prot, __flags, __fd, __offset);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__addr, __len, __prot, __flags, __fd, __offset);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -468,7 +467,7 @@ public class mman_h {
         return RuntimeHelper.requireNonNull(constants$0.munmap$MH, "munmap");
     }
 
-    public static int munmap(Addressable __addr, long __len) {
+    public static int munmap(MemorySegment __addr, long __len) {
         var mh$ = munmap$MH();
         try {
             return (int) mh$.invokeExact(__addr, __len);
@@ -481,7 +480,7 @@ public class mman_h {
         return RuntimeHelper.requireNonNull(constants$0.mprotect$MH, "mprotect");
     }
 
-    public static int mprotect(Addressable __addr, long __len, int __prot) {
+    public static int mprotect(MemorySegment __addr, long __len, int __prot) {
         var mh$ = mprotect$MH();
         try {
             return (int) mh$.invokeExact(__addr, __len, __prot);
@@ -494,7 +493,7 @@ public class mman_h {
         return RuntimeHelper.requireNonNull(constants$0.msync$MH, "msync");
     }
 
-    public static int msync(Addressable __addr, long __len, int __flags) {
+    public static int msync(MemorySegment __addr, long __len, int __flags) {
         var mh$ = msync$MH();
         try {
             return (int) mh$.invokeExact(__addr, __len, __flags);
@@ -507,7 +506,7 @@ public class mman_h {
         return RuntimeHelper.requireNonNull(constants$0.madvise$MH, "madvise");
     }
 
-    public static int madvise(Addressable __addr, long __len, int __advice) {
+    public static int madvise(MemorySegment __addr, long __len, int __advice) {
         var mh$ = madvise$MH();
         try {
             return (int) mh$.invokeExact(__addr, __len, __advice);
@@ -520,7 +519,7 @@ public class mman_h {
         return RuntimeHelper.requireNonNull(constants$0.posix_madvise$MH, "posix_madvise");
     }
 
-    public static int posix_madvise(Addressable __addr, long __len, int __advice) {
+    public static int posix_madvise(MemorySegment __addr, long __len, int __advice) {
         var mh$ = posix_madvise$MH();
         try {
             return (int) mh$.invokeExact(__addr, __len, __advice);
@@ -533,7 +532,7 @@ public class mman_h {
         return RuntimeHelper.requireNonNull(constants$1.mlock$MH, "mlock");
     }
 
-    public static int mlock(Addressable __addr, long __len) {
+    public static int mlock(MemorySegment __addr, long __len) {
         var mh$ = mlock$MH();
         try {
             return (int) mh$.invokeExact(__addr, __len);
@@ -546,7 +545,7 @@ public class mman_h {
         return RuntimeHelper.requireNonNull(constants$1.munlock$MH, "munlock");
     }
 
-    public static int munlock(Addressable __addr, long __len) {
+    public static int munlock(MemorySegment __addr, long __len) {
         var mh$ = munlock$MH();
         try {
             return (int) mh$.invokeExact(__addr, __len);
@@ -585,7 +584,7 @@ public class mman_h {
         return RuntimeHelper.requireNonNull(constants$1.mincore$MH, "mincore");
     }
 
-    public static int mincore(Addressable __start, long __len, Addressable __vec) {
+    public static int mincore(MemorySegment __start, long __len, MemorySegment __vec) {
         var mh$ = mincore$MH();
         try {
             return (int) mh$.invokeExact(__start, __len, __vec);
@@ -598,7 +597,7 @@ public class mman_h {
         return RuntimeHelper.requireNonNull(constants$1.shm_open$MH, "shm_open");
     }
 
-    public static int shm_open(Addressable __name, int __oflag, int __mode) {
+    public static int shm_open(MemorySegment __name, int __oflag, int __mode) {
         var mh$ = shm_open$MH();
         try {
             return (int) mh$.invokeExact(__name, __oflag, __mode);
@@ -611,7 +610,7 @@ public class mman_h {
         return RuntimeHelper.requireNonNull(constants$2.shm_unlink$MH, "shm_unlink");
     }
 
-    public static int shm_unlink(Addressable __name) {
+    public static int shm_unlink(MemorySegment __name) {
         var mh$ = shm_unlink$MH();
         try {
             return (int) mh$.invokeExact(__name);
@@ -636,7 +635,7 @@ public class mman_h {
         return (int) 32L;
     }
 
-    public static MemoryAddress MAP_FAILED() {
+    public static MemorySegment MAP_FAILED() {
         return constants$2.MAP_FAILED$ADDR;
     }
 }

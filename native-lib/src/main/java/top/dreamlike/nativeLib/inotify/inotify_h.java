@@ -2,7 +2,7 @@
 
 package top.dreamlike.nativeLib.inotify;
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.ValueLayout.*;
@@ -391,7 +391,7 @@ public class inotify_h {
         return RuntimeHelper.requireNonNull(constants$0.inotify_add_watch$MH, "inotify_add_watch");
     }
 
-    public static int inotify_add_watch(int __fd, Addressable __name, int __mask) {
+    public static int inotify_add_watch(int __fd, MemorySegment __name, int __mask) {
         var mh$ = inotify_add_watch$MH();
         try {
             return (int) mh$.invokeExact(__fd, __name, __mask);

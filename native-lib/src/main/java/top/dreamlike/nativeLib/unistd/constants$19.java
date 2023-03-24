@@ -2,7 +2,6 @@
 
 package top.dreamlike.nativeLib.unistd;
 
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
 
 class constants$19 {
@@ -11,7 +10,7 @@ class constants$19 {
     static final MemorySegment __ILP32_OFFBIG_LDFLAGS$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("-m32");
     static final MemorySegment __LP64_OFF64_CFLAGS$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("-m64");
     static final MemorySegment __LP64_OFF64_LDFLAGS$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("-m64");
-    static final MemoryAddress NULL$ADDR = MemoryAddress.ofLong(0L);
+    static final MemorySegment NULL$ADDR = MemorySegment.NULL;
 }
 
 

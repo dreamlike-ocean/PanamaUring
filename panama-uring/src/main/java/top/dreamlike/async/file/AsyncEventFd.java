@@ -5,8 +5,8 @@ import top.dreamlike.eventloop.IOUringEventLoop;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.util.concurrent.CompletableFuture;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
@@ -26,7 +26,7 @@ public class AsyncEventFd extends PlainAsyncFd {
     }
 
     public CompletableFuture<Integer> write(long count) {
-        MemorySession shared = MemorySession.openShared();
+        Arena shared = Arena.openShared();
         MemorySegment writeBuf = shared.allocate(JAVA_LONG, count);
         return writeUnsafe(0, writeBuf)
                 .whenComplete((__, ___) -> {
@@ -35,7 +35,7 @@ public class AsyncEventFd extends PlainAsyncFd {
     }
 
     public CompletableFuture<Long> read() {
-        MemorySession shared = MemorySession.openShared();
+        Arena shared = Arena.openShared();
         MemorySegment writeBuf = shared.allocate(JAVA_LONG, 0);
         return readUnsafe(0, writeBuf)
                 .thenCompose(res -> res < 0 ? CompletableFuture.failedFuture(new NativeCallException(NativeHelper.getErrorStr(-res))) : CompletableFuture.completedFuture(writeBuf.get(JAVA_LONG, 0)))

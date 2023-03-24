@@ -33,7 +33,7 @@
 //    @Test
 //    public void writeFile(){
 //        //RAII
-//        try (MemorySession session = MemorySession.openConfined()) {
+//        try (Arena session = Arena.openConfined()) {
 //            MemorySegment filePath = session.allocateUtf8String("demo.txt");
 //            var fd = open(filePath, O_RDWR() |O_APPEND());
 //            if (fd == -1){
@@ -59,7 +59,7 @@
 //        //int getpid()
 //        FunctionDescriptor getPidFunctionDesc= FunctionDescriptor.of(JAVA_INT.withBitAlignment(32));
 //        Linker nativeLinker = Linker.nativeLinker();
-//        MethodHandle getpid = nativeLinker.downcallHandle(nativeLinker.defaultLookup().lookup("getpid").get(), getPidFunctionDesc);
+//        MethodHandle getpid = nativeLinker.downcallHandle(nativeLinker.defaultLookup().find("getpid").get(), getPidFunctionDesc);
 //        int pid = (int)getpid.invokeExact();
 //        System.out.println(pid);
 //        new Scanner(System.in).nextLine();
@@ -68,7 +68,7 @@
 //
 //    @Test
 //    public void epollAndIoUring(){
-//        MemorySession session = MemorySession.openImplicit();
+//        Arena session =SegmentScope.auto();
 //        Epoll epoll = new Epoll();
 //
 //        IOUringEventLoop loop = new IOUringEventLoop(16, 4, -1);
@@ -145,10 +145,10 @@
 //    @Test
 //    public void eventfd(){
 //        int eventfd = eventfd_h.eventfd(0, 0);
-//        MemorySession memorySession = MemorySession.openShared();
+//        Arena session = Arena.openShared();
 //
 //        new Thread(()->{
-//            MemorySegment c1 = memorySession.allocate(eventfd_h.C_LONG);
+//            MemorySegment c1 = Arena.allocate(eventfd_h.C_LONG);
 //            c1.set(eventfd_h.C_LONG,0,1);
 //            try {
 //                Thread.sleep(1000);
@@ -157,7 +157,7 @@
 //            }
 //            long read = write(eventfd, c1, eventfd_h.C_LONG.byteSize());
 //        }).start();
-//        MemorySegment count = memorySession.allocate(eventfd_h.C_LONG);
+//        MemorySegment count = Arena.allocate(eventfd_h.C_LONG);
 //        long read = read(eventfd, count, eventfd_h.C_LONG.byteSize());
 //        System.out.println(count.get(eventfd_h.C_LONG,0));
 //    }

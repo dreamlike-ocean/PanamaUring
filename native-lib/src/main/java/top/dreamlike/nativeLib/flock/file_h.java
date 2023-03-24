@@ -2,7 +2,7 @@
 
 package top.dreamlike.nativeLib.flock;
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.ValueLayout.*;
@@ -625,7 +625,7 @@ public class file_h {
         return RuntimeHelper.requireNonNull(constants$0.open$MH, "open");
     }
 
-    public static int open(Addressable __file, int __oflag, Object... x2) {
+    public static int open(MemorySegment __file, int __oflag, Object... x2) {
         var mh$ = open$MH();
         try {
             return (int) mh$.invokeExact(__file, __oflag, x2);
@@ -638,7 +638,7 @@ public class file_h {
         return RuntimeHelper.requireNonNull(constants$0.openat$MH, "openat");
     }
 
-    public static int openat(int __fd, Addressable __file, int __oflag, Object... x3) {
+    public static int openat(int __fd, MemorySegment __file, int __oflag, Object... x3) {
         var mh$ = openat$MH();
         try {
             return (int) mh$.invokeExact(__fd, __file, __oflag, x3);
@@ -651,7 +651,7 @@ public class file_h {
         return RuntimeHelper.requireNonNull(constants$0.creat$MH, "creat");
     }
 
-    public static int creat(Addressable __file, int __mode) {
+    public static int creat(MemorySegment __file, int __mode) {
         var mh$ = creat$MH();
         try {
             return (int) mh$.invokeExact(__file, __mode);

@@ -2,7 +2,7 @@
 
 package top.dreamlike.nativeLib.fcntl;
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.ValueLayout.*;
@@ -463,41 +463,48 @@ public class fcntl_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle open$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.open$MH,"open");
+        return RuntimeHelper.requireNonNull(constants$0.open$MH, "open");
     }
-    public static int open ( Addressable __file,  int __oflag, Object... x2) {
+
+    public static int open(MemorySegment __file, int __oflag, Object... x2) {
         var mh$ = open$MH();
         try {
-            return (int)mh$.invokeExact(__file, __oflag, x2);
+            return (int) mh$.invokeExact(__file, __oflag, x2);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle openat$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.openat$MH,"openat");
+        return RuntimeHelper.requireNonNull(constants$0.openat$MH, "openat");
     }
-    public static int openat ( int __fd,  Addressable __file,  int __oflag, Object... x3) {
+
+    public static int openat(int __fd, MemorySegment __file, int __oflag, Object... x3) {
         var mh$ = openat$MH();
         try {
-            return (int)mh$.invokeExact(__fd, __file, __oflag, x3);
+            return (int) mh$.invokeExact(__fd, __file, __oflag, x3);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle creat$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.creat$MH,"creat");
+        return RuntimeHelper.requireNonNull(constants$0.creat$MH, "creat");
     }
-    public static int creat ( Addressable __file,  int __mode) {
+
+    public static int creat(MemorySegment __file, int __mode) {
         var mh$ = creat$MH();
         try {
-            return (int)mh$.invokeExact(__file, __mode);
+            return (int) mh$.invokeExact(__file, __mode);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle lockf$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.lockf$MH,"lockf");
+        return RuntimeHelper.requireNonNull(constants$0.lockf$MH, "lockf");
     }
     public static int lockf ( int __fd,  int __cmd,  long __len) {
         var mh$ = lockf$MH();

@@ -5,10 +5,7 @@ package top.dreamlike.nativeLib.liburing;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 
-import java.lang.foreign.Addressable;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.lang.invoke.MethodHandle;
 
 import static top.dreamlike.nativeLib.liburing.liburing_h.*;
@@ -16,9 +13,10 @@ import static top.dreamlike.nativeLib.liburing.liburing_h.*;
 class liburing_h_1 {
 
     public static MethodHandle io_uring_prep_timeout$MH() {
-        return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_timeout$MH,"io_uring_prep_timeout");
+        return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_timeout$MH, "io_uring_prep_timeout");
     }
-    public static void io_uring_prep_timeout ( Addressable sqe,  Addressable ts,  int count,  int flags) {
+
+    public static void io_uring_prep_timeout(MemorySegment sqe, MemorySegment ts, int count, int flags) {
         //static inline void io_uring_prep_timeout(struct io_uring_sqe *sqe,
         //					 struct __kernel_timespec *ts,
         //					 unsigned count, unsigned flags)
@@ -26,13 +24,15 @@ class liburing_h_1 {
         //	io_uring_prep_rw(IORING_OP_TIMEOUT, sqe, -1, ts, 1, count);
         //	sqe->timeout_flags = flags;
         //}
-        io_uring_prep_rw(IORING_OP_TIMEOUT(), sqe, -1, ts,1, count);
-        io_uring_sqe.timeout_flags$set((MemorySegment) sqe,flags);
+        io_uring_prep_rw(IORING_OP_TIMEOUT(), sqe, -1, ts, 1, count);
+        io_uring_sqe.timeout_flags$set(sqe, flags);
     }
+
     public static MethodHandle io_uring_prep_timeout_remove$MH() {
-        return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_timeout_remove$MH,"io_uring_prep_timeout_remove");
+        return RuntimeHelper.requireNonNull(constants$30.io_uring_prep_timeout_remove$MH, "io_uring_prep_timeout_remove");
     }
-    public static void io_uring_prep_timeout_remove ( Addressable sqe,  long user_data,  int flags) {
+
+    public static void io_uring_prep_timeout_remove(MemorySegment sqe, long user_data, int flags) {
         var mh$ = io_uring_prep_timeout_remove$MH();
         try {
             mh$.invokeExact(sqe, user_data, flags);
@@ -40,10 +40,12 @@ class liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_prep_timeout_update$MH() {
-        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_timeout_update$MH,"io_uring_prep_timeout_update");
+        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_timeout_update$MH, "io_uring_prep_timeout_update");
     }
-    public static void io_uring_prep_timeout_update ( Addressable sqe,  Addressable ts,  long user_data,  int flags) {
+
+    public static void io_uring_prep_timeout_update(MemorySegment sqe, MemorySegment ts, long user_data, int flags) {
         var mh$ = io_uring_prep_timeout_update$MH();
         try {
             mh$.invokeExact(sqe, ts, user_data, flags);
@@ -56,19 +58,19 @@ class liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_accept$MH, "io_uring_prep_accept");
     }
 
-    public static void io_uring_prep_accept(Addressable sqe, int fd, Addressable addr, Addressable addrlen, int flags) {
-        io_uring_prep_rw(IORING_OP_ACCEPT(), sqe, fd, addr, 0, addrlen.address().toRawLongValue());
-        MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe.address());
+    public static void io_uring_prep_accept(MemorySegment sqe, int fd, MemorySegment addr, MemorySegment addrlen, int flags) {
+        io_uring_prep_rw(IORING_OP_ACCEPT(), sqe, fd, addr, 0, addrlen.address());
+        MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe);
         io_uring_sqe.accept_flags$set(sqeSegment, flags);
     }
 
-    public static void io_uring_prep_multishot_accept(Addressable sqe, int fd, Addressable addr, Addressable addrlen, int flags) {
+    public static void io_uring_prep_multishot_accept(MemorySegment sqe, int fd, MemorySegment addr, MemorySegment addrlen, int flags) {
         if (!NativeHelper.compareWithCurrentLinuxVersion(5, 19)) {
             throw new NativeCallException("need linux kernal > 5.19");
         }
         io_uring_prep_accept(sqe, fd, addr, addrlen, flags);
 //        sqe->ioprio |= IORING_ACCEPT_MULTISHOT;
-        MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe.address());
+        MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe);
         short prio = io_uring_sqe.ioprio$get(sqeSegment);
         io_uring_sqe.ioprio$set(sqeSegment, (short) (prio | IORING_ACCEPT_MULTISHOT()));
     }
@@ -77,9 +79,9 @@ class liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_cancel$MH, "io_uring_prep_cancel");
     }
 
-    public static void io_uring_prep_cancel(Addressable sqe, Addressable user_data, int flags) {
+    public static void io_uring_prep_cancel(MemorySegment sqe, MemorySegment user_data, int flags) {
         io_uring_prep_rw(IORING_OP_ASYNC_CANCEL(), sqe, -1, user_data, 0, 0);
-        MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe.address());
+        MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe);
         io_uring_sqe.cancel_flags$set(sqeSegment, flags);
     }
 
@@ -101,9 +103,9 @@ class liburing_h_1 {
      *                  file descriptor.  Can be used to cancel any pending
      *                  request in the ring. Available since 5.19.
      */
-    public static void io_uring_prep_cancel(Addressable sqe, long user_data, int flags) {
-        io_uring_prep_rw(IORING_OP_ASYNC_CANCEL(), sqe, -1, MemoryAddress.ofLong(user_data), 0, 0);
-        MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe.address());
+    public static void io_uring_prep_cancel(MemorySegment sqe, long user_data, int flags) {
+        io_uring_prep_rw(IORING_OP_ASYNC_CANCEL(), sqe, -1, MemorySegment.ofAddress(user_data), 0, 0);
+        MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe);
         io_uring_sqe.cancel_flags$set(sqeSegment, flags);
     }
 
@@ -111,7 +113,7 @@ class liburing_h_1 {
         return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_link_timeout$MH, "io_uring_prep_link_timeout");
     }
 
-    public static void io_uring_prep_link_timeout(Addressable sqe, Addressable ts, int flags) {
+    public static void io_uring_prep_link_timeout(MemorySegment sqe, MemorySegment ts, int flags) {
         var mh$ = io_uring_prep_link_timeout$MH();
         try {
             mh$.invokeExact(sqe, ts, flags);
@@ -119,17 +121,20 @@ class liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_prep_connect$MH() {
-        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_connect$MH,"io_uring_prep_connect");
+        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_connect$MH, "io_uring_prep_connect");
     }
 
-    public static void io_uring_prep_connect ( Addressable sqe,  int fd,  Addressable addr,  int addrlen) {
-      io_uring_prep_rw(IORING_OP_CONNECT(), sqe,fd,addr,0,addrlen);
+    public static void io_uring_prep_connect(MemorySegment sqe, int fd, MemorySegment addr, int addrlen) {
+        io_uring_prep_rw(IORING_OP_CONNECT(), sqe, fd, addr, 0, addrlen);
     }
+
     public static MethodHandle io_uring_prep_files_update$MH() {
-        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_files_update$MH,"io_uring_prep_files_update");
+        return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_files_update$MH, "io_uring_prep_files_update");
     }
-    public static void io_uring_prep_files_update ( Addressable sqe,  Addressable fds,  int nr_fds,  int offset) {
+
+    public static void io_uring_prep_files_update(MemorySegment sqe, MemorySegment fds, int nr_fds, int offset) {
         var mh$ = io_uring_prep_files_update$MH();
         try {
             mh$.invokeExact(sqe, fds, nr_fds, offset);
@@ -137,10 +142,12 @@ class liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_prep_fallocate$MH() {
-        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_fallocate$MH,"io_uring_prep_fallocate");
+        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_fallocate$MH, "io_uring_prep_fallocate");
     }
-    public static void io_uring_prep_fallocate ( Addressable sqe,  int fd,  int mode,  long offset,  long len) {
+
+    public static void io_uring_prep_fallocate(MemorySegment sqe, int fd, int mode, long offset, long len) {
         var mh$ = io_uring_prep_fallocate$MH();
         try {
             mh$.invokeExact(sqe, fd, mode, offset, len);
@@ -148,10 +155,12 @@ class liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_prep_openat$MH() {
-        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_openat$MH,"io_uring_prep_openat");
+        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_openat$MH, "io_uring_prep_openat");
     }
-    public static void io_uring_prep_openat ( Addressable sqe,  int dfd,  Addressable path,  int flags,  int mode) {
+
+    public static void io_uring_prep_openat(MemorySegment sqe, int dfd, MemorySegment path, int flags, int mode) {
         var mh$ = io_uring_prep_openat$MH();
         try {
             mh$.invokeExact(sqe, dfd, path, flags, mode);
@@ -159,10 +168,12 @@ class liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_prep_close$MH() {
-        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_close$MH,"io_uring_prep_close");
+        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_close$MH, "io_uring_prep_close");
     }
-    public static void io_uring_prep_close ( Addressable sqe,  int fd) {
+
+    public static void io_uring_prep_close(MemorySegment sqe, int fd) {
         var mh$ = io_uring_prep_close$MH();
         try {
             mh$.invokeExact(sqe, fd);
@@ -170,22 +181,28 @@ class liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_prep_read$MH() {
-        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_read$MH,"io_uring_prep_read");
+        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_read$MH, "io_uring_prep_read");
     }
-    public static void io_uring_prep_read ( Addressable sqe,  int fd,  Addressable buf,  int nbytes,  long offset) {
-       io_uring_prep_rw(IORING_OP_READ(), sqe, fd,buf, nbytes, offset);
+
+    public static void io_uring_prep_read(MemorySegment sqe, int fd, MemorySegment buf, int nbytes, long offset) {
+        io_uring_prep_rw(IORING_OP_READ(), sqe, fd, buf, nbytes, offset);
     }
+
     public static MethodHandle io_uring_prep_write$MH() {
-        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_write$MH,"io_uring_prep_write");
+        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_write$MH, "io_uring_prep_write");
     }
-    public static void io_uring_prep_write ( Addressable sqe,  int fd,  Addressable buf,  int nbytes,  long offset) {
+
+    public static void io_uring_prep_write(MemorySegment sqe, int fd, MemorySegment buf, int nbytes, long offset) {
         io_uring_prep_rw(IORING_OP_WRITE(), sqe, fd, buf, nbytes, offset);
     }
+
     public static MethodHandle io_uring_prep_statx$MH() {
-        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_statx$MH,"io_uring_prep_statx");
+        return RuntimeHelper.requireNonNull(constants$32.io_uring_prep_statx$MH, "io_uring_prep_statx");
     }
-    public static void io_uring_prep_statx ( Addressable sqe,  int dfd,  Addressable path,  int flags,  int mask,  Addressable statxbuf) {
+
+    public static void io_uring_prep_statx(MemorySegment sqe, int dfd, MemorySegment path, int flags, int mask, MemorySegment statxbuf) {
         var mh$ = io_uring_prep_statx$MH();
         try {
             mh$.invokeExact(sqe, dfd, path, flags, mask, statxbuf);
@@ -193,10 +210,12 @@ class liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_prep_fadvise$MH() {
-        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_fadvise$MH,"io_uring_prep_fadvise");
+        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_fadvise$MH, "io_uring_prep_fadvise");
     }
-    public static void io_uring_prep_fadvise ( Addressable sqe,  int fd,  long offset,  long len,  int advice) {
+
+    public static void io_uring_prep_fadvise(MemorySegment sqe, int fd, long offset, long len, int advice) {
         var mh$ = io_uring_prep_fadvise$MH();
         try {
             mh$.invokeExact(sqe, fd, offset, len, advice);
@@ -204,10 +223,12 @@ class liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_prep_madvise$MH() {
-        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_madvise$MH,"io_uring_prep_madvise");
+        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_madvise$MH, "io_uring_prep_madvise");
     }
-    public static void io_uring_prep_madvise ( Addressable sqe,  Addressable addr,  long length,  int advice) {
+
+    public static void io_uring_prep_madvise(MemorySegment sqe, MemorySegment addr, long length, int advice) {
         var mh$ = io_uring_prep_madvise$MH();
         try {
             mh$.invokeExact(sqe, addr, length, advice);
@@ -215,22 +236,28 @@ class liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_prep_send$MH() {
-        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_send$MH,"io_uring_prep_send");
+        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_send$MH, "io_uring_prep_send");
     }
-    public static void io_uring_prep_send ( Addressable sqe,  int sockfd,  Addressable buf,  long len,  int flags) {
-        io_uring_prep_rw(IORING_OP_SEND(), sqe,sockfd, buf, (int)len, 0);
+
+    public static void io_uring_prep_send(MemorySegment sqe, int sockfd, MemorySegment buf, long len, int flags) {
+        io_uring_prep_rw(IORING_OP_SEND(), sqe, sockfd, buf, (int) len, 0);
     }
+
     public static MethodHandle io_uring_prep_recv$MH() {
-        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_recv$MH,"io_uring_prep_recv");
+        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_recv$MH, "io_uring_prep_recv");
     }
-    public static void io_uring_prep_recv ( Addressable sqe,  int sockfd,  Addressable buf,  long len,  int flags) {
-        io_uring_prep_rw(IORING_OP_RECV(), sqe, sockfd,buf,(int) len, 0);
+
+    public static void io_uring_prep_recv(MemorySegment sqe, int sockfd, MemorySegment buf, long len, int flags) {
+        io_uring_prep_rw(IORING_OP_RECV(), sqe, sockfd, buf, (int) len, 0);
     }
+
     public static MethodHandle io_uring_prep_openat2$MH() {
-        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_openat2$MH,"io_uring_prep_openat2");
+        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_openat2$MH, "io_uring_prep_openat2");
     }
-    public static void io_uring_prep_openat2 ( Addressable sqe,  int dfd,  Addressable path,  Addressable how) {
+
+    public static void io_uring_prep_openat2(MemorySegment sqe, int dfd, MemorySegment path, MemorySegment how) {
         var mh$ = io_uring_prep_openat2$MH();
         try {
             mh$.invokeExact(sqe, dfd, path, how);
@@ -238,10 +265,12 @@ class liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_prep_epoll_ctl$MH() {
-        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_epoll_ctl$MH,"io_uring_prep_epoll_ctl");
+        return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_epoll_ctl$MH, "io_uring_prep_epoll_ctl");
     }
-    public static void io_uring_prep_epoll_ctl ( Addressable sqe,  int epfd,  int fd,  int op,  Addressable ev) {
+
+    public static void io_uring_prep_epoll_ctl(MemorySegment sqe, int epfd, int fd, int op, MemorySegment ev) {
         var mh$ = io_uring_prep_epoll_ctl$MH();
         try {
             mh$.invokeExact(sqe, epfd, fd, op, ev);
@@ -249,17 +278,21 @@ class liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_prep_provide_buffers$MH() {
-        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_provide_buffers$MH,"io_uring_prep_provide_buffers");
+        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_provide_buffers$MH, "io_uring_prep_provide_buffers");
     }
-    public static void io_uring_prep_provide_buffers ( Addressable sqe,  Addressable addr,  int len,  int nr,  int bgid,  int bid) {
-        io_uring_prep_rw(IORING_OP_PROVIDE_BUFFERS(),sqe,nr,addr,len,bid);
-        io_uring_sqe.buf_group$set(io_uring_sqe.ofAddress(sqe.address(),MemorySession.global()), (short) bgid);
+
+    public static void io_uring_prep_provide_buffers(MemorySegment sqe, MemorySegment addr, int len, int nr, int bgid, int bid) {
+        io_uring_prep_rw(IORING_OP_PROVIDE_BUFFERS(), sqe, nr, addr, len, bid);
+        io_uring_sqe.buf_group$set(NativeHelper.unsafePointConvertor(sqe), (short) bgid);
     }
+
     public static MethodHandle io_uring_prep_remove_buffers$MH() {
-        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_remove_buffers$MH,"io_uring_prep_remove_buffers");
+        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_remove_buffers$MH, "io_uring_prep_remove_buffers");
     }
-    public static void io_uring_prep_remove_buffers ( Addressable sqe,  int nr,  int bgid) {
+
+    public static void io_uring_prep_remove_buffers(MemorySegment sqe, int nr, int bgid) {
         var mh$ = io_uring_prep_remove_buffers$MH();
         try {
             mh$.invokeExact(sqe, nr, bgid);
@@ -267,10 +300,12 @@ class liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_prep_shutdown$MH() {
-        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_shutdown$MH,"io_uring_prep_shutdown");
+        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_shutdown$MH, "io_uring_prep_shutdown");
     }
-    public static void io_uring_prep_shutdown ( Addressable sqe,  int fd,  int how) {
+
+    public static void io_uring_prep_shutdown(MemorySegment sqe, int fd, int how) {
         var mh$ = io_uring_prep_shutdown$MH();
         try {
             mh$.invokeExact(sqe, fd, how);
@@ -278,10 +313,12 @@ class liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_prep_unlinkat$MH() {
-        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_unlinkat$MH,"io_uring_prep_unlinkat");
+        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_unlinkat$MH, "io_uring_prep_unlinkat");
     }
-    public static void io_uring_prep_unlinkat ( Addressable sqe,  int dfd,  Addressable path,  int flags) {
+
+    public static void io_uring_prep_unlinkat(MemorySegment sqe, int dfd, MemorySegment path, int flags) {
         var mh$ = io_uring_prep_unlinkat$MH();
         try {
             mh$.invokeExact(sqe, dfd, path, flags);
@@ -289,10 +326,12 @@ class liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_prep_renameat$MH() {
-        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_renameat$MH,"io_uring_prep_renameat");
+        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_renameat$MH, "io_uring_prep_renameat");
     }
-    public static void io_uring_prep_renameat ( Addressable sqe,  int olddfd,  Addressable oldpath,  int newdfd,  Addressable newpath,  int flags) {
+
+    public static void io_uring_prep_renameat(MemorySegment sqe, int olddfd, MemorySegment oldpath, int newdfd, MemorySegment newpath, int flags) {
         var mh$ = io_uring_prep_renameat$MH();
         try {
             mh$.invokeExact(sqe, olddfd, oldpath, newdfd, newpath, flags);
@@ -300,10 +339,12 @@ class liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_prep_sync_file_range$MH() {
-        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_sync_file_range$MH,"io_uring_prep_sync_file_range");
+        return RuntimeHelper.requireNonNull(constants$34.io_uring_prep_sync_file_range$MH, "io_uring_prep_sync_file_range");
     }
-    public static void io_uring_prep_sync_file_range ( Addressable sqe,  int fd,  int len,  long offset,  int flags) {
+
+    public static void io_uring_prep_sync_file_range(MemorySegment sqe, int fd, int len, long offset, int flags) {
         var mh$ = io_uring_prep_sync_file_range$MH();
         try {
             mh$.invokeExact(sqe, fd, len, offset, flags);
@@ -311,105 +352,124 @@ class liburing_h_1 {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_sq_ready$MH() {
-        return RuntimeHelper.requireNonNull(constants$35.io_uring_sq_ready$MH,"io_uring_sq_ready");
+        return RuntimeHelper.requireNonNull(constants$35.io_uring_sq_ready$MH, "io_uring_sq_ready");
     }
-    public static int io_uring_sq_ready ( Addressable ring) {
+
+    public static int io_uring_sq_ready(MemorySegment ring) {
         var mh$ = io_uring_sq_ready$MH();
         try {
-            return (int)mh$.invokeExact(ring);
+            return (int) mh$.invokeExact(ring);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_sq_space_left$MH() {
-        return RuntimeHelper.requireNonNull(constants$35.io_uring_sq_space_left$MH,"io_uring_sq_space_left");
+        return RuntimeHelper.requireNonNull(constants$35.io_uring_sq_space_left$MH, "io_uring_sq_space_left");
     }
-    public static int io_uring_sq_space_left ( Addressable ring) {
+
+    public static int io_uring_sq_space_left(MemorySegment ring) {
         var mh$ = io_uring_sq_space_left$MH();
         try {
-            return (int)mh$.invokeExact(ring);
+            return (int) mh$.invokeExact(ring);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_sqring_wait$MH() {
-        return RuntimeHelper.requireNonNull(constants$35.io_uring_sqring_wait$MH,"io_uring_sqring_wait");
+        return RuntimeHelper.requireNonNull(constants$35.io_uring_sqring_wait$MH, "io_uring_sqring_wait");
     }
-    public static int io_uring_sqring_wait ( Addressable ring) {
+
+    public static int io_uring_sqring_wait(MemorySegment ring) {
         var mh$ = io_uring_sqring_wait$MH();
         try {
-            return (int)mh$.invokeExact(ring);
+            return (int) mh$.invokeExact(ring);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_cq_ready$MH() {
-        return RuntimeHelper.requireNonNull(constants$35.io_uring_cq_ready$MH,"io_uring_cq_ready");
+        return RuntimeHelper.requireNonNull(constants$35.io_uring_cq_ready$MH, "io_uring_cq_ready");
     }
-    public static int io_uring_cq_ready ( Addressable ring) {
+
+    public static int io_uring_cq_ready(MemorySegment ring) {
         var mh$ = io_uring_cq_ready$MH();
         try {
-            return (int)mh$.invokeExact(ring);
+            return (int) mh$.invokeExact(ring);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_cq_eventfd_enabled$MH() {
-        return RuntimeHelper.requireNonNull(constants$35.io_uring_cq_eventfd_enabled$MH,"io_uring_cq_eventfd_enabled");
+        return RuntimeHelper.requireNonNull(constants$35.io_uring_cq_eventfd_enabled$MH, "io_uring_cq_eventfd_enabled");
     }
-    public static boolean io_uring_cq_eventfd_enabled ( Addressable ring) {
+
+    public static boolean io_uring_cq_eventfd_enabled(MemorySegment ring) {
         var mh$ = io_uring_cq_eventfd_enabled$MH();
         try {
-            return (boolean)mh$.invokeExact(ring);
+            return (boolean) mh$.invokeExact(ring);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_cq_eventfd_toggle$MH() {
-        return RuntimeHelper.requireNonNull(constants$35.io_uring_cq_eventfd_toggle$MH,"io_uring_cq_eventfd_toggle");
+        return RuntimeHelper.requireNonNull(constants$35.io_uring_cq_eventfd_toggle$MH, "io_uring_cq_eventfd_toggle");
     }
-    public static int io_uring_cq_eventfd_toggle ( Addressable ring,  boolean enabled) {
+
+    public static int io_uring_cq_eventfd_toggle(MemorySegment ring, boolean enabled) {
         var mh$ = io_uring_cq_eventfd_toggle$MH();
         try {
-            return (int)mh$.invokeExact(ring, enabled);
+            return (int) mh$.invokeExact(ring, enabled);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_wait_cqe_nr$MH() {
-        return RuntimeHelper.requireNonNull(constants$36.io_uring_wait_cqe_nr$MH,"io_uring_wait_cqe_nr");
+        return RuntimeHelper.requireNonNull(constants$36.io_uring_wait_cqe_nr$MH, "io_uring_wait_cqe_nr");
     }
-    public static int io_uring_wait_cqe_nr ( Addressable ring,  Addressable cqe_ptr,  int wait_nr) {
+
+    public static int io_uring_wait_cqe_nr(MemorySegment ring, MemorySegment cqe_ptr, int wait_nr) {
         var mh$ = io_uring_wait_cqe_nr$MH();
         try {
-            return (int)mh$.invokeExact(ring, cqe_ptr, wait_nr);
+            return (int) mh$.invokeExact(ring, cqe_ptr, wait_nr);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_peek_cqe$MH() {
-        return RuntimeHelper.requireNonNull(constants$36.io_uring_peek_cqe$MH,"io_uring_peek_cqe");
+        return RuntimeHelper.requireNonNull(constants$36.io_uring_peek_cqe$MH, "io_uring_peek_cqe");
     }
-    public static int io_uring_peek_cqe ( Addressable ring,  Addressable cqe_ptr) {
+
+    public static int io_uring_peek_cqe(MemorySegment ring, MemorySegment cqe_ptr) {
         var mh$ = io_uring_peek_cqe$MH();
         try {
-            return (int)mh$.invokeExact(ring, cqe_ptr);
+            return (int) mh$.invokeExact(ring, cqe_ptr);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle io_uring_wait_cqe$MH() {
-        return RuntimeHelper.requireNonNull(constants$36.io_uring_wait_cqe$MH,"io_uring_wait_cqe");
+        return RuntimeHelper.requireNonNull(constants$36.io_uring_wait_cqe$MH, "io_uring_wait_cqe");
     }
-    public static int io_uring_wait_cqe ( Addressable ring,  Addressable cqe_ptr) {
+
+    public static int io_uring_wait_cqe(MemorySegment ring, MemorySegment cqe_ptr) {
         var mh$ = io_uring_wait_cqe$MH();
         try {
-            return (int)mh$.invokeExact(ring, cqe_ptr);
+            return (int) mh$.invokeExact(ring, cqe_ptr);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static long _POSIX_C_SOURCE() {
         return 199506L;
     }
@@ -665,23 +725,29 @@ class liburing_h_1 {
     public static int EDEADLOCK() {
         return (int)35L;
     }
+
     public static int ENOTSUP() {
-        return (int)95L;
+        return (int) 95L;
     }
-    public static MemoryAddress SIG_ERR() {
+
+    public static MemorySegment SIG_ERR() {
         return constants$36.SIG_ERR$ADDR;
     }
-    public static MemoryAddress SIG_DFL() {
+
+    public static MemorySegment SIG_DFL() {
         return constants$36.SIG_DFL$ADDR;
     }
-    public static MemoryAddress SIG_IGN() {
+
+    public static MemorySegment SIG_IGN() {
         return constants$36.SIG_IGN$ADDR;
     }
-    public static MemoryAddress SIG_HOLD() {
+
+    public static MemorySegment SIG_HOLD() {
         return constants$37.SIG_HOLD$ADDR;
     }
+
     public static int SIGIO() {
-        return (int)29L;
+        return (int) 29L;
     }
     public static int SIGIOT() {
         return (int)6L;
@@ -1334,12 +1400,15 @@ class liburing_h_1 {
     public static MemorySegment SCNuPTR() {
         return constants$62.SCNuPTR$SEGMENT;
     }
+
     public static MemorySegment SCNxPTR() {
         return constants$63.SCNxPTR$SEGMENT;
     }
-    public static MemoryAddress NULL() {
+
+    public static MemorySegment NULL() {
         return constants$63.NULL$ADDR;
     }
+
     public static long CLOCKS_PER_SEC() {
         return 1000000L;
     }

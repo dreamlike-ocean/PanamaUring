@@ -3,7 +3,7 @@
 package top.dreamlike.nativeLib.stdio;
 
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
 class constants$14 {
@@ -44,7 +44,7 @@ class constants$14 {
             "__overflow",
             constants$14.__overflow$FUNC
     );
-    static final MemoryAddress NULL$ADDR = MemoryAddress.ofLong(0L);
+    static final MemorySegment NULL$ADDR = MemorySegment.NULL;
 }
 
 

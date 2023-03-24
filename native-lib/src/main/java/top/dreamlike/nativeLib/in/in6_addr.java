@@ -16,6 +16,20 @@ public class in6_addr {
     public static MemoryLayout $LAYOUT() {
         return in6_addr.$struct$LAYOUT;
     }
+    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
+        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
+    }
+
+    public static MemorySegment __in6_u$slice(MemorySegment seg) {
+        return seg.asSlice(0, 16);
+    }
+    public static long sizeof() { return $LAYOUT().byteSize(); }
+    public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
+
+    public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
+        return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
+    }
+
     public static class __in6_u {
 
         static final  GroupLayout __in6_u$union$LAYOUT = MemoryLayout.unionLayout(
@@ -40,18 +54,11 @@ public class in6_addr {
         public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
             return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
         }
-        public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) { return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session); }
-    }
 
-    public static MemorySegment __in6_u$slice(MemorySegment seg) {
-        return seg.asSlice(0, 16);
+        public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
+            return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
+        }
     }
-    public static long sizeof() { return $LAYOUT().byteSize(); }
-    public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
-    public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
-        return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
-    }
-    public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) { return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session); }
 }
 
 

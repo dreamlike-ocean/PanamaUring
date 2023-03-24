@@ -3,7 +3,7 @@
 package top.dreamlike.nativeLib.mman;
 
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
 class constants$2 {
@@ -15,7 +15,7 @@ class constants$2 {
             "shm_unlink",
             constants$2.shm_unlink$FUNC
     );
-    static final MemoryAddress MAP_FAILED$ADDR = MemoryAddress.ofLong(-1L);
+    static final MemorySegment MAP_FAILED$ADDR = MemorySegment.ofAddress(-1L);
 }
 
 

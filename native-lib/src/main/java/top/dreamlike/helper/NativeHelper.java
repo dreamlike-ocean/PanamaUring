@@ -4,9 +4,8 @@ import top.dreamlike.nativeLib.errno.errno_h;
 import top.dreamlike.nativeLib.in.sockaddr_in;
 import top.dreamlike.nativeLib.inet.sockaddr_in6;
 
-import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.lang.foreign.ValueLayout;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -46,22 +45,44 @@ public class NativeHelper {
 
     //todo ipv6支持 有空会做
 
-    public static int serverListen(String host, int port) {
-        int socketFd = socket(AF_INET(), SOCK_STREAM(), 0);
-        if (socketFd == -1) throw new IllegalStateException("open listen socket fail");
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment serverAddr = sockaddr_in.allocate(session);
-            bzero(serverAddr, sockaddr_in.sizeof());
-            sockaddr_in.sin_family$set(serverAddr, (short) AF_INET());
-            inet_pton(AF_INET(), session.allocateUtf8String(host), sockaddr_in.sin_addr$slice(serverAddr));
-            sockaddr_in.sin_port$set(serverAddr, htons((short) port));
-            int bind = bind(socketFd, serverAddr, (int) sockaddr_in.sizeof());
-            if (bind == -1) {
-                throw new IllegalStateException("bind error!" + NativeHelper.getNowError());
-            }
+    static {
+        osVersion = System.getProperty("os.version", "");
+        osName = System.getProperty("os.name", "");
+        String arch0 = System.getProperty("os.arch", "x86_64" /*most java users are x86_64*/);
+        if (arch0.equals("amd64")) {
+            arch0 = "x86_64";
         }
-        listen(socketFd, 64);
-        return socketFd;
+        arch = arch0;
+        String os = osName.toLowerCase();
+        osLinux = os.contains("linux");
+        int major = -1;
+        int minor = -1;
+        if (osLinux) {
+            String[] split = osVersion.split("\\.");
+            if (split.length >= 2) {
+                try {
+                    major = Integer.parseInt(split[0]);
+                    minor = Integer.parseInt(split[1]);
+                } catch (NumberFormatException ignore) {
+                }
+            }
+            if (minor == -1) {
+                major = -1;
+            }
+
+
+        }
+
+        currentLinuxMajor = major;
+        currentLinuxMinor = minor;
+
+        errStr = new String[257];
+        for (int errNo = 0; errNo <= 256; errNo++) {
+            MemorySegment memoryAddress = strerror(errNo);
+            long strlen = strlen(memoryAddress);
+            MemorySegment memorySegment = MemorySegment.ofAddress(memoryAddress.address(), strlen);
+            errStr[errNo] = new String(memorySegment.toArray(JAVA_BYTE));
+        }
     }
 
     public static String toString(MemorySegment cstring) {
@@ -83,24 +104,41 @@ public class NativeHelper {
         return socketFd;
     }
 
+    public static int serverListen(String host, int port) {
+        int socketFd = socket(AF_INET(), SOCK_STREAM(), 0);
+        if (socketFd == -1) throw new IllegalStateException("open listen socket fail");
+        try (Arena session = Arena.openConfined()) {
+            MemorySegment serverAddr = sockaddr_in.allocate(session);
+            bzero(serverAddr, sockaddr_in.sizeof());
+            sockaddr_in.sin_family$set(serverAddr, (short) AF_INET());
+            inet_pton(AF_INET(), session.allocateUtf8String(host), sockaddr_in.sin_addr$slice(serverAddr));
+            sockaddr_in.sin_port$set(serverAddr, htons((short) port));
+            int bind = bind(socketFd, serverAddr, (int) sockaddr_in.sizeof());
+            if (bind == -1) {
+                throw new IllegalStateException("bind error!" + NativeHelper.getNowError());
+            }
+        }
+        listen(socketFd, 64);
+        return socketFd;
+    }
+
     /**
-     *
      * @param session
      * @param host
      * @param port
      * @return sockAddr to isIpv4
      * @throws UnknownHostException
      */
-    public static Pair<MemorySegment,Boolean> getSockAddr(MemorySession session,String host,int port) throws UnknownHostException {
+    public static Pair<MemorySegment, Boolean> getSockAddr(Arena session, String host, int port) throws UnknownHostException {
         InetAddress inetAddress = InetAddress.getByName(host);
         return switch (inetAddress) {
-            case Inet6Address address -> new Pair<>(ipv6(session, address.getHostAddress(),port),false);
-            case Inet4Address address -> new Pair<>(ipv4(session,address.getHostAddress(),port),true);
-            case InetAddress address -> new Pair<>(ipv4(session,address.getHostAddress(),port),true);
+            case Inet6Address address -> new Pair<>(ipv6(session, address.getHostAddress(), port), false);
+            case Inet4Address address -> new Pair<>(ipv4(session, address.getHostAddress(), port), true);
+            case InetAddress address -> new Pair<>(ipv4(session, address.getHostAddress(), port), true);
         };
     }
 
-    private static MemorySegment ipv6(MemorySession session, String ipv6, int port) {
+    private static MemorySegment ipv6(Arena session, String ipv6, int port) {
         MemorySegment sockaddrSegement = sockaddr_in6.allocate(session);
         bzero(sockaddrSegement, sockaddr_in6.sizeof());
         sockaddr_in6.sin6_family$set(sockaddrSegement, (short) AF_INET6());
@@ -112,7 +150,7 @@ public class NativeHelper {
         return sockaddrSegement;
     }
 
-    private static MemorySegment ipv4(MemorySession session, String ipv4, int port) {
+    private static MemorySegment ipv4(Arena session, String ipv4, int port) {
         MemorySegment sockaddrSegement = sockaddr_in.allocate(session);
         bzero(sockaddrSegement, sockaddr_in.sizeof());
         sockaddr_in.sin_family$set(sockaddrSegement, (short) AF_INET());
@@ -122,13 +160,6 @@ public class NativeHelper {
             throw new IllegalStateException("inet_pton fail!,err:" + getNowError());
         }
         return sockaddrSegement;
-    }
-
-    public static int setSocket(int fd,int optName){
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment val = session.allocate(JAVA_INT, 1);
-            return setsockopt(fd, SOL_SOCKET(), optName, val, (int) val.byteSize());
-        }
     }
 
     public static int getErrorNo(){
@@ -168,20 +199,21 @@ public class NativeHelper {
         return 0;
     }
 
-
-    public static String getIpV4Host(MemorySegment sockaddrSegement) {
-        MemoryAddress memoryAddress = inet_ntoa(sockaddr_in.sin_addr$slice(sockaddrSegement));
-        long strlen = strlen(memoryAddress);
-        return new String(MemorySegment.ofAddress(memoryAddress, strlen, MemorySession.global()).toArray(JAVA_BYTE));
+    public static int setSocket(int fd,int optName){
+        try (Arena session = Arena.openConfined()) {
+            MemorySegment val = session.allocate(JAVA_INT, 1);
+            return setsockopt(fd, SOL_SOCKET(), optName, val, (int) val.byteSize());
+        }
     }
 
     public static int getIpv4Port(MemorySegment sockaddrSegement) {
         return Short.toUnsignedInt(ntohs(sockaddr_in.sin_port$get(sockaddrSegement)));
     }
 
-    @Unsafe("存在段错误风险")
-    public static MemorySegment unsafePointConvertor(MemoryAddress p) {
-        return MemorySegment.ofAddress(p, Long.MAX_VALUE, MemorySession.global());
+    public static String getIpV4Host(MemorySegment sockaddrSegement) {
+        MemorySegment memoryAddress = inet_ntoa(sockaddr_in.sin_addr$slice(sockaddrSegement));
+        long strlen = strlen(memoryAddress);
+        return new String(MemorySegment.ofAddress(memoryAddress.address(), strlen).toArray(JAVA_BYTE));
     }
 
 
@@ -245,44 +277,15 @@ public class NativeHelper {
         return res;
     }
 
-    static {
-        osVersion = System.getProperty("os.version", "");
-        osName = System.getProperty("os.name", "");
-        String arch0 = System.getProperty("os.arch", "x86_64" /*most java users are x86_64*/);
-        if (arch0.equals("amd64")) {
-            arch0 = "x86_64";
-        }
-        arch = arch0;
-        String os = osName.toLowerCase();
-        osLinux = os.contains("linux");
-        int major = -1;
-        int minor = -1;
-        if (osLinux) {
-            String[] split = osVersion.split("\\.");
-            if (split.length >= 2) {
-                try {
-                    major = Integer.parseInt(split[0]);
-                    minor = Integer.parseInt(split[1]);
-                } catch (NumberFormatException ignore) {
-                }
-            }
-            if (minor == -1) {
-                major = -1;
-            }
-
-
-        }
-
-        currentLinuxMajor = major;
-        currentLinuxMinor = minor;
-
-        errStr = new String[257];
-        for (int errNo = 0; errNo <= 256; errNo++) {
-            MemoryAddress memoryAddress = strerror(errNo);
-            long strlen = strlen(memoryAddress);
-            MemorySegment memorySegment = MemorySegment.ofAddress(memoryAddress, strlen, MemorySession.global());
-            errStr[errNo] = new String(memorySegment.toArray(JAVA_BYTE));
-        }
+    /**
+     * jdk20更新后 不再有MemoryAddress 直接建模为MemorySegment
+     *
+     * @param p
+     * @return
+     */
+    @Unsafe("存在段错误风险")
+    public static MemorySegment unsafePointConvertor(MemorySegment p) {
+        return MemorySegment.ofAddress(p.address(), Long.MAX_VALUE);
     }
 
 

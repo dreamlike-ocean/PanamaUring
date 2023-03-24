@@ -6,8 +6,8 @@ import top.dreamlike.eventloop.IOUringEventLoop;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.lang.foreign.ValueLayout;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,8 +24,8 @@ public class AsyncPipe extends PlainAsyncFd {
 
     public AsyncPipe(IOUringEventLoop eventLoop) {
         super(eventLoop);
-        try (MemorySession memorySession = MemorySession.openConfined()) {
-            MemorySegment pipes = memorySession.allocateArray(JAVA_INT, 2);
+        try (Arena session = Arena.openConfined()) {
+            MemorySegment pipes = session.allocateArray(JAVA_INT, 2);
             int res = pipe(pipes);
             if (res == -1) {
                 throw new NativeCallException(NativeHelper.getNowError());

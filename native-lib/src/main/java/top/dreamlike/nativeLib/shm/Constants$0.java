@@ -15,8 +15,8 @@ public class Constants$0 {
 
     private final static Linker LINKER = Linker.nativeLinker();
 
-    private final static SymbolLookup SYMBOL_LOOKUP = name -> SymbolLookup.loaderLookup().lookup(name)
-            .or(() -> LINKER.defaultLookup().lookup(name));
+    private final static SymbolLookup SYMBOL_LOOKUP = name -> SymbolLookup.loaderLookup().find(name)
+            .or(() -> LINKER.defaultLookup().find(name));
     private static final FunctionDescriptor shm_open$FUNC = FunctionDescriptor.of(C_INT$LAYOUT,
             C_POINTER$LAYOUT,
             C_INT$LAYOUT,
@@ -34,7 +34,7 @@ public class Constants$0 {
 
 
     static MethodHandle downcallHandle(String name, FunctionDescriptor fdesc) {
-        return SYMBOL_LOOKUP.lookup(name).
+        return SYMBOL_LOOKUP.find(name).
                 map(addr -> LINKER.downcallHandle(addr, fdesc)).
                 orElse(null);
     }

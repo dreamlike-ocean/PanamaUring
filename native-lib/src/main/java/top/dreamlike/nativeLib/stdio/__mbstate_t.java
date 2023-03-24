@@ -41,6 +41,26 @@ public class __mbstate_t {
         __mbstate_t.__count$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
+    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
+        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
+    }
+
+    public static MemorySegment __value$slice(MemorySegment seg) {
+        return seg.asSlice(4, 4);
+    }
+
+    public static long sizeof() {
+        return $LAYOUT().byteSize();
+    }
+
+    public static MemorySegment allocate(SegmentAllocator allocator) {
+        return allocator.allocate($LAYOUT());
+    }
+
+    public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
+        return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
+    }
+
     public static class __value {
 
         static final GroupLayout __value$union$LAYOUT = MemoryLayout.unionLayout(
@@ -90,29 +110,9 @@ public class __mbstate_t {
             return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
         }
 
-        public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) {
+        public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
             return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
         }
-    }
-
-    public static MemorySegment __value$slice(MemorySegment seg) {
-        return seg.asSlice(4, 4);
-    }
-
-    public static long sizeof() {
-        return $LAYOUT().byteSize();
-    }
-
-    public static MemorySegment allocate(SegmentAllocator allocator) {
-        return allocator.allocate($LAYOUT());
-    }
-
-    public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
-        return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
-    }
-
-    public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) {
-        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
     }
 }
 

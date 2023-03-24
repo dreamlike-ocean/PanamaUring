@@ -2,9 +2,9 @@
 
 package top.dreamlike.nativeLib.liburing;
 
+import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
-import java.lang.foreign.*;
 
 public class sigevent {
 
@@ -62,6 +62,20 @@ public class sigevent {
     public static void sigev_notify$set(MemorySegment seg, long index, int x) {
         sigevent.sigev_notify$VH.set(seg.asSlice(index*sizeof()), x);
     }
+    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
+        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
+    }
+
+    public static MemorySegment _sigev_un$slice(MemorySegment seg) {
+        return seg.asSlice(16, 48);
+    }
+    public static long sizeof() { return $LAYOUT().byteSize(); }
+    public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
+
+    public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
+        return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
+    }
+
     public static class _sigev_un {
 
         static final  GroupLayout _sigev_un$union$LAYOUT = MemoryLayout.unionLayout(
@@ -94,6 +108,20 @@ public class sigevent {
         public static void _tid$set(MemorySegment seg, long index, int x) {
             _sigev_un._tid$VH.set(seg.asSlice(index*sizeof()), x);
         }
+        public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
+            return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
+        }
+
+        public static MemorySegment _sigev_thread$slice(MemorySegment seg) {
+            return seg.asSlice(0, 16);
+        }
+        public static long sizeof() { return $LAYOUT().byteSize(); }
+        public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
+
+        public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
+            return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
+        }
+
         public static class _sigev_thread {
 
             static final  GroupLayout _sigev_un$_sigev_thread$struct$LAYOUT = MemoryLayout.structLayout(
@@ -112,87 +140,91 @@ public class sigevent {
             static final MethodHandle _function$MH = RuntimeHelper.downcallHandle(
                 _sigev_thread._function$FUNC
             );
+            public static MemorySegment _function$get(MemorySegment seg) {
+                return (java.lang.foreign.MemorySegment) _sigev_thread._function$VH.get(seg);
+            }
+
+            static final VarHandle _function$VH = _sigev_un$_sigev_thread$struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("_function"));
+
+            public static VarHandle _function$VH() {
+                return _sigev_thread._function$VH;
+            }
+
+            public static void _function$set(MemorySegment seg, MemorySegment x) {
+                _sigev_thread._function$VH.set(seg, x);
+            }
+
+            public static MemorySegment _function$get(MemorySegment seg, long index) {
+                return (java.lang.foreign.MemorySegment) _sigev_thread._function$VH.get(seg.asSlice(index * sizeof()));
+            }
+
+            public static void _function$set(MemorySegment seg, long index, MemorySegment x) {
+                _sigev_thread._function$VH.set(seg.asSlice(index * sizeof()), x);
+            }
+
+            public static _function _function(MemorySegment segment, Arena session) {
+                return _function.ofAddress(_function$get(segment), session);
+            }
+
+            public static MemorySegment _attribute$get(MemorySegment seg) {
+                return (java.lang.foreign.MemorySegment) _sigev_thread._attribute$VH.get(seg);
+            }
+
+            static final VarHandle _attribute$VH = _sigev_un$_sigev_thread$struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("_attribute"));
+
+            public static VarHandle _attribute$VH() {
+                return _sigev_thread._attribute$VH;
+            }
+
+            public static void _attribute$set(MemorySegment seg, MemorySegment x) {
+                _sigev_thread._attribute$VH.set(seg, x);
+            }
+
+            public static MemorySegment _attribute$get(MemorySegment seg, long index) {
+                return (java.lang.foreign.MemorySegment) _sigev_thread._attribute$VH.get(seg.asSlice(index * sizeof()));
+            }
+
+            public static void _attribute$set(MemorySegment seg, long index, MemorySegment x) {
+                _sigev_thread._attribute$VH.set(seg.asSlice(index * sizeof()), x);
+            }
+
+            public static long sizeof() {
+                return $LAYOUT().byteSize();
+            }
+
+            public static MemorySegment allocate(SegmentAllocator allocator) {
+                return allocator.allocate($LAYOUT());
+            }
+
+            public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
+                return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
+            }
+
+            public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
+                return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
+            }
+
             public interface _function {
 
                 void apply(java.lang.foreign.MemorySegment _x0);
-                static MemorySegment allocate(_function fi, MemorySession session) {
+
+                static MemorySegment allocate(_function fi, Arena session) {
                     return RuntimeHelper.upcallStub(_function.class, fi, _sigev_thread._function$FUNC, session);
                 }
-                static _function ofAddress(MemoryAddress addr, MemorySession session) {
-                    MemorySegment symbol = MemorySegment.ofAddress(addr, 0, session);
+
+                static _function ofAddress(MemorySegment addr, Arena session) {
+                    MemorySegment symbol = MemorySegment.ofAddress(addr.address(), 0, session.scope());
                     return (java.lang.foreign.MemorySegment __x0) -> {
                         try {
-                            _sigev_thread._function$MH.invokeExact((Addressable)symbol, __x0);
+                            _sigev_thread._function$MH.invokeExact((MemorySegment) symbol, __x0);
                         } catch (Throwable ex$) {
                             throw new AssertionError("should not reach here", ex$);
                         }
                     };
                 }
             }
-
-            static final VarHandle _function$VH = _sigev_un$_sigev_thread$struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("_function"));
-            public static VarHandle _function$VH() {
-                return _sigev_thread._function$VH;
-            }
-            public static MemoryAddress _function$get(MemorySegment seg) {
-                return (java.lang.foreign.MemoryAddress)_sigev_thread._function$VH.get(seg);
-            }
-            public static void _function$set( MemorySegment seg, MemoryAddress x) {
-                _sigev_thread._function$VH.set(seg, x);
-            }
-            public static MemoryAddress _function$get(MemorySegment seg, long index) {
-                return (java.lang.foreign.MemoryAddress)_sigev_thread._function$VH.get(seg.asSlice(index*sizeof()));
-            }
-            public static void _function$set(MemorySegment seg, long index, MemoryAddress x) {
-                _sigev_thread._function$VH.set(seg.asSlice(index*sizeof()), x);
-            }
-            public static _function _function (MemorySegment segment, MemorySession session) {
-                return _function.ofAddress(_function$get(segment), session);
-            }
-            static final VarHandle _attribute$VH = _sigev_un$_sigev_thread$struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("_attribute"));
-            public static VarHandle _attribute$VH() {
-                return _sigev_thread._attribute$VH;
-            }
-            public static MemoryAddress _attribute$get(MemorySegment seg) {
-                return (java.lang.foreign.MemoryAddress)_sigev_thread._attribute$VH.get(seg);
-            }
-            public static void _attribute$set( MemorySegment seg, MemoryAddress x) {
-                _sigev_thread._attribute$VH.set(seg, x);
-            }
-            public static MemoryAddress _attribute$get(MemorySegment seg, long index) {
-                return (java.lang.foreign.MemoryAddress)_sigev_thread._attribute$VH.get(seg.asSlice(index*sizeof()));
-            }
-            public static void _attribute$set(MemorySegment seg, long index, MemoryAddress x) {
-                _sigev_thread._attribute$VH.set(seg.asSlice(index*sizeof()), x);
-            }
-            public static long sizeof() { return $LAYOUT().byteSize(); }
-            public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
-            public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
-                return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
-            }
-            public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) { return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session); }
         }
-
-        public static MemorySegment _sigev_thread$slice(MemorySegment seg) {
-            return seg.asSlice(0, 16);
-        }
-        public static long sizeof() { return $LAYOUT().byteSize(); }
-        public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
-        public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
-            return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
-        }
-        public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) { return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session); }
     }
-
-    public static MemorySegment _sigev_un$slice(MemorySegment seg) {
-        return seg.asSlice(16, 48);
-    }
-    public static long sizeof() { return $LAYOUT().byteSize(); }
-    public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
-    public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
-        return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
-    }
-    public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) { return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session); }
 }
 
 

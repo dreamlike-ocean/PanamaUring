@@ -10,34 +10,44 @@ public class epoll_data {
     static final  GroupLayout $union$LAYOUT = MemoryLayout.unionLayout(
         Constants$root.C_POINTER$LAYOUT.withName("ptr"),
         Constants$root.C_INT$LAYOUT.withName("fd"),
-        Constants$root.C_INT$LAYOUT.withName("u32"),
-        Constants$root.C_LONG_LONG$LAYOUT.withName("u64")
+            Constants$root.C_INT$LAYOUT.withName("u32"),
+            Constants$root.C_LONG_LONG$LAYOUT.withName("u64")
     ).withName("epoll_data");
+
     public static MemoryLayout $LAYOUT() {
         return epoll_data.$union$LAYOUT;
     }
+
     static final VarHandle ptr$VH = $union$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("ptr"));
+
     public static VarHandle ptr$VH() {
         return epoll_data.ptr$VH;
     }
-    public static MemoryAddress ptr$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress)epoll_data.ptr$VH.get(seg);
+
+    public static MemorySegment ptr$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) epoll_data.ptr$VH.get(seg);
     }
-    public static void ptr$set( MemorySegment seg, MemoryAddress x) {
+
+    public static void ptr$set(MemorySegment seg, MemorySegment x) {
         epoll_data.ptr$VH.set(seg, x);
     }
-    public static MemoryAddress ptr$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress)epoll_data.ptr$VH.get(seg.asSlice(index*sizeof()));
+
+    public static MemorySegment ptr$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) epoll_data.ptr$VH.get(seg.asSlice(index * sizeof()));
     }
-    public static void ptr$set(MemorySegment seg, long index, MemoryAddress x) {
-        epoll_data.ptr$VH.set(seg.asSlice(index*sizeof()), x);
+
+    public static void ptr$set(MemorySegment seg, long index, MemorySegment x) {
+        epoll_data.ptr$VH.set(seg.asSlice(index * sizeof()), x);
     }
+
     static final VarHandle fd$VH = $union$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("fd"));
+
     public static VarHandle fd$VH() {
         return epoll_data.fd$VH;
     }
+
     public static int fd$get(MemorySegment seg) {
-        return (int)epoll_data.fd$VH.get(seg);
+        return (int) epoll_data.fd$VH.get(seg);
     }
     public static void fd$set( MemorySegment seg, int x) {
         epoll_data.fd$VH.set(seg, x);
@@ -82,10 +92,14 @@ public class epoll_data {
     }
     public static long sizeof() { return $LAYOUT().byteSize(); }
     public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
+
     public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
         return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
     }
-    public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) { return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session); }
+
+    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
+        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
+    }
 }
 
 

@@ -2,7 +2,7 @@
 
 package top.dreamlike.nativeLib.eventfd;
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.ValueLayout.*;
@@ -232,19 +232,22 @@ public class eventfd_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle eventfd_read$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.eventfd_read$MH,"eventfd_read");
+        return RuntimeHelper.requireNonNull(constants$0.eventfd_read$MH, "eventfd_read");
     }
-    public static int eventfd_read ( int __fd,  Addressable __value) {
+
+    public static int eventfd_read(int __fd, MemorySegment __value) {
         var mh$ = eventfd_read$MH();
         try {
-            return (int)mh$.invokeExact(__fd, __value);
+            return (int) mh$.invokeExact(__fd, __value);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle eventfd_write$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.eventfd_write$MH,"eventfd_write");
+        return RuntimeHelper.requireNonNull(constants$0.eventfd_write$MH, "eventfd_write");
     }
     public static int eventfd_write ( int __fd,  long __value) {
         var mh$ = eventfd_write$MH();

@@ -73,19 +73,19 @@ public class _IO_FILE {
         return _IO_FILE._IO_read_ptr$VH;
     }
 
-    public static MemoryAddress _IO_read_ptr$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_read_ptr$VH.get(seg);
+    public static MemorySegment _IO_read_ptr$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_read_ptr$VH.get(seg);
     }
 
-    public static void _IO_read_ptr$set(MemorySegment seg, MemoryAddress x) {
+    public static void _IO_read_ptr$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._IO_read_ptr$VH.set(seg, x);
     }
 
-    public static MemoryAddress _IO_read_ptr$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_read_ptr$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _IO_read_ptr$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_read_ptr$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _IO_read_ptr$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _IO_read_ptr$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._IO_read_ptr$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -95,19 +95,19 @@ public class _IO_FILE {
         return _IO_FILE._IO_read_end$VH;
     }
 
-    public static MemoryAddress _IO_read_end$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_read_end$VH.get(seg);
+    public static MemorySegment _IO_read_end$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_read_end$VH.get(seg);
     }
 
-    public static void _IO_read_end$set(MemorySegment seg, MemoryAddress x) {
+    public static void _IO_read_end$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._IO_read_end$VH.set(seg, x);
     }
 
-    public static MemoryAddress _IO_read_end$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_read_end$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _IO_read_end$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_read_end$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _IO_read_end$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _IO_read_end$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._IO_read_end$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -117,19 +117,19 @@ public class _IO_FILE {
         return _IO_FILE._IO_read_base$VH;
     }
 
-    public static MemoryAddress _IO_read_base$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_read_base$VH.get(seg);
+    public static MemorySegment _IO_read_base$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_read_base$VH.get(seg);
     }
 
-    public static void _IO_read_base$set(MemorySegment seg, MemoryAddress x) {
+    public static void _IO_read_base$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._IO_read_base$VH.set(seg, x);
     }
 
-    public static MemoryAddress _IO_read_base$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_read_base$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _IO_read_base$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_read_base$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _IO_read_base$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _IO_read_base$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._IO_read_base$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -139,19 +139,19 @@ public class _IO_FILE {
         return _IO_FILE._IO_write_base$VH;
     }
 
-    public static MemoryAddress _IO_write_base$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_write_base$VH.get(seg);
+    public static MemorySegment _IO_write_base$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_write_base$VH.get(seg);
     }
 
-    public static void _IO_write_base$set(MemorySegment seg, MemoryAddress x) {
+    public static void _IO_write_base$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._IO_write_base$VH.set(seg, x);
     }
 
-    public static MemoryAddress _IO_write_base$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_write_base$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _IO_write_base$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_write_base$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _IO_write_base$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _IO_write_base$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._IO_write_base$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -161,19 +161,19 @@ public class _IO_FILE {
         return _IO_FILE._IO_write_ptr$VH;
     }
 
-    public static MemoryAddress _IO_write_ptr$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_write_ptr$VH.get(seg);
+    public static MemorySegment _IO_write_ptr$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_write_ptr$VH.get(seg);
     }
 
-    public static void _IO_write_ptr$set(MemorySegment seg, MemoryAddress x) {
+    public static void _IO_write_ptr$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._IO_write_ptr$VH.set(seg, x);
     }
 
-    public static MemoryAddress _IO_write_ptr$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_write_ptr$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _IO_write_ptr$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_write_ptr$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _IO_write_ptr$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _IO_write_ptr$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._IO_write_ptr$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -183,19 +183,19 @@ public class _IO_FILE {
         return _IO_FILE._IO_write_end$VH;
     }
 
-    public static MemoryAddress _IO_write_end$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_write_end$VH.get(seg);
+    public static MemorySegment _IO_write_end$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_write_end$VH.get(seg);
     }
 
-    public static void _IO_write_end$set(MemorySegment seg, MemoryAddress x) {
+    public static void _IO_write_end$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._IO_write_end$VH.set(seg, x);
     }
 
-    public static MemoryAddress _IO_write_end$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_write_end$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _IO_write_end$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_write_end$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _IO_write_end$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _IO_write_end$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._IO_write_end$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -205,19 +205,19 @@ public class _IO_FILE {
         return _IO_FILE._IO_buf_base$VH;
     }
 
-    public static MemoryAddress _IO_buf_base$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_buf_base$VH.get(seg);
+    public static MemorySegment _IO_buf_base$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_buf_base$VH.get(seg);
     }
 
-    public static void _IO_buf_base$set(MemorySegment seg, MemoryAddress x) {
+    public static void _IO_buf_base$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._IO_buf_base$VH.set(seg, x);
     }
 
-    public static MemoryAddress _IO_buf_base$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_buf_base$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _IO_buf_base$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_buf_base$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _IO_buf_base$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _IO_buf_base$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._IO_buf_base$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -227,19 +227,19 @@ public class _IO_FILE {
         return _IO_FILE._IO_buf_end$VH;
     }
 
-    public static MemoryAddress _IO_buf_end$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_buf_end$VH.get(seg);
+    public static MemorySegment _IO_buf_end$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_buf_end$VH.get(seg);
     }
 
-    public static void _IO_buf_end$set(MemorySegment seg, MemoryAddress x) {
+    public static void _IO_buf_end$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._IO_buf_end$VH.set(seg, x);
     }
 
-    public static MemoryAddress _IO_buf_end$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_buf_end$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _IO_buf_end$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_buf_end$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _IO_buf_end$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _IO_buf_end$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._IO_buf_end$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -249,19 +249,19 @@ public class _IO_FILE {
         return _IO_FILE._IO_save_base$VH;
     }
 
-    public static MemoryAddress _IO_save_base$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_save_base$VH.get(seg);
+    public static MemorySegment _IO_save_base$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_save_base$VH.get(seg);
     }
 
-    public static void _IO_save_base$set(MemorySegment seg, MemoryAddress x) {
+    public static void _IO_save_base$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._IO_save_base$VH.set(seg, x);
     }
 
-    public static MemoryAddress _IO_save_base$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_save_base$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _IO_save_base$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_save_base$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _IO_save_base$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _IO_save_base$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._IO_save_base$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -271,19 +271,19 @@ public class _IO_FILE {
         return _IO_FILE._IO_backup_base$VH;
     }
 
-    public static MemoryAddress _IO_backup_base$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_backup_base$VH.get(seg);
+    public static MemorySegment _IO_backup_base$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_backup_base$VH.get(seg);
     }
 
-    public static void _IO_backup_base$set(MemorySegment seg, MemoryAddress x) {
+    public static void _IO_backup_base$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._IO_backup_base$VH.set(seg, x);
     }
 
-    public static MemoryAddress _IO_backup_base$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_backup_base$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _IO_backup_base$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_backup_base$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _IO_backup_base$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _IO_backup_base$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._IO_backup_base$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -293,19 +293,19 @@ public class _IO_FILE {
         return _IO_FILE._IO_save_end$VH;
     }
 
-    public static MemoryAddress _IO_save_end$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_save_end$VH.get(seg);
+    public static MemorySegment _IO_save_end$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_save_end$VH.get(seg);
     }
 
-    public static void _IO_save_end$set(MemorySegment seg, MemoryAddress x) {
+    public static void _IO_save_end$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._IO_save_end$VH.set(seg, x);
     }
 
-    public static MemoryAddress _IO_save_end$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._IO_save_end$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _IO_save_end$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._IO_save_end$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _IO_save_end$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _IO_save_end$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._IO_save_end$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -315,19 +315,19 @@ public class _IO_FILE {
         return _IO_FILE._markers$VH;
     }
 
-    public static MemoryAddress _markers$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._markers$VH.get(seg);
+    public static MemorySegment _markers$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._markers$VH.get(seg);
     }
 
-    public static void _markers$set(MemorySegment seg, MemoryAddress x) {
+    public static void _markers$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._markers$VH.set(seg, x);
     }
 
-    public static MemoryAddress _markers$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._markers$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _markers$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._markers$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _markers$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _markers$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._markers$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -337,19 +337,19 @@ public class _IO_FILE {
         return _IO_FILE._chain$VH;
     }
 
-    public static MemoryAddress _chain$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._chain$VH.get(seg);
+    public static MemorySegment _chain$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._chain$VH.get(seg);
     }
 
-    public static void _chain$set(MemorySegment seg, MemoryAddress x) {
+    public static void _chain$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._chain$VH.set(seg, x);
     }
 
-    public static MemoryAddress _chain$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._chain$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _chain$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._chain$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _chain$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _chain$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._chain$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -473,19 +473,19 @@ public class _IO_FILE {
         return _IO_FILE._lock$VH;
     }
 
-    public static MemoryAddress _lock$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._lock$VH.get(seg);
+    public static MemorySegment _lock$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._lock$VH.get(seg);
     }
 
-    public static void _lock$set(MemorySegment seg, MemoryAddress x) {
+    public static void _lock$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._lock$VH.set(seg, x);
     }
 
-    public static MemoryAddress _lock$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._lock$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _lock$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._lock$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _lock$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _lock$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._lock$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -517,19 +517,19 @@ public class _IO_FILE {
         return _IO_FILE._codecvt$VH;
     }
 
-    public static MemoryAddress _codecvt$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._codecvt$VH.get(seg);
+    public static MemorySegment _codecvt$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._codecvt$VH.get(seg);
     }
 
-    public static void _codecvt$set(MemorySegment seg, MemoryAddress x) {
+    public static void _codecvt$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._codecvt$VH.set(seg, x);
     }
 
-    public static MemoryAddress _codecvt$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._codecvt$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _codecvt$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._codecvt$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _codecvt$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _codecvt$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._codecvt$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -539,19 +539,19 @@ public class _IO_FILE {
         return _IO_FILE._wide_data$VH;
     }
 
-    public static MemoryAddress _wide_data$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._wide_data$VH.get(seg);
+    public static MemorySegment _wide_data$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._wide_data$VH.get(seg);
     }
 
-    public static void _wide_data$set(MemorySegment seg, MemoryAddress x) {
+    public static void _wide_data$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._wide_data$VH.set(seg, x);
     }
 
-    public static MemoryAddress _wide_data$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._wide_data$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _wide_data$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._wide_data$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _wide_data$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _wide_data$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._wide_data$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -561,19 +561,19 @@ public class _IO_FILE {
         return _IO_FILE._freeres_list$VH;
     }
 
-    public static MemoryAddress _freeres_list$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._freeres_list$VH.get(seg);
+    public static MemorySegment _freeres_list$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._freeres_list$VH.get(seg);
     }
 
-    public static void _freeres_list$set(MemorySegment seg, MemoryAddress x) {
+    public static void _freeres_list$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._freeres_list$VH.set(seg, x);
     }
 
-    public static MemoryAddress _freeres_list$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._freeres_list$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _freeres_list$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._freeres_list$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _freeres_list$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _freeres_list$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._freeres_list$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -583,19 +583,19 @@ public class _IO_FILE {
         return _IO_FILE._freeres_buf$VH;
     }
 
-    public static MemoryAddress _freeres_buf$get(MemorySegment seg) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._freeres_buf$VH.get(seg);
+    public static MemorySegment _freeres_buf$get(MemorySegment seg) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._freeres_buf$VH.get(seg);
     }
 
-    public static void _freeres_buf$set(MemorySegment seg, MemoryAddress x) {
+    public static void _freeres_buf$set(MemorySegment seg, MemorySegment x) {
         _IO_FILE._freeres_buf$VH.set(seg, x);
     }
 
-    public static MemoryAddress _freeres_buf$get(MemorySegment seg, long index) {
-        return (java.lang.foreign.MemoryAddress) _IO_FILE._freeres_buf$VH.get(seg.asSlice(index * sizeof()));
+    public static MemorySegment _freeres_buf$get(MemorySegment seg, long index) {
+        return (java.lang.foreign.MemorySegment) _IO_FILE._freeres_buf$VH.get(seg.asSlice(index * sizeof()));
     }
 
-    public static void _freeres_buf$set(MemorySegment seg, long index, MemoryAddress x) {
+    public static void _freeres_buf$set(MemorySegment seg, long index, MemorySegment x) {
         _IO_FILE._freeres_buf$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
@@ -659,7 +659,7 @@ public class _IO_FILE {
         return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
     }
 
-    public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) {
+    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
         return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
     }
 }

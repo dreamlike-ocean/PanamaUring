@@ -2,7 +2,7 @@
 
 package top.dreamlike.nativeLib.errno;
 
-import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.ValueLayout.*;
@@ -546,17 +546,20 @@ public class errno_h  {
     public static int EHWPOISON() {
         return (int)133L;
     }
+
     public static MethodHandle __errno_location$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.__errno_location$MH,"__errno_location");
+        return RuntimeHelper.requireNonNull(constants$0.__errno_location$MH, "__errno_location");
     }
-    public static MemoryAddress __errno_location () {
+
+    public static MemorySegment __errno_location() {
         var mh$ = __errno_location$MH();
         try {
-            return (java.lang.foreign.MemoryAddress)mh$.invokeExact();
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact();
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static long _POSIX_C_SOURCE() {
         return 200809L;
     }

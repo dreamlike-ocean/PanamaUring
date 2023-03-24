@@ -2,8 +2,6 @@
 
 package top.dreamlike.nativeLib.unistd;
 
-import java.lang.foreign.Addressable;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
@@ -320,30 +318,35 @@ public class unistd_h  {
     public static OfLong off_t = Constants$root.C_LONG_LONG$LAYOUT;
     public static OfInt pid_t = Constants$root.C_INT$LAYOUT;
     public static OfLong intptr_t = Constants$root.C_LONG_LONG$LAYOUT;
+
     public static MethodHandle access$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.access$MH,"access");
+        return RuntimeHelper.requireNonNull(constants$0.access$MH, "access");
     }
-    public static int access ( Addressable __name,  int __type) {
+
+    public static int access(MemorySegment __name, int __type) {
         var mh$ = access$MH();
         try {
-            return (int)mh$.invokeExact(__name, __type);
+            return (int) mh$.invokeExact(__name, __type);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle faccessat$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.faccessat$MH,"faccessat");
+        return RuntimeHelper.requireNonNull(constants$0.faccessat$MH, "faccessat");
     }
-    public static int faccessat ( int __fd,  Addressable __file,  int __type,  int __flag) {
+
+    public static int faccessat(int __fd, MemorySegment __file, int __type, int __flag) {
         var mh$ = faccessat$MH();
         try {
-            return (int)mh$.invokeExact(__fd, __file, __type, __flag);
+            return (int) mh$.invokeExact(__fd, __file, __type, __flag);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle lseek$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.lseek$MH,"lseek");
+        return RuntimeHelper.requireNonNull(constants$0.lseek$MH, "lseek");
     }
     public static long lseek ( int __fd,  long __offset,  int __whence) {
         var mh$ = lseek$MH();
@@ -364,63 +367,74 @@ public class unistd_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle read$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.read$MH,"read");
+        return RuntimeHelper.requireNonNull(constants$0.read$MH, "read");
     }
-    public static long read ( int __fd,  Addressable __buf,  long __nbytes) {
+
+    public static long read(int __fd, MemorySegment __buf, long __nbytes) {
         var mh$ = read$MH();
         try {
-            return (long)mh$.invokeExact(__fd, __buf, __nbytes);
+            return (long) mh$.invokeExact(__fd, __buf, __nbytes);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle write$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.write$MH,"write");
+        return RuntimeHelper.requireNonNull(constants$0.write$MH, "write");
     }
-    public static long write ( int __fd,  Addressable __buf,  long __n) {
+
+    public static long write(int __fd, MemorySegment __buf, long __n) {
         var mh$ = write$MH();
         try {
-            return (long)mh$.invokeExact(__fd, __buf, __n);
+            return (long) mh$.invokeExact(__fd, __buf, __n);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle pread$MH() {
-        return RuntimeHelper.requireNonNull(constants$1.pread$MH,"pread");
+        return RuntimeHelper.requireNonNull(constants$1.pread$MH, "pread");
     }
-    public static long pread ( int __fd,  Addressable __buf,  long __nbytes,  long __offset) {
+
+    public static long pread(int __fd, MemorySegment __buf, long __nbytes, long __offset) {
         var mh$ = pread$MH();
         try {
-            return (long)mh$.invokeExact(__fd, __buf, __nbytes, __offset);
+            return (long) mh$.invokeExact(__fd, __buf, __nbytes, __offset);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle pwrite$MH() {
-        return RuntimeHelper.requireNonNull(constants$1.pwrite$MH,"pwrite");
+        return RuntimeHelper.requireNonNull(constants$1.pwrite$MH, "pwrite");
     }
-    public static long pwrite ( int __fd,  Addressable __buf,  long __n,  long __offset) {
+
+    public static long pwrite(int __fd, MemorySegment __buf, long __n, long __offset) {
         var mh$ = pwrite$MH();
         try {
-            return (long)mh$.invokeExact(__fd, __buf, __n, __offset);
+            return (long) mh$.invokeExact(__fd, __buf, __n, __offset);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle pipe$MH() {
-        return RuntimeHelper.requireNonNull(constants$1.pipe$MH,"pipe");
+        return RuntimeHelper.requireNonNull(constants$1.pipe$MH, "pipe");
     }
-    public static int pipe ( Addressable __pipedes) {
+
+    public static int pipe(MemorySegment __pipedes) {
         var mh$ = pipe$MH();
         try {
-            return (int)mh$.invokeExact(__pipedes);
+            return (int) mh$.invokeExact(__pipedes);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle alarm$MH() {
-        return RuntimeHelper.requireNonNull(constants$1.alarm$MH,"alarm");
+        return RuntimeHelper.requireNonNull(constants$1.alarm$MH, "alarm");
     }
     public static int alarm ( int __seconds) {
         var mh$ = alarm$MH();
@@ -474,19 +488,22 @@ public class unistd_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle chown$MH() {
-        return RuntimeHelper.requireNonNull(constants$2.chown$MH,"chown");
+        return RuntimeHelper.requireNonNull(constants$2.chown$MH, "chown");
     }
-    public static int chown ( Addressable __file,  int __owner,  int __group) {
+
+    public static int chown(MemorySegment __file, int __owner, int __group) {
         var mh$ = chown$MH();
         try {
-            return (int)mh$.invokeExact(__file, __owner, __group);
+            return (int) mh$.invokeExact(__file, __owner, __group);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle fchown$MH() {
-        return RuntimeHelper.requireNonNull(constants$2.fchown$MH,"fchown");
+        return RuntimeHelper.requireNonNull(constants$2.fchown$MH, "fchown");
     }
     public static int fchown ( int __fd,  int __owner,  int __group) {
         var mh$ = fchown$MH();
@@ -496,41 +513,48 @@ public class unistd_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle lchown$MH() {
-        return RuntimeHelper.requireNonNull(constants$2.lchown$MH,"lchown");
+        return RuntimeHelper.requireNonNull(constants$2.lchown$MH, "lchown");
     }
-    public static int lchown ( Addressable __file,  int __owner,  int __group) {
+
+    public static int lchown(MemorySegment __file, int __owner, int __group) {
         var mh$ = lchown$MH();
         try {
-            return (int)mh$.invokeExact(__file, __owner, __group);
+            return (int) mh$.invokeExact(__file, __owner, __group);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle fchownat$MH() {
-        return RuntimeHelper.requireNonNull(constants$2.fchownat$MH,"fchownat");
+        return RuntimeHelper.requireNonNull(constants$2.fchownat$MH, "fchownat");
     }
-    public static int fchownat ( int __fd,  Addressable __file,  int __owner,  int __group,  int __flag) {
+
+    public static int fchownat(int __fd, MemorySegment __file, int __owner, int __group, int __flag) {
         var mh$ = fchownat$MH();
         try {
-            return (int)mh$.invokeExact(__fd, __file, __owner, __group, __flag);
+            return (int) mh$.invokeExact(__fd, __file, __owner, __group, __flag);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle chdir$MH() {
-        return RuntimeHelper.requireNonNull(constants$3.chdir$MH,"chdir");
+        return RuntimeHelper.requireNonNull(constants$3.chdir$MH, "chdir");
     }
-    public static int chdir ( Addressable __path) {
+
+    public static int chdir(MemorySegment __path) {
         var mh$ = chdir$MH();
         try {
-            return (int)mh$.invokeExact(__path);
+            return (int) mh$.invokeExact(__path);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle fchdir$MH() {
-        return RuntimeHelper.requireNonNull(constants$3.fchdir$MH,"fchdir");
+        return RuntimeHelper.requireNonNull(constants$3.fchdir$MH, "fchdir");
     }
     public static int fchdir ( int __fd) {
         var mh$ = fchdir$MH();
@@ -540,30 +564,35 @@ public class unistd_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle getcwd$MH() {
-        return RuntimeHelper.requireNonNull(constants$3.getcwd$MH,"getcwd");
+        return RuntimeHelper.requireNonNull(constants$3.getcwd$MH, "getcwd");
     }
-    public static MemoryAddress getcwd ( Addressable __buf,  long __size) {
+
+    public static MemorySegment getcwd(MemorySegment __buf, long __size) {
         var mh$ = getcwd$MH();
         try {
-            return (java.lang.foreign.MemoryAddress)mh$.invokeExact(__buf, __size);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__buf, __size);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle getwd$MH() {
-        return RuntimeHelper.requireNonNull(constants$3.getwd$MH,"getwd");
+        return RuntimeHelper.requireNonNull(constants$3.getwd$MH, "getwd");
     }
-    public static MemoryAddress getwd ( Addressable __buf) {
+
+    public static MemorySegment getwd(MemorySegment __buf) {
         var mh$ = getwd$MH();
         try {
-            return (java.lang.foreign.MemoryAddress)mh$.invokeExact(__buf);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__buf);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle dup$MH() {
-        return RuntimeHelper.requireNonNull(constants$3.dup$MH,"dup");
+        return RuntimeHelper.requireNonNull(constants$3.dup$MH, "dup");
     }
     public static int dup ( int __fd) {
         var mh$ = dup$MH();
@@ -584,100 +613,120 @@ public class unistd_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MemoryLayout __environ$LAYOUT() {
         return constants$4.__environ$LAYOUT;
     }
+
     public static VarHandle __environ$VH() {
         return constants$4.__environ$VH;
     }
+
     public static MemorySegment __environ$SEGMENT() {
-        return RuntimeHelper.requireNonNull(constants$4.__environ$SEGMENT,"__environ");
+        return RuntimeHelper.requireNonNull(constants$4.__environ$SEGMENT, "__environ");
     }
-    public static MemoryAddress __environ$get() {
-        return (java.lang.foreign.MemoryAddress) constants$4.__environ$VH.get(RuntimeHelper.requireNonNull(constants$4.__environ$SEGMENT, "__environ"));
+
+    public static MemorySegment __environ$get() {
+        return (java.lang.foreign.MemorySegment) constants$4.__environ$VH.get(RuntimeHelper.requireNonNull(constants$4.__environ$SEGMENT, "__environ"));
     }
-    public static void __environ$set( MemoryAddress x) {
+
+    public static void __environ$set(MemorySegment x) {
         constants$4.__environ$VH.set(RuntimeHelper.requireNonNull(constants$4.__environ$SEGMENT, "__environ"), x);
     }
+
     public static MethodHandle execve$MH() {
-        return RuntimeHelper.requireNonNull(constants$4.execve$MH,"execve");
+        return RuntimeHelper.requireNonNull(constants$4.execve$MH, "execve");
     }
-    public static int execve ( Addressable __path,  Addressable __argv,  Addressable __envp) {
+
+    public static int execve(MemorySegment __path, MemorySegment __argv, MemorySegment __envp) {
         var mh$ = execve$MH();
         try {
-            return (int)mh$.invokeExact(__path, __argv, __envp);
+            return (int) mh$.invokeExact(__path, __argv, __envp);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle fexecve$MH() {
-        return RuntimeHelper.requireNonNull(constants$4.fexecve$MH,"fexecve");
+        return RuntimeHelper.requireNonNull(constants$4.fexecve$MH, "fexecve");
     }
-    public static int fexecve ( int __fd,  Addressable __argv,  Addressable __envp) {
+
+    public static int fexecve(int __fd, MemorySegment __argv, MemorySegment __envp) {
         var mh$ = fexecve$MH();
         try {
-            return (int)mh$.invokeExact(__fd, __argv, __envp);
+            return (int) mh$.invokeExact(__fd, __argv, __envp);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle execv$MH() {
-        return RuntimeHelper.requireNonNull(constants$4.execv$MH,"execv");
+        return RuntimeHelper.requireNonNull(constants$4.execv$MH, "execv");
     }
-    public static int execv ( Addressable __path,  Addressable __argv) {
+
+    public static int execv(MemorySegment __path, MemorySegment __argv) {
         var mh$ = execv$MH();
         try {
-            return (int)mh$.invokeExact(__path, __argv);
+            return (int) mh$.invokeExact(__path, __argv);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle execle$MH() {
-        return RuntimeHelper.requireNonNull(constants$4.execle$MH,"execle");
+        return RuntimeHelper.requireNonNull(constants$4.execle$MH, "execle");
     }
-    public static int execle ( Addressable __path,  Addressable __arg, Object... x2) {
+
+    public static int execle(MemorySegment __path, MemorySegment __arg, Object... x2) {
         var mh$ = execle$MH();
         try {
-            return (int)mh$.invokeExact(__path, __arg, x2);
+            return (int) mh$.invokeExact(__path, __arg, x2);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle execl$MH() {
-        return RuntimeHelper.requireNonNull(constants$4.execl$MH,"execl");
+        return RuntimeHelper.requireNonNull(constants$4.execl$MH, "execl");
     }
-    public static int execl ( Addressable __path,  Addressable __arg, Object... x2) {
+
+    public static int execl(MemorySegment __path, MemorySegment __arg, Object... x2) {
         var mh$ = execl$MH();
         try {
-            return (int)mh$.invokeExact(__path, __arg, x2);
+            return (int) mh$.invokeExact(__path, __arg, x2);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle execvp$MH() {
-        return RuntimeHelper.requireNonNull(constants$5.execvp$MH,"execvp");
+        return RuntimeHelper.requireNonNull(constants$5.execvp$MH, "execvp");
     }
-    public static int execvp ( Addressable __file,  Addressable __argv) {
+
+    public static int execvp(MemorySegment __file, MemorySegment __argv) {
         var mh$ = execvp$MH();
         try {
-            return (int)mh$.invokeExact(__file, __argv);
+            return (int) mh$.invokeExact(__file, __argv);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle execlp$MH() {
-        return RuntimeHelper.requireNonNull(constants$5.execlp$MH,"execlp");
+        return RuntimeHelper.requireNonNull(constants$5.execlp$MH, "execlp");
     }
-    public static int execlp ( Addressable __file,  Addressable __arg, Object... x2) {
+
+    public static int execlp(MemorySegment __file, MemorySegment __arg, Object... x2) {
         var mh$ = execlp$MH();
         try {
-            return (int)mh$.invokeExact(__file, __arg, x2);
+            return (int) mh$.invokeExact(__file, __arg, x2);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle nice$MH() {
-        return RuntimeHelper.requireNonNull(constants$5.nice$MH,"nice");
+        return RuntimeHelper.requireNonNull(constants$5.nice$MH, "nice");
     }
     public static int nice ( int __inc) {
         var mh$ = nice$MH();
@@ -1598,19 +1647,22 @@ public class unistd_h  {
     public static int _CS_V7_ENV() {
         return (int)1149L;
     }
+
     public static MethodHandle pathconf$MH() {
-        return RuntimeHelper.requireNonNull(constants$5.pathconf$MH,"pathconf");
+        return RuntimeHelper.requireNonNull(constants$5.pathconf$MH, "pathconf");
     }
-    public static long pathconf ( Addressable __path,  int __name) {
+
+    public static long pathconf(MemorySegment __path, int __name) {
         var mh$ = pathconf$MH();
         try {
-            return (long)mh$.invokeExact(__path, __name);
+            return (long) mh$.invokeExact(__path, __name);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle fpathconf$MH() {
-        return RuntimeHelper.requireNonNull(constants$5.fpathconf$MH,"fpathconf");
+        return RuntimeHelper.requireNonNull(constants$5.fpathconf$MH, "fpathconf");
     }
     public static long fpathconf ( int __fd,  int __name) {
         var mh$ = fpathconf$MH();
@@ -1631,19 +1683,22 @@ public class unistd_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle confstr$MH() {
-        return RuntimeHelper.requireNonNull(constants$6.confstr$MH,"confstr");
+        return RuntimeHelper.requireNonNull(constants$6.confstr$MH, "confstr");
     }
-    public static long confstr ( int __name,  Addressable __buf,  long __len) {
+
+    public static long confstr(int __name, MemorySegment __buf, long __len) {
         var mh$ = confstr$MH();
         try {
-            return (long)mh$.invokeExact(__name, __buf, __len);
+            return (long) mh$.invokeExact(__name, __buf, __len);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle getpid$MH() {
-        return RuntimeHelper.requireNonNull(constants$6.getpid$MH,"getpid");
+        return RuntimeHelper.requireNonNull(constants$6.getpid$MH, "getpid");
     }
     public static int getpid () {
         var mh$ = getpid$MH();
@@ -1785,19 +1840,22 @@ public class unistd_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle getgroups$MH() {
-        return RuntimeHelper.requireNonNull(constants$8.getgroups$MH,"getgroups");
+        return RuntimeHelper.requireNonNull(constants$8.getgroups$MH, "getgroups");
     }
-    public static int getgroups ( int __size,  Addressable __list) {
+
+    public static int getgroups(int __size, MemorySegment __list) {
         var mh$ = getgroups$MH();
         try {
-            return (int)mh$.invokeExact(__size, __list);
+            return (int) mh$.invokeExact(__size, __list);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle setuid$MH() {
-        return RuntimeHelper.requireNonNull(constants$8.setuid$MH,"setuid");
+        return RuntimeHelper.requireNonNull(constants$8.setuid$MH, "setuid");
     }
     public static int setuid ( int __uid) {
         var mh$ = setuid$MH();
@@ -1884,30 +1942,35 @@ public class unistd_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle ttyname$MH() {
-        return RuntimeHelper.requireNonNull(constants$10.ttyname$MH,"ttyname");
+        return RuntimeHelper.requireNonNull(constants$10.ttyname$MH, "ttyname");
     }
-    public static MemoryAddress ttyname ( int __fd) {
+
+    public static MemorySegment ttyname(int __fd) {
         var mh$ = ttyname$MH();
         try {
-            return (java.lang.foreign.MemoryAddress)mh$.invokeExact(__fd);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__fd);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle ttyname_r$MH() {
-        return RuntimeHelper.requireNonNull(constants$10.ttyname_r$MH,"ttyname_r");
+        return RuntimeHelper.requireNonNull(constants$10.ttyname_r$MH, "ttyname_r");
     }
-    public static int ttyname_r ( int __fd,  Addressable __buf,  long __buflen) {
+
+    public static int ttyname_r(int __fd, MemorySegment __buf, long __buflen) {
         var mh$ = ttyname_r$MH();
         try {
-            return (int)mh$.invokeExact(__fd, __buf, __buflen);
+            return (int) mh$.invokeExact(__fd, __buf, __buflen);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle isatty$MH() {
-        return RuntimeHelper.requireNonNull(constants$10.isatty$MH,"isatty");
+        return RuntimeHelper.requireNonNull(constants$10.isatty$MH, "isatty");
     }
     public static int isatty ( int __fd) {
         var mh$ = isatty$MH();
@@ -1928,107 +1991,126 @@ public class unistd_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle link$MH() {
-        return RuntimeHelper.requireNonNull(constants$10.link$MH,"link");
+        return RuntimeHelper.requireNonNull(constants$10.link$MH, "link");
     }
-    public static int link ( Addressable __from,  Addressable __to) {
+
+    public static int link(MemorySegment __from, MemorySegment __to) {
         var mh$ = link$MH();
         try {
-            return (int)mh$.invokeExact(__from, __to);
+            return (int) mh$.invokeExact(__from, __to);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle linkat$MH() {
-        return RuntimeHelper.requireNonNull(constants$10.linkat$MH,"linkat");
+        return RuntimeHelper.requireNonNull(constants$10.linkat$MH, "linkat");
     }
-    public static int linkat ( int __fromfd,  Addressable __from,  int __tofd,  Addressable __to,  int __flags) {
+
+    public static int linkat(int __fromfd, MemorySegment __from, int __tofd, MemorySegment __to, int __flags) {
         var mh$ = linkat$MH();
         try {
-            return (int)mh$.invokeExact(__fromfd, __from, __tofd, __to, __flags);
+            return (int) mh$.invokeExact(__fromfd, __from, __tofd, __to, __flags);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle symlink$MH() {
-        return RuntimeHelper.requireNonNull(constants$11.symlink$MH,"symlink");
+        return RuntimeHelper.requireNonNull(constants$11.symlink$MH, "symlink");
     }
-    public static int symlink ( Addressable __from,  Addressable __to) {
+
+    public static int symlink(MemorySegment __from, MemorySegment __to) {
         var mh$ = symlink$MH();
         try {
-            return (int)mh$.invokeExact(__from, __to);
+            return (int) mh$.invokeExact(__from, __to);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle readlink$MH() {
-        return RuntimeHelper.requireNonNull(constants$11.readlink$MH,"readlink");
+        return RuntimeHelper.requireNonNull(constants$11.readlink$MH, "readlink");
     }
-    public static long readlink ( Addressable __path,  Addressable __buf,  long __len) {
+
+    public static long readlink(MemorySegment __path, MemorySegment __buf, long __len) {
         var mh$ = readlink$MH();
         try {
-            return (long)mh$.invokeExact(__path, __buf, __len);
+            return (long) mh$.invokeExact(__path, __buf, __len);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle symlinkat$MH() {
-        return RuntimeHelper.requireNonNull(constants$11.symlinkat$MH,"symlinkat");
+        return RuntimeHelper.requireNonNull(constants$11.symlinkat$MH, "symlinkat");
     }
-    public static int symlinkat ( Addressable __from,  int __tofd,  Addressable __to) {
+
+    public static int symlinkat(MemorySegment __from, int __tofd, MemorySegment __to) {
         var mh$ = symlinkat$MH();
         try {
-            return (int)mh$.invokeExact(__from, __tofd, __to);
+            return (int) mh$.invokeExact(__from, __tofd, __to);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle readlinkat$MH() {
-        return RuntimeHelper.requireNonNull(constants$11.readlinkat$MH,"readlinkat");
+        return RuntimeHelper.requireNonNull(constants$11.readlinkat$MH, "readlinkat");
     }
-    public static long readlinkat ( int __fd,  Addressable __path,  Addressable __buf,  long __len) {
+
+    public static long readlinkat(int __fd, MemorySegment __path, MemorySegment __buf, long __len) {
         var mh$ = readlinkat$MH();
         try {
-            return (long)mh$.invokeExact(__fd, __path, __buf, __len);
+            return (long) mh$.invokeExact(__fd, __path, __buf, __len);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle unlink$MH() {
-        return RuntimeHelper.requireNonNull(constants$11.unlink$MH,"unlink");
+        return RuntimeHelper.requireNonNull(constants$11.unlink$MH, "unlink");
     }
-    public static int unlink ( Addressable __name) {
+
+    public static int unlink(MemorySegment __name) {
         var mh$ = unlink$MH();
         try {
-            return (int)mh$.invokeExact(__name);
+            return (int) mh$.invokeExact(__name);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle unlinkat$MH() {
-        return RuntimeHelper.requireNonNull(constants$11.unlinkat$MH,"unlinkat");
+        return RuntimeHelper.requireNonNull(constants$11.unlinkat$MH, "unlinkat");
     }
-    public static int unlinkat ( int __fd,  Addressable __name,  int __flag) {
+
+    public static int unlinkat(int __fd, MemorySegment __name, int __flag) {
         var mh$ = unlinkat$MH();
         try {
-            return (int)mh$.invokeExact(__fd, __name, __flag);
+            return (int) mh$.invokeExact(__fd, __name, __flag);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle rmdir$MH() {
-        return RuntimeHelper.requireNonNull(constants$12.rmdir$MH,"rmdir");
+        return RuntimeHelper.requireNonNull(constants$12.rmdir$MH, "rmdir");
     }
-    public static int rmdir ( Addressable __path) {
+
+    public static int rmdir(MemorySegment __path) {
         var mh$ = rmdir$MH();
         try {
-            return (int)mh$.invokeExact(__path);
+            return (int) mh$.invokeExact(__path);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle tcgetpgrp$MH() {
-        return RuntimeHelper.requireNonNull(constants$12.tcgetpgrp$MH,"tcgetpgrp");
+        return RuntimeHelper.requireNonNull(constants$12.tcgetpgrp$MH, "tcgetpgrp");
     }
     public static int tcgetpgrp ( int __fd) {
         var mh$ = tcgetpgrp$MH();
@@ -2049,57 +2131,70 @@ public class unistd_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle getlogin$MH() {
-        return RuntimeHelper.requireNonNull(constants$12.getlogin$MH,"getlogin");
+        return RuntimeHelper.requireNonNull(constants$12.getlogin$MH, "getlogin");
     }
-    public static MemoryAddress getlogin () {
+
+    public static MemorySegment getlogin() {
         var mh$ = getlogin$MH();
         try {
-            return (java.lang.foreign.MemoryAddress)mh$.invokeExact();
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact();
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle getlogin_r$MH() {
-        return RuntimeHelper.requireNonNull(constants$12.getlogin_r$MH,"getlogin_r");
+        return RuntimeHelper.requireNonNull(constants$12.getlogin_r$MH, "getlogin_r");
     }
-    public static int getlogin_r ( Addressable __name,  long __name_len) {
+
+    public static int getlogin_r(MemorySegment __name, long __name_len) {
         var mh$ = getlogin_r$MH();
         try {
-            return (int)mh$.invokeExact(__name, __name_len);
+            return (int) mh$.invokeExact(__name, __name_len);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle setlogin$MH() {
-        return RuntimeHelper.requireNonNull(constants$12.setlogin$MH,"setlogin");
+        return RuntimeHelper.requireNonNull(constants$12.setlogin$MH, "setlogin");
     }
-    public static int setlogin ( Addressable __name) {
+
+    public static int setlogin(MemorySegment __name) {
         var mh$ = setlogin$MH();
         try {
-            return (int)mh$.invokeExact(__name);
+            return (int) mh$.invokeExact(__name);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MemoryLayout optarg$LAYOUT() {
         return constants$13.optarg$LAYOUT;
     }
+
     public static VarHandle optarg$VH() {
         return constants$13.optarg$VH;
     }
+
     public static MemorySegment optarg$SEGMENT() {
-        return RuntimeHelper.requireNonNull(constants$13.optarg$SEGMENT,"optarg");
+        return RuntimeHelper.requireNonNull(constants$13.optarg$SEGMENT, "optarg");
     }
-    public static MemoryAddress optarg$get() {
-        return (java.lang.foreign.MemoryAddress) constants$13.optarg$VH.get(RuntimeHelper.requireNonNull(constants$13.optarg$SEGMENT, "optarg"));
+
+    public static MemorySegment optarg$get() {
+        return (java.lang.foreign.MemorySegment) constants$13.optarg$VH.get(RuntimeHelper.requireNonNull(constants$13.optarg$SEGMENT, "optarg"));
     }
-    public static void optarg$set( MemoryAddress x) {
+
+    public static void optarg$set(MemorySegment x) {
         constants$13.optarg$VH.set(RuntimeHelper.requireNonNull(constants$13.optarg$SEGMENT, "optarg"), x);
     }
+
     public static MemoryLayout optind$LAYOUT() {
         return constants$13.optind$LAYOUT;
     }
+
     public static VarHandle optind$VH() {
         return constants$13.optind$VH;
     }
@@ -2142,41 +2237,48 @@ public class unistd_h  {
     public static void optopt$set( int x) {
         constants$13.optopt$VH.set(RuntimeHelper.requireNonNull(constants$13.optopt$SEGMENT, "optopt"), x);
     }
+
     public static MethodHandle getopt$MH() {
-        return RuntimeHelper.requireNonNull(constants$13.getopt$MH,"getopt");
+        return RuntimeHelper.requireNonNull(constants$13.getopt$MH, "getopt");
     }
-    public static int getopt ( int ___argc,  Addressable ___argv,  Addressable __shortopts) {
+
+    public static int getopt(int ___argc, MemorySegment ___argv, MemorySegment __shortopts) {
         var mh$ = getopt$MH();
         try {
-            return (int)mh$.invokeExact(___argc, ___argv, __shortopts);
+            return (int) mh$.invokeExact(___argc, ___argv, __shortopts);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle gethostname$MH() {
-        return RuntimeHelper.requireNonNull(constants$13.gethostname$MH,"gethostname");
+        return RuntimeHelper.requireNonNull(constants$13.gethostname$MH, "gethostname");
     }
-    public static int gethostname ( Addressable __name,  long __len) {
+
+    public static int gethostname(MemorySegment __name, long __len) {
         var mh$ = gethostname$MH();
         try {
-            return (int)mh$.invokeExact(__name, __len);
+            return (int) mh$.invokeExact(__name, __len);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle sethostname$MH() {
-        return RuntimeHelper.requireNonNull(constants$14.sethostname$MH,"sethostname");
+        return RuntimeHelper.requireNonNull(constants$14.sethostname$MH, "sethostname");
     }
-    public static int sethostname ( Addressable __name,  long __len) {
+
+    public static int sethostname(MemorySegment __name, long __len) {
         var mh$ = sethostname$MH();
         try {
-            return (int)mh$.invokeExact(__name, __len);
+            return (int) mh$.invokeExact(__name, __len);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle sethostid$MH() {
-        return RuntimeHelper.requireNonNull(constants$14.sethostid$MH,"sethostid");
+        return RuntimeHelper.requireNonNull(constants$14.sethostid$MH, "sethostid");
     }
     public static int sethostid ( long __id) {
         var mh$ = sethostid$MH();
@@ -2186,30 +2288,35 @@ public class unistd_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle getdomainname$MH() {
-        return RuntimeHelper.requireNonNull(constants$14.getdomainname$MH,"getdomainname");
+        return RuntimeHelper.requireNonNull(constants$14.getdomainname$MH, "getdomainname");
     }
-    public static int getdomainname ( Addressable __name,  long __len) {
+
+    public static int getdomainname(MemorySegment __name, long __len) {
         var mh$ = getdomainname$MH();
         try {
-            return (int)mh$.invokeExact(__name, __len);
+            return (int) mh$.invokeExact(__name, __len);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle setdomainname$MH() {
-        return RuntimeHelper.requireNonNull(constants$14.setdomainname$MH,"setdomainname");
+        return RuntimeHelper.requireNonNull(constants$14.setdomainname$MH, "setdomainname");
     }
-    public static int setdomainname ( Addressable __name,  long __len) {
+
+    public static int setdomainname(MemorySegment __name, long __len) {
         var mh$ = setdomainname$MH();
         try {
-            return (int)mh$.invokeExact(__name, __len);
+            return (int) mh$.invokeExact(__name, __len);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle vhangup$MH() {
-        return RuntimeHelper.requireNonNull(constants$14.vhangup$MH,"vhangup");
+        return RuntimeHelper.requireNonNull(constants$14.vhangup$MH, "vhangup");
     }
     public static int vhangup () {
         var mh$ = vhangup$MH();
@@ -2219,52 +2326,61 @@ public class unistd_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle revoke$MH() {
-        return RuntimeHelper.requireNonNull(constants$14.revoke$MH,"revoke");
+        return RuntimeHelper.requireNonNull(constants$14.revoke$MH, "revoke");
     }
-    public static int revoke ( Addressable __file) {
+
+    public static int revoke(MemorySegment __file) {
         var mh$ = revoke$MH();
         try {
-            return (int)mh$.invokeExact(__file);
+            return (int) mh$.invokeExact(__file);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle profil$MH() {
-        return RuntimeHelper.requireNonNull(constants$15.profil$MH,"profil");
+        return RuntimeHelper.requireNonNull(constants$15.profil$MH, "profil");
     }
-    public static int profil ( Addressable __sample_buffer,  long __size,  long __offset,  int __scale) {
+
+    public static int profil(MemorySegment __sample_buffer, long __size, long __offset, int __scale) {
         var mh$ = profil$MH();
         try {
-            return (int)mh$.invokeExact(__sample_buffer, __size, __offset, __scale);
+            return (int) mh$.invokeExact(__sample_buffer, __size, __offset, __scale);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle acct$MH() {
-        return RuntimeHelper.requireNonNull(constants$15.acct$MH,"acct");
+        return RuntimeHelper.requireNonNull(constants$15.acct$MH, "acct");
     }
-    public static int acct ( Addressable __name) {
+
+    public static int acct(MemorySegment __name) {
         var mh$ = acct$MH();
         try {
-            return (int)mh$.invokeExact(__name);
+            return (int) mh$.invokeExact(__name);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle getusershell$MH() {
-        return RuntimeHelper.requireNonNull(constants$15.getusershell$MH,"getusershell");
+        return RuntimeHelper.requireNonNull(constants$15.getusershell$MH, "getusershell");
     }
-    public static MemoryAddress getusershell () {
+
+    public static MemorySegment getusershell() {
         var mh$ = getusershell$MH();
         try {
-            return (java.lang.foreign.MemoryAddress)mh$.invokeExact();
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact();
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle endusershell$MH() {
-        return RuntimeHelper.requireNonNull(constants$15.endusershell$MH,"endusershell");
+        return RuntimeHelper.requireNonNull(constants$15.endusershell$MH, "endusershell");
     }
     public static void endusershell () {
         var mh$ = endusershell$MH();
@@ -2296,30 +2412,35 @@ public class unistd_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle chroot$MH() {
-        return RuntimeHelper.requireNonNull(constants$16.chroot$MH,"chroot");
+        return RuntimeHelper.requireNonNull(constants$16.chroot$MH, "chroot");
     }
-    public static int chroot ( Addressable __path) {
+
+    public static int chroot(MemorySegment __path) {
         var mh$ = chroot$MH();
         try {
-            return (int)mh$.invokeExact(__path);
+            return (int) mh$.invokeExact(__path);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle getpass$MH() {
-        return RuntimeHelper.requireNonNull(constants$16.getpass$MH,"getpass");
+        return RuntimeHelper.requireNonNull(constants$16.getpass$MH, "getpass");
     }
-    public static MemoryAddress getpass ( Addressable __prompt) {
+
+    public static MemorySegment getpass(MemorySegment __prompt) {
         var mh$ = getpass$MH();
         try {
-            return (java.lang.foreign.MemoryAddress)mh$.invokeExact(__prompt);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__prompt);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle fsync$MH() {
-        return RuntimeHelper.requireNonNull(constants$16.fsync$MH,"fsync");
+        return RuntimeHelper.requireNonNull(constants$16.fsync$MH, "fsync");
     }
     public static int fsync ( int __fd) {
         var mh$ = fsync$MH();
@@ -2373,19 +2494,22 @@ public class unistd_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle truncate$MH() {
-        return RuntimeHelper.requireNonNull(constants$17.truncate$MH,"truncate");
+        return RuntimeHelper.requireNonNull(constants$17.truncate$MH, "truncate");
     }
-    public static int truncate ( Addressable __file,  long __length) {
+
+    public static int truncate(MemorySegment __file, long __length) {
         var mh$ = truncate$MH();
         try {
-            return (int)mh$.invokeExact(__file, __length);
+            return (int) mh$.invokeExact(__file, __length);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle ftruncate$MH() {
-        return RuntimeHelper.requireNonNull(constants$17.ftruncate$MH,"ftruncate");
+        return RuntimeHelper.requireNonNull(constants$17.ftruncate$MH, "ftruncate");
     }
     public static int ftruncate ( int __fd,  long __length) {
         var mh$ = ftruncate$MH();
@@ -2395,30 +2519,35 @@ public class unistd_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle brk$MH() {
-        return RuntimeHelper.requireNonNull(constants$17.brk$MH,"brk");
+        return RuntimeHelper.requireNonNull(constants$17.brk$MH, "brk");
     }
-    public static int brk ( Addressable __addr) {
+
+    public static int brk(MemorySegment __addr) {
         var mh$ = brk$MH();
         try {
-            return (int)mh$.invokeExact(__addr);
+            return (int) mh$.invokeExact(__addr);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle sbrk$MH() {
-        return RuntimeHelper.requireNonNull(constants$17.sbrk$MH,"sbrk");
+        return RuntimeHelper.requireNonNull(constants$17.sbrk$MH, "sbrk");
     }
-    public static MemoryAddress sbrk ( long __delta) {
+
+    public static MemorySegment sbrk(long __delta) {
         var mh$ = sbrk$MH();
         try {
-            return (java.lang.foreign.MemoryAddress)mh$.invokeExact(__delta);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__delta);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle syscall$MH() {
-        return RuntimeHelper.requireNonNull(constants$17.syscall$MH,"syscall");
+        return RuntimeHelper.requireNonNull(constants$17.syscall$MH, "syscall");
     }
     public static long syscall ( long __sysno, Object... x1) {
         var mh$ = syscall$MH();
@@ -2450,28 +2579,33 @@ public class unistd_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle crypt$MH() {
-        return RuntimeHelper.requireNonNull(constants$18.crypt$MH,"crypt");
+        return RuntimeHelper.requireNonNull(constants$18.crypt$MH, "crypt");
     }
-    public static MemoryAddress crypt ( Addressable __key,  Addressable __salt) {
+
+    public static MemorySegment crypt(MemorySegment __key, MemorySegment __salt) {
         var mh$ = crypt$MH();
         try {
-            return (java.lang.foreign.MemoryAddress)mh$.invokeExact(__key, __salt);
+            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__key, __salt);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static MethodHandle getentropy$MH() {
-        return RuntimeHelper.requireNonNull(constants$18.getentropy$MH,"getentropy");
+        return RuntimeHelper.requireNonNull(constants$18.getentropy$MH, "getentropy");
     }
-    public static int getentropy ( Addressable __buffer,  long __length) {
+
+    public static int getentropy(MemorySegment __buffer, long __length) {
         var mh$ = getentropy$MH();
         try {
-            return (int)mh$.invokeExact(__buffer, __length);
+            return (int) mh$.invokeExact(__buffer, __length);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
+
     public static long _POSIX_C_SOURCE() {
         return 200809L;
     }
@@ -2655,14 +2789,17 @@ public class unistd_h  {
     public static MemorySegment __LP64_OFF64_LDFLAGS() {
         return constants$19.__LP64_OFF64_LDFLAGS$SEGMENT;
     }
+
     public static int __TIMESIZE() {
-        return (int)64L;
+        return (int) 64L;
     }
-    public static MemoryAddress NULL() {
+
+    public static MemorySegment NULL() {
         return constants$19.NULL$ADDR;
     }
+
     public static int L_SET() {
-        return (int)0L;
+        return (int) 0L;
     }
     public static int L_INCR() {
         return (int)1L;

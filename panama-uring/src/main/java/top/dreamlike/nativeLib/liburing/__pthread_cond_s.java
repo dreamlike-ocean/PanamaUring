@@ -2,8 +2,8 @@
 
 package top.dreamlike.nativeLib.liburing;
 
-import java.lang.invoke.VarHandle;
 import java.lang.foreign.*;
+import java.lang.invoke.VarHandle;
 
 public class __pthread_cond_s {
 
@@ -47,6 +47,30 @@ public class __pthread_cond_s {
     public static void __wseq$set(MemorySegment seg, long index, long x) {
         __pthread_cond_s.__wseq$VH.set(seg.asSlice(index*sizeof()), x);
     }
+    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
+        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
+    }
+
+    public static MemorySegment __wseq32$slice(MemorySegment seg) {
+        return seg.asSlice(0, 8);
+    }
+    static final VarHandle __g1_start$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("$anon$1"), MemoryLayout.PathElement.groupElement("__g1_start"));
+    public static VarHandle __g1_start$VH() {
+        return __pthread_cond_s.__g1_start$VH;
+    }
+    public static long __g1_start$get(MemorySegment seg) {
+        return (long)__pthread_cond_s.__g1_start$VH.get(seg);
+    }
+    public static void __g1_start$set( MemorySegment seg, long x) {
+        __pthread_cond_s.__g1_start$VH.set(seg, x);
+    }
+    public static long __g1_start$get(MemorySegment seg, long index) {
+        return (long)__pthread_cond_s.__g1_start$VH.get(seg.asSlice(index*sizeof()));
+    }
+    public static void __g1_start$set(MemorySegment seg, long index, long x) {
+        __pthread_cond_s.__g1_start$VH.set(seg.asSlice(index*sizeof()), x);
+    }
+
     public static class __wseq32 {
 
         static final  GroupLayout __wseq32$struct$LAYOUT = MemoryLayout.structLayout(
@@ -93,75 +117,10 @@ public class __pthread_cond_s {
         public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
             return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
         }
-        public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) { return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session); }
-    }
 
-    public static MemorySegment __wseq32$slice(MemorySegment seg) {
-        return seg.asSlice(0, 8);
-    }
-    static final VarHandle __g1_start$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("$anon$1"), MemoryLayout.PathElement.groupElement("__g1_start"));
-    public static VarHandle __g1_start$VH() {
-        return __pthread_cond_s.__g1_start$VH;
-    }
-    public static long __g1_start$get(MemorySegment seg) {
-        return (long)__pthread_cond_s.__g1_start$VH.get(seg);
-    }
-    public static void __g1_start$set( MemorySegment seg, long x) {
-        __pthread_cond_s.__g1_start$VH.set(seg, x);
-    }
-    public static long __g1_start$get(MemorySegment seg, long index) {
-        return (long)__pthread_cond_s.__g1_start$VH.get(seg.asSlice(index*sizeof()));
-    }
-    public static void __g1_start$set(MemorySegment seg, long index, long x) {
-        __pthread_cond_s.__g1_start$VH.set(seg.asSlice(index*sizeof()), x);
-    }
-    public static class __g1_start32 {
-
-        static final  GroupLayout __g1_start32$struct$LAYOUT = MemoryLayout.structLayout(
-            Constants$root.C_INT$LAYOUT.withName("__low"),
-            Constants$root.C_INT$LAYOUT.withName("__high")
-        );
-        public static MemoryLayout $LAYOUT() {
-            return __g1_start32.__g1_start32$struct$LAYOUT;
+        public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
+            return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
         }
-        static final VarHandle __low$VH = __g1_start32$struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("__low"));
-        public static VarHandle __low$VH() {
-            return __g1_start32.__low$VH;
-        }
-        public static int __low$get(MemorySegment seg) {
-            return (int)__g1_start32.__low$VH.get(seg);
-        }
-        public static void __low$set( MemorySegment seg, int x) {
-            __g1_start32.__low$VH.set(seg, x);
-        }
-        public static int __low$get(MemorySegment seg, long index) {
-            return (int)__g1_start32.__low$VH.get(seg.asSlice(index*sizeof()));
-        }
-        public static void __low$set(MemorySegment seg, long index, int x) {
-            __g1_start32.__low$VH.set(seg.asSlice(index*sizeof()), x);
-        }
-        static final VarHandle __high$VH = __g1_start32$struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("__high"));
-        public static VarHandle __high$VH() {
-            return __g1_start32.__high$VH;
-        }
-        public static int __high$get(MemorySegment seg) {
-            return (int)__g1_start32.__high$VH.get(seg);
-        }
-        public static void __high$set( MemorySegment seg, int x) {
-            __g1_start32.__high$VH.set(seg, x);
-        }
-        public static int __high$get(MemorySegment seg, long index) {
-            return (int)__g1_start32.__high$VH.get(seg.asSlice(index*sizeof()));
-        }
-        public static void __high$set(MemorySegment seg, long index, int x) {
-            __g1_start32.__high$VH.set(seg.asSlice(index*sizeof()), x);
-        }
-        public static long sizeof() { return $LAYOUT().byteSize(); }
-        public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
-        public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
-            return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
-        }
-        public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) { return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session); }
     }
 
     public static MemorySegment __g1_start32$slice(MemorySegment seg) {
@@ -210,10 +169,63 @@ public class __pthread_cond_s {
     }
     public static long sizeof() { return $LAYOUT().byteSize(); }
     public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
+
     public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
         return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
     }
-    public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) { return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session); }
+
+    public static class __g1_start32 {
+
+        static final  GroupLayout __g1_start32$struct$LAYOUT = MemoryLayout.structLayout(
+            Constants$root.C_INT$LAYOUT.withName("__low"),
+            Constants$root.C_INT$LAYOUT.withName("__high")
+        );
+        public static MemoryLayout $LAYOUT() {
+            return __g1_start32.__g1_start32$struct$LAYOUT;
+        }
+        static final VarHandle __low$VH = __g1_start32$struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("__low"));
+        public static VarHandle __low$VH() {
+            return __g1_start32.__low$VH;
+        }
+        public static int __low$get(MemorySegment seg) {
+            return (int)__g1_start32.__low$VH.get(seg);
+        }
+        public static void __low$set( MemorySegment seg, int x) {
+            __g1_start32.__low$VH.set(seg, x);
+        }
+        public static int __low$get(MemorySegment seg, long index) {
+            return (int)__g1_start32.__low$VH.get(seg.asSlice(index*sizeof()));
+        }
+        public static void __low$set(MemorySegment seg, long index, int x) {
+            __g1_start32.__low$VH.set(seg.asSlice(index*sizeof()), x);
+        }
+        static final VarHandle __high$VH = __g1_start32$struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("__high"));
+        public static VarHandle __high$VH() {
+            return __g1_start32.__high$VH;
+        }
+        public static int __high$get(MemorySegment seg) {
+            return (int)__g1_start32.__high$VH.get(seg);
+        }
+        public static void __high$set( MemorySegment seg, int x) {
+            __g1_start32.__high$VH.set(seg, x);
+        }
+        public static int __high$get(MemorySegment seg, long index) {
+            return (int)__g1_start32.__high$VH.get(seg.asSlice(index*sizeof()));
+        }
+        public static void __high$set(MemorySegment seg, long index, int x) {
+            __g1_start32.__high$VH.set(seg.asSlice(index*sizeof()), x);
+        }
+        public static long sizeof() { return $LAYOUT().byteSize(); }
+        public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
+
+        public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
+            return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
+        }
+
+        public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
+            return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
+        }
+    }
 }
 
 

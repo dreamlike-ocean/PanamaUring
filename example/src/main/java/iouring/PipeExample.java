@@ -4,14 +4,14 @@ import top.dreamlike.async.file.AsyncPipe;
 import top.dreamlike.eventloop.IOUringEventLoop;
 import top.dreamlike.helper.NativeHelper;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 public class PipeExample {
     public static void main(String[] args) {
-        try (MemorySession session = MemorySession.openShared();
+        try (Arena session = Arena.openShared();
              IOUringEventLoop eventLoop = new IOUringEventLoop(32, 8, 100)) {
             eventLoop.start();
             AsyncPipe pipe = new AsyncPipe(eventLoop);

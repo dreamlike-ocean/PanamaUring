@@ -2,8 +2,8 @@
 
 package top.dreamlike.nativeLib.liburing;
 
-import java.lang.invoke.VarHandle;
 import java.lang.foreign.*;
+import java.lang.invoke.VarHandle;
 
 public class fscrypt_key_specifier {
 
@@ -51,6 +51,20 @@ public class fscrypt_key_specifier {
     public static void __reserved$set(MemorySegment seg, long index, int x) {
         fscrypt_key_specifier.__reserved$VH.set(seg.asSlice(index*sizeof()), x);
     }
+    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
+        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
+    }
+
+    public static MemorySegment u$slice(MemorySegment seg) {
+        return seg.asSlice(8, 32);
+    }
+    public static long sizeof() { return $LAYOUT().byteSize(); }
+    public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
+
+    public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
+        return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
+    }
+
     public static class u {
 
         static final  GroupLayout u$union$LAYOUT = MemoryLayout.unionLayout(
@@ -75,18 +89,11 @@ public class fscrypt_key_specifier {
         public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
             return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
         }
-        public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) { return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session); }
-    }
 
-    public static MemorySegment u$slice(MemorySegment seg) {
-        return seg.asSlice(8, 32);
+        public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
+            return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
+        }
     }
-    public static long sizeof() { return $LAYOUT().byteSize(); }
-    public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
-    public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
-        return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
-    }
-    public static MemorySegment ofAddress(MemoryAddress addr, MemorySession session) { return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session); }
 }
 
 
