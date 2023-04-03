@@ -7,6 +7,8 @@
 这个项目并非与netty的io_uring一样会从系统调用开始处理，而是直接修改[liburing](https://github.com/axboe/liburing)
 源码，在此基础上封装调用，即它最底层只是一层对liburing的封装。
 
+**目前阶段参考价值大于实用价值，在jdk21之后我会做进一步的API适配，Panama API仍在变动之中**
+
 ### 支持的特性
 
 **注意**：若无提及则均为one shot模式
@@ -59,7 +61,7 @@
 > 注意 jdk版本不能升级也不能降级，Panama api可能不一致
 
 - Maven 3.8.4
-- OpenJDK 19
+- OpenJDK 20
 - Linux >= 5.10
 
 构建非常简单
@@ -75,8 +77,6 @@ mvn clean package -DskipTests
 由于io_uring的双环特性，其实推荐单线程获取sqe，然后同一线程再submit。
 
 目前获取io_uring实例直接使用默认参数获取，所以使用的是`io_uring_get_sqe`这个函数获取sqe，这个方法会导致从环上摘下一个sqe，而且封装的EventLoop带有一个定期submit的功能，所以要求`io_uring_get_sqe`和sqe参数填充这多个操作必须是原子的
-
-> 所以目前不支持IORING_SETUP_SQPOLL这个参数
 
 进而需要把这几个操作打包为一个操作切换到EventLoop上面执行
 
