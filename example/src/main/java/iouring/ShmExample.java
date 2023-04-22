@@ -17,7 +17,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 public class ShmExample {
     public static void main(String[] args) {
-//        /proc/7391/fd
+//        /proc/7391/res
 
         try (Arena session = Arena.openConfined()) {
             //整点共享内存
@@ -28,7 +28,7 @@ public class ShmExample {
             //找到这个共享内存fd的路径
             MemorySegment pathBuff = session.allocate(64);
             int pid = unistd_h.getpid();
-            String fdsPath = String.format("/proc/%d/fd/", pid);
+            String fdsPath = String.format("/proc/%d/res/", pid);
             long readLength = unistd_h.readlink(session.allocateUtf8String(fdsPath + shm_fd), pathBuff, pathBuff.byteSize());
             MemorySegment pathName = pathBuff.asSlice(0, readLength);
             System.out.println(NativeHelper.toString(pathName));

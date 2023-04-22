@@ -1,0 +1,51 @@
+package top.dreamlike.async.socket.extension;
+
+import top.dreamlike.eventloop.EpollUringEventLoop;
+import top.dreamlike.extension.flow.DispatchPublisher;
+import top.dreamlike.extension.flow.SimpleSubscriber;
+
+import java.util.concurrent.Flow;
+import java.util.function.Consumer;
+
+import static top.dreamlike.nativeLib.epoll.epoll_h.EPOLLIN;
+
+public class EpollFlow<T> extends DispatchPublisher<T> implements Flow.Subscriber<T> {
+    private final SimpleSubscriber<T> simpleSubscriber;
+    private final EpollUringEventLoop eventLoop;
+    private int fd;
+
+    public EpollFlow(int maxBuffer, int fd, EpollUringEventLoop epollUringEventLoop, Consumer<T> onNext) {
+        super(maxBuffer, null, epollUringEventLoop);
+        this.eventLoop = epollUringEventLoop;
+        this.onCancel = this::cancelCallback;
+        this.simpleSubscriber = new SimpleSubscriber<>();
+        this.simpleSubscriber.setConsumer(onNext);
+        this.subscribe(simpleSubscriber);
+    }
+
+    public void cancelCallback() {
+        eventLoop.runOnEventLoop(() -> {
+            eventLoop.removeEventUnsafe(fd, EPOLLIN());
+        });
+    }
+
+    @Override
+    public void onSubscribe(Flow.Subscription subscription) {
+
+    }
+
+    @Override
+    public void onNext(T item) {
+
+    }
+
+    @Override
+    public void onError(Throwable throwable) {
+
+    }
+
+    @Override
+    public void onComplete() {
+
+    }
+}

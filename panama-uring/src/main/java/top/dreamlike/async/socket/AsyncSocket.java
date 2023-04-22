@@ -128,7 +128,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
     @Override
     public String toString() {
         return "AsyncSocket{" +
-                "fd=" + fd +
+                "res=" + fd +
                 ", host='" + host + '\'' +
                 ", port=" + port +
                 ", ring=" + ring +

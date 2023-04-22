@@ -38,7 +38,7 @@ public class AsyncFile extends PlainAsyncFd {
             MemorySegment filePath = allocator.allocateUtf8String(path);
             fd = open(filePath, ops);
             if (fd < 0) {
-                throw new IllegalStateException("fd open error:" + NativeHelper.getNowError());
+                throw new IllegalStateException("res open error:" + NativeHelper.getNowError());
             }
 
         }
@@ -49,7 +49,7 @@ public class AsyncFile extends PlainAsyncFd {
         super(eventLoop);
         this.fd = fd;
         if (fd < 0){
-            throw new IllegalStateException("fd open error:"+ NativeHelper.getNowError());
+            throw new IllegalStateException("res open error:" + NativeHelper.getNowError());
         }
         this.uring = AccessHelper.fetchIOURing.apply(eventLoop);
     }

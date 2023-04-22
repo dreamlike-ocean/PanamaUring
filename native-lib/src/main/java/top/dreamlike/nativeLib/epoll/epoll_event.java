@@ -10,10 +10,10 @@ public class epoll_event {
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
         Constants$root.C_INT$LAYOUT.withName("events"),
         MemoryLayout.unionLayout(
-            Constants$root.C_POINTER$LAYOUT.withName("ptr"),
-            Constants$root.C_INT$LAYOUT.withName("fd"),
-            Constants$root.C_INT$LAYOUT.withName("u32"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("u64")
+                Constants$root.C_POINTER$LAYOUT.withName("ptr"),
+                Constants$root.C_INT$LAYOUT.withName("res"),
+                Constants$root.C_INT$LAYOUT.withName("u32"),
+                Constants$root.C_LONG_LONG$LAYOUT.withName("u64")
         ).withName("data")
     ).withName("epoll_event");
     public static MemoryLayout $LAYOUT() {

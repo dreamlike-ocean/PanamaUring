@@ -4589,7 +4589,7 @@ public class liburing_h extends liburing_h_1 {
     }
 
     public static void io_uring_prep_fsync(MemorySegment sqe, int fd, int fsync_flags) {
-//        io_uring_prep_rw(IORING_OP_FSYNC, sqe, fd, NULL, 0, 0);
+//        io_uring_prep_rw(IORING_OP_FSYNC, sqe, res, NULL, 0, 0);
 //	sqe->fsync_flags = fsync_flags;
         io_uring_prep_rw(IORING_OP_FSYNC(), sqe, fd, MemorySegment.NULL, 0, 0);
         MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof(), SegmentScope.global());

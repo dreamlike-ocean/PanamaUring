@@ -53,7 +53,7 @@ public class IOOpResult {
     @Override
     public String toString() {
         return "IOOpResult{" +
-                "fd=" + fd +
+                "res=" + fd +
                 ", res=" + res +
                 '}';
     }

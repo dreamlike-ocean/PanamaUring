@@ -2,6 +2,7 @@ package top.dreamlike.epoll;
 
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.helper.NativeHelper;
+import top.dreamlike.helper.Unsafe;
 import top.dreamlike.nativeLib.epoll.epoll_data;
 import top.dreamlike.nativeLib.epoll.epoll_event;
 import top.dreamlike.nativeLib.unistd.unistd_h;
@@ -20,13 +21,23 @@ public class Epoll implements AutoCloseable{
 
     private final MemorySegment events;
 
-    public Epoll(){
+    public Epoll() {
         allocator = Arena.openShared();
         events = allocator.allocateArray(epoll_event.$LAYOUT(), 1024);
         epollFd = epoll_create1(0);
-        if (epollFd == -1 ){
+        if (epollFd == -1) {
             throw new IllegalStateException("epoll create fail");
         }
+    }
+
+    @Unsafe("必须是epoll res")
+    public Epoll(int epollFd) {
+        if (epollFd == -1) {
+            throw new IllegalStateException("epoll create fail");
+        }
+        allocator = Arena.openShared();
+        events = allocator.allocateArray(epoll_event.$LAYOUT(), 1024);
+        epollFd = epollFd;
     }
 
 
@@ -91,7 +102,7 @@ public class Epoll implements AutoCloseable{
         @Override
         public String toString() {
             return "Event{" +
-                    "fd=" + fd +
+                    "res=" + fd +
                     ", event=" + event +
                     '}';
         }

@@ -465,7 +465,7 @@ public class IOUring implements AutoCloseable {
     }
 
     public long prep_connect_and_get_user_data(SocketInfo info, IntConsumer callback) throws UnknownHostException {
-        int fd = info.fd();
+        int fd = info.res();
         MemorySegment sqe;
         if (fd == -1 || (sqe = getSqe()) == null) {
             return -1;

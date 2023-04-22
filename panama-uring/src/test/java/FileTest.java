@@ -35,8 +35,8 @@
 //        //RAII
 //        try (Arena session = Arena.openConfined()) {
 //            MemorySegment filePath = session.allocateUtf8String("demo.txt");
-//            var fd = open(filePath, O_RDWR() |O_APPEND());
-//            if (fd == -1){
+//            var res = open(filePath, O_RDWR() |O_APPEND());
+//            if (res == -1){
 //                System.out.println("open file error!");
 //                return;
 //            }
@@ -44,9 +44,9 @@
 //            MemorySegment waitWrite = session.allocateArray(ValueLayout.JAVA_BYTE, str.length);
 //            waitWrite.copyFrom(MemorySegment.ofArray(str));
 //
-//            System.out.println(write(fd, waitWrite, waitWrite.byteSize()));
+//            System.out.println(write(res, waitWrite, waitWrite.byteSize()));
 //            sync();
-//            close(fd);
+//            close(res);
 //        }
 //
 //
@@ -87,7 +87,7 @@
 //        MemorySegment allocate = session.allocate(JAVA_LONG);
 //        while (true) {
 //            ArrayList<Epoll.Event> select = epoll.select(-1);
-//            int eventfd = select.get(0).fd;
+//            int eventfd = select.get(0).res;
 //            eventfd_read(eventfd,allocate);
 //            List<IOOpResult> x = uring.batchGetCqe(64);
 //            System.out.println(x);
@@ -235,7 +235,7 @@
 //        ioUring.waitComplete(-1);
 //        LocalDateTime start = LocalDateTime.now();
 //        for (IOOpResult ioOpResult : ioUring.batchGetCqe(16)) {
-//            System.out.println(ioOpResult.fd);
+//            System.out.println(ioOpResult.res);
 //        }
 //
 //        ioUring.waitComplete(6_000);
