@@ -3875,7 +3875,11 @@ public class liburing_h extends liburing_h_1 {
     }
 
     public static int IORING_ACCEPT_MULTISHOT() {
-        return 1 << 0;
+        return 1;
+    }
+
+    public static int IORING_RECV_MULTISHOT() {
+        return 1 << 1;
     }
 
     public static OfLong ptrdiff_t = Constants$root.C_LONG_LONG$LAYOUT;

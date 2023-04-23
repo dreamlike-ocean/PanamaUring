@@ -17,8 +17,8 @@ import java.util.function.Consumer;
 
 public final class AsyncServerSocket extends AsyncFd implements AsyncServerSocketOps<AsyncSocket> {
 
-    protected final IOUring uring;
-    protected final int serverFd;
+    private final IOUring uring;
+    private final int serverFd;
 
 
     public AsyncServerSocket(IOUringEventLoop eventLoop, String host, int port) {

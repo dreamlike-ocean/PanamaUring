@@ -75,6 +75,7 @@ class liburing_h_1 {
         io_uring_sqe.ioprio$set(sqeSegment, (short) (prio | IORING_ACCEPT_MULTISHOT()));
     }
 
+
     public static MethodHandle io_uring_prep_cancel$MH() {
         return RuntimeHelper.requireNonNull(constants$31.io_uring_prep_cancel$MH, "io_uring_prep_cancel");
     }
@@ -247,6 +248,14 @@ class liburing_h_1 {
 
     public static MethodHandle io_uring_prep_recv$MH() {
         return RuntimeHelper.requireNonNull(constants$33.io_uring_prep_recv$MH, "io_uring_prep_recv");
+    }
+
+    public static void io_uring_prep_recv_multi(MemorySegment sqe, int sockfd, MemorySegment buf, long len, int flags) {
+        io_uring_prep_recv(sqe, sockfd, buf, len, flags);
+        //io_uring_prep_recv(sqe, sockfd, buf, len, flags);
+        //	sqe->ioprio |= IORING_RECV_MULTISHOT;
+        short prio = io_uring_sqe.ioprio$get(sqe);
+        io_uring_sqe.ioprio$set(sqe, (short) (prio | IORING_RECV_MULTISHOT()));
     }
 
     public static void io_uring_prep_recv(MemorySegment sqe, int sockfd, MemorySegment buf, long len, int flags) {
