@@ -108,6 +108,11 @@ public class IntObjectHashMap<V> implements IntObjectMap<V>, Iterable<IntObjectM
         return index == -1 ? null : toExternal(values[index]);
     }
 
+    public V getOrDefault(int key, V defaultValue) {
+        V v = get(key);
+        return v == null ? defaultValue : v;
+    }
+
     @Override
     public V put(int key, V value) {
         int startIndex = hashIndex(key);

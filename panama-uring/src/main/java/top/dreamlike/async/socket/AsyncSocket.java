@@ -2,6 +2,7 @@ package top.dreamlike.async.socket;
 
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.AsyncFd;
+import top.dreamlike.async.socket.extension.IOUringFlow;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.eventloop.IOUringEventLoop;
 import top.dreamlike.extension.NotEnoughSqeException;
@@ -13,6 +14,8 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.net.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
+import java.util.function.Consumer;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
@@ -65,6 +68,26 @@ public non-sealed class AsyncSocket extends AsyncFd {
             }
         });
         return completableFuture;
+    }
+
+    public Flow.Subscription recvMulti(Consumer<byte[]> consumer) {
+        IOUringFlow<byte[]> flow = new IOUringFlow<>(Integer.MAX_VALUE, eventLoop, consumer);
+        eventLoop.runOnEventLoop(() -> {
+
+            long userData = ring.prep_recv_multi_and_get_user_data(fd, (res, throwable) -> {
+                if (throwable != null) {
+                    flow.onError(throwable);
+                    flow.cancel();
+                    return;
+                }
+                boolean allowNext = flow.offer(res);
+                if (!allowNext) {
+                    flow.cancel();
+                }
+            });
+            flow.setUserData(userData);
+        });
+        return flow;
     }
 
     public CompletableFuture<Integer> recv(byte[] buffer) {
@@ -128,7 +151,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
     @Override
     public String toString() {
         return "AsyncSocket{" +
-                "fd=" + fd +
+                "res=" + fd +
                 ", host='" + host + '\'' +
                 ", port=" + port +
                 ", ring=" + ring +

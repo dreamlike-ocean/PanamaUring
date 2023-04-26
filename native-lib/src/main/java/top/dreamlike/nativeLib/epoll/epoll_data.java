@@ -8,8 +8,8 @@ import java.lang.invoke.VarHandle;
 public class epoll_data {
 
     static final  GroupLayout $union$LAYOUT = MemoryLayout.unionLayout(
-        Constants$root.C_POINTER$LAYOUT.withName("ptr"),
-        Constants$root.C_INT$LAYOUT.withName("fd"),
+            Constants$root.C_POINTER$LAYOUT.withName("ptr"),
+            Constants$root.C_INT$LAYOUT.withName("res"),
             Constants$root.C_INT$LAYOUT.withName("u32"),
             Constants$root.C_LONG_LONG$LAYOUT.withName("u64")
     ).withName("epoll_data");
@@ -40,7 +40,7 @@ public class epoll_data {
         epoll_data.ptr$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
-    static final VarHandle fd$VH = $union$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("fd"));
+    static final VarHandle fd$VH = $union$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("res"));
 
     public static VarHandle fd$VH() {
         return epoll_data.fd$VH;

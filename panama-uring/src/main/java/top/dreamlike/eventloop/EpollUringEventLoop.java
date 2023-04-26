@@ -5,6 +5,7 @@ import top.dreamlike.access.AccessHelper;
 import top.dreamlike.epoll.Epoll;
 import top.dreamlike.epoll.async.EpollAsyncSocket;
 import top.dreamlike.helper.Pair;
+import top.dreamlike.helper.Unsafe;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
@@ -52,6 +53,16 @@ public class EpollUringEventLoop extends IOUringEventLoop {
     public CompletableFuture<Void> modifyAll(int fd, int event, IntConsumer callback) {
         return epollEventLoop.modifyAll(fd, event, callback);
     }
+
+    public CompletableFuture<Void> removeEvent(int fd, int event) {
+        return epollEventLoop.removeEvent(fd, event);
+    }
+
+    @Unsafe("强行从epoll remove掉，自己保证线程安全")
+    public void removeEventUnsafe(int fd, int event) {
+        epollEventLoop.removeEventUnsafe(fd, event);
+    }
+
 
     public CompletableFuture<Void> modifyEvent(int fd, int event) {
         return epollEventLoop.modifyEvent(fd, event);

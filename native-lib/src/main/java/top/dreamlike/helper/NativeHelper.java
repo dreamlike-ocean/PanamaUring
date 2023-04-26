@@ -166,15 +166,20 @@ public class NativeHelper {
         return  errno_h.__errno_location().get(ValueLayout.JAVA_INT, 0);
     }
 
-    public static String getNowError(){
+    public static String getNowError() {
         return getErrorStr(getErrorNo());
     }
 
-    public static String getErrorStr(int errNo){
-        return errNo < errStr.length ? errStr[errNo] : "Unknown error "+errNo;
+    public static String getErrorStr(int errNo) {
+        return errNo < errStr.length ? errStr[errNo] : "Unknown error " + errNo;
     }
 
-    public static int makeNoBlocking(int fd){
+    public static String getErrorStrSafe(int errNo) {
+        errNo = Math.abs(errNo);
+        return errNo < errStr.length ? errStr[errNo] : "Unknown error " + errNo;
+    }
+
+    public static int makeNoBlocking(int fd) {
         int flags = fcntl(fd, F_GETFL(), 0);
         if (flags == -1) {
             return errno_h.__errno_location().get(ValueLayout.JAVA_INT, 0);

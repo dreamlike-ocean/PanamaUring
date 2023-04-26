@@ -11,17 +11,17 @@ public class io_uring_sqe {
             Constants$root.C_CHAR$LAYOUT.withName("opcode"),
             Constants$root.C_CHAR$LAYOUT.withName("flags"),
             Constants$root.C_SHORT$LAYOUT.withName("ioprio"),
-            Constants$root.C_INT$LAYOUT.withName("fd"),
+            Constants$root.C_INT$LAYOUT.withName("res"),
             MemoryLayout.unionLayout(
                     Constants$root.C_LONG_LONG$LAYOUT.withName("off"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("addr2")
-        ).withName("$anon$0"),
-        MemoryLayout.unionLayout(
-            Constants$root.C_LONG_LONG$LAYOUT.withName("addr"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("splice_off_in")
-        ).withName("$anon$1"),
-        Constants$root.C_INT$LAYOUT.withName("len"),
-        MemoryLayout.unionLayout(
+                    Constants$root.C_LONG_LONG$LAYOUT.withName("addr2")
+            ).withName("$anon$0"),
+            MemoryLayout.unionLayout(
+                    Constants$root.C_LONG_LONG$LAYOUT.withName("addr"),
+                    Constants$root.C_LONG_LONG$LAYOUT.withName("splice_off_in")
+            ).withName("$anon$1"),
+            Constants$root.C_INT$LAYOUT.withName("len"),
+            MemoryLayout.unionLayout(
             Constants$root.C_INT$LAYOUT.withName("rw_flags"),
             Constants$root.C_INT$LAYOUT.withName("fsync_flags"),
             Constants$root.C_SHORT$LAYOUT.withName("poll_events"),
@@ -114,7 +114,8 @@ public class io_uring_sqe {
     public static void ioprio$set(MemorySegment seg, long index, short x) {
         io_uring_sqe.ioprio$VH.set(seg.asSlice(index*sizeof()), x);
     }
-    static final VarHandle fd$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("fd"));
+
+    static final VarHandle fd$VH = $struct$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("res"));
     public static VarHandle fd$VH() {
         return io_uring_sqe.fd$VH;
     }

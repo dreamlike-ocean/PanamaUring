@@ -4,24 +4,35 @@ import top.dreamlike.async.uring.Op;
 import top.dreamlike.helper.BiIntConsumer;
 
 import java.lang.foreign.MemorySegment;
+import java.util.function.Consumer;
 
 public class IOOpResult {
     public int fd;
     public int res;
     public MemorySegment segment;
 
-    public final BiIntConsumer callback;
+//    public BiIntConsumer callback;
+
+    public final Consumer<IOOpResult> callback;
 
     public int bid;
 
     public final Op op;
 
-    public Runnable afterRemove;
+    public int flag;
+
+    public long userData;
 
     private IOOpResult(Op op, BiIntConsumer callback) {
+        this.callback = (__) -> callback.consumer(res, bid);
+        this.op = op;
+    }
+
+    private IOOpResult(Op op, Consumer<IOOpResult> callback) {
         this.callback = callback;
         this.op = op;
     }
+
 
     public static IOOpResult bindCallBack(Op op, BiIntConsumer callback) {
         return new IOOpResult(op, callback);
@@ -31,29 +42,26 @@ public class IOOpResult {
         this.fd = fd;
         this.res = res;
         this.segment = segment;
-        this.callback = callback;
+        this.callback = (__) -> callback.consumer(res, bid);
         this.op = op;
+    }
+
+    public static IOOpResult bindCallBack(Op op, Consumer<IOOpResult> callback) {
+        return new IOOpResult(op, callback);
     }
 
     public void doCallBack() {
         try {
-            callback.consumer(res, bid);
+            callback.accept(this);
         } catch (Throwable throwable) {
             //ignore
         }
     }
 
-    public void runAfterRemove() {
-        if (afterRemove != null) {
-            afterRemove.run();
-        }
-    }
-
-
     @Override
     public String toString() {
         return "IOOpResult{" +
-                "fd=" + fd +
+                "res=" + fd +
                 ", res=" + res +
                 '}';
     }

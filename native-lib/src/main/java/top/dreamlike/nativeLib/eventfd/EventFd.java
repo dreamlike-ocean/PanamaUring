@@ -33,7 +33,7 @@ public class EventFd implements AutoCloseable {
         }
         int res = eventfd_h.eventfd_read(fd, segment);
 //        if (res < 0) {
-//            throw new NativeCallException(fd+":"+NativeHelper.getNowError());
+//            throw new NativeCallException(res+":"+NativeHelper.getNowError());
 //        }
     }
 

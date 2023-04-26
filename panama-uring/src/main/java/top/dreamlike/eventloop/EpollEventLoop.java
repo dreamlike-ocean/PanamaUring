@@ -2,9 +2,11 @@ package top.dreamlike.eventloop;
 
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.epoll.Epoll;
+import top.dreamlike.epoll.extension.ListenContext;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Pair;
+import top.dreamlike.helper.Unsafe;
 import top.dreamlike.nativeLib.epoll.epoll_h;
 import top.dreamlike.nativeLib.eventfd.EventFd;
 import top.dreamlike.thirdparty.colletion.IntObjectHashMap;
@@ -21,7 +23,9 @@ public class EpollEventLoop extends BaseEventLoop {
 
     private final Queue<Epoll.Event> processingEvent;
 
-    private final IntObjectHashMap<IntConsumer> fdHandler;
+    private final static ListenContext EMPTY = new ListenContext(0, 0, (__) -> {
+    });
+    private final IntObjectHashMap<ListenContext> fdHandler;
 
     private final EventFd wakeUpFd;
 
@@ -37,59 +41,109 @@ public class EpollEventLoop extends BaseEventLoop {
     }
 
     /**
-     * @param fd       需要监听的fd
-     * @param event    事件
-     * @param callback 当epoll被触发时给出的event处理程序的回调
+     * @param fd        需要监听的fd
+     * @param eventMask 事件
+     * @param callback  当epoll被触发时给出的event处理程序的回调
      * @return 注册结果 要切线程
      */
-    public CompletableFuture<Void> registerEvent(int fd, int event, IntConsumer callback) {
-        return runOnEventLoop(() -> registerEvent0(fd, event, callback))
+    public CompletableFuture<Void> registerEvent(int fd, int eventMask, IntConsumer callback) {
+        return runOnEventLoop(() -> registerEvent0(fd, eventMask, callback))
                 .thenCompose(NativeHelper::errorNoTransform);
     }
 
-    private int registerEvent0(int fd, int event, IntConsumer callback) {
-        int register = epoll.register(fd, event);
+    private int registerEvent0(int fd, int eventMask, IntConsumer callback) {
+        int register = epoll.register(fd, eventMask);
 
         if (register == 0) {
-            fdHandler.put(fd, callback);
+            fdHandler.put(fd, new ListenContext(fd, eventMask, callback));
         }
         return register;
     }
 
     public CompletableFuture<Void> modifyCallBack(int fd, IntConsumer callback) {
         return runOnEventLoop(() -> {
-            if (fdHandler.get(fd) == null) {
-                throw new NativeCallException("fd need to be registered to epoll");
+            ListenContext oldValue = fdHandler.get(fd);
+            if (oldValue == null) {
+                throw new NativeCallException("res need to be registered to epoll");
             }
-            fdHandler.put(fd, callback);
+            fdHandler.put(fd, new ListenContext(fd, oldValue.eventMask(), callback));
             return null;
         });
     }
 
-    public CompletableFuture<Void> modifyAll(int fd, int event, IntConsumer callback) {
+    public int fetchFdEventMask(int fd) {
+        return fdHandler.getOrDefault(fd, EMPTY).eventMask();
+    }
+
+    public CompletableFuture<Void> addEvent(int fd, int event) {
+        return runOnEventLoop(() -> {
+            ListenContext listenContext = fdHandler.get(fd);
+            if (listenContext == null) {
+                throw new NativeCallException("res need to be registered to epoll");
+            }
+            //这个掩码已经注册 直接不做
+            int oldMask = listenContext.eventMask();
+            if ((oldMask & event) != 0) {
+                return 0;
+            }
+            int eventMask = oldMask | event;
+            return modifyEventUnsafe(fd, eventMask, listenContext);
+        }).thenCompose(NativeHelper::errorNoTransform);
+    }
+
+    public CompletableFuture<Void> removeEvent(int fd, int event) {
+        return runOnEventLoop(() -> removeEventUnsafe(fd, event)).thenCompose(NativeHelper::errorNoTransform);
+    }
+
+    public int removeEventUnsafe(int fd, int event) {
+        ListenContext listenContext = fdHandler.get(fd);
+        if (listenContext == null) {
+            throw new NativeCallException("res need to be registered to epoll");
+        }
+        //这个掩码没注册 直接不做
+        int oldMask = listenContext.eventMask();
+        if ((oldMask & event) == 0) {
+            return 0;
+        }
+        int eventMask = oldMask & ~event;
+        return modifyEventUnsafe(fd, eventMask, listenContext);
+    }
+
+
+    public CompletableFuture<Void> modifyAll(int fd, int eventMask, IntConsumer callback) {
         return runOnEventLoop(() -> {
             if (fdHandler.get(fd) == null) {
-                throw new NativeCallException("fd need to be registered to epoll");
+                throw new NativeCallException("res need to be registered to epoll");
             }
-            fdHandler.put(fd, callback);
-            return epoll.modify(fd, event);
+            fdHandler.put(fd, new ListenContext(fd, eventMask, callback));
+            return epoll.modify(fd, eventMask);
         }).thenCompose(NativeHelper::errorNoTransform);
     }
 
 
     public CompletableFuture<Void> modifyEvent(int fd, int event) {
         return runOnEventLoop(() -> {
-            if (fdHandler.get(fd) == null) {
-                throw new NativeCallException("fd need to be registered to epoll");
+            ListenContext listenContext = fdHandler.get(fd);
+            if (listenContext == null) {
+                throw new NativeCallException("res need to be registered to epoll");
             }
-            return epoll.modify(fd, event);
+            return modifyEventUnsafe(fd, event, listenContext);
         }).thenCompose(NativeHelper::errorNoTransform);
+    }
+
+    @Unsafe("自行保证线程安全")
+    public int modifyEventUnsafe(int fd, int event, ListenContext listenContext) {
+        int res = epoll.modify(fd, event);
+        if (res == 0) {
+            fdHandler.put(fd, new ListenContext(fd, event, listenContext.callback()));
+        }
+        return res;
     }
 
     public CompletableFuture<Void> unregisterEvent(int fd) {
         return runOnEventLoop(() -> {
             if (fdHandler.remove(fd) == null) {
-                throw new NativeCallException("fd need to be registered to epoll");
+                throw new NativeCallException("res need to be registered to epoll");
             }
             return epoll.unRegister(fd);
         }).thenCompose(NativeHelper::errorNoTransform);
@@ -118,7 +172,7 @@ public class EpollEventLoop extends BaseEventLoop {
             Epoll.Event event = processingEvent.poll();
             var eventHandler = (event.event() & epoll_h.EPOLLONESHOT()) != 0 ? fdHandler.remove(event.fd()) : fdHandler.get(event.fd());
             if (eventHandler != null) {
-                eventHandler.accept(event.event());
+                eventHandler.callback().accept(event.event());
             }
         }
     }

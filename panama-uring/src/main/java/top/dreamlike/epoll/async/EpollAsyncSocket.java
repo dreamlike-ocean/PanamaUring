@@ -1,11 +1,13 @@
 package top.dreamlike.epoll.async;
 
 import top.dreamlike.async.socket.AsyncSocket;
+import top.dreamlike.async.socket.extension.EpollFlow;
 import top.dreamlike.eventloop.EpollUringEventLoop;
 import top.dreamlike.eventloop.IOUringEventLoop;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Pair;
+import top.dreamlike.nativeLib.epoll.epoll_h;
 import top.dreamlike.nativeLib.socket.socket_h;
 
 import java.lang.foreign.Arena;
@@ -16,8 +18,11 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static top.dreamlike.nativeLib.epoll.epoll_h.EPOLLIN;
@@ -46,6 +51,8 @@ public class EpollAsyncSocket extends AsyncSocket {
     private final static int recvSize = 1024;
 
     private final AtomicBoolean connected;
+
+    private final AtomicBoolean multiMode = new AtomicBoolean(false);
 
     public EpollAsyncSocket(int fd, String host, int port, EpollUringEventLoop eventLoop) {
         super(fd, host, port, eventLoop);
@@ -82,6 +89,9 @@ public class EpollAsyncSocket extends AsyncSocket {
         if (!connected.get()) {
             throw new NativeCallException("must connect first");
         }
+        if (multiMode.get()) {
+            throw new IllegalStateException("in multi shot mode");
+        }
         CompletableFuture<Integer> recvFuture = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
             //fast path
@@ -97,13 +107,34 @@ public class EpollAsyncSocket extends AsyncSocket {
             });
 
             if ((event & EPOLLIN()) == 0) {
-                fetchEventLoop().modifyAll(fd, event | EPOLLIN(), this::handleEvent);
+                fetchEventLoop().modifyAll(fd, event | epoll_h.EPOLLIN(), this::handleEvent);
             }
         });
 
         return recvFuture;
     }
 
+    @Override
+    public Flow.Subscription recvMulti(Consumer<byte[]> consumer) {
+        if (multiMode.compareAndSet(false, true)) {
+            throw new IllegalStateException("in multi shot mode");
+        }
+        EpollFlow<byte[]> flow = new EpollFlow<byte[]>(Integer.MAX_VALUE, fd, fetchEventLoop(), consumer);
+        //这里实际上只是将被压从原来的Socket内实现转为了Flow实现而已。。。
+        recursiveOffer(() -> flow.offer(readFromBuffer()), flow::cancel, flow::isFull);
+        return flow;
+    }
+
+    private void recursiveOffer(Runnable operator, Runnable endHandle, Supplier<Boolean> allowRecursion) {
+        if (allowRecursion.get()) {
+            recvQuest.offer(() -> {
+                operator.run();
+                recursiveOffer(operator, endHandle, allowRecursion);
+            });
+        } else {
+            endHandle.run();
+        }
+    }
 
     @Override
     public CompletableFuture<Integer> connect() {
@@ -180,6 +211,10 @@ public class EpollAsyncSocket extends AsyncSocket {
         return res;
     }
 
+    private byte[] readFromBuffer() {
+        return recvBuffers.poll().base;
+    }
+
     @Override
     public CompletableFuture<Integer> write(byte[] buffer, int offset, int length) {
         return eventLoop.runOnEventLoop(() -> {
@@ -227,7 +262,7 @@ public class EpollAsyncSocket extends AsyncSocket {
             if (recvBuffers.size() == maxReadBufferQueueLength.get()) {
                 // 停止监听 被压策略
                 event &= ~EPOLLIN();
-                fetchEventLoop().modifyEvent(fd, event);
+                fetchEventLoop().removeEventUnsafe(fd, EPOLLIN());
             }
             //存在时间顺序 不会npe
             var poll = recvQuest.poll();
