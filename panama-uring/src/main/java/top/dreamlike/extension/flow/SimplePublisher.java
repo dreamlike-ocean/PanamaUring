@@ -88,6 +88,9 @@ public class SimplePublisher<T> implements Flow.Publisher<T>, Flow.Subscription 
         return buffer.size() != maxBuffer;
     }
 
+    public boolean isFull() {
+        return buffer.size() == maxBuffer;
+    }
 
     public void end() {
         subscriber.onComplete();

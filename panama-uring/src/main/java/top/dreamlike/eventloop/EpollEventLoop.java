@@ -6,6 +6,7 @@ import top.dreamlike.epoll.extension.ListenContext;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Pair;
+import top.dreamlike.helper.Unsafe;
 import top.dreamlike.nativeLib.epoll.epoll_h;
 import top.dreamlike.nativeLib.eventfd.EventFd;
 import top.dreamlike.thirdparty.colletion.IntObjectHashMap;
@@ -86,7 +87,7 @@ public class EpollEventLoop extends BaseEventLoop {
                 return 0;
             }
             int eventMask = oldMask | event;
-            return modifyEvent0(fd, eventMask, listenContext);
+            return modifyEventUnsafe(fd, eventMask, listenContext);
         }).thenCompose(NativeHelper::errorNoTransform);
     }
 
@@ -105,7 +106,7 @@ public class EpollEventLoop extends BaseEventLoop {
             return 0;
         }
         int eventMask = oldMask & ~event;
-        return modifyEvent0(fd, eventMask, listenContext);
+        return modifyEventUnsafe(fd, eventMask, listenContext);
     }
 
 
@@ -126,11 +127,12 @@ public class EpollEventLoop extends BaseEventLoop {
             if (listenContext == null) {
                 throw new NativeCallException("res need to be registered to epoll");
             }
-            return modifyEvent0(fd, event, listenContext);
+            return modifyEventUnsafe(fd, event, listenContext);
         }).thenCompose(NativeHelper::errorNoTransform);
     }
 
-    private int modifyEvent0(int fd, int event, ListenContext listenContext) {
+    @Unsafe("自行保证线程安全")
+    public int modifyEventUnsafe(int fd, int event, ListenContext listenContext) {
         int res = epoll.modify(fd, event);
         if (res == 0) {
             fdHandler.put(fd, new ListenContext(fd, event, listenContext.callback()));

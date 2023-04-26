@@ -372,8 +372,13 @@ public class IOUring implements AutoCloseable {
     }
 
     public long prep_cancel_and_get_user_data(long need_cancel_user_data, int cancel_flags, IntConsumer consumer) {
-        MemorySegment sqe = getSqe();
-        if (sqe == null) return NO_SQE;
+        MemorySegment sqe = null;
+        while (sqe == null) {
+            sqe = getSqe();
+            if (sqe == null) {
+                submit();
+            }
+        }
         long opsCount = count.getAndIncrement();
         MemorySegment sqeStruct = NativeHelper.unsafePointConvertor(sqe);
         context.put(opsCount, IOOpResult.bindCallBack(Op.CANCEL, (res, __) -> {
@@ -385,7 +390,6 @@ public class IOUring implements AutoCloseable {
                 context.remove(need_cancel_user_data);
             }
             consumer.accept(res);
-//            context.remove(need_cancel_user_data);
         }));
         io_uring_prep_cancel(sqe, need_cancel_user_data, cancel_flags);
         io_uring_sqe.user_data$set(sqeStruct, opsCount);
@@ -583,12 +587,13 @@ public class IOUring implements AutoCloseable {
                 int flag = io_uring_cqe.flags$get(cqe);
                 boolean isMultiOp = (flag & IORING_CQE_F_MORE()) != 0;
                 IOOpResult result = isMultiOp ? context.get(opsCount) : context.remove(opsCount);
-
                 if (result == null) {
                     System.err.println("result is null,ops:" + opsCount);
                     io_uring_cqe_seen(ring, cqe);
                     continue;
                 }
+                result.flag = flag;
+                result.userData = opsCount;
                 result.res = io_uring_cqe.res$get(cqe);
                 result.bid = flag >> IORING_CQE_BUFFER_SHIFT();
                 io_uring_cqe_seen(ring, cqe);

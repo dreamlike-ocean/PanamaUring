@@ -59,8 +59,8 @@ public class EpollUringEventLoop extends IOUringEventLoop {
     }
 
     @Unsafe("强行从epoll remove掉，自己保证线程安全")
-    public CompletableFuture<Void> removeEventUnsafe(int fd, int event) {
-        return epollEventLoop.removeEvent(fd, event);
+    public void removeEventUnsafe(int fd, int event) {
+        epollEventLoop.removeEventUnsafe(fd, event);
     }
 
 

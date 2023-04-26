@@ -12,7 +12,7 @@ import static top.dreamlike.nativeLib.epoll.epoll_h.EPOLLIN;
 public class EpollFlow<T> extends DispatchPublisher<T> implements Flow.Subscriber<T> {
     private final SimpleSubscriber<T> simpleSubscriber;
     private final EpollUringEventLoop eventLoop;
-    private int fd;
+    private final int fd;
 
     public EpollFlow(int maxBuffer, int fd, EpollUringEventLoop epollUringEventLoop, Consumer<T> onNext) {
         super(maxBuffer, null, epollUringEventLoop);
@@ -20,6 +20,7 @@ public class EpollFlow<T> extends DispatchPublisher<T> implements Flow.Subscribe
         this.onCancel = this::cancelCallback;
         this.simpleSubscriber = new SimpleSubscriber<>();
         this.simpleSubscriber.setConsumer(onNext);
+        this.fd = fd;
         this.subscribe(simpleSubscriber);
     }
 
@@ -31,21 +32,21 @@ public class EpollFlow<T> extends DispatchPublisher<T> implements Flow.Subscribe
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
-
+        simpleSubscriber.onSubscribe(subscription);
     }
 
     @Override
     public void onNext(T item) {
-
+        simpleSubscriber.onNext(item);
     }
 
     @Override
     public void onError(Throwable throwable) {
-
+        simpleSubscriber.onError(throwable);
     }
 
     @Override
     public void onComplete() {
-
+        simpleSubscriber.onComplete();
     }
 }
