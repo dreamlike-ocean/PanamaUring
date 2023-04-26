@@ -4,8 +4,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <name>PanamaUring</name>
+    <description>这是一个探索性用PanamaApi为Java提供完整且好用的io_uring生态的库</description>
+    <url>https://github.com/dreamlike-ocean/PanamaUring</url>
     <groupId>io.github.dreamlike-ocean</groupId>
-    <artifactId>uringDemo</artifactId>
+    <artifactId>PanamaUring</artifactId>
     <packaging>pom</packaging>
     <version>1.0</version>
     <properties>
