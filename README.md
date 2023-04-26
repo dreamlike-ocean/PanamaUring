@@ -7,7 +7,8 @@
 这个项目并非与netty的io_uring一样会从系统调用开始处理，而是直接修改[liburing](https://github.com/axboe/liburing)
 源码，在此基础上封装调用，即它最底层只是一层对liburing的封装。
 
-**目前阶段参考价值大于实用价值，在jdk21之后我会做进一步的API适配，Panama API仍在变动之中**
+**目前阶段参考价值大于实用价值，<del>在jdk21之后我会做进一步的API适配</del>,(垃圾java毁我人生，这东西jdk21稳定不了)，Panama
+API仍在变动之中**
 
 ### 支持的特性
 
@@ -26,10 +27,12 @@
 - [x] 异步connect （ipv4，ipv6）
 - [x] IOSQE_BUFFER_SELECT模式的异步recv
 - [x] 异步write
+- [x] mutlishot异步recv
 
 #### AsyncServerSocket
 
 - [x] 异步accept
+- [x] multishot的异步accept
 
 #### IO_Uring
 
