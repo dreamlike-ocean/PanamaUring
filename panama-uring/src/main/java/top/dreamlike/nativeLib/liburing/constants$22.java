@@ -2,48 +2,50 @@
 
 package top.dreamlike.nativeLib.liburing;
 
+import top.dreamlike.common.CType;
+
+import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
-import java.lang.foreign.*;
 
 class constants$22 {
 
-    static final FunctionDescriptor atomic_flag_test_and_set_explicit$FUNC = FunctionDescriptor.of(Constants$root.C_BOOL$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor atomic_flag_test_and_set_explicit$FUNC = FunctionDescriptor.of(CType.C_BOOL$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle atomic_flag_test_and_set_explicit$MH = RuntimeHelper.downcallHandle(
         "atomic_flag_test_and_set_explicit",
         constants$22.atomic_flag_test_and_set_explicit$FUNC
     );
     static final FunctionDescriptor atomic_flag_clear$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle atomic_flag_clear$MH = RuntimeHelper.downcallHandle(
         "atomic_flag_clear",
         constants$22.atomic_flag_clear$FUNC
     );
     static final FunctionDescriptor atomic_flag_clear_explicit$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+        CType.C_POINTER$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle atomic_flag_clear_explicit$MH = RuntimeHelper.downcallHandle(
         "atomic_flag_clear_explicit",
         constants$22.atomic_flag_clear_explicit$FUNC
     );
-    static final FunctionDescriptor io_uring_get_probe_ring$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor io_uring_get_probe_ring$FUNC = FunctionDescriptor.of(CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle io_uring_get_probe_ring$MH = RuntimeHelper.downcallHandle(
         "io_uring_get_probe_ring",
         constants$22.io_uring_get_probe_ring$FUNC
     );
-    static final FunctionDescriptor io_uring_get_probe$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT);
+    static final FunctionDescriptor io_uring_get_probe$FUNC = FunctionDescriptor.of(CType.C_POINTER$LAYOUT);
     static final MethodHandle io_uring_get_probe$MH = RuntimeHelper.downcallHandle(
         "io_uring_get_probe",
         constants$22.io_uring_get_probe$FUNC
     );
     static final FunctionDescriptor io_uring_free_probe$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle io_uring_free_probe$MH = RuntimeHelper.downcallHandle(
         "io_uring_free_probe",

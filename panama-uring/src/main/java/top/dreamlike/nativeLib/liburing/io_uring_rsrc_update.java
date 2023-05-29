@@ -2,15 +2,17 @@
 
 package top.dreamlike.nativeLib.liburing;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class io_uring_rsrc_update {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        Constants$root.C_INT$LAYOUT.withName("offset"),
-        Constants$root.C_INT$LAYOUT.withName("resv"),
-        Constants$root.C_LONG_LONG$LAYOUT.withName("data")
+        CType.C_INT$LAYOUT.withName("offset"),
+        CType.C_INT$LAYOUT.withName("resv"),
+        CType.C_LONG_LONG$LAYOUT.withName("data")
     ).withName("io_uring_rsrc_update");
     public static MemoryLayout $LAYOUT() {
         return io_uring_rsrc_update.$struct$LAYOUT;

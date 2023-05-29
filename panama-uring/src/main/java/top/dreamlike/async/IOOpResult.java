@@ -42,7 +42,7 @@ public class IOOpResult {
         this.fd = fd;
         this.res = res;
         this.segment = segment;
-        this.callback = (__) -> callback.consumer(res, bid);
+        this.callback = (__) -> callback.consumer(this.res, this.bid);
         this.op = op;
     }
 

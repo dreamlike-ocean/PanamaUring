@@ -2,21 +2,23 @@
 
 package top.dreamlike.nativeLib.liburing;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class io_cqring_offsets {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        Constants$root.C_INT$LAYOUT.withName("head"),
-        Constants$root.C_INT$LAYOUT.withName("tail"),
-        Constants$root.C_INT$LAYOUT.withName("ring_mask"),
-        Constants$root.C_INT$LAYOUT.withName("ring_entries"),
-        Constants$root.C_INT$LAYOUT.withName("overflow"),
-        Constants$root.C_INT$LAYOUT.withName("cqes"),
-        Constants$root.C_INT$LAYOUT.withName("flags"),
-        Constants$root.C_INT$LAYOUT.withName("resv1"),
-        Constants$root.C_LONG_LONG$LAYOUT.withName("resv2")
+        CType.C_INT$LAYOUT.withName("head"),
+        CType.C_INT$LAYOUT.withName("tail"),
+        CType.C_INT$LAYOUT.withName("ring_mask"),
+        CType.C_INT$LAYOUT.withName("ring_entries"),
+        CType.C_INT$LAYOUT.withName("overflow"),
+        CType.C_INT$LAYOUT.withName("cqes"),
+        CType.C_INT$LAYOUT.withName("flags"),
+        CType.C_INT$LAYOUT.withName("resv1"),
+        CType.C_LONG_LONG$LAYOUT.withName("resv2")
     ).withName("io_cqring_offsets");
     public static MemoryLayout $LAYOUT() {
         return io_cqring_offsets.$struct$LAYOUT;

@@ -2,36 +2,38 @@
 
 package top.dreamlike.nativeLib.flock;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class stat {
 
     static final GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-            Constants$root.C_LONG_LONG$LAYOUT.withName("st_dev"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("st_ino"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("st_nlink"),
-            Constants$root.C_INT$LAYOUT.withName("st_mode"),
-            Constants$root.C_INT$LAYOUT.withName("st_uid"),
-            Constants$root.C_INT$LAYOUT.withName("st_gid"),
-            Constants$root.C_INT$LAYOUT.withName("__pad0"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("st_rdev"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("st_size"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("st_blksize"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("st_blocks"),
+            CType.C_LONG_LONG$LAYOUT.withName("st_dev"),
+            CType.C_LONG_LONG$LAYOUT.withName("st_ino"),
+            CType.C_LONG_LONG$LAYOUT.withName("st_nlink"),
+            CType.C_INT$LAYOUT.withName("st_mode"),
+            CType.C_INT$LAYOUT.withName("st_uid"),
+            CType.C_INT$LAYOUT.withName("st_gid"),
+            CType.C_INT$LAYOUT.withName("__pad0"),
+            CType.C_LONG_LONG$LAYOUT.withName("st_rdev"),
+            CType.C_LONG_LONG$LAYOUT.withName("st_size"),
+            CType.C_LONG_LONG$LAYOUT.withName("st_blksize"),
+            CType.C_LONG_LONG$LAYOUT.withName("st_blocks"),
             MemoryLayout.structLayout(
-                    Constants$root.C_LONG_LONG$LAYOUT.withName("tv_sec"),
-                    Constants$root.C_LONG_LONG$LAYOUT.withName("tv_nsec")
+                    CType.C_LONG_LONG$LAYOUT.withName("tv_sec"),
+                    CType.C_LONG_LONG$LAYOUT.withName("tv_nsec")
             ).withName("st_atim"),
             MemoryLayout.structLayout(
-                    Constants$root.C_LONG_LONG$LAYOUT.withName("tv_sec"),
-                    Constants$root.C_LONG_LONG$LAYOUT.withName("tv_nsec")
+                    CType.C_LONG_LONG$LAYOUT.withName("tv_sec"),
+                    CType.C_LONG_LONG$LAYOUT.withName("tv_nsec")
             ).withName("st_mtim"),
             MemoryLayout.structLayout(
-                    Constants$root.C_LONG_LONG$LAYOUT.withName("tv_sec"),
-                    Constants$root.C_LONG_LONG$LAYOUT.withName("tv_nsec")
+                    CType.C_LONG_LONG$LAYOUT.withName("tv_sec"),
+                    CType.C_LONG_LONG$LAYOUT.withName("tv_nsec")
             ).withName("st_ctim"),
-            MemoryLayout.sequenceLayout(3, Constants$root.C_LONG_LONG$LAYOUT).withName("__glibc_reserved")
+            MemoryLayout.sequenceLayout(3, CType.C_LONG_LONG$LAYOUT).withName("__glibc_reserved")
     ).withName("stat");
 
     public static MemoryLayout $LAYOUT() {

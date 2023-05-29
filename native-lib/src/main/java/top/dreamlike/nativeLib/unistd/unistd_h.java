@@ -2,6 +2,8 @@
 
 package top.dreamlike.nativeLib.unistd;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
@@ -11,242 +13,7 @@ import static java.lang.foreign.ValueLayout.*;
 public class unistd_h  {
 
     /* package-private */ unistd_h() {}
-    public static OfByte C_CHAR = Constants$root.C_CHAR$LAYOUT;
-    public static OfShort C_SHORT = Constants$root.C_SHORT$LAYOUT;
-    public static OfInt C_INT = Constants$root.C_INT$LAYOUT;
-    public static OfLong C_LONG = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong C_LONG_LONG = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfFloat C_FLOAT = Constants$root.C_FLOAT$LAYOUT;
-    public static OfDouble C_DOUBLE = Constants$root.C_DOUBLE$LAYOUT;
-    public static OfAddress C_POINTER = Constants$root.C_POINTER$LAYOUT;
-    public static int _UNISTD_H() {
-        return (int)1L;
-    }
-    public static int _FEATURES_H() {
-        return (int)1L;
-    }
-    public static int _DEFAULT_SOURCE() {
-        return (int)1L;
-    }
-    public static int __GLIBC_USE_ISOC2X() {
-        return (int)0L;
-    }
-    public static int __USE_ISOC11() {
-        return (int)1L;
-    }
-    public static int __USE_ISOC99() {
-        return (int)1L;
-    }
-    public static int __USE_ISOC95() {
-        return (int)1L;
-    }
-    public static int __USE_POSIX_IMPLICITLY() {
-        return (int)1L;
-    }
-    public static int _POSIX_SOURCE() {
-        return (int)1L;
-    }
-    public static int __USE_POSIX() {
-        return (int)1L;
-    }
-    public static int __USE_POSIX2() {
-        return (int)1L;
-    }
-    public static int __USE_POSIX199309() {
-        return (int)1L;
-    }
-    public static int __USE_POSIX199506() {
-        return (int)1L;
-    }
-    public static int __USE_XOPEN2K() {
-        return (int)1L;
-    }
-    public static int __USE_XOPEN2K8() {
-        return (int)1L;
-    }
-    public static int _ATFILE_SOURCE() {
-        return (int)1L;
-    }
-    public static int __USE_MISC() {
-        return (int)1L;
-    }
-    public static int __USE_ATFILE() {
-        return (int)1L;
-    }
-    public static int __USE_FORTIFY_LEVEL() {
-        return (int)0L;
-    }
-    public static int __GLIBC_USE_DEPRECATED_GETS() {
-        return (int)0L;
-    }
-    public static int __GLIBC_USE_DEPRECATED_SCANF() {
-        return (int)0L;
-    }
-    public static int _STDC_PREDEF_H() {
-        return (int)1L;
-    }
-    public static int __STDC_IEC_559__() {
-        return (int)1L;
-    }
-    public static int __STDC_IEC_559_COMPLEX__() {
-        return (int)1L;
-    }
-    public static int __GNU_LIBRARY__() {
-        return (int)6L;
-    }
-    public static int __GLIBC__() {
-        return (int)2L;
-    }
-    public static int __GLIBC_MINOR__() {
-        return (int)31L;
-    }
-    public static int _SYS_CDEFS_H() {
-        return (int)1L;
-    }
-    public static int __glibc_c99_flexarr_available() {
-        return (int)1L;
-    }
-    public static int __WORDSIZE() {
-        return (int)64L;
-    }
-    public static int __WORDSIZE_TIME64_COMPAT32() {
-        return (int)1L;
-    }
-    public static int __SYSCALL_WORDSIZE() {
-        return (int)64L;
-    }
-    public static int __LONG_DOUBLE_USES_FLOAT128() {
-        return (int)0L;
-    }
-    public static int __HAVE_GENERIC_SELECTION() {
-        return (int)1L;
-    }
-    public static int _XOPEN_VERSION() {
-        return (int)700L;
-    }
-    public static int _XOPEN_XCU_VERSION() {
-        return (int)4L;
-    }
-    public static int _XOPEN_XPG2() {
-        return (int)1L;
-    }
-    public static int _XOPEN_XPG3() {
-        return (int)1L;
-    }
-    public static int _XOPEN_XPG4() {
-        return (int)1L;
-    }
-    public static int _XOPEN_UNIX() {
-        return (int)1L;
-    }
-    public static int _XOPEN_ENH_I18N() {
-        return (int)1L;
-    }
-    public static int _XOPEN_LEGACY() {
-        return (int)1L;
-    }
-    public static int _BITS_POSIX_OPT_H() {
-        return (int)1L;
-    }
-    public static int _POSIX_JOB_CONTROL() {
-        return (int)1L;
-    }
-    public static int _POSIX_SAVED_IDS() {
-        return (int)1L;
-    }
-    public static int _POSIX_CHOWN_RESTRICTED() {
-        return (int)0L;
-    }
-    public static int _POSIX_NO_TRUNC() {
-        return (int)1L;
-    }
-    public static int _XOPEN_REALTIME() {
-        return (int)1L;
-    }
-    public static int _XOPEN_REALTIME_THREADS() {
-        return (int)1L;
-    }
-    public static int _XOPEN_SHM() {
-        return (int)1L;
-    }
-    public static int _POSIX_REENTRANT_FUNCTIONS() {
-        return (int)1L;
-    }
-    public static int _POSIX_ASYNC_IO() {
-        return (int)1L;
-    }
-    public static int _LFS_ASYNCHRONOUS_IO() {
-        return (int)1L;
-    }
-    public static int _LFS64_ASYNCHRONOUS_IO() {
-        return (int)1L;
-    }
-    public static int _LFS_LARGEFILE() {
-        return (int)1L;
-    }
-    public static int _LFS64_LARGEFILE() {
-        return (int)1L;
-    }
-    public static int _LFS64_STDIO() {
-        return (int)1L;
-    }
-    public static int _POSIX_CPUTIME() {
-        return (int)0L;
-    }
-    public static int _POSIX_THREAD_CPUTIME() {
-        return (int)0L;
-    }
-    public static int _POSIX_REGEXP() {
-        return (int)1L;
-    }
-    public static int _POSIX_SHELL() {
-        return (int)1L;
-    }
-    public static int _POSIX_MONOTONIC_CLOCK() {
-        return (int)0L;
-    }
-    public static int _POSIX_V7_LP64_OFF64() {
-        return (int)1L;
-    }
-    public static int _POSIX_V6_LP64_OFF64() {
-        return (int)1L;
-    }
-    public static int _XBS5_LP64_OFF64() {
-        return (int)1L;
-    }
-    public static int STDIN_FILENO() {
-        return (int)0L;
-    }
-    public static int STDOUT_FILENO() {
-        return (int)1L;
-    }
-    public static int STDERR_FILENO() {
-        return (int)2L;
-    }
-    public static int _BITS_TYPES_H() {
-        return (int)1L;
-    }
-    public static int _BITS_TYPESIZES_H() {
-        return (int)1L;
-    }
-    public static int __OFF_T_MATCHES_OFF64_T() {
-        return (int)1L;
-    }
-    public static int __INO_T_MATCHES_INO64_T() {
-        return (int)1L;
-    }
-    public static int __RLIM_T_MATCHES_RLIM64_T() {
-        return (int)1L;
-    }
-    public static int __STATFS_MATCHES_STATFS64() {
-        return (int)1L;
-    }
-    public static int __FD_SETSIZE() {
-        return (int)1024L;
-    }
-    public static int _BITS_TIME64_H() {
-        return (int)1L;
-    }
+
     public static int R_OK() {
         return (int)4L;
     }
@@ -286,38 +53,38 @@ public class unistd_h  {
     public static int F_TEST() {
         return (int)3L;
     }
-    public static OfShort __int16_t = Constants$root.C_SHORT$LAYOUT;
-    public static OfInt __int32_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong __int64_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfShort __int_least16_t = Constants$root.C_SHORT$LAYOUT;
-    public static OfInt __int_least32_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong __int_least64_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __quad_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __intmax_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __off_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __off64_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt __pid_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong __clock_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __time_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __suseconds_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt __daddr_t = Constants$root.C_INT$LAYOUT;
-    public static OfInt __key_t = Constants$root.C_INT$LAYOUT;
-    public static OfInt __clockid_t = Constants$root.C_INT$LAYOUT;
-    public static OfAddress __timer_t = Constants$root.C_POINTER$LAYOUT;
-    public static OfLong __blksize_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __blkcnt_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __blkcnt64_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __fsword_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __ssize_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __syscall_slong_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __loff_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfAddress __caddr_t = Constants$root.C_POINTER$LAYOUT;
-    public static OfLong __intptr_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt __sig_atomic_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong ssize_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong off_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt pid_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong intptr_t = Constants$root.C_LONG_LONG$LAYOUT;
+    public static OfShort __int16_t = CType.C_SHORT$LAYOUT;
+    public static OfInt __int32_t = CType.C_INT$LAYOUT;
+    public static OfLong __int64_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfShort __int_least16_t = CType.C_SHORT$LAYOUT;
+    public static OfInt __int_least32_t = CType.C_INT$LAYOUT;
+    public static OfLong __int_least64_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __quad_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __intmax_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __off_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __off64_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfInt __pid_t = CType.C_INT$LAYOUT;
+    public static OfLong __clock_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __time_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __suseconds_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfInt __daddr_t = CType.C_INT$LAYOUT;
+    public static OfInt __key_t = CType.C_INT$LAYOUT;
+    public static OfInt __clockid_t = CType.C_INT$LAYOUT;
+    public static OfAddress __timer_t = CType.C_POINTER$LAYOUT;
+    public static OfLong __blksize_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __blkcnt_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __blkcnt64_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __fsword_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __ssize_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __syscall_slong_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __loff_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfAddress __caddr_t = CType.C_POINTER$LAYOUT;
+    public static OfLong __intptr_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfInt __sig_atomic_t = CType.C_INT$LAYOUT;
+    public static OfLong ssize_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong off_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfInt pid_t = CType.C_INT$LAYOUT;
+    public static OfLong intptr_t = CType.C_LONG_LONG$LAYOUT;
 
     public static MethodHandle access$MH() {
         return RuntimeHelper.requireNonNull(constants$0.access$MH, "access");
@@ -2771,31 +2538,10 @@ public class unistd_h  {
     public static int _XBS5_LPBIG_OFFBIG() {
         return (int)-1L;
     }
-    public static MemorySegment __ILP32_OFF32_CFLAGS() {
-        return constants$18.__ILP32_OFF32_CFLAGS$SEGMENT;
-    }
-    public static MemorySegment __ILP32_OFF32_LDFLAGS() {
-        return constants$18.__ILP32_OFF32_LDFLAGS$SEGMENT;
-    }
-    public static MemorySegment __ILP32_OFFBIG_CFLAGS() {
-        return constants$19.__ILP32_OFFBIG_CFLAGS$SEGMENT;
-    }
-    public static MemorySegment __ILP32_OFFBIG_LDFLAGS() {
-        return constants$19.__ILP32_OFFBIG_LDFLAGS$SEGMENT;
-    }
-    public static MemorySegment __LP64_OFF64_CFLAGS() {
-        return constants$19.__LP64_OFF64_CFLAGS$SEGMENT;
-    }
-    public static MemorySegment __LP64_OFF64_LDFLAGS() {
-        return constants$19.__LP64_OFF64_LDFLAGS$SEGMENT;
-    }
+
 
     public static int __TIMESIZE() {
         return (int) 64L;
-    }
-
-    public static MemorySegment NULL() {
-        return constants$19.NULL$ADDR;
     }
 
     public static int L_SET() {

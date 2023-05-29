@@ -2,20 +2,22 @@
 
 package top.dreamlike.nativeLib.liburing;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class io_uring_restriction {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        Constants$root.C_SHORT$LAYOUT.withName("opcode"),
+        CType.C_SHORT$LAYOUT.withName("opcode"),
         MemoryLayout.unionLayout(
-            Constants$root.C_CHAR$LAYOUT.withName("register_op"),
-            Constants$root.C_CHAR$LAYOUT.withName("sqe_op"),
-            Constants$root.C_CHAR$LAYOUT.withName("sqe_flags")
+            CType.C_CHAR$LAYOUT.withName("register_op"),
+            CType.C_CHAR$LAYOUT.withName("sqe_op"),
+            CType.C_CHAR$LAYOUT.withName("sqe_flags")
         ).withName("$anon$0"),
-        Constants$root.C_CHAR$LAYOUT.withName("resv"),
-        MemoryLayout.sequenceLayout(3, Constants$root.C_INT$LAYOUT).withName("resv2")
+        CType.C_CHAR$LAYOUT.withName("resv"),
+        MemoryLayout.sequenceLayout(3, CType.C_INT$LAYOUT).withName("resv2")
     ).withName("io_uring_restriction");
     public static MemoryLayout $LAYOUT() {
         return io_uring_restriction.$struct$LAYOUT;

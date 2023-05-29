@@ -2,15 +2,17 @@
 
 package top.dreamlike.nativeLib.in;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 
 public class in6_addr {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
         MemoryLayout.unionLayout(
-            MemoryLayout.sequenceLayout(16, Constants$root.C_CHAR$LAYOUT).withName("__u6_addr8"),
-            MemoryLayout.sequenceLayout(8, Constants$root.C_SHORT$LAYOUT).withName("__u6_addr16"),
-            MemoryLayout.sequenceLayout(4, Constants$root.C_INT$LAYOUT).withName("__u6_addr32")
+            MemoryLayout.sequenceLayout(16, CType.C_CHAR$LAYOUT).withName("__u6_addr8"),
+            MemoryLayout.sequenceLayout(8, CType.C_SHORT$LAYOUT).withName("__u6_addr16"),
+            MemoryLayout.sequenceLayout(4, CType.C_INT$LAYOUT).withName("__u6_addr32")
         ).withName("__in6_u")
     ).withName("in6_addr");
     public static MemoryLayout $LAYOUT() {
@@ -33,9 +35,9 @@ public class in6_addr {
     public static class __in6_u {
 
         static final  GroupLayout __in6_u$union$LAYOUT = MemoryLayout.unionLayout(
-            MemoryLayout.sequenceLayout(16, Constants$root.C_CHAR$LAYOUT).withName("__u6_addr8"),
-            MemoryLayout.sequenceLayout(8, Constants$root.C_SHORT$LAYOUT).withName("__u6_addr16"),
-            MemoryLayout.sequenceLayout(4, Constants$root.C_INT$LAYOUT).withName("__u6_addr32")
+            MemoryLayout.sequenceLayout(16, CType.C_CHAR$LAYOUT).withName("__u6_addr8"),
+            MemoryLayout.sequenceLayout(8, CType.C_SHORT$LAYOUT).withName("__u6_addr16"),
+            MemoryLayout.sequenceLayout(4, CType.C_INT$LAYOUT).withName("__u6_addr32")
         );
         public static MemoryLayout $LAYOUT() {
             return __in6_u.__in6_u$union$LAYOUT;

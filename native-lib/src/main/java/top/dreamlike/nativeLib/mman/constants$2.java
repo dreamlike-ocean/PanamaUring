@@ -2,14 +2,16 @@
 
 package top.dreamlike.nativeLib.mman;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
 class constants$2 {
 
-    static final FunctionDescriptor shm_unlink$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor shm_unlink$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_POINTER$LAYOUT
     );
     static final MethodHandle shm_unlink$MH = RuntimeHelper.downcallHandle(
             "shm_unlink",

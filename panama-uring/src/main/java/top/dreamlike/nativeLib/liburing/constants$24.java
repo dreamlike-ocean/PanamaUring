@@ -2,57 +2,59 @@
 
 package top.dreamlike.nativeLib.liburing;
 
+import top.dreamlike.common.CType;
+
+import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
-import java.lang.foreign.*;
 
 class constants$24 {
 
     static final FunctionDescriptor io_uring_queue_exit$FUNC = FunctionDescriptor.ofVoid(
-        Constants$root.C_POINTER$LAYOUT
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle io_uring_queue_exit$MH = RuntimeHelper.downcallHandle(
         "io_uring_queue_exit",
         constants$24.io_uring_queue_exit$FUNC
     );
-    static final FunctionDescriptor io_uring_peek_batch_cqe$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor io_uring_peek_batch_cqe$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle io_uring_peek_batch_cqe$MH = RuntimeHelper.downcallHandle(
         "io_uring_peek_batch_cqe",
         constants$24.io_uring_peek_batch_cqe$FUNC
     );
-    static final FunctionDescriptor io_uring_wait_cqes$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor io_uring_wait_cqes$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle io_uring_wait_cqes$MH = RuntimeHelper.downcallHandle(
         "io_uring_wait_cqes",
         constants$24.io_uring_wait_cqes$FUNC
     );
-    static final FunctionDescriptor io_uring_wait_cqe_timeout$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor io_uring_wait_cqe_timeout$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle io_uring_wait_cqe_timeout$MH = RuntimeHelper.downcallHandle(
         "io_uring_wait_cqe_timeout",
         constants$24.io_uring_wait_cqe_timeout$FUNC
     );
-    static final FunctionDescriptor io_uring_submit$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor io_uring_submit$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle io_uring_submit$MH = RuntimeHelper.downcallHandle(
         "io_uring_submit",
         constants$24.io_uring_submit$FUNC
     );
-    static final FunctionDescriptor io_uring_submit_and_wait$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor io_uring_submit_and_wait$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle io_uring_submit_and_wait$MH = RuntimeHelper.downcallHandle(
         "io_uring_submit_and_wait",

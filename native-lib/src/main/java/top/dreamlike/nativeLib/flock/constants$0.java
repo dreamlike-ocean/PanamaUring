@@ -2,58 +2,60 @@
 
 package top.dreamlike.nativeLib.flock;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
 
 class constants$0 {
 
-    static final FunctionDescriptor fcntl$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_INT$LAYOUT,
-            Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor fcntl$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_INT$LAYOUT,
+            CType.C_INT$LAYOUT
     );
     static final MethodHandle fcntl$MH = RuntimeHelper.downcallHandleVariadic(
             "fcntl",
             constants$0.fcntl$FUNC
     );
-    static final FunctionDescriptor open$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_POINTER$LAYOUT,
-            Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor open$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_POINTER$LAYOUT,
+            CType.C_INT$LAYOUT
     );
     static final MethodHandle open$MH = RuntimeHelper.downcallHandleVariadic(
             "open",
             constants$0.open$FUNC
     );
-    static final FunctionDescriptor openat$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_INT$LAYOUT,
-            Constants$root.C_POINTER$LAYOUT,
-            Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor openat$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_INT$LAYOUT,
+            CType.C_POINTER$LAYOUT,
+            CType.C_INT$LAYOUT
     );
     static final MethodHandle openat$MH = RuntimeHelper.downcallHandleVariadic(
             "openat",
             constants$0.openat$FUNC
     );
-    static final FunctionDescriptor creat$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_POINTER$LAYOUT,
-            Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor creat$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_POINTER$LAYOUT,
+            CType.C_INT$LAYOUT
     );
     static final MethodHandle creat$MH = RuntimeHelper.downcallHandle(
             "creat",
             constants$0.creat$FUNC
     );
-    static final FunctionDescriptor lockf$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_INT$LAYOUT,
-            Constants$root.C_INT$LAYOUT,
-            Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor lockf$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_INT$LAYOUT,
+            CType.C_INT$LAYOUT,
+            CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle lockf$MH = RuntimeHelper.downcallHandle(
             "lockf",
             constants$0.lockf$FUNC
     );
-    static final FunctionDescriptor posix_fadvise$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_INT$LAYOUT,
-            Constants$root.C_LONG_LONG$LAYOUT,
-            Constants$root.C_LONG_LONG$LAYOUT,
-            Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor posix_fadvise$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_INT$LAYOUT,
+            CType.C_LONG_LONG$LAYOUT,
+            CType.C_LONG_LONG$LAYOUT,
+            CType.C_INT$LAYOUT
     );
     static final MethodHandle posix_fadvise$MH = RuntimeHelper.downcallHandle(
             "posix_fadvise",

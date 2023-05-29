@@ -2,53 +2,55 @@
 
 package top.dreamlike.nativeLib.liburing;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class io_uring_sqe {
 
     static final GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-            Constants$root.C_CHAR$LAYOUT.withName("opcode"),
-            Constants$root.C_CHAR$LAYOUT.withName("flags"),
-            Constants$root.C_SHORT$LAYOUT.withName("ioprio"),
-            Constants$root.C_INT$LAYOUT.withName("res"),
+            CType.C_CHAR$LAYOUT.withName("opcode"),
+            CType.C_CHAR$LAYOUT.withName("flags"),
+            CType.C_SHORT$LAYOUT.withName("ioprio"),
+            CType.C_INT$LAYOUT.withName("res"),
             MemoryLayout.unionLayout(
-                    Constants$root.C_LONG_LONG$LAYOUT.withName("off"),
-                    Constants$root.C_LONG_LONG$LAYOUT.withName("addr2")
+                    CType.C_LONG_LONG$LAYOUT.withName("off"),
+                    CType.C_LONG_LONG$LAYOUT.withName("addr2")
             ).withName("$anon$0"),
             MemoryLayout.unionLayout(
-                    Constants$root.C_LONG_LONG$LAYOUT.withName("addr"),
-                    Constants$root.C_LONG_LONG$LAYOUT.withName("splice_off_in")
+                    CType.C_LONG_LONG$LAYOUT.withName("addr"),
+                    CType.C_LONG_LONG$LAYOUT.withName("splice_off_in")
             ).withName("$anon$1"),
-            Constants$root.C_INT$LAYOUT.withName("len"),
+            CType.C_INT$LAYOUT.withName("len"),
             MemoryLayout.unionLayout(
-            Constants$root.C_INT$LAYOUT.withName("rw_flags"),
-            Constants$root.C_INT$LAYOUT.withName("fsync_flags"),
-            Constants$root.C_SHORT$LAYOUT.withName("poll_events"),
-            Constants$root.C_INT$LAYOUT.withName("poll32_events"),
-            Constants$root.C_INT$LAYOUT.withName("sync_range_flags"),
-            Constants$root.C_INT$LAYOUT.withName("msg_flags"),
-            Constants$root.C_INT$LAYOUT.withName("timeout_flags"),
-            Constants$root.C_INT$LAYOUT.withName("accept_flags"),
-            Constants$root.C_INT$LAYOUT.withName("cancel_flags"),
-            Constants$root.C_INT$LAYOUT.withName("open_flags"),
-            Constants$root.C_INT$LAYOUT.withName("statx_flags"),
-            Constants$root.C_INT$LAYOUT.withName("fadvise_advice"),
-            Constants$root.C_INT$LAYOUT.withName("splice_flags"),
-            Constants$root.C_INT$LAYOUT.withName("rename_flags"),
-            Constants$root.C_INT$LAYOUT.withName("unlink_flags")
+            CType.C_INT$LAYOUT.withName("rw_flags"),
+            CType.C_INT$LAYOUT.withName("fsync_flags"),
+            CType.C_SHORT$LAYOUT.withName("poll_events"),
+            CType.C_INT$LAYOUT.withName("poll32_events"),
+            CType.C_INT$LAYOUT.withName("sync_range_flags"),
+            CType.C_INT$LAYOUT.withName("msg_flags"),
+            CType.C_INT$LAYOUT.withName("timeout_flags"),
+            CType.C_INT$LAYOUT.withName("accept_flags"),
+            CType.C_INT$LAYOUT.withName("cancel_flags"),
+            CType.C_INT$LAYOUT.withName("open_flags"),
+            CType.C_INT$LAYOUT.withName("statx_flags"),
+            CType.C_INT$LAYOUT.withName("fadvise_advice"),
+            CType.C_INT$LAYOUT.withName("splice_flags"),
+            CType.C_INT$LAYOUT.withName("rename_flags"),
+            CType.C_INT$LAYOUT.withName("unlink_flags")
         ).withName("$anon$2"),
-        Constants$root.C_LONG_LONG$LAYOUT.withName("user_data"),
+        CType.C_LONG_LONG$LAYOUT.withName("user_data"),
         MemoryLayout.unionLayout(
             MemoryLayout.structLayout(
                 MemoryLayout.unionLayout(
-                    Constants$root.C_SHORT$LAYOUT.withName("buf_index"),
-                    Constants$root.C_SHORT$LAYOUT.withName("buf_group")
+                    CType.C_SHORT$LAYOUT.withName("buf_index"),
+                    CType.C_SHORT$LAYOUT.withName("buf_group")
                 ).withName("$anon$0"),
-                Constants$root.C_SHORT$LAYOUT.withName("personality"),
-                Constants$root.C_INT$LAYOUT.withName("splice_fd_in")
+                CType.C_SHORT$LAYOUT.withName("personality"),
+                CType.C_INT$LAYOUT.withName("splice_fd_in")
             ).withName("$anon$0"),
-            MemoryLayout.sequenceLayout(3, Constants$root.C_LONG_LONG$LAYOUT).withName("__pad2")
+            MemoryLayout.sequenceLayout(3, CType.C_LONG_LONG$LAYOUT).withName("__pad2")
         ).withName("$anon$3")
     ).withName("io_uring_sqe");
     public static MemoryLayout $LAYOUT() {

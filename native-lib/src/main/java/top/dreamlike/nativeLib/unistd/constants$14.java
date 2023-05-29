@@ -2,49 +2,51 @@
 
 package top.dreamlike.nativeLib.unistd;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
 
 class constants$14 {
 
-    static final FunctionDescriptor sethostname$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor sethostname$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle sethostname$MH = RuntimeHelper.downcallHandle(
         "sethostname",
         constants$14.sethostname$FUNC
     );
-    static final FunctionDescriptor sethostid$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor sethostid$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle sethostid$MH = RuntimeHelper.downcallHandle(
         "sethostid",
         constants$14.sethostid$FUNC
     );
-    static final FunctionDescriptor getdomainname$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor getdomainname$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle getdomainname$MH = RuntimeHelper.downcallHandle(
         "getdomainname",
         constants$14.getdomainname$FUNC
     );
-    static final FunctionDescriptor setdomainname$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor setdomainname$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle setdomainname$MH = RuntimeHelper.downcallHandle(
         "setdomainname",
         constants$14.setdomainname$FUNC
     );
-    static final FunctionDescriptor vhangup$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT);
+    static final FunctionDescriptor vhangup$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT);
     static final MethodHandle vhangup$MH = RuntimeHelper.downcallHandle(
         "vhangup",
         constants$14.vhangup$FUNC
     );
-    static final FunctionDescriptor revoke$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor revoke$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle revoke$MH = RuntimeHelper.downcallHandle(
         "revoke",

@@ -6,9 +6,9 @@ import top.dreamlike.async.socket.extension.EpollFlow;
 import top.dreamlike.eventloop.EpollUringEventLoop;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
+import top.dreamlike.nativeLib.in.in_h;
+import top.dreamlike.nativeLib.in.sockaddr;
 import top.dreamlike.nativeLib.in.sockaddr_in;
-import top.dreamlike.nativeLib.socket.sockaddr;
-import top.dreamlike.nativeLib.socket.socket_h;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -47,7 +47,7 @@ public final class EpollAsyncServerSocket extends AsyncFd implements AsyncServer
                 try (Arena session = Arena.openConfined()) {
                     MemorySegment client_addr = sockaddr.allocate(session);
                     MemorySegment client_addr_len = session.allocate(JAVA_INT, (int) sockaddr.sizeof());
-                    int fd = socket_h.accept(serverFd, client_addr, client_addr_len);
+                    int fd = in_h.accept(serverFd, client_addr, client_addr_len);
                     if (fd < -1) {
                         res.completeExceptionally(new NativeCallException(NativeHelper.getNowError()));
                         return;
@@ -72,7 +72,7 @@ public final class EpollAsyncServerSocket extends AsyncFd implements AsyncServer
                 try (Arena session = Arena.openConfined()) {
                     MemorySegment client_addr = sockaddr.allocate(session);
                     MemorySegment client_addr_len = session.allocate(JAVA_INT, (int) sockaddr.sizeof());
-                    int fd = socket_h.accept(serverFd, client_addr, client_addr_len);
+                    int fd = in_h.accept(serverFd, client_addr, client_addr_len);
                     if (fd < -1) {
                         flow.onError(new NativeCallException(NativeHelper.getErrorStr(-fd)));
                         flow.cancel();

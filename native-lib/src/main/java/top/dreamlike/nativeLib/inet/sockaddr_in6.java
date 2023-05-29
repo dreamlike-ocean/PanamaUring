@@ -2,23 +2,25 @@
 
 package top.dreamlike.nativeLib.inet;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class sockaddr_in6 {
 
     static final GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-            Constants$root.C_SHORT$LAYOUT.withName("sin6_family"),
-            Constants$root.C_SHORT$LAYOUT.withName("sin6_port"),
-            Constants$root.C_INT$LAYOUT.withName("sin6_flowinfo"),
+            CType.C_SHORT$LAYOUT.withName("sin6_family"),
+            CType.C_SHORT$LAYOUT.withName("sin6_port"),
+            CType.C_INT$LAYOUT.withName("sin6_flowinfo"),
             MemoryLayout.structLayout(
                     MemoryLayout.unionLayout(
-                            MemoryLayout.sequenceLayout(16, Constants$root.C_CHAR$LAYOUT).withName("__u6_addr8"),
-                            MemoryLayout.sequenceLayout(8, Constants$root.C_SHORT$LAYOUT).withName("__u6_addr16"),
-                            MemoryLayout.sequenceLayout(4, Constants$root.C_INT$LAYOUT).withName("__u6_addr32")
+                            MemoryLayout.sequenceLayout(16, CType.C_CHAR$LAYOUT).withName("__u6_addr8"),
+                            MemoryLayout.sequenceLayout(8, CType.C_SHORT$LAYOUT).withName("__u6_addr16"),
+                            MemoryLayout.sequenceLayout(4, CType.C_INT$LAYOUT).withName("__u6_addr32")
                     ).withName("__in6_u")
             ).withName("sin6_addr"),
-            Constants$root.C_INT$LAYOUT.withName("sin6_scope_id")
+            CType.C_INT$LAYOUT.withName("sin6_scope_id")
     ).withName("sockaddr_in6");
 
     public static MemoryLayout $LAYOUT() {

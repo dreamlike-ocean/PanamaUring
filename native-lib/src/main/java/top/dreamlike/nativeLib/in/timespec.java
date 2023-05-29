@@ -2,14 +2,16 @@
 
 package top.dreamlike.nativeLib.in;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class timespec {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        Constants$root.C_LONG_LONG$LAYOUT.withName("tv_sec"),
-        Constants$root.C_LONG_LONG$LAYOUT.withName("tv_nsec")
+        CType.C_LONG_LONG$LAYOUT.withName("tv_sec"),
+        CType.C_LONG_LONG$LAYOUT.withName("tv_nsec")
     ).withName("timespec");
     public static MemoryLayout $LAYOUT() {
         return timespec.$struct$LAYOUT;

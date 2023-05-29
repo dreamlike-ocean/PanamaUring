@@ -2,54 +2,56 @@
 
 package top.dreamlike.nativeLib.string;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
 
 class constants$4 {
 
-    static final FunctionDescriptor strtok$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor strtok$FUNC = FunctionDescriptor.of(CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle strtok$MH = RuntimeHelper.downcallHandle(
         "strtok",
         constants$4.strtok$FUNC
     );
-    static final FunctionDescriptor __strtok_r$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor __strtok_r$FUNC = FunctionDescriptor.of(CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle __strtok_r$MH = RuntimeHelper.downcallHandle(
         "__strtok_r",
         constants$4.__strtok_r$FUNC
     );
-    static final FunctionDescriptor strtok_r$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor strtok_r$FUNC = FunctionDescriptor.of(CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle strtok_r$MH = RuntimeHelper.downcallHandle(
         "strtok_r",
         constants$4.strtok_r$FUNC
     );
-    static final FunctionDescriptor strlen$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor strlen$FUNC = FunctionDescriptor.of(CType.C_LONG_LONG$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle strlen$MH = RuntimeHelper.downcallHandle(
         "strlen",
         constants$4.strlen$FUNC
     );
-    static final FunctionDescriptor strnlen$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor strnlen$FUNC = FunctionDescriptor.of(CType.C_LONG_LONG$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle strnlen$MH = RuntimeHelper.downcallHandle(
         "strnlen",
         constants$4.strnlen$FUNC
     );
-    static final FunctionDescriptor strerror$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor strerror$FUNC = FunctionDescriptor.of(CType.C_POINTER$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle strerror$MH = RuntimeHelper.downcallHandle(
         "strerror",

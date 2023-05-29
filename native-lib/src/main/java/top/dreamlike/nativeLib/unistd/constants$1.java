@@ -2,55 +2,57 @@
 
 package top.dreamlike.nativeLib.unistd;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
 
 class constants$1 {
 
-    static final FunctionDescriptor pread$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor pread$FUNC = FunctionDescriptor.of(CType.C_LONG_LONG$LAYOUT,
+        CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_LONG_LONG$LAYOUT,
+        CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle pread$MH = RuntimeHelper.downcallHandle(
         "pread",
         constants$1.pread$FUNC
     );
-    static final FunctionDescriptor pwrite$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor pwrite$FUNC = FunctionDescriptor.of(CType.C_LONG_LONG$LAYOUT,
+        CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_LONG_LONG$LAYOUT,
+        CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle pwrite$MH = RuntimeHelper.downcallHandle(
         "pwrite",
         constants$1.pwrite$FUNC
     );
-    static final FunctionDescriptor pipe$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor pipe$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle pipe$MH = RuntimeHelper.downcallHandle(
         "pipe",
         constants$1.pipe$FUNC
     );
-    static final FunctionDescriptor alarm$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor alarm$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle alarm$MH = RuntimeHelper.downcallHandle(
         "alarm",
         constants$1.alarm$FUNC
     );
-    static final FunctionDescriptor sleep$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor sleep$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle sleep$MH = RuntimeHelper.downcallHandle(
         "sleep",
         constants$1.sleep$FUNC
     );
-    static final FunctionDescriptor ualarm$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor ualarm$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle ualarm$MH = RuntimeHelper.downcallHandle(
         "ualarm",

@@ -2,12 +2,14 @@
 
 package top.dreamlike.nativeLib.inet;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 
 public class fsid_t {
 
     static final GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-            MemoryLayout.sequenceLayout(2, Constants$root.C_INT$LAYOUT).withName("__val")
+            MemoryLayout.sequenceLayout(2, CType.C_INT$LAYOUT).withName("__val")
     );
 
     public static MemoryLayout $LAYOUT() {

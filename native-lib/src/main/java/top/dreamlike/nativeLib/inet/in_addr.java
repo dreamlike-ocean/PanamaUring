@@ -2,13 +2,15 @@
 
 package top.dreamlike.nativeLib.inet;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class in_addr {
 
     static final GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-            Constants$root.C_INT$LAYOUT.withName("s_addr")
+            CType.C_INT$LAYOUT.withName("s_addr")
     ).withName("in_addr");
 
     public static MemoryLayout $LAYOUT() {

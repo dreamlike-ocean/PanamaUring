@@ -2,15 +2,17 @@
 
 package top.dreamlike.nativeLib.in;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class sockaddr_storage {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        Constants$root.C_SHORT$LAYOUT.withName("ss_family"),
-        MemoryLayout.sequenceLayout(118, Constants$root.C_CHAR$LAYOUT).withName("__ss_padding"),
-        Constants$root.C_LONG_LONG$LAYOUT.withName("__ss_align")
+        CType.C_SHORT$LAYOUT.withName("ss_family"),
+        MemoryLayout.sequenceLayout(118, CType.C_CHAR$LAYOUT).withName("__ss_padding"),
+        CType.C_LONG_LONG$LAYOUT.withName("__ss_align")
     ).withName("sockaddr_storage");
     public static MemoryLayout $LAYOUT() {
         return sockaddr_storage.$struct$LAYOUT;

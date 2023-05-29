@@ -2,52 +2,54 @@
 
 package top.dreamlike.nativeLib.mman;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
 
 class constants$1 {
 
-    static final FunctionDescriptor mlock$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_POINTER$LAYOUT,
-            Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor mlock$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_POINTER$LAYOUT,
+            CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle mlock$MH = RuntimeHelper.downcallHandle(
             "mlock",
             constants$1.mlock$FUNC
     );
-    static final FunctionDescriptor munlock$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_POINTER$LAYOUT,
-            Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor munlock$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_POINTER$LAYOUT,
+            CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle munlock$MH = RuntimeHelper.downcallHandle(
             "munlock",
             constants$1.munlock$FUNC
     );
-    static final FunctionDescriptor mlockall$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor mlockall$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_INT$LAYOUT
     );
     static final MethodHandle mlockall$MH = RuntimeHelper.downcallHandle(
             "mlockall",
             constants$1.mlockall$FUNC
     );
-    static final FunctionDescriptor munlockall$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT);
+    static final FunctionDescriptor munlockall$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT);
     static final MethodHandle munlockall$MH = RuntimeHelper.downcallHandle(
             "munlockall",
             constants$1.munlockall$FUNC
     );
-    static final FunctionDescriptor mincore$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_POINTER$LAYOUT,
-            Constants$root.C_LONG_LONG$LAYOUT,
-            Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor mincore$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_POINTER$LAYOUT,
+            CType.C_LONG_LONG$LAYOUT,
+            CType.C_POINTER$LAYOUT
     );
     static final MethodHandle mincore$MH = RuntimeHelper.downcallHandle(
             "mincore",
             constants$1.mincore$FUNC
     );
-    static final FunctionDescriptor shm_open$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_POINTER$LAYOUT,
-            Constants$root.C_INT$LAYOUT,
-            Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor shm_open$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_POINTER$LAYOUT,
+            CType.C_INT$LAYOUT,
+            CType.C_INT$LAYOUT
     );
     static final MethodHandle shm_open$MH = RuntimeHelper.downcallHandle(
             "shm_open",

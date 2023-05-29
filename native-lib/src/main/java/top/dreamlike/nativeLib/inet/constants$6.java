@@ -2,38 +2,40 @@
 
 package top.dreamlike.nativeLib.inet;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
 import java.lang.invoke.MethodHandle;
 
 class constants$6 {
 
-    static final FunctionDescriptor bindresvport$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor bindresvport$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle bindresvport$MH = RuntimeHelper.downcallHandle(
         "bindresvport",
         constants$6.bindresvport$FUNC
     );
-    static final FunctionDescriptor bindresvport6$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor bindresvport6$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle bindresvport6$MH = RuntimeHelper.downcallHandle(
         "bindresvport6",
         constants$6.bindresvport6$FUNC
     );
-    static final FunctionDescriptor inet_addr$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor inet_addr$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle inet_addr$MH = RuntimeHelper.downcallHandle(
         "inet_addr",
         constants$6.inet_addr$FUNC
     );
-    static final FunctionDescriptor inet_lnaof$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor inet_lnaof$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
         MemoryLayout.structLayout(
-            Constants$root.C_INT$LAYOUT.withName("s_addr")
+            CType.C_INT$LAYOUT.withName("s_addr")
         ).withName("in_addr")
     );
     static final MethodHandle inet_lnaof$MH = RuntimeHelper.downcallHandle(
@@ -41,18 +43,18 @@ class constants$6 {
         constants$6.inet_lnaof$FUNC
     );
     static final FunctionDescriptor inet_makeaddr$FUNC = FunctionDescriptor.of(MemoryLayout.structLayout(
-        Constants$root.C_INT$LAYOUT.withName("s_addr")
+        CType.C_INT$LAYOUT.withName("s_addr")
     ).withName("in_addr"),
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+        CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle inet_makeaddr$MH = RuntimeHelper.downcallHandle(
         "inet_makeaddr",
         constants$6.inet_makeaddr$FUNC
     );
-    static final FunctionDescriptor inet_netof$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
+    static final FunctionDescriptor inet_netof$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
         MemoryLayout.structLayout(
-            Constants$root.C_INT$LAYOUT.withName("s_addr")
+            CType.C_INT$LAYOUT.withName("s_addr")
         ).withName("in_addr")
     );
     static final MethodHandle inet_netof$MH = RuntimeHelper.downcallHandle(

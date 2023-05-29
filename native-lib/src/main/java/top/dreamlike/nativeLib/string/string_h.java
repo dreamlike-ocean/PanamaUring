@@ -2,150 +2,15 @@
 
 package top.dreamlike.nativeLib.string;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
-import static java.lang.foreign.ValueLayout.*;
+import static java.lang.foreign.ValueLayout.OfAddress;
 public class string_h  {
 
     /* package-private */ string_h() {}
-    public static OfByte C_CHAR = Constants$root.C_CHAR$LAYOUT;
-    public static OfShort C_SHORT = Constants$root.C_SHORT$LAYOUT;
-    public static OfInt C_INT = Constants$root.C_INT$LAYOUT;
-    public static OfLong C_LONG = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong C_LONG_LONG = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfFloat C_FLOAT = Constants$root.C_FLOAT$LAYOUT;
-    public static OfDouble C_DOUBLE = Constants$root.C_DOUBLE$LAYOUT;
-    public static OfAddress C_POINTER = Constants$root.C_POINTER$LAYOUT;
-    public static int _STRING_H() {
-        return (int)1L;
-    }
-    public static int _FEATURES_H() {
-        return (int)1L;
-    }
-    public static int _DEFAULT_SOURCE() {
-        return (int)1L;
-    }
-    public static int __GLIBC_USE_ISOC2X() {
-        return (int)0L;
-    }
-    public static int __USE_ISOC11() {
-        return (int)1L;
-    }
-    public static int __USE_ISOC99() {
-        return (int)1L;
-    }
-    public static int __USE_ISOC95() {
-        return (int)1L;
-    }
-    public static int __USE_POSIX_IMPLICITLY() {
-        return (int)1L;
-    }
-    public static int _POSIX_SOURCE() {
-        return (int)1L;
-    }
-    public static int __USE_POSIX() {
-        return (int)1L;
-    }
-    public static int __USE_POSIX2() {
-        return (int)1L;
-    }
-    public static int __USE_POSIX199309() {
-        return (int)1L;
-    }
-    public static int __USE_POSIX199506() {
-        return (int)1L;
-    }
-    public static int __USE_XOPEN2K() {
-        return (int)1L;
-    }
-    public static int __USE_XOPEN2K8() {
-        return (int)1L;
-    }
-    public static int _ATFILE_SOURCE() {
-        return (int)1L;
-    }
-    public static int __USE_MISC() {
-        return (int)1L;
-    }
-    public static int __USE_ATFILE() {
-        return (int)1L;
-    }
-    public static int __USE_FORTIFY_LEVEL() {
-        return (int)0L;
-    }
-    public static int __GLIBC_USE_DEPRECATED_GETS() {
-        return (int)0L;
-    }
-    public static int __GLIBC_USE_DEPRECATED_SCANF() {
-        return (int)0L;
-    }
-    public static int _STDC_PREDEF_H() {
-        return (int)1L;
-    }
-    public static int __STDC_IEC_559__() {
-        return (int)1L;
-    }
-    public static int __STDC_IEC_559_COMPLEX__() {
-        return (int)1L;
-    }
-    public static int __GNU_LIBRARY__() {
-        return (int)6L;
-    }
-    public static int __GLIBC__() {
-        return (int)2L;
-    }
-    public static int __GLIBC_MINOR__() {
-        return (int)31L;
-    }
-    public static int _SYS_CDEFS_H() {
-        return (int)1L;
-    }
-    public static int __glibc_c99_flexarr_available() {
-        return (int)1L;
-    }
-    public static int __WORDSIZE() {
-        return (int)64L;
-    }
-    public static int __WORDSIZE_TIME64_COMPAT32() {
-        return (int)1L;
-    }
-    public static int __SYSCALL_WORDSIZE() {
-        return (int)64L;
-    }
-    public static int __LONG_DOUBLE_USES_FLOAT128() {
-        return (int)0L;
-    }
-    public static int __HAVE_GENERIC_SELECTION() {
-        return (int)1L;
-    }
-    public static int __GLIBC_USE_LIB_EXT2() {
-        return (int)0L;
-    }
-    public static int __GLIBC_USE_IEC_60559_BFP_EXT() {
-        return (int)0L;
-    }
-    public static int __GLIBC_USE_IEC_60559_BFP_EXT_C2X() {
-        return (int)0L;
-    }
-    public static int __GLIBC_USE_IEC_60559_FUNCS_EXT() {
-        return (int)0L;
-    }
-    public static int __GLIBC_USE_IEC_60559_FUNCS_EXT_C2X() {
-        return (int)0L;
-    }
-    public static int __GLIBC_USE_IEC_60559_TYPES_EXT() {
-        return (int)0L;
-    }
-    public static int _BITS_TYPES_LOCALE_T_H() {
-        return (int)1L;
-    }
-    public static int _BITS_TYPES___LOCALE_T_H() {
-        return (int)1L;
-    }
-    public static int _STRINGS_H() {
-        return (int)1L;
-    }
 
     public static MethodHandle memcpy$MH() {
         return RuntimeHelper.requireNonNull(constants$0.memcpy$MH, "memcpy");
@@ -328,8 +193,8 @@ public class string_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
-    public static OfAddress __locale_t = Constants$root.C_POINTER$LAYOUT;
-    public static OfAddress locale_t = Constants$root.C_POINTER$LAYOUT;
+    public static OfAddress __locale_t = CType.C_POINTER$LAYOUT;
+    public static OfAddress locale_t = CType.C_POINTER$LAYOUT;
 
     public static MethodHandle strcoll_l$MH() {
         return RuntimeHelper.requireNonNull(constants$2.strcoll_l$MH, "strcoll_l");
@@ -807,17 +672,7 @@ public class string_h  {
         }
     }
 
-    public static long _POSIX_C_SOURCE() {
-        return 200809L;
-    }
 
-    public static long __STDC_ISO_10646__() {
-        return 201706L;
-    }
-
-    public static MemorySegment NULL() {
-        return constants$8.NULL$ADDR;
-    }
 }
 
 

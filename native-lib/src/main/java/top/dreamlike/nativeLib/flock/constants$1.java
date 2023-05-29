@@ -2,23 +2,25 @@
 
 package top.dreamlike.nativeLib.flock;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
 
 class constants$1 {
 
-    static final FunctionDescriptor posix_fallocate$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_INT$LAYOUT,
-            Constants$root.C_LONG_LONG$LAYOUT,
-            Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor posix_fallocate$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_INT$LAYOUT,
+            CType.C_LONG_LONG$LAYOUT,
+            CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle posix_fallocate$MH = RuntimeHelper.downcallHandle(
             "posix_fallocate",
             constants$1.posix_fallocate$FUNC
     );
-    static final FunctionDescriptor flock$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_INT$LAYOUT,
-            Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor flock$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_INT$LAYOUT,
+            CType.C_INT$LAYOUT
     );
     static final MethodHandle flock$MH = RuntimeHelper.downcallHandle(
             "flock",

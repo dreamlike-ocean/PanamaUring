@@ -2,25 +2,27 @@
 
 package top.dreamlike.nativeLib.in;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class group_filter {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        Constants$root.C_INT$LAYOUT.withName("gf_interface"),
+        CType.C_INT$LAYOUT.withName("gf_interface"),
         MemoryLayout.paddingLayout(32),
         MemoryLayout.structLayout(
-            Constants$root.C_SHORT$LAYOUT.withName("ss_family"),
-            MemoryLayout.sequenceLayout(118, Constants$root.C_CHAR$LAYOUT).withName("__ss_padding"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("__ss_align")
+            CType.C_SHORT$LAYOUT.withName("ss_family"),
+            MemoryLayout.sequenceLayout(118, CType.C_CHAR$LAYOUT).withName("__ss_padding"),
+            CType.C_LONG_LONG$LAYOUT.withName("__ss_align")
         ).withName("gf_group"),
-        Constants$root.C_INT$LAYOUT.withName("gf_fmode"),
-        Constants$root.C_INT$LAYOUT.withName("gf_numsrc"),
+        CType.C_INT$LAYOUT.withName("gf_fmode"),
+        CType.C_INT$LAYOUT.withName("gf_numsrc"),
         MemoryLayout.sequenceLayout(1, MemoryLayout.structLayout(
-            Constants$root.C_SHORT$LAYOUT.withName("ss_family"),
-            MemoryLayout.sequenceLayout(118, Constants$root.C_CHAR$LAYOUT).withName("__ss_padding"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("__ss_align")
+            CType.C_SHORT$LAYOUT.withName("ss_family"),
+            MemoryLayout.sequenceLayout(118, CType.C_CHAR$LAYOUT).withName("__ss_padding"),
+            CType.C_LONG_LONG$LAYOUT.withName("__ss_align")
         ).withName("sockaddr_storage")).withName("gf_slist")
     ).withName("group_filter");
     public static MemoryLayout $LAYOUT() {

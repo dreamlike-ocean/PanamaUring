@@ -2,12 +2,14 @@
 
 package top.dreamlike.nativeLib.inet;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 
 public class sigset_t {
 
     static final GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-            MemoryLayout.sequenceLayout(16, Constants$root.C_LONG_LONG$LAYOUT).withName("__val")
+            MemoryLayout.sequenceLayout(16, CType.C_LONG_LONG$LAYOUT).withName("__val")
     );
 
     public static MemoryLayout $LAYOUT() {

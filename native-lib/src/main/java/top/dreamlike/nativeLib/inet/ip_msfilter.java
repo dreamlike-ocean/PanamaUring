@@ -2,6 +2,8 @@
 
 package top.dreamlike.nativeLib.inet;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
@@ -9,15 +11,15 @@ public class ip_msfilter {
 
     static final GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
             MemoryLayout.structLayout(
-                    Constants$root.C_INT$LAYOUT.withName("s_addr")
+                    CType.C_INT$LAYOUT.withName("s_addr")
             ).withName("imsf_multiaddr"),
             MemoryLayout.structLayout(
-                    Constants$root.C_INT$LAYOUT.withName("s_addr")
+                    CType.C_INT$LAYOUT.withName("s_addr")
             ).withName("imsf_interface"),
-            Constants$root.C_INT$LAYOUT.withName("imsf_fmode"),
-            Constants$root.C_INT$LAYOUT.withName("imsf_numsrc"),
+            CType.C_INT$LAYOUT.withName("imsf_fmode"),
+            CType.C_INT$LAYOUT.withName("imsf_numsrc"),
             MemoryLayout.sequenceLayout(1, MemoryLayout.structLayout(
-                    Constants$root.C_INT$LAYOUT.withName("s_addr")
+                    CType.C_INT$LAYOUT.withName("s_addr")
             ).withName("in_addr")).withName("imsf_slist")
     ).withName("ip_msfilter");
 

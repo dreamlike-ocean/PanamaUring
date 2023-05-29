@@ -2,12 +2,14 @@
 
 package top.dreamlike.nativeLib.errno;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
 
 class constants$0 {
 
-    static final FunctionDescriptor __errno_location$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT);
+    static final FunctionDescriptor __errno_location$FUNC = FunctionDescriptor.of(CType.C_POINTER$LAYOUT);
     static final MethodHandle __errno_location$MH = RuntimeHelper.downcallHandle(
         "__errno_location",
         constants$0.__errno_location$FUNC
