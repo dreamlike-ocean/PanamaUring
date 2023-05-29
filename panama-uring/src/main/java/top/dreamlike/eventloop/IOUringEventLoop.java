@@ -151,7 +151,7 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         return submitLinkedOpUnsafe(ops);
     }
 
-    public CompletableFuture<Integer> cancel(long userData, int flag) {
+    public CompletableFuture<Integer> cancel(long userData, int flag, boolean needSummit) {
         return runOnEventLoop((promise) -> {
             boolean contain = ioUring.contain(userData);
             if (!contain) {
@@ -180,7 +180,11 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
                 };
                 promise.completeExceptionally(new NativeCallException(errorMsg));
             });
+            flush();
         });
+    }
+    public CompletableFuture<Integer> cancel(long userData, int flag) {
+       return cancel(userData, flag,  false);
     }
 
 
