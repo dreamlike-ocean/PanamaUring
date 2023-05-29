@@ -2,6 +2,8 @@
 
 package top.dreamlike.nativeLib.in;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
@@ -9,14 +11,14 @@ import static java.lang.foreign.ValueLayout.*;
 public class in_h  {
 
     /* package-private */ in_h() {}
-    public static OfByte C_CHAR = Constants$root.C_CHAR$LAYOUT;
-    public static OfShort C_SHORT = Constants$root.C_SHORT$LAYOUT;
-    public static OfInt C_INT = Constants$root.C_INT$LAYOUT;
-    public static OfLong C_LONG = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong C_LONG_LONG = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfFloat C_FLOAT = Constants$root.C_FLOAT$LAYOUT;
-    public static OfDouble C_DOUBLE = Constants$root.C_DOUBLE$LAYOUT;
-    public static OfAddress C_POINTER = Constants$root.C_POINTER$LAYOUT;
+    public static OfByte C_CHAR = CType.C_CHAR$LAYOUT;
+    public static OfShort C_SHORT = CType.C_SHORT$LAYOUT;
+    public static OfInt C_INT = CType.C_INT$LAYOUT;
+    public static OfLong C_LONG = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong C_LONG_LONG = CType.C_LONG_LONG$LAYOUT;
+    public static OfFloat C_FLOAT = CType.C_FLOAT$LAYOUT;
+    public static OfDouble C_DOUBLE = CType.C_DOUBLE$LAYOUT;
+    public static OfAddress C_POINTER = CType.C_POINTER$LAYOUT;
     public static int _NETINET_IN_H() {
         return (int)1L;
     }
@@ -1094,50 +1096,50 @@ public class in_h  {
     public static int INET6_ADDRSTRLEN() {
         return (int)46L;
     }
-    public static OfShort __int16_t = Constants$root.C_SHORT$LAYOUT;
-    public static OfInt __int32_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong __int64_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfShort __int_least16_t = Constants$root.C_SHORT$LAYOUT;
-    public static OfInt __int_least32_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong __int_least64_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __quad_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __intmax_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __off_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __off64_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt __pid_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong __clock_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __time_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __suseconds_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt __daddr_t = Constants$root.C_INT$LAYOUT;
-    public static OfInt __key_t = Constants$root.C_INT$LAYOUT;
-    public static OfInt __clockid_t = Constants$root.C_INT$LAYOUT;
-    public static OfAddress __timer_t = Constants$root.C_POINTER$LAYOUT;
-    public static OfLong __blksize_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __blkcnt_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __blkcnt64_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __fsword_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __ssize_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __syscall_slong_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __loff_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfAddress __caddr_t = Constants$root.C_POINTER$LAYOUT;
-    public static OfLong __intptr_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt __sig_atomic_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong quad_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong loff_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong off_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt pid_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong ssize_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt daddr_t = Constants$root.C_INT$LAYOUT;
-    public static OfAddress caddr_t = Constants$root.C_POINTER$LAYOUT;
-    public static OfInt key_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong clock_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt clockid_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong time_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfAddress timer_t = Constants$root.C_POINTER$LAYOUT;
-    public static OfShort int16_t = Constants$root.C_SHORT$LAYOUT;
-    public static OfInt int32_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong int64_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong register_t = Constants$root.C_LONG_LONG$LAYOUT;
+    public static OfShort __int16_t = CType.C_SHORT$LAYOUT;
+    public static OfInt __int32_t = CType.C_INT$LAYOUT;
+    public static OfLong __int64_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfShort __int_least16_t = CType.C_SHORT$LAYOUT;
+    public static OfInt __int_least32_t = CType.C_INT$LAYOUT;
+    public static OfLong __int_least64_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __quad_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __intmax_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __off_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __off64_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfInt __pid_t = CType.C_INT$LAYOUT;
+    public static OfLong __clock_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __time_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __suseconds_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfInt __daddr_t = CType.C_INT$LAYOUT;
+    public static OfInt __key_t = CType.C_INT$LAYOUT;
+    public static OfInt __clockid_t = CType.C_INT$LAYOUT;
+    public static OfAddress __timer_t = CType.C_POINTER$LAYOUT;
+    public static OfLong __blksize_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __blkcnt_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __blkcnt64_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __fsword_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __ssize_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __syscall_slong_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __loff_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfAddress __caddr_t = CType.C_POINTER$LAYOUT;
+    public static OfLong __intptr_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfInt __sig_atomic_t = CType.C_INT$LAYOUT;
+    public static OfLong quad_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong loff_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong off_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfInt pid_t = CType.C_INT$LAYOUT;
+    public static OfLong ssize_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfInt daddr_t = CType.C_INT$LAYOUT;
+    public static OfAddress caddr_t = CType.C_POINTER$LAYOUT;
+    public static OfInt key_t = CType.C_INT$LAYOUT;
+    public static OfLong clock_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfInt clockid_t = CType.C_INT$LAYOUT;
+    public static OfLong time_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfAddress timer_t = CType.C_POINTER$LAYOUT;
+    public static OfShort int16_t = CType.C_SHORT$LAYOUT;
+    public static OfInt int32_t = CType.C_INT$LAYOUT;
+    public static OfLong int64_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong register_t = CType.C_LONG_LONG$LAYOUT;
     public static MethodHandle __bswap_16$MH() {
         return RuntimeHelper.requireNonNull(constants$0.__bswap_16$MH,"__bswap_16");
     }
@@ -1204,9 +1206,9 @@ public class in_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
-    public static OfLong suseconds_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __fd_mask = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong fd_mask = Constants$root.C_LONG_LONG$LAYOUT;
+    public static OfLong suseconds_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __fd_mask = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong fd_mask = CType.C_LONG_LONG$LAYOUT;
 
     public static MethodHandle select$MH() {
         return RuntimeHelper.requireNonNull(constants$1.select$MH, "select");
@@ -1233,10 +1235,10 @@ public class in_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
-    public static OfLong blksize_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong blkcnt_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt pthread_once_t = Constants$root.C_INT$LAYOUT;
-    public static OfInt pthread_spinlock_t = Constants$root.C_INT$LAYOUT;
+    public static OfLong blksize_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong blkcnt_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfInt pthread_once_t = CType.C_INT$LAYOUT;
+    public static OfInt pthread_spinlock_t = CType.C_INT$LAYOUT;
     public static int SOCK_STREAM() {
         return (int)1L;
     }
@@ -1344,23 +1346,23 @@ public class in_h  {
     public static int SCM_RIGHTS() {
         return (int) 1L;
     }
-    public static OfInt __kernel_key_t = Constants$root.C_INT$LAYOUT;
-    public static OfInt __kernel_mqd_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong __kernel_long_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt __kernel_pid_t = Constants$root.C_INT$LAYOUT;
-    public static OfInt __kernel_ipc_pid_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong __kernel_suseconds_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt __kernel_daddr_t = Constants$root.C_INT$LAYOUT;
-    public static OfLong __kernel_ssize_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __kernel_ptrdiff_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __kernel_off_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __kernel_loff_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __kernel_time_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __kernel_time64_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfLong __kernel_clock_t = Constants$root.C_LONG_LONG$LAYOUT;
-    public static OfInt __kernel_timer_t = Constants$root.C_INT$LAYOUT;
-    public static OfInt __kernel_clockid_t = Constants$root.C_INT$LAYOUT;
-    public static OfAddress __kernel_caddr_t = Constants$root.C_POINTER$LAYOUT;
+    public static OfInt __kernel_key_t = CType.C_INT$LAYOUT;
+    public static OfInt __kernel_mqd_t = CType.C_INT$LAYOUT;
+    public static OfLong __kernel_long_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfInt __kernel_pid_t = CType.C_INT$LAYOUT;
+    public static OfInt __kernel_ipc_pid_t = CType.C_INT$LAYOUT;
+    public static OfLong __kernel_suseconds_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfInt __kernel_daddr_t = CType.C_INT$LAYOUT;
+    public static OfLong __kernel_ssize_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __kernel_ptrdiff_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __kernel_off_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __kernel_loff_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __kernel_time_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __kernel_time64_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfLong __kernel_clock_t = CType.C_LONG_LONG$LAYOUT;
+    public static OfInt __kernel_timer_t = CType.C_INT$LAYOUT;
+    public static OfInt __kernel_clockid_t = CType.C_INT$LAYOUT;
+    public static OfAddress __kernel_caddr_t = CType.C_POINTER$LAYOUT;
     public static int SHUT_RD() {
         return (int)0L;
     }

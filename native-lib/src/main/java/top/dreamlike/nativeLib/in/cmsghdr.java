@@ -2,16 +2,18 @@
 
 package top.dreamlike.nativeLib.in;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class cmsghdr {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        Constants$root.C_LONG_LONG$LAYOUT.withName("cmsg_len"),
-        Constants$root.C_INT$LAYOUT.withName("cmsg_level"),
-        Constants$root.C_INT$LAYOUT.withName("cmsg_type"),
-        MemoryLayout.sequenceLayout(0, Constants$root.C_CHAR$LAYOUT).withName("__cmsg_data")
+        CType.C_LONG_LONG$LAYOUT.withName("cmsg_len"),
+        CType.C_INT$LAYOUT.withName("cmsg_level"),
+        CType.C_INT$LAYOUT.withName("cmsg_type"),
+        MemoryLayout.sequenceLayout(0, CType.C_CHAR$LAYOUT).withName("__cmsg_data")
     ).withName("cmsghdr");
     public static MemoryLayout $LAYOUT() {
         return cmsghdr.$struct$LAYOUT;

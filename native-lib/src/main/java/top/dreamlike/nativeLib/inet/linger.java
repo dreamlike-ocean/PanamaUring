@@ -2,14 +2,16 @@
 
 package top.dreamlike.nativeLib.inet;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class linger {
 
     static final GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-            Constants$root.C_INT$LAYOUT.withName("l_onoff"),
-            Constants$root.C_INT$LAYOUT.withName("l_linger")
+            CType.C_INT$LAYOUT.withName("l_onoff"),
+            CType.C_INT$LAYOUT.withName("l_linger")
     ).withName("linger");
 
     public static MemoryLayout $LAYOUT() {

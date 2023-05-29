@@ -2,33 +2,35 @@
 
 package top.dreamlike.nativeLib.string;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
 class constants$8 {
 
-    static final FunctionDescriptor stpcpy$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor stpcpy$FUNC = FunctionDescriptor.of(CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle stpcpy$MH = RuntimeHelper.downcallHandle(
         "stpcpy",
         constants$8.stpcpy$FUNC
     );
-    static final FunctionDescriptor __stpncpy$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor __stpncpy$FUNC = FunctionDescriptor.of(CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle __stpncpy$MH = RuntimeHelper.downcallHandle(
         "__stpncpy",
         constants$8.__stpncpy$FUNC
     );
-    static final FunctionDescriptor stpncpy$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor stpncpy$FUNC = FunctionDescriptor.of(CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle stpncpy$MH = RuntimeHelper.downcallHandle(
             "stpncpy",

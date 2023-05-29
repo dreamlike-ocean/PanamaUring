@@ -27,14 +27,12 @@ public class EventFd implements AutoCloseable {
     }
 
     @Unsafe("需要segment一直有效")
-    public void readSyncUnsafe(MemorySegment segment) {
+    public int readSyncUnsafe(MemorySegment segment) {
         if (segment.byteSize() != JAVA_LONG.byteSize()) {
             throw new NativeCallException("segment.byteSize() != JAVA_LONG.byteSize()");
         }
         int res = eventfd_h.eventfd_read(fd, segment);
-//        if (res < 0) {
-//            throw new NativeCallException(res+":"+NativeHelper.getNowError());
-//        }
+        return res;
     }
 
     public long readSync() {

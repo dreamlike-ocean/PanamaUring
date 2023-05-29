@@ -2,19 +2,21 @@
 
 package top.dreamlike.nativeLib.inet;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 
 public class ip_mreq_source {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
         MemoryLayout.structLayout(
-            Constants$root.C_INT$LAYOUT.withName("s_addr")
+            CType.C_INT$LAYOUT.withName("s_addr")
         ).withName("imr_multiaddr"),
         MemoryLayout.structLayout(
-            Constants$root.C_INT$LAYOUT.withName("s_addr")
+            CType.C_INT$LAYOUT.withName("s_addr")
         ).withName("imr_interface"),
         MemoryLayout.structLayout(
-            Constants$root.C_INT$LAYOUT.withName("s_addr")
+            CType.C_INT$LAYOUT.withName("s_addr")
         ).withName("imr_sourceaddr")
     ).withName("ip_mreq_source");
     public static MemoryLayout $LAYOUT() {

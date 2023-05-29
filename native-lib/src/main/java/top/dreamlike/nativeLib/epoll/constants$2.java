@@ -2,18 +2,20 @@
 
 package top.dreamlike.nativeLib.epoll;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
 class constants$2 {
 
-    static final FunctionDescriptor epoll_pwait$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor epoll_pwait$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle epoll_pwait$MH = RuntimeHelper.downcallHandle(
         "epoll_pwait",

@@ -2,17 +2,19 @@
 
 package top.dreamlike.nativeLib.string;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class __locale_struct {
 
     static final GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-            MemoryLayout.sequenceLayout(13, Constants$root.C_POINTER$LAYOUT).withName("__locales"),
-            Constants$root.C_POINTER$LAYOUT.withName("__ctype_b"),
-            Constants$root.C_POINTER$LAYOUT.withName("__ctype_tolower"),
-            Constants$root.C_POINTER$LAYOUT.withName("__ctype_toupper"),
-            MemoryLayout.sequenceLayout(13, Constants$root.C_POINTER$LAYOUT).withName("__names")
+            MemoryLayout.sequenceLayout(13, CType.C_POINTER$LAYOUT).withName("__locales"),
+            CType.C_POINTER$LAYOUT.withName("__ctype_b"),
+            CType.C_POINTER$LAYOUT.withName("__ctype_tolower"),
+            CType.C_POINTER$LAYOUT.withName("__ctype_toupper"),
+            MemoryLayout.sequenceLayout(13, CType.C_POINTER$LAYOUT).withName("__names")
     ).withName("__locale_struct");
 
     public static MemoryLayout $LAYOUT() {

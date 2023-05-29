@@ -2,33 +2,35 @@
 
 package top.dreamlike.nativeLib.unistd;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
 
 class constants$16 {
 
-    static final FunctionDescriptor chroot$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor chroot$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle chroot$MH = RuntimeHelper.downcallHandle(
         "chroot",
         constants$16.chroot$FUNC
     );
-    static final FunctionDescriptor getpass$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor getpass$FUNC = FunctionDescriptor.of(CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle getpass$MH = RuntimeHelper.downcallHandle(
         "getpass",
         constants$16.getpass$FUNC
     );
-    static final FunctionDescriptor fsync$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor fsync$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle fsync$MH = RuntimeHelper.downcallHandle(
         "fsync",
         constants$16.fsync$FUNC
     );
-    static final FunctionDescriptor gethostid$FUNC = FunctionDescriptor.of(Constants$root.C_LONG_LONG$LAYOUT);
+    static final FunctionDescriptor gethostid$FUNC = FunctionDescriptor.of(CType.C_LONG_LONG$LAYOUT);
     static final MethodHandle gethostid$MH = RuntimeHelper.downcallHandle(
         "gethostid",
         constants$16.gethostid$FUNC
@@ -38,7 +40,7 @@ class constants$16 {
         "sync",
         constants$16.sync$FUNC
     );
-    static final FunctionDescriptor getpagesize$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT);
+    static final FunctionDescriptor getpagesize$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT);
     static final MethodHandle getpagesize$MH = RuntimeHelper.downcallHandle(
         "getpagesize",
         constants$16.getpagesize$FUNC

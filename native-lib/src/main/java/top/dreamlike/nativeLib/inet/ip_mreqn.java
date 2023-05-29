@@ -2,6 +2,8 @@
 
 package top.dreamlike.nativeLib.inet;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
@@ -9,12 +11,12 @@ public class ip_mreqn {
 
     static final GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
             MemoryLayout.structLayout(
-                    Constants$root.C_INT$LAYOUT.withName("s_addr")
+                    CType.C_INT$LAYOUT.withName("s_addr")
             ).withName("imr_multiaddr"),
             MemoryLayout.structLayout(
-                    Constants$root.C_INT$LAYOUT.withName("s_addr")
+                    CType.C_INT$LAYOUT.withName("s_addr")
             ).withName("imr_address"),
-            Constants$root.C_INT$LAYOUT.withName("imr_ifindex")
+            CType.C_INT$LAYOUT.withName("imr_ifindex")
     ).withName("ip_mreqn");
 
     public static MemoryLayout $LAYOUT() {

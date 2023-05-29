@@ -2,62 +2,64 @@
 
 package top.dreamlike.nativeLib.mman;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
 
 class constants$0 {
 
-    static final FunctionDescriptor mmap$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
-            Constants$root.C_POINTER$LAYOUT,
-            Constants$root.C_LONG_LONG$LAYOUT,
-            Constants$root.C_INT$LAYOUT,
-            Constants$root.C_INT$LAYOUT,
-            Constants$root.C_INT$LAYOUT,
-            Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor mmap$FUNC = FunctionDescriptor.of(CType.C_POINTER$LAYOUT,
+            CType.C_POINTER$LAYOUT,
+            CType.C_LONG_LONG$LAYOUT,
+            CType.C_INT$LAYOUT,
+            CType.C_INT$LAYOUT,
+            CType.C_INT$LAYOUT,
+            CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle mmap$MH = RuntimeHelper.downcallHandle(
             "mmap",
             constants$0.mmap$FUNC
     );
-    static final FunctionDescriptor munmap$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_POINTER$LAYOUT,
-            Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor munmap$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_POINTER$LAYOUT,
+            CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle munmap$MH = RuntimeHelper.downcallHandle(
             "munmap",
             constants$0.munmap$FUNC
     );
-    static final FunctionDescriptor mprotect$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_POINTER$LAYOUT,
-            Constants$root.C_LONG_LONG$LAYOUT,
-            Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor mprotect$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_POINTER$LAYOUT,
+            CType.C_LONG_LONG$LAYOUT,
+            CType.C_INT$LAYOUT
     );
     static final MethodHandle mprotect$MH = RuntimeHelper.downcallHandle(
             "mprotect",
             constants$0.mprotect$FUNC
     );
-    static final FunctionDescriptor msync$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_POINTER$LAYOUT,
-            Constants$root.C_LONG_LONG$LAYOUT,
-            Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor msync$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_POINTER$LAYOUT,
+            CType.C_LONG_LONG$LAYOUT,
+            CType.C_INT$LAYOUT
     );
     static final MethodHandle msync$MH = RuntimeHelper.downcallHandle(
             "msync",
             constants$0.msync$FUNC
     );
-    static final FunctionDescriptor madvise$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_POINTER$LAYOUT,
-            Constants$root.C_LONG_LONG$LAYOUT,
-            Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor madvise$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_POINTER$LAYOUT,
+            CType.C_LONG_LONG$LAYOUT,
+            CType.C_INT$LAYOUT
     );
     static final MethodHandle madvise$MH = RuntimeHelper.downcallHandle(
             "madvise",
             constants$0.madvise$FUNC
     );
-    static final FunctionDescriptor posix_madvise$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-            Constants$root.C_POINTER$LAYOUT,
-            Constants$root.C_LONG_LONG$LAYOUT,
-            Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor posix_madvise$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_POINTER$LAYOUT,
+            CType.C_LONG_LONG$LAYOUT,
+            CType.C_INT$LAYOUT
     );
     static final MethodHandle posix_madvise$MH = RuntimeHelper.downcallHandle(
             "posix_madvise",

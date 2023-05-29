@@ -2,30 +2,32 @@
 
 package top.dreamlike.nativeLib.eventfd;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
 
 class constants$0 {
 
-    static final FunctionDescriptor eventfd$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor eventfd$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle eventfd$MH = RuntimeHelper.downcallHandle(
         "eventfd",
         constants$0.eventfd$FUNC
     );
-    static final FunctionDescriptor eventfd_read$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor eventfd_read$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle eventfd_read$MH = RuntimeHelper.downcallHandle(
         "eventfd_read",
         constants$0.eventfd_read$FUNC
     );
-    static final FunctionDescriptor eventfd_write$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor eventfd_write$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT,
+        CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle eventfd_write$MH = RuntimeHelper.downcallHandle(
         "eventfd_write",

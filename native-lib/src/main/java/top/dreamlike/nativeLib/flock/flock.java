@@ -2,18 +2,20 @@
 
 package top.dreamlike.nativeLib.flock;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class flock {
 
     static final GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-            Constants$root.C_SHORT$LAYOUT.withName("l_type"),
-            Constants$root.C_SHORT$LAYOUT.withName("l_whence"),
+            CType.C_SHORT$LAYOUT.withName("l_type"),
+            CType.C_SHORT$LAYOUT.withName("l_whence"),
             MemoryLayout.paddingLayout(32),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("l_start"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("l_len"),
-            Constants$root.C_INT$LAYOUT.withName("l_pid"),
+            CType.C_LONG_LONG$LAYOUT.withName("l_start"),
+            CType.C_LONG_LONG$LAYOUT.withName("l_len"),
+            CType.C_INT$LAYOUT.withName("l_pid"),
             MemoryLayout.paddingLayout(32)
     ).withName("flock");
 

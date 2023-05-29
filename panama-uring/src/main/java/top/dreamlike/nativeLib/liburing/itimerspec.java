@@ -2,18 +2,20 @@
 
 package top.dreamlike.nativeLib.liburing;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 
 public class itimerspec {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
         MemoryLayout.structLayout(
-            Constants$root.C_LONG_LONG$LAYOUT.withName("tv_sec"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("tv_nsec")
+            CType.C_LONG_LONG$LAYOUT.withName("tv_sec"),
+            CType.C_LONG_LONG$LAYOUT.withName("tv_nsec")
         ).withName("it_interval"),
         MemoryLayout.structLayout(
-            Constants$root.C_LONG_LONG$LAYOUT.withName("tv_sec"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("tv_nsec")
+            CType.C_LONG_LONG$LAYOUT.withName("tv_sec"),
+            CType.C_LONG_LONG$LAYOUT.withName("tv_nsec")
         ).withName("it_value")
     ).withName("itimerspec");
     public static MemoryLayout $LAYOUT() {

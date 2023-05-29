@@ -2,14 +2,16 @@
 
 package top.dreamlike.nativeLib.inet;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class iovec {
 
     static final GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-            Constants$root.C_POINTER$LAYOUT.withName("iov_base"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("iov_len")
+            CType.C_POINTER$LAYOUT.withName("iov_base"),
+            CType.C_LONG_LONG$LAYOUT.withName("iov_len")
     ).withName("iovec");
 
     public static MemoryLayout $LAYOUT() {

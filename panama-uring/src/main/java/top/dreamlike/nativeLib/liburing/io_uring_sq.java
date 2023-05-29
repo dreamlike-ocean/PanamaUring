@@ -2,25 +2,27 @@
 
 package top.dreamlike.nativeLib.liburing;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class io_uring_sq {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        Constants$root.C_POINTER$LAYOUT.withName("khead"),
-        Constants$root.C_POINTER$LAYOUT.withName("ktail"),
-        Constants$root.C_POINTER$LAYOUT.withName("kring_mask"),
-        Constants$root.C_POINTER$LAYOUT.withName("kring_entries"),
-        Constants$root.C_POINTER$LAYOUT.withName("kflags"),
-        Constants$root.C_POINTER$LAYOUT.withName("kdropped"),
-        Constants$root.C_POINTER$LAYOUT.withName("array"),
-        Constants$root.C_POINTER$LAYOUT.withName("sqes"),
-        Constants$root.C_INT$LAYOUT.withName("sqe_head"),
-        Constants$root.C_INT$LAYOUT.withName("sqe_tail"),
-        Constants$root.C_LONG_LONG$LAYOUT.withName("ring_sz"),
-            Constants$root.C_POINTER$LAYOUT.withName("ring_ptr"),
-            MemoryLayout.sequenceLayout(4, Constants$root.C_INT$LAYOUT).withName("pad")
+        CType.C_POINTER$LAYOUT.withName("khead"),
+        CType.C_POINTER$LAYOUT.withName("ktail"),
+        CType.C_POINTER$LAYOUT.withName("kring_mask"),
+        CType.C_POINTER$LAYOUT.withName("kring_entries"),
+        CType.C_POINTER$LAYOUT.withName("kflags"),
+        CType.C_POINTER$LAYOUT.withName("kdropped"),
+        CType.C_POINTER$LAYOUT.withName("array"),
+        CType.C_POINTER$LAYOUT.withName("sqes"),
+        CType.C_INT$LAYOUT.withName("sqe_head"),
+        CType.C_INT$LAYOUT.withName("sqe_tail"),
+        CType.C_LONG_LONG$LAYOUT.withName("ring_sz"),
+            CType.C_POINTER$LAYOUT.withName("ring_ptr"),
+            MemoryLayout.sequenceLayout(4, CType.C_INT$LAYOUT).withName("pad")
     ).withName("io_uring_sq");
 
     public static MemoryLayout $LAYOUT() {

@@ -2,14 +2,16 @@
 
 package top.dreamlike.nativeLib.in;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class osockaddr {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        Constants$root.C_SHORT$LAYOUT.withName("sa_family"),
-        MemoryLayout.sequenceLayout(14, Constants$root.C_CHAR$LAYOUT).withName("sa_data")
+        CType.C_SHORT$LAYOUT.withName("sa_family"),
+        MemoryLayout.sequenceLayout(14, CType.C_CHAR$LAYOUT).withName("sa_data")
     ).withName("osockaddr");
     public static MemoryLayout $LAYOUT() {
         return osockaddr.$struct$LAYOUT;

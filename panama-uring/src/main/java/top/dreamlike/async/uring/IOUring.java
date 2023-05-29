@@ -2,16 +2,20 @@ package top.dreamlike.async.uring;
 
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.IOOpResult;
+import top.dreamlike.common.CType;
+import top.dreamlike.common.__kernel_timespec;
 import top.dreamlike.epoll.Epoll;
 import top.dreamlike.extension.NotEnoughBufferException;
 import top.dreamlike.helper.*;
 import top.dreamlike.nativeLib.eventfd.EventFd;
 import top.dreamlike.nativeLib.eventfd.eventfd_h;
+import top.dreamlike.nativeLib.in.iovec;
+import top.dreamlike.nativeLib.in.sockaddr;
 import top.dreamlike.nativeLib.in.sockaddr_in;
-import top.dreamlike.nativeLib.liburing.*;
-import top.dreamlike.nativeLib.socket.sockaddr;
+import top.dreamlike.nativeLib.liburing.io_uring;
+import top.dreamlike.nativeLib.liburing.io_uring_cqe;
+import top.dreamlike.nativeLib.liburing.io_uring_sqe;
 
-import java.io.*;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -26,9 +30,10 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 import static java.lang.foreign.ValueLayout.*;
+import static top.dreamlike.nativeLib.errno.errno_h.ENOBUFS;
 import static top.dreamlike.nativeLib.eventfd.eventfd_h.EFD_NONBLOCK;
-import static top.dreamlike.nativeLib.inet.inet_h.C_POINTER;
-import static top.dreamlike.nativeLib.inet.inet_h.*;
+import static top.dreamlike.nativeLib.inet.inet_h.inet_ntoa;
+import static top.dreamlike.nativeLib.inet.inet_h.ntohs;
 import static top.dreamlike.nativeLib.liburing.liburing_h.*;
 import static top.dreamlike.nativeLib.string.string_h.strlen;
 
@@ -87,21 +92,22 @@ public class IOUring implements AutoCloseable {
         initWakeEventFd();
     }
 
-    private void initContext(){
+    private void initContext() {
         context = new HashMap<>();
         count = new AtomicLong();
     }
-    private void initRing(){
+
+    private void initRing() {
         allocator = Arena.openShared();
         this.ring = io_uring.allocate(allocator);
-        var ret= io_uring_queue_init(ringSize, ring, 0);
-        if (ret < 0){
+        var ret = io_uring_queue_init(ringSize, ring, 0);
+        if (ret < 0) {
             throw new IllegalStateException("io_uring init fail!");
         }
     }
 
-    private void initSelectedBuffer(int autoBufferSize){
-        gid =(byte) new Random(System.currentTimeMillis()).nextInt(100);
+    private void initSelectedBuffer(int autoBufferSize) {
+        gid = (byte) new Random(System.currentTimeMillis()).nextInt(100);
         selectedBuffer = new MemorySegment[autoBufferSize];
         for (int i = 0; i < selectedBuffer.length; i++) {
             selectedBuffer[i] = allocator.allocate(1024);
@@ -109,8 +115,8 @@ public class IOUring implements AutoCloseable {
 
         //fixme CQE溢出问题 当前先不修，因为selectedBuffer api有点复杂
         //      当前先假装不出问题
-        for (int i = 0; i < selectedBuffer.length;) {
-            if (!provideBuffer(selectedBuffer[i],i,false)) {
+        for (int i = 0; i < selectedBuffer.length; ) {
+            if (!provideBuffer(selectedBuffer[i], i, false)) {
                 submit();
                 continue;
             }
@@ -163,7 +169,7 @@ public class IOUring implements AutoCloseable {
     }
 
 
-    public boolean checkSupport(int op){
+    public boolean checkSupport(int op) {
         return io_uring_opcode_supported_ring(ring, op) == 1;
     }
 
@@ -303,28 +309,25 @@ public class IOUring implements AutoCloseable {
 
     static {
 
-        try {
 
-            if (!NativeHelper.isLinux() || !NativeHelper.isX86_64() || !NativeHelper.compareWithCurrentLinuxVersion(5, 10)) {
-                throw new NativeCallException("please check os version(need linux >= 5.10) and CPU Arch(need X86_64)");
-            }
-
-
-            InputStream is = IOUring.class.getResourceAsStream("/liburing.so");
-            File file = File.createTempFile("liburing", ".so");
-            OutputStream os = new FileOutputStream(file);
-            byte[] buffer = new byte[1024];
-            int length;
-            while ((length = is.read(buffer)) != -1) {
-                os.write(buffer, 0, length);
-            }
-            is.close();
-            os.close();
-            System.load(file.getAbsolutePath());
-            file.deleteOnExit();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (!NativeHelper.isLinux() || !NativeHelper.isX86_64() || !NativeHelper.compareWithCurrentLinuxVersion(5, 10)) {
+            throw new NativeCallException("please check os version(need linux >= 5.10) and CPU Arch(need X86_64)");
         }
+        NativeHelper.loadSo("liburing-ffi.2.4");
+
+//            InputStream is = IOUring.class.getResourceAsStream("/liburing.so");
+//            File file = File.createTempFile("liburing", ".so");
+//            OutputStream os = new FileOutputStream(file);
+//            byte[] buffer = new byte[1024];
+//            int length;
+//            while ((length = is.read(buffer)) != -1) {
+//                os.write(buffer, 0, length);
+//            }
+//            is.close();
+//            os.close();
+//            System.load(file.getAbsolutePath());
+//            file.deleteOnExit();
+
 
         AccessHelper.fetchContext = uring -> uring.context;
     }
@@ -546,11 +549,11 @@ public class IOUring implements AutoCloseable {
             return false;
         }
 
-        io_uring_prep_provide_buffers(sqe, buffer,(int) buffer.byteSize(),1,gid, bid);
+        io_uring_prep_provide_buffers(sqe, buffer, (int) buffer.byteSize(), 1, gid, bid);
 
         MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof());
         io_uring_sqe.user_data$set(sqeSegment, -IORING_OP_PROVIDE_BUFFERS());
-        if (needSubmit){
+        if (needSubmit) {
             submit();
         }
 
@@ -568,16 +571,17 @@ public class IOUring implements AutoCloseable {
 
     /**
      * 非阻塞获取事件
+     *
      * @param max 本次最大获取事件数量
      * @return
      */
-    public List<IOOpResult> batchGetCqe(int max){
+    public List<IOOpResult> batchGetCqe(int max) {
         try (Arena tmp = Arena.openConfined()) {
-            MemorySegment ref = tmp.allocate(C_POINTER.byteSize());
+            MemorySegment ref = tmp.allocate(CType.C_POINTER$LAYOUT.byteSize());
             int count = 0;
             ArrayList<IOOpResult> results = new ArrayList<>();
             while (count <= max && io_uring_peek_cqe(ring, ref) == 0) {
-                MemorySegment cqePoint = ref.get(C_POINTER, 0);
+                MemorySegment cqePoint = ref.get(CType.C_POINTER$LAYOUT, 0);
                 MemorySegment cqe = NativeHelper.unsafePointConvertor(cqePoint);
                 long opsCount = io_uring_cqe.user_data$get(cqe);
                 if (opsCount < 0) {
@@ -607,15 +611,16 @@ public class IOUring implements AutoCloseable {
 
     /**
      * 等待一个事件
+     *
      * @return
      */
-    public List<IOOpResult> waitFd(){
+    public List<IOOpResult> waitFd() {
         //及时释放内存
         //太弱智了 不支持栈上分配
         try (Arena tmp = Arena.openConfined()) {
-            MemorySegment ref = tmp.allocate(C_POINTER.byteSize());
+            MemorySegment ref = tmp.allocate(CType.C_POINTER$LAYOUT.byteSize());
             io_uring_wait_cqe(ring, ref);
-            MemorySegment cqePoint = ref.get(C_POINTER, 0);
+            MemorySegment cqePoint = ref.get(CType.C_POINTER$LAYOUT, 0);
             MemorySegment cqe = NativeHelper.unsafePointConvertor(cqePoint);
             long opsCount = io_uring_cqe.user_data$get(cqe);
             if (opsCount < 0) {
@@ -670,7 +675,7 @@ public class IOUring implements AutoCloseable {
 
     public void waitComplete(long waitMs) {
         try (Arena session = Arena.openConfined()) {
-            MemorySegment cqe_ptr = session.allocate(C_POINTER.byteSize());
+            MemorySegment cqe_ptr = session.allocate(CType.C_POINTER$LAYOUT.byteSize());
             if (waitMs == -1) {
                 io_uring_wait_cqe(ring, cqe_ptr);
                 return;

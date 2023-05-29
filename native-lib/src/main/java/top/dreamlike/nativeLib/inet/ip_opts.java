@@ -2,15 +2,17 @@
 
 package top.dreamlike.nativeLib.inet;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 
 public class ip_opts {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
         MemoryLayout.structLayout(
-            Constants$root.C_INT$LAYOUT.withName("s_addr")
+            CType.C_INT$LAYOUT.withName("s_addr")
         ).withName("ip_dst"),
-        MemoryLayout.sequenceLayout(40, Constants$root.C_CHAR$LAYOUT).withName("ip_opts")
+        MemoryLayout.sequenceLayout(40, CType.C_CHAR$LAYOUT).withName("ip_opts")
     ).withName("ip_opts");
     public static MemoryLayout $LAYOUT() {
         return ip_opts.$struct$LAYOUT;

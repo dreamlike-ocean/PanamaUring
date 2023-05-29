@@ -2,52 +2,54 @@
 
 package top.dreamlike.nativeLib.string;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
 
 class constants$6 {
 
-    static final FunctionDescriptor rindex$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor rindex$FUNC = FunctionDescriptor.of(CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle rindex$MH = RuntimeHelper.downcallHandle(
         "rindex",
         constants$6.rindex$FUNC
     );
-    static final FunctionDescriptor ffs$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor ffs$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle ffs$MH = RuntimeHelper.downcallHandle(
         "ffs",
         constants$6.ffs$FUNC
     );
-    static final FunctionDescriptor ffsl$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor ffsl$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle ffsl$MH = RuntimeHelper.downcallHandle(
         "ffsl",
         constants$6.ffsl$FUNC
     );
-    static final FunctionDescriptor ffsll$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor ffsll$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle ffsll$MH = RuntimeHelper.downcallHandle(
         "ffsll",
         constants$6.ffsll$FUNC
     );
-    static final FunctionDescriptor strcasecmp$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor strcasecmp$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle strcasecmp$MH = RuntimeHelper.downcallHandle(
         "strcasecmp",
         constants$6.strcasecmp$FUNC
     );
-    static final FunctionDescriptor strncasecmp$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT
+    static final FunctionDescriptor strncasecmp$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_LONG_LONG$LAYOUT
     );
     static final MethodHandle strncasecmp$MH = RuntimeHelper.downcallHandle(
         "strncasecmp",

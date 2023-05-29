@@ -2,20 +2,22 @@
 
 package top.dreamlike.nativeLib.inet;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class msghdr {
 
     static final GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-            Constants$root.C_POINTER$LAYOUT.withName("msg_name"),
-            Constants$root.C_INT$LAYOUT.withName("msg_namelen"),
+            CType.C_POINTER$LAYOUT.withName("msg_name"),
+            CType.C_INT$LAYOUT.withName("msg_namelen"),
             MemoryLayout.paddingLayout(32),
-            Constants$root.C_POINTER$LAYOUT.withName("msg_iov"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("msg_iovlen"),
-            Constants$root.C_POINTER$LAYOUT.withName("msg_control"),
-            Constants$root.C_LONG_LONG$LAYOUT.withName("msg_controllen"),
-            Constants$root.C_INT$LAYOUT.withName("msg_flags"),
+            CType.C_POINTER$LAYOUT.withName("msg_iov"),
+            CType.C_LONG_LONG$LAYOUT.withName("msg_iovlen"),
+            CType.C_POINTER$LAYOUT.withName("msg_control"),
+            CType.C_LONG_LONG$LAYOUT.withName("msg_controllen"),
+            CType.C_INT$LAYOUT.withName("msg_flags"),
             MemoryLayout.paddingLayout(32)
     ).withName("msghdr");
 

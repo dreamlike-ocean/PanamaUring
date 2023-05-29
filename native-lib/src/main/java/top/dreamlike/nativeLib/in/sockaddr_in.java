@@ -2,18 +2,20 @@
 
 package top.dreamlike.nativeLib.in;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class sockaddr_in {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        Constants$root.C_SHORT$LAYOUT.withName("sin_family"),
-        Constants$root.C_SHORT$LAYOUT.withName("sin_port"),
+        CType.C_SHORT$LAYOUT.withName("sin_family"),
+        CType.C_SHORT$LAYOUT.withName("sin_port"),
         MemoryLayout.structLayout(
-            Constants$root.C_INT$LAYOUT.withName("s_addr")
+            CType.C_INT$LAYOUT.withName("s_addr")
         ).withName("sin_addr"),
-        MemoryLayout.sequenceLayout(8, Constants$root.C_CHAR$LAYOUT).withName("sin_zero")
+        MemoryLayout.sequenceLayout(8, CType.C_CHAR$LAYOUT).withName("sin_zero")
     ).withName("sockaddr_in");
     public static MemoryLayout $LAYOUT() {
         return sockaddr_in.$struct$LAYOUT;

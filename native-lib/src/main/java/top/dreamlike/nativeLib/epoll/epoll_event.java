@@ -2,18 +2,20 @@
 
 package top.dreamlike.nativeLib.epoll;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class epoll_event {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        Constants$root.C_INT$LAYOUT.withName("events"),
+        CType.C_INT$LAYOUT.withName("events"),
         MemoryLayout.unionLayout(
-                Constants$root.C_POINTER$LAYOUT.withName("ptr"),
-                Constants$root.C_INT$LAYOUT.withName("res"),
-                Constants$root.C_INT$LAYOUT.withName("u32"),
-                Constants$root.C_LONG_LONG$LAYOUT.withName("u64")
+                CType.C_POINTER$LAYOUT.withName("ptr"),
+                CType.C_INT$LAYOUT.withName("res"),
+                CType.C_INT$LAYOUT.withName("u32"),
+                CType.C_LONG_LONG$LAYOUT.withName("u64")
         ).withName("data")
     ).withName("epoll_event");
     public static MemoryLayout $LAYOUT() {

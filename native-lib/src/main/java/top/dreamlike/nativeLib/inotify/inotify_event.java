@@ -2,6 +2,7 @@
 
 package top.dreamlike.nativeLib.inotify;
 
+import top.dreamlike.common.CType;
 import top.dreamlike.helper.NativeHelper;
 
 import java.lang.foreign.*;
@@ -10,11 +11,11 @@ import java.lang.invoke.VarHandle;
 public class inotify_event {
 
     static final GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-            Constants$root.C_INT$LAYOUT.withName("wd"),
-            Constants$root.C_INT$LAYOUT.withName("mask"),
-            Constants$root.C_INT$LAYOUT.withName("cookie"),
-            Constants$root.C_INT$LAYOUT.withName("len"),
-            MemoryLayout.sequenceLayout(0, Constants$root.C_CHAR$LAYOUT).withName("name")
+            CType.C_INT$LAYOUT.withName("wd"),
+            CType.C_INT$LAYOUT.withName("mask"),
+            CType.C_INT$LAYOUT.withName("cookie"),
+            CType.C_INT$LAYOUT.withName("len"),
+            MemoryLayout.sequenceLayout(0, CType.C_CHAR$LAYOUT).withName("name")
     ).withName("inotify_event");
 
     public static MemoryLayout $LAYOUT() {

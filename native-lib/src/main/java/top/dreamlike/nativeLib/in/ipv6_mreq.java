@@ -2,6 +2,8 @@
 
 package top.dreamlike.nativeLib.in;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
@@ -10,12 +12,12 @@ public class ipv6_mreq {
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
         MemoryLayout.structLayout(
             MemoryLayout.unionLayout(
-                MemoryLayout.sequenceLayout(16, Constants$root.C_CHAR$LAYOUT).withName("__u6_addr8"),
-                MemoryLayout.sequenceLayout(8, Constants$root.C_SHORT$LAYOUT).withName("__u6_addr16"),
-                MemoryLayout.sequenceLayout(4, Constants$root.C_INT$LAYOUT).withName("__u6_addr32")
+                MemoryLayout.sequenceLayout(16, CType.C_CHAR$LAYOUT).withName("__u6_addr8"),
+                MemoryLayout.sequenceLayout(8, CType.C_SHORT$LAYOUT).withName("__u6_addr16"),
+                MemoryLayout.sequenceLayout(4, CType.C_INT$LAYOUT).withName("__u6_addr32")
             ).withName("__in6_u")
         ).withName("ipv6mr_multiaddr"),
-        Constants$root.C_INT$LAYOUT.withName("ipv6mr_interface")
+        CType.C_INT$LAYOUT.withName("ipv6mr_interface")
     ).withName("ipv6_mreq");
     public static MemoryLayout $LAYOUT() {
         return ipv6_mreq.$struct$LAYOUT;

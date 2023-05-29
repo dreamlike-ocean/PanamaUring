@@ -2,56 +2,58 @@
 
 package top.dreamlike.nativeLib.liburing;
 
+import top.dreamlike.common.CType;
+
+import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
-import java.lang.foreign.*;
 
 class constants$23 {
 
-    static final FunctionDescriptor io_uring_opcode_supported_ring$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor io_uring_opcode_supported_ring$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle io_uring_opcode_supported_ring$MH = RuntimeHelper.downcallHandle(
         "io_uring_opcode_supported_ring",
         constants$23.io_uring_opcode_supported_ring$FUNC
     );
-    static final FunctionDescriptor io_uring_opcode_supported$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor io_uring_opcode_supported$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle io_uring_opcode_supported$MH = RuntimeHelper.downcallHandle(
         "io_uring_opcode_supported",
         constants$23.io_uring_opcode_supported$FUNC
     );
-    static final FunctionDescriptor io_uring_queue_init_params$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor io_uring_queue_init_params$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle io_uring_queue_init_params$MH = RuntimeHelper.downcallHandle(
         "io_uring_queue_init_params",
         constants$23.io_uring_queue_init_params$FUNC
     );
-    static final FunctionDescriptor io_uring_queue_init$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor io_uring_queue_init$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle io_uring_queue_init$MH = RuntimeHelper.downcallHandle(
         "io_uring_queue_init",
         constants$23.io_uring_queue_init$FUNC
     );
-    static final FunctionDescriptor io_uring_queue_mmap$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor io_uring_queue_mmap$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle io_uring_queue_mmap$MH = RuntimeHelper.downcallHandle(
         "io_uring_queue_mmap",
         constants$23.io_uring_queue_mmap$FUNC
     );
-    static final FunctionDescriptor io_uring_ring_dontfork$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor io_uring_ring_dontfork$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle io_uring_ring_dontfork$MH = RuntimeHelper.downcallHandle(
         "io_uring_ring_dontfork",

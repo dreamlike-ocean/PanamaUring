@@ -2,29 +2,31 @@
 
 package top.dreamlike.nativeLib.unistd;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
 
 class constants$15 {
 
-    static final FunctionDescriptor profil$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_LONG_LONG$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor profil$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT,
+        CType.C_LONG_LONG$LAYOUT,
+        CType.C_LONG_LONG$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle profil$MH = RuntimeHelper.downcallHandle(
         "profil",
         constants$15.profil$FUNC
     );
-    static final FunctionDescriptor acct$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_POINTER$LAYOUT
+    static final FunctionDescriptor acct$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_POINTER$LAYOUT
     );
     static final MethodHandle acct$MH = RuntimeHelper.downcallHandle(
         "acct",
         constants$15.acct$FUNC
     );
-    static final FunctionDescriptor getusershell$FUNC = FunctionDescriptor.of(Constants$root.C_POINTER$LAYOUT);
+    static final FunctionDescriptor getusershell$FUNC = FunctionDescriptor.of(CType.C_POINTER$LAYOUT);
     static final MethodHandle getusershell$MH = RuntimeHelper.downcallHandle(
         "getusershell",
         constants$15.getusershell$FUNC
@@ -39,9 +41,9 @@ class constants$15 {
         "setusershell",
         constants$15.setusershell$FUNC
     );
-    static final FunctionDescriptor daemon$FUNC = FunctionDescriptor.of(Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT,
-        Constants$root.C_INT$LAYOUT
+    static final FunctionDescriptor daemon$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT,
+        CType.C_INT$LAYOUT
     );
     static final MethodHandle daemon$MH = RuntimeHelper.downcallHandle(
         "daemon",

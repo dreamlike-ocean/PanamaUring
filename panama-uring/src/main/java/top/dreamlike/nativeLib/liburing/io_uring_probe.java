@@ -2,21 +2,23 @@
 
 package top.dreamlike.nativeLib.liburing;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class io_uring_probe {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        Constants$root.C_CHAR$LAYOUT.withName("last_op"),
-        Constants$root.C_CHAR$LAYOUT.withName("ops_len"),
-        Constants$root.C_SHORT$LAYOUT.withName("resv"),
-        MemoryLayout.sequenceLayout(3, Constants$root.C_INT$LAYOUT).withName("resv2"),
+        CType.C_CHAR$LAYOUT.withName("last_op"),
+        CType.C_CHAR$LAYOUT.withName("ops_len"),
+        CType.C_SHORT$LAYOUT.withName("resv"),
+        MemoryLayout.sequenceLayout(3, CType.C_INT$LAYOUT).withName("resv2"),
         MemoryLayout.sequenceLayout(0, MemoryLayout.structLayout(
-            Constants$root.C_CHAR$LAYOUT.withName("op"),
-            Constants$root.C_CHAR$LAYOUT.withName("resv"),
-            Constants$root.C_SHORT$LAYOUT.withName("flags"),
-            Constants$root.C_INT$LAYOUT.withName("resv2")
+            CType.C_CHAR$LAYOUT.withName("op"),
+            CType.C_CHAR$LAYOUT.withName("resv"),
+            CType.C_SHORT$LAYOUT.withName("flags"),
+            CType.C_INT$LAYOUT.withName("resv2")
         ).withName("io_uring_probe_op")).withName("ops")
     ).withName("io_uring_probe");
     public static MemoryLayout $LAYOUT() {

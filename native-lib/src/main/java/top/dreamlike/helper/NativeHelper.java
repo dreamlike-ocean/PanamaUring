@@ -4,6 +4,7 @@ import top.dreamlike.nativeLib.errno.errno_h;
 import top.dreamlike.nativeLib.in.sockaddr_in;
 import top.dreamlike.nativeLib.inet.sockaddr_in6;
 
+import java.io.*;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -21,7 +22,6 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static top.dreamlike.nativeLib.eventfd.eventfd_h.eventfd;
 import static top.dreamlike.nativeLib.fcntl.fcntl_h.*;
 import static top.dreamlike.nativeLib.inet.inet_h.*;
-import static top.dreamlike.nativeLib.socket.socket_h.listen;
 import static top.dreamlike.nativeLib.string.string_h.*;
 
 public class NativeHelper {
@@ -294,5 +294,27 @@ public class NativeHelper {
     }
 
 
+    public static void loadSo(String soName) {
+        try {
 
+            if (!NativeHelper.isLinux() || !NativeHelper.isX86_64()) {
+                throw new NativeCallException("please check os version(need linux >= 5.10) and CPU Arch(need X86_64)");
+            }
+
+            InputStream is = NativeHelper.class.getResourceAsStream("/"+soName+".so");
+            File file = File.createTempFile(soName, ".so");
+            OutputStream os = new FileOutputStream(file);
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = is.read(buffer)) != -1) {
+                os.write(buffer, 0, length);
+            }
+            is.close();
+            os.close();
+            System.load(file.getAbsolutePath());
+            file.deleteOnExit();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

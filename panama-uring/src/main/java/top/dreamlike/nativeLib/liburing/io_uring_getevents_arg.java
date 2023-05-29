@@ -2,16 +2,18 @@
 
 package top.dreamlike.nativeLib.liburing;
 
+import top.dreamlike.common.CType;
+
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 
 public class io_uring_getevents_arg {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        Constants$root.C_LONG_LONG$LAYOUT.withName("sigmask"),
-        Constants$root.C_INT$LAYOUT.withName("sigmask_sz"),
-        Constants$root.C_INT$LAYOUT.withName("pad"),
-        Constants$root.C_LONG_LONG$LAYOUT.withName("ts")
+        CType.C_LONG_LONG$LAYOUT.withName("sigmask"),
+        CType.C_INT$LAYOUT.withName("sigmask_sz"),
+        CType.C_INT$LAYOUT.withName("pad"),
+        CType.C_LONG_LONG$LAYOUT.withName("ts")
     ).withName("io_uring_getevents_arg");
     public static MemoryLayout $LAYOUT() {
         return io_uring_getevents_arg.$struct$LAYOUT;
