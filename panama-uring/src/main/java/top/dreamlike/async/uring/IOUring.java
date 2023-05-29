@@ -315,20 +315,6 @@ public class IOUring implements AutoCloseable {
         }
         NativeHelper.loadSo("liburing-ffi.2.4");
 
-//            InputStream is = IOUring.class.getResourceAsStream("/liburing.so");
-//            File file = File.createTempFile("liburing", ".so");
-//            OutputStream os = new FileOutputStream(file);
-//            byte[] buffer = new byte[1024];
-//            int length;
-//            while ((length = is.read(buffer)) != -1) {
-//                os.write(buffer, 0, length);
-//            }
-//            is.close();
-//            os.close();
-//            System.load(file.getAbsolutePath());
-//            file.deleteOnExit();
-
-
         AccessHelper.fetchContext = uring -> uring.context;
     }
 
