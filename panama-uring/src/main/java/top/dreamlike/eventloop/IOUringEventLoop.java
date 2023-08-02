@@ -66,7 +66,7 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         ioUring.submit();
     }
 
-    public void wakeup() {
+    public void wakeup0() {
         ioUring.wakeup();
     }
 

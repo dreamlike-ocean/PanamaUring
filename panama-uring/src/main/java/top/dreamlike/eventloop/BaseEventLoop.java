@@ -49,9 +49,9 @@ public abstract class BaseEventLoop extends Thread implements Executor {
             while (!tasks.isEmpty()) {
                 tasks.poll().run();
             }
-            wakeUpFlag.set(false);
+            wakeUpFlag.setRelease(false);
             selectAndWait(duration);
-            wakeUpFlag.set(true);
+            wakeUpFlag.setRelease(true);
             //到期的任务
             afterSelect();
         }
@@ -98,7 +98,7 @@ public abstract class BaseEventLoop extends Thread implements Executor {
     @Override
     public void execute(Runnable command) {
         if (close.get()) {
-            throw new IllegalStateException("eventloop has closed");
+            throw new IllegalStateException("EventLoop has closed");
         }
         tasks.offer(command);
         wakeup();
@@ -134,8 +134,14 @@ public abstract class BaseEventLoop extends Thread implements Executor {
         return res;
     }
 
+    public void wakeup() {
+        if (wakeUpFlag.getAcquire()) {
+            return;
+        }
+        wakeup0();
+    }
 
-    public abstract void wakeup();
+    protected abstract void wakeup0();
 
     protected abstract void selectAndWait(long duration);
 

@@ -151,7 +151,7 @@ public class EpollEventLoop extends BaseEventLoop {
 
 
     @Override
-    public void wakeup() {
+    public void wakeup0() {
         wakeUpFd.write(1);
     }
 

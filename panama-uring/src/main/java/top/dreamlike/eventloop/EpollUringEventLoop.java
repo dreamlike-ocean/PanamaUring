@@ -92,10 +92,10 @@ public class EpollUringEventLoop extends IOUringEventLoop {
 
 
     @Override
-    public void wakeup() {
+    public void wakeup0() {
         //启动时没有
         if (epollEventLoop != null) {
-            epollEventLoop.wakeup();
+            epollEventLoop.wakeup0();
         }
     }
 }

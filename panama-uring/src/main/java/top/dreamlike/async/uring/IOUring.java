@@ -134,6 +134,7 @@ public class IOUring implements AutoCloseable {
 
     private void multiShotReadEventfd() {
         BooleanSupplier prepFn = () -> prep_read(wakeUpFd.getFd(), 0, wakeUpReadBuffer, (__) -> {
+            System.out.println("Eventfd readable");
             //轮询到了直接再注册一个可读事件
             multiShotReadEventfd();
         });
