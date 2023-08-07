@@ -129,7 +129,7 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
                     AtomicBoolean normalEnd = new AtomicBoolean(false);
                     long userData = ioUring.prep_write_and_get_user_data(writeFd(), offset, memorySegment.resource(),
                             (writeRes) -> {
-                                // 先确保下游拿到memorysegment’再释放
+                                // 先确保下游拿到memorysegmen’再释放
                                 var casResult = normalEnd.compareAndExchange(false, true);
                                 ue.complete(writeRes);
                                 if (casResult) {
@@ -163,11 +163,7 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
 
                 });
 
-        return lazyRes.withContext((uni, c) -> {
-            Long userData = c.get(USER_DATA_KEY);
-            return uni.onCancellation()
-                    .call(() -> eventLoop.cancelAsync(userData, 0, true));
-        });
+        return lazyRes;
     }
 
     public boolean closed() {
