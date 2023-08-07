@@ -18,6 +18,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.smallrye.reactive</groupId>
+            <artifactId>mutiny</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.github.dreamlike-ocean</groupId>
             <artifactId>native-lib</artifactId>
         </dependency>
@@ -54,7 +58,7 @@
                     <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
                 <executions>
-                    <execution>
+                  <execution>
                         <id>package-all-dependency</id>
                         <phase>package</phase>
                         <goals>
@@ -62,6 +66,15 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>20</source>
+                    <target>20</target>
+                    <compilerArgs>--enable-preview</compilerArgs>
+                </configuration>
             </plugin>
         </plugins>
     </build>

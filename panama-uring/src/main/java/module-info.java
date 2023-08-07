@@ -8,4 +8,5 @@ module top.dremalike.panama.uring.linux.x86_64 {
     requires jdk.unsupported;
     requires top.dreamlike.nativeLib;
     requires org.slf4j;
+    requires io.smallrye.mutiny;
 }

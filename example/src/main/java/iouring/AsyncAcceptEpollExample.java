@@ -22,7 +22,5 @@ public class AsyncAcceptEpollExample {
                     System.out.println("vertx remote:" + ns.remoteAddress().port());
                 });
         EpollAsyncSocket epollAsyncSocket = serverSocket.accept().get();
-
-        System.out.println(epollAsyncSocket);
     }
 }

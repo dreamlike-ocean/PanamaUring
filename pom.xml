@@ -20,6 +20,7 @@
         <vertx.version>4.3.7</vertx.version>
         <vertx-async.version>2.2.0</vertx-async.version>
         <native-lib>2.2.0</native-lib>
+        <mutiny.version>2.3.1</mutiny.version>
     </properties>
     <licenses>
         <license>
@@ -130,6 +131,11 @@
     </profiles>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.smallrye.reactive</groupId>
+                <artifactId>mutiny</artifactId>
+                <version>${mutiny.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.github.dreamlike-ocean</groupId>
                 <artifactId>native-lib</artifactId>

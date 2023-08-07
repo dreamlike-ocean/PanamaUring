@@ -9,6 +9,8 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.util.concurrent.CompletableFuture;
 
+import io.smallrye.mutiny.Uni;
+
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 public class AsyncEventFd extends PlainAsyncFd {
@@ -33,6 +35,8 @@ public class AsyncEventFd extends PlainAsyncFd {
                     shared.close();
                 });
     }
+
+    
 
     public CompletableFuture<Long> read() {
         Arena shared = Arena.openShared();
