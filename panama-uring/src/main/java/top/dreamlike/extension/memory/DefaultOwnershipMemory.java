@@ -20,6 +20,25 @@ public class DefaultOwnershipMemory implements OwnershipMemory {
         this.memorySegment = memorySegment;
     }
 
+    /**
+     *
+     * @param memorySegment 所有权对象
+     * @param arena memorySegment所属的arena
+     */
+    public DefaultOwnershipMemory(MemorySegment memorySegment, Arena arena) {
+        if(memorySegment == null) {
+            throw new NullPointerException("memorySegment is null");
+        }
+        if(arena == null) {
+            throw new NullPointerException("releaseFn is null");
+        }
+        this.dropTrait = (__) -> {
+            arena.close();
+        };
+        this.memorySegment = memorySegment;
+    }
+
+
     @Override
     public MemorySegment resource() {
         return memorySegment;

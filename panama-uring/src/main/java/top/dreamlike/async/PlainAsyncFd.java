@@ -7,13 +7,14 @@ import top.dreamlike.extension.NotEnoughSqeException;
 import top.dreamlike.extension.memory.OwnershipMemory;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
+import top.dreamlike.helper.Pair;
 import top.dreamlike.nativeLib.unistd.unistd_h;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 import io.smallrye.mutiny.Uni;
 
@@ -24,8 +25,7 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
 
     protected final AtomicBoolean closed = new AtomicBoolean(false);
 
-    // 写的奇形怪状的防止冲突
-    private static final String USER_DATA_KEY = "_USER_DATA_KEY_";
+    private static final Consumer<Integer> DO_NOTHING = i -> {};
 
     protected PlainAsyncFd(IOUringEventLoop eventLoop) {
         super(eventLoop);
@@ -73,6 +73,30 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
         return future;
     }
 
+    protected Uni<Pair<OwnershipMemory, Integer>> readUnsafeLazy(int offset, OwnershipMemory memory) {
+        if (closed()) {
+            throw new NativeCallException("file has closed");
+        }
+        Uni<Pair<OwnershipMemory, Integer>> lazyRes = Uni.createFrom()
+                .emitter(ue -> eventLoop.runOnEventLoop(() -> {
+                    AtomicBoolean end = new AtomicBoolean(false);
+                    long userData = ioUring.prep_read_and_get_user_data(readFd(), offset, memory.resource(), sysCallRes -> {
+                        if (end.compareAndSet(false, true)) {
+                            ue.complete(new Pair<>(memory, sysCallRes));
+                        }else {
+                            //async op被取消的场景
+                            memory.drop();
+                        }
+                    });
+                    if (userData == IOUring.NO_SQE) {
+                        ue.fail(new NotEnoughSqeException());
+                        return;
+                    }
+                    ue.onTermination(() -> onTermination(end, userData));
+                }));
+        return lazyRes;
+    }
+
     public CompletableFuture<Integer> write(int fileOffset, byte[] buffer, int bufferOffset, int bufferLength) {
         if (bufferOffset + bufferLength > buffer.length) {
             throw new ArrayIndexOutOfBoundsException();
@@ -115,53 +139,41 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
     }
 
     /**
-     * 
+     * 这里解决的是流的终止和MemorySegment所有权生命周期并不一致的问题
+     * 只有成功回调才会将所有权释放回用户侧
      * @param offset        文件偏移量
      * @param memorySegment 所有权移交给io_uring语义的内存段
      * @return
      */
-    protected Uni<Integer> writeUnsafeLazy(int offset, OwnershipMemory memorySegment) {
+    protected Uni<Pair<OwnershipMemory, Integer>> writeUnsafeLazy(int offset, OwnershipMemory memorySegment) {
         if (closed.get()) {
             throw new NativeCallException("file has closed");
         }
-        Uni<Integer> lazyRes = Uni.createFrom()
-                .emitter((ue) -> {
-                    AtomicBoolean normalEnd = new AtomicBoolean(false);
-                    long userData = ioUring.prep_write_and_get_user_data(writeFd(), offset, memorySegment.resource(),
-                            (writeRes) -> {
-                                // 先确保下游拿到memorysegmen’再释放
-                                var casResult = normalEnd.compareAndExchange(false, true);
-                                ue.complete(writeRes);
-                                if (casResult) {
+        Uni<Pair<OwnershipMemory, Integer>> lazyRes = Uni.createFrom()
+                .emitter((ue) -> eventLoop.runOnEventLoop(() -> {
+
+                    AtomicBoolean end = new AtomicBoolean(false);
+                    long userData = ioUring.prep_write_and_get_user_data(writeFd(), offset, memorySegment.resource(), (sysCallRes) -> {
+                                //即使cancel成功了 io_uring仍旧存在回调
+                                // 转移所有权给下游
+                                if (end.compareAndExchange(false, true)) {
+                                    ue.complete(new Pair<>(memorySegment, sysCallRes));
+                                } else  {
+                                    //发现被取消了直接drop
                                     memorySegment.drop();
                                 }
                             });
 
                     if (userData == IOUring.NO_SQE) {
-                        normalEnd.set(true);
+                        end.set(true);
                         memorySegment.drop();
                         ue.fail(new NotEnoughSqeException());
                         return;
                     }
 
-                    ue.onTermination(() -> {
+                    ue.onTermination(() -> onTermination(end, userData));
 
-                        if (normalEnd.get()) {
-                            return;
-                        }
-                        // 非正常结束比如说cancel了
-                        eventLoop.cancelAsync(userData, 0, true)
-                                .subscribe().with(i -> {
-                                    normalEnd.set(true);
-                                    memorySegment.drop();
-                                }, t -> {
-                                    // todo 这里异常被吞了。。。
-                                    // 取消失败 不释放资源等待async op回调
-                                });
-
-                    });
-
-                });
+                }));
 
         return lazyRes;
     }
@@ -175,10 +187,10 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
     protected void close() {
         if (closed.compareAndSet(false, true)) {
             try {
-                unistd_h.close(readFd());
                 if (readFd() != writeFd()) {
                     unistd_h.close(writeFd());
                 }
+                unistd_h.close(readFd());
             } catch (RuntimeException e) {
                 closed.set(false);
                 throw e;
@@ -188,5 +200,19 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
 
     protected int writeFd() {
         return readFd();
+    }
+
+    private void onTermination(AtomicBoolean end, long userData) {
+        //cas失败 当前异步操作已经完成 无需cancel
+        if (!end.compareAndSet(false, true)) {
+            return;
+        }
+        // 非正常结束比如说cancel了
+        eventLoop.cancelAsync(userData, 0, true)
+                //一并收拢到io_uring回调中释放资源
+                .subscribe().with(DO_NOTHING, t -> {
+                    // todo 这里异常被吞了。。。
+                    // 取消失败 不释放资源等待async op回调
+                });
     }
 }

@@ -2,6 +2,8 @@ package top.dreamlike.async.file;
 
 import top.dreamlike.async.PlainAsyncFd;
 import top.dreamlike.eventloop.IOUringEventLoop;
+import top.dreamlike.extension.memory.DefaultOwnershipMemory;
+import top.dreamlike.extension.memory.OwnershipMemory;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 
@@ -10,13 +12,13 @@ import java.lang.foreign.MemorySegment;
 import java.util.concurrent.CompletableFuture;
 
 import io.smallrye.mutiny.Uni;
+import top.dreamlike.helper.Pair;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 public class AsyncEventFd extends PlainAsyncFd {
 
     private final int eventfd;
-
 
     public AsyncEventFd(IOUringEventLoop eventLoop) {
         this(eventLoop, 0);
@@ -36,17 +38,34 @@ public class AsyncEventFd extends PlainAsyncFd {
                 });
     }
 
-    
+    public Uni<Integer> writeLazy(long count) {
+        Arena shared = Arena.openShared();
+        MemorySegment writeBuf = shared.allocate(JAVA_LONG, count);
+
+        return writeUnsafeLazy(0,  new DefaultOwnershipMemory(writeBuf, shared))
+                .onItem().invoke(p -> p.t1().drop())
+                .onItem().transform(Pair::t2);
+    }
+
 
     public CompletableFuture<Long> read() {
         Arena shared = Arena.openShared();
-        MemorySegment writeBuf = shared.allocate(JAVA_LONG, 0);
-        return readUnsafe(0, writeBuf)
-                .thenCompose(res -> res < 0 ? CompletableFuture.failedFuture(new NativeCallException(NativeHelper.getErrorStr(-res))) : CompletableFuture.completedFuture(writeBuf.get(JAVA_LONG, 0)))
+        MemorySegment readByteBuf = shared.allocate(JAVA_LONG, 0);
+        return readUnsafe(0, readByteBuf)
+                .thenCompose(res -> res < 0 ? CompletableFuture.failedFuture(new NativeCallException(NativeHelper.getErrorStr(-res))) : CompletableFuture.completedFuture(readByteBuf.get(JAVA_LONG, 0)))
                 .whenComplete((__, ___) -> {
                     shared.close();
                 });
     }
+
+    public Uni<Integer> readLazy() {
+        Arena shared = Arena.openShared();
+        MemorySegment readByteBuf = shared.allocate(JAVA_LONG, 0);
+        return readUnsafeLazy(0,  new DefaultOwnershipMemory(readByteBuf, shared))
+                .onItem().invoke(p -> p.t1().drop())
+                .onItem().transform(Pair::t2);
+    }
+
 
     @Override
     protected int readFd() {
