@@ -95,6 +95,7 @@ public class AsyncFile extends PlainAsyncFd {
                     });
 
                     if (userData == IOUring.NO_SQE) {
+                        end.set(true);
                         ue.fail(new NotEnoughSqeException());
                         return;
                     }
@@ -137,6 +138,7 @@ public class AsyncFile extends PlainAsyncFd {
                         ue.complete(syscallRes);
                     });
                     if (userData == IOUring.NO_SQE) {
+                        end.set(true);
                         ue.fail(new NotEnoughSqeException());
                         return;
                     }

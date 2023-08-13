@@ -88,6 +88,8 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
                         }
                     });
                     if (userData == IOUring.NO_SQE) {
+                        memory.drop();
+                        end.set(true);
                         ue.fail(new NotEnoughSqeException());
                         return;
                     }
