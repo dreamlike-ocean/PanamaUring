@@ -1,5 +1,6 @@
 package top.dreamlike.async;
 
+import io.smallrye.mutiny.Uni;
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.eventloop.IOUringEventLoop;
@@ -15,8 +16,6 @@ import java.lang.foreign.MemorySegment;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-
-import io.smallrye.mutiny.Uni;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
@@ -202,7 +201,7 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
         return readFd();
     }
 
-    private void onTermination(AtomicBoolean end, long userData) {
+    protected void onTermination(AtomicBoolean end, long userData) {
         //cas失败 当前异步操作已经完成 无需cancel
         if (!end.compareAndSet(false, true)) {
             return;
@@ -215,4 +214,5 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
                     // 取消失败 不释放资源等待async op回调
                 });
     }
+
 }

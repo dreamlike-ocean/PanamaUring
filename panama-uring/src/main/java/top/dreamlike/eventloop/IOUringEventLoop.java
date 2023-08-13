@@ -1,5 +1,6 @@
 package top.dreamlike.eventloop;
 
+import io.smallrye.mutiny.Uni;
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.AsyncFd;
 import top.dreamlike.async.IOOpResult;
@@ -22,8 +23,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
-
-import io.smallrye.mutiny.Uni;
 
 public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
 
@@ -187,6 +186,13 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         return cancel(userData, flag, false);
     }
 
+    /**
+     * 不支持cancel cancel_op 要不就太复杂了
+     *
+     * @param userData 对应op返回的userdata
+     * @param flag     cancel的flag
+     * @return
+     */
     public Uni<Integer> cancelAsync(long userData, int flag) {
         return Uni.createFrom()
                 .completionStage(() -> cancel(userData, flag, false));

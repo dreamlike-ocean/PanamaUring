@@ -1,5 +1,6 @@
 package top.dreamlike.async.file;
 
+import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.dreamlike.access.AccessHelper;
@@ -7,6 +8,7 @@ import top.dreamlike.async.PlainAsyncFd;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.eventloop.IOUringEventLoop;
 import top.dreamlike.extension.NotEnoughSqeException;
+import top.dreamlike.extension.fp.Result;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Unsafe;
@@ -75,6 +77,32 @@ public class AsyncFile extends PlainAsyncFd {
         return future;
     }
 
+    public Uni<byte[]> readSelectedLazy(int offset, int length) {
+        if (closed.get()) {
+            throw new NativeCallException("file has closed");
+        }
+        return Uni.createFrom()
+                .emitter(ue -> eventLoop.runOnEventLoop(() -> {
+                    AtomicBoolean end = new AtomicBoolean(false);
+                    long userData = uring.prep_selected_read_and_get_user_data(fd, offset, length, (r) -> {
+                        if (!end.compareAndSet(false, true)) {
+                            return;
+                        }
+                        switch (r) {
+                            case Result.OK(byte[] res) -> ue.complete(res);
+                            case Result.Err(Throwable t) -> ue.fail(t);
+                        }
+                    });
+
+                    if (userData == IOUring.NO_SQE) {
+                        ue.fail(new NotEnoughSqeException());
+                        return;
+                    }
+
+                    ue.onTermination(() -> onTermination(end, userData));
+                }));
+    }
+
 
     @Override
     public CompletableFuture<Integer> writeUnsafe(int offset, MemorySegment memorySegment) {
@@ -92,6 +120,29 @@ public class AsyncFile extends PlainAsyncFd {
             }
         });
         return future;
+    }
+
+    public Uni<Integer> fsyncLazy(int fsyncFlag) {
+        if (closed.get()) {
+            throw new NativeCallException("file has closed");
+        }
+
+        return Uni.createFrom()
+                .emitter(ue -> eventLoop.runOnEventLoop(() -> {
+                    AtomicBoolean end = new AtomicBoolean(false);
+                    long userData = uring.prep_fsync_and_get_user_data(fd, fsyncFlag, syscallRes -> {
+                        if (!end.compareAndSet(false, true)) {
+                            return;
+                        }
+                        ue.complete(syscallRes);
+                    });
+                    if (userData == IOUring.NO_SQE) {
+                        ue.fail(new NotEnoughSqeException());
+                        return;
+                    }
+
+                    ue.onTermination(() -> onTermination(end, userData));
+                }));
     }
 
     public void close() {

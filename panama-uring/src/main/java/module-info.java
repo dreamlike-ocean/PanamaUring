@@ -5,6 +5,7 @@ module top.dremalike.panama.uring.linux.x86_64 {
     exports top.dreamlike.async;
     exports top.dreamlike.eventloop;
     exports top.dreamlike.extension.memory;
+    exports top.dreamlike.extension.fp;
     requires jctools.core;
     requires jdk.unsupported;
     requires top.dreamlike.nativeLib;

@@ -6,6 +6,7 @@ import top.dreamlike.common.CType;
 import top.dreamlike.common.__kernel_timespec;
 import top.dreamlike.epoll.Epoll;
 import top.dreamlike.extension.NotEnoughBufferException;
+import top.dreamlike.extension.fp.Result;
 import top.dreamlike.helper.*;
 import top.dreamlike.nativeLib.eventfd.EventFd;
 import top.dreamlike.nativeLib.eventfd.eventfd_h;
@@ -171,7 +172,7 @@ public class IOUring implements AutoCloseable {
     }
 
     public long prep_selected_read_and_get_user_data(int fd, int offset, int length,
-            CompletableFuture<byte[]> readBufferPromise) {
+                                                     Consumer<Result<byte[], Throwable>> consumer) {
         MemorySegment sqe = getSqe();
         if (sqe == null)
             return NO_SQE;
@@ -181,17 +182,20 @@ public class IOUring implements AutoCloseable {
             MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof());
             IOOpResult result = new IOOpResult(fd, -1, Op.FILE_SELECTED_READ, null, (res, bid) -> {
                 if (res == -ENOBUFS()) {
-                    readBufferPromise.completeExceptionally(new NotEnoughBufferException(gid));
+                    var t = new NotEnoughBufferException(gid);
+                    consumer.accept(new Result.Err<>(t));
                     return;
                 }
 
                 if (res < 0) {
-                    readBufferPromise.completeExceptionally(new NativeCallException(NativeHelper.getErrorStr(-res)));
+                    var t = new NativeCallException(NativeHelper.getErrorStr(-res));
+                    consumer.accept(new Result.Err<>(t));
                     return;
                 }
 
                 MemorySegment buffer = selectedBuffer[bid];
-                readBufferPromise.complete(buffer.asSlice(0, res).toArray(ValueLayout.JAVA_BYTE));
+                byte[] readRes = buffer.asSlice(0, res).toArray(JAVA_BYTE);
+                consumer.accept(new Result.OK<>(readRes));
                 provideBuffer(buffer, bid, true);
             });
             long opsCount = count.getAndIncrement();
@@ -206,7 +210,7 @@ public class IOUring implements AutoCloseable {
     }
 
     public boolean prep_selected_read(int fd, int offset, int length, CompletableFuture<byte[]> readBufferPromise) {
-        return prep_selected_read_and_get_user_data(fd, offset, length, readBufferPromise) != NO_SQE;
+        return prep_selected_read_and_get_user_data(fd, offset, length, Result.transform(readBufferPromise)) != NO_SQE;
     }
 
     public boolean prep_selected_recv(int socketFd, int length, CompletableFuture<byte[]> recvBufferPromise) {
@@ -430,14 +434,22 @@ public class IOUring implements AutoCloseable {
     }
 
     protected MemorySegment getSqe() {
+        return getSqe(false);
+    }
+
+    protected MemorySegment getSqe(boolean loopUntilGet) {
         int i = 0;
         MemorySegment sqe = MemorySegment.NULL;
         // 空指针
         while (sqe.address() == 0) {
             sqe = io_uring_get_sqe(ring);
             i++;
-            if (i >= max_loop && sqe.address() == 0) {
+            //持续max次还没有获取到sqe 且不允许loopUntilGet 直接返回null
+            if (i >= max_loop && sqe.address() == 0 && !loopUntilGet) {
                 return null;
+            }
+            if (sqe.address() == 0) {
+                submit();
             }
         }
 
