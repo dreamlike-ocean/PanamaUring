@@ -41,7 +41,6 @@ public class AsyncPipe extends PlainAsyncFd {
         return super.readUnsafe(offset, memorySegment)
                 .thenCompose(res -> res < 0 ? CompletableFuture.failedFuture(new NativeCallException(NativeHelper.getErrorStr(-res))) : CompletableFuture.completedFuture(res));
     }
-
     @Override
     public IOUringEventLoop fetchEventLoop() {
         return eventLoop;

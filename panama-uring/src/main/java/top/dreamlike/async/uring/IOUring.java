@@ -219,6 +219,11 @@ public class IOUring implements AutoCloseable {
 
     public long prep_selected_recv_and_get_user_data(int socketFd, int length,
             CompletableFuture<byte[]> recvBufferPromise) {
+        return prep_selected_recv_and_get_user_data(socketFd, length, Result.transform(recvBufferPromise));
+    }
+
+    public long prep_selected_recv_and_get_user_data(int socketFd, int length,
+                                                     Consumer<Result<byte[], Throwable>> consumer) {
         MemorySegment sqe = getSqe();
         if (sqe == null)
             return NO_SQE;
@@ -226,11 +231,11 @@ public class IOUring implements AutoCloseable {
         long opsCount = count.getAndIncrement();
         IOOpResult result = new IOOpResult(socketFd, -1, Op.SOCKET_SELECTED_READ, null, (res, bid) -> {
             if (res == -ENOBUFS()) {
-                recvBufferPromise.completeExceptionally(new Exception(String.format("gid: %d 不存在空余的内存了", gid)));
+                consumer.accept(new Result.Err<>(new Exception(String.format("gid: %d 不存在空余的内存了", gid))));
                 return;
             }
             MemorySegment buffer = selectedBuffer[bid];
-            recvBufferPromise.complete(buffer.asSlice(0, res).toArray(ValueLayout.JAVA_BYTE));
+            consumer.accept(new Result.OK<>(buffer.asSlice(0, res).toArray(ValueLayout.JAVA_BYTE)));
             provideBuffer(buffer, bid, true);
         });
         io_uring_prep_recv(sqe, socketFd, MemorySegment.NULL, length, 0);

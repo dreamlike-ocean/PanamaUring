@@ -2,13 +2,13 @@ package top.dreamlike.async.socket;
 
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.subscription.MultiEmitter;
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.AsyncFd;
 import top.dreamlike.async.socket.extension.IOUringFlow;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.eventloop.IOUringEventLoop;
 import top.dreamlike.extension.NotEnoughSqeException;
+import top.dreamlike.extension.fp.Result;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.SocketInfo;
@@ -18,6 +18,7 @@ import java.lang.foreign.MemorySegment;
 import java.net.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
@@ -71,6 +72,28 @@ public non-sealed class AsyncSocket extends AsyncFd {
             }
         });
         return completableFuture;
+    }
+
+    public Uni<byte[]> recvSelectLazy(int size) {
+        return Uni.createFrom()
+                .emitter(ue -> eventLoop.runOnEventLoop(() -> {
+                    AtomicBoolean end = new AtomicBoolean(false);
+                    long userData = ring.prep_selected_recv_and_get_user_data(fd, size, (r) -> {
+                        if (!end.compareAndSet(false, true)) {
+                            return;
+                        }
+                        switch (r) {
+                            case Result.OK(byte[] res) -> ue.complete(res);
+                            case Result.Err(Throwable t) -> ue.fail(t);
+                        }
+                    });
+                    if (userData == IOUring.NO_SQE) {
+                        end.set(true);
+                        ue.fail(new NotEnoughSqeException());
+                        return;
+                    }
+                    ue.onTermination(() -> onTermination(end, userData));
+                }));
     }
 
     @Deprecated
@@ -132,6 +155,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
                 });
     }
 
+    @Deprecated
     public CompletableFuture<Integer> recv(byte[] buffer) {
         CompletableFuture<Integer> completableFuture = new CompletableFuture<>();
         Arena malloc = Arena.openShared();
@@ -153,6 +177,61 @@ public non-sealed class AsyncSocket extends AsyncFd {
                 .whenComplete((__, ___) -> malloc.close());
     }
 
+    public Uni<Integer> recvLazy(byte[] buffer) {
+        return Uni.createFrom()
+                .emitter(ue -> eventLoop.runOnEventLoop(() -> {
+                    Arena malloc = Arena.openShared();
+                    MemorySegment buf = malloc.allocateArray(JAVA_BYTE, buffer.length);
+                    AtomicBoolean end = new AtomicBoolean(false);
+                    long userData = ring.prep_recv_and_get_user_data(fd, buf, i -> {
+                        if (!end.compareAndSet(false, true)) {
+                            return;
+                        }
+                        if (i < 0) {
+                            ue.fail(new NativeCallException(NativeHelper.getErrorStr(-i)));
+                        } else {
+                            MemorySegment.copy(buf, 0, MemorySegment.ofArray(buffer), 0, i);
+                            ue.complete(i);
+                        }
+                    });
+                    if (userData == IOUring.NO_SQE) {
+                        end.set(true);
+                        ue.fail(new NotEnoughSqeException());
+                        return;
+                    }
+                    ue.onTermination(() -> onTermination(end, userData));
+                }));
+    }
+
+    public Uni<Integer> connectLazy() {
+        return Uni.createFrom()
+                .emitter(ue -> eventLoop.runOnEventLoop(() -> {
+                    AtomicBoolean end = new AtomicBoolean(false);
+                    try {
+                        long userData = ring.prep_connect_and_get_user_data(new SocketInfo(fd, host, port), i -> {
+                            if (!end.compareAndSet(false, true)) {
+                                return;
+                            }
+                            if (i < 0) {
+                                ue.fail(new NativeCallException(NativeHelper.getErrorStr(-i)));
+                            } else {
+                                ue.complete(i);
+                            }
+                        });
+                        if (userData == IOUring.NO_SQE) {
+                            end.set(true);
+                            ue.fail(new NotEnoughSqeException());
+                            return;
+                        }
+                        ue.onTermination(() -> onTermination(end, userData));
+                    } catch (UnknownHostException e) {
+                        ue.fail(e);
+                    }
+                }));
+    }
+
+
+    @Deprecated
     public CompletableFuture<Integer> connect() {
         CompletableFuture<Integer> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
@@ -167,6 +246,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
         return future;
     }
 
+    @Deprecated
     public CompletableFuture<Integer> write(byte[] buffer, int offset, int length) {
         if (offset + length > buffer.length) {
             throw new ArrayIndexOutOfBoundsException();
@@ -185,8 +265,45 @@ public non-sealed class AsyncSocket extends AsyncFd {
         });
     }
 
+    public Uni<Integer> writeLazy(byte[] buffer, int offset, int length) {
+        if (offset + length > buffer.length) {
+            throw new ArrayIndexOutOfBoundsException();
+        }
+        return Uni.createFrom()
+                .emitter(ue -> eventLoop.runOnEventLoop(() -> {
+                    AtomicBoolean end = new AtomicBoolean(false);
+                    Arena session = Arena.openConfined();
+                    MemorySegment memorySegment = session.allocate(length);
+                    MemorySegment.copy(buffer, offset, memorySegment, JAVA_BYTE, 0, length);
+                    long userData = ring.prep_send_and_get_user_data(fd, memorySegment, i -> {
+                        session.close();
+                        if (!end.compareAndSet(false, true)) {
+                            return;
+                        }
+                        if (i < 0) {
+                            ue.fail(new NativeCallException(NativeHelper.getErrorStr(-i)));
+                        } else {
+                            ue.complete(i);
+                        }
+                    });
+                    if (userData == IOUring.NO_SQE) {
+                        end.set(true);
+                        session.close();
+                        ue.fail(new NotEnoughSqeException());
+                        return;
+                    }
+                    ue.onTermination(() -> onTermination(end, userData));
+                }));
+
+    }
+
+    @Deprecated
     public CompletableFuture<Integer> write(byte[] buffer) {
         return write(buffer, 0, buffer.length);
+    }
+
+    public Uni<Integer> writeLazy(byte[] buffer) {
+        return writeLazy(buffer, 0, buffer.length);
     }
 
     @Override
