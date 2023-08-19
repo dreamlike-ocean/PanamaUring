@@ -19,6 +19,7 @@ import java.net.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
@@ -35,6 +36,20 @@ public non-sealed class AsyncSocket extends AsyncFd {
 
     protected final IOUringEventLoop eventLoop;
 
+    private static int INIT = 0;
+    private static int CONNECTING = 1;
+    private static int CONNECTED = 2;
+    private static int CLOSE = 3;
+    private AtomicInteger state = new AtomicInteger(0);
+
+    /**
+     * accept 使用用到
+     *
+     * @param fd        socket fd
+     * @param host      对端host
+     * @param port      对端端口
+     * @param eventLoop 绑定的eventloop
+     */
     public AsyncSocket(int fd, String host, int port, IOUringEventLoop eventLoop) {
         super(eventLoop);
         this.fd = fd;
@@ -42,6 +57,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
         this.port = port;
         this.ring = AccessHelper.fetchIOURing.apply(eventLoop);
         this.eventLoop = eventLoop;
+        this.state = new AtomicInteger(CONNECTED);
     }
 
     public AsyncSocket(SocketAddress address, IOUringEventLoop eventLoop) {
@@ -65,6 +81,9 @@ public non-sealed class AsyncSocket extends AsyncFd {
 
     @Deprecated
     public CompletableFuture<byte[]> recvSelected(int size) {
+        if (state.get() != CONNECTED) {
+            throw new IllegalStateException("Socket is not connected");
+        }
         CompletableFuture<byte[]> completableFuture = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
             if (!ring.prep_selected_recv(fd, size, completableFuture)) {
@@ -77,6 +96,10 @@ public non-sealed class AsyncSocket extends AsyncFd {
     public Uni<byte[]> recvSelectLazy(int size) {
         return Uni.createFrom()
                 .emitter(ue -> eventLoop.runOnEventLoop(() -> {
+                    if (state.get() != CONNECTED) {
+                        ue.fail(new IllegalStateException("Socket is not connected"));
+                        return;
+                    }
                     AtomicBoolean end = new AtomicBoolean(false);
                     long userData = ring.prep_selected_recv_and_get_user_data(fd, size, (r) -> {
                         if (!end.compareAndSet(false, true)) {
@@ -98,6 +121,9 @@ public non-sealed class AsyncSocket extends AsyncFd {
 
     @Deprecated
     public Flow.Subscription recvMulti(Consumer<byte[]> consumer) {
+        if (state.get() != CONNECTED) {
+            throw new IllegalStateException("Socket is not connected");
+        }
         IOUringFlow<byte[]> flow = new IOUringFlow<>(Integer.MAX_VALUE, eventLoop, consumer);
         eventLoop.runOnEventLoop(() -> {
             long userData = ring.prep_recv_multi_and_get_user_data(fd, (res, throwable) -> {
@@ -120,6 +146,10 @@ public non-sealed class AsyncSocket extends AsyncFd {
         return Multi.createFrom()
                 .emitter(me -> {
                     eventLoop.runOnEventLoop(() -> {
+                        if (state.get() != CONNECTED) {
+                            me.fail(new IllegalStateException("Socket is not connected"));
+                            return;
+                        }
                         // 这个Aomtic只是为了方便给lambda传递userData而已
                         AtomicLong userDataLazy = new AtomicLong();
                         //挂载回调
@@ -131,7 +161,6 @@ public non-sealed class AsyncSocket extends AsyncFd {
                             }
                             //这里cancel是有意义的因为是multi-shot的让下次不再发射事件 res直接释放就好了
                             if (me.isCancelled()) {
-
                                 eventLoop.cancelAsync(userDataLazy.get(), 0, true);
                                 return;
                             }
@@ -142,7 +171,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
                             }
 
                         });
-                    
+
                         if (userData != IOUring.NO_SQE) {
                             userDataLazy.set(userData);
                             return;
@@ -157,6 +186,9 @@ public non-sealed class AsyncSocket extends AsyncFd {
 
     @Deprecated
     public CompletableFuture<Integer> recv(byte[] buffer) {
+        if (state.get() != CONNECTED) {
+            throw new IllegalStateException("Socket is not connected");
+        }
         CompletableFuture<Integer> completableFuture = new CompletableFuture<>();
         Arena malloc = Arena.openShared();
         MemorySegment buf = malloc.allocateArray(JAVA_BYTE, buffer.length);
@@ -180,6 +212,10 @@ public non-sealed class AsyncSocket extends AsyncFd {
     public Uni<Integer> recvLazy(byte[] buffer) {
         return Uni.createFrom()
                 .emitter(ue -> eventLoop.runOnEventLoop(() -> {
+                    if (state.get() != CONNECTED) {
+                        ue.fail(new IllegalStateException("Socket is not connected"));
+                        return;
+                    }
                     Arena malloc = Arena.openShared();
                     MemorySegment buf = malloc.allocateArray(JAVA_BYTE, buffer.length);
                     AtomicBoolean end = new AtomicBoolean(false);
@@ -206,6 +242,18 @@ public non-sealed class AsyncSocket extends AsyncFd {
     public Uni<Integer> connectLazy() {
         return Uni.createFrom()
                 .emitter(ue -> eventLoop.runOnEventLoop(() -> {
+                    if (!state.compareAndSet(INIT, CONNECTING)) {
+                        int stateSnap = state.get();
+                        if (stateSnap == CONNECTING || stateSnap == CONNECTED) {
+                            ue.fail(new IllegalStateException("already connected"));
+                        }
+
+                        if (stateSnap == CLOSE) {
+                            ue.fail(new IllegalStateException("Socket is closed"));
+                        }
+                        ue.fail(new IllegalStateException("current state dont support connect"));
+                        return;
+                    }
                     AtomicBoolean end = new AtomicBoolean(false);
                     try {
                         long userData = ring.prep_connect_and_get_user_data(new SocketInfo(fd, host, port), i -> {
@@ -233,6 +281,17 @@ public non-sealed class AsyncSocket extends AsyncFd {
 
     @Deprecated
     public CompletableFuture<Integer> connect() {
+        if (!state.compareAndSet(INIT, CONNECTING)) {
+            int stateSnap = state.get();
+            if (stateSnap == CONNECTING || stateSnap == CONNECTED) {
+                throw new IllegalStateException("already connected");
+            }
+
+            if (stateSnap == CLOSE) {
+                throw new IllegalStateException("Socket is closed");
+            }
+            throw new IllegalStateException("current state dont support connect");
+        }
         CompletableFuture<Integer> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
             try {
@@ -250,6 +309,9 @@ public non-sealed class AsyncSocket extends AsyncFd {
     public CompletableFuture<Integer> write(byte[] buffer, int offset, int length) {
         if (offset + length > buffer.length) {
             throw new ArrayIndexOutOfBoundsException();
+        }
+        if (state.get() != CONNECTED) {
+            throw new IllegalStateException("Socket is not connected");
         }
         Arena session = Arena.openShared();
         CompletableFuture<Integer> future = new CompletableFuture<>();
@@ -271,6 +333,10 @@ public non-sealed class AsyncSocket extends AsyncFd {
         }
         return Uni.createFrom()
                 .emitter(ue -> eventLoop.runOnEventLoop(() -> {
+                    if (state.get() != CONNECTED) {
+                        ue.fail(new IllegalStateException("Socket is not connected"));
+                        return;
+                    }
                     AtomicBoolean end = new AtomicBoolean(false);
                     Arena session = Arena.openConfined();
                     MemorySegment memorySegment = session.allocate(length);
@@ -331,5 +397,10 @@ public non-sealed class AsyncSocket extends AsyncFd {
     @Override
     public IOUringEventLoop fetchEventLoop() {
         return eventLoop;
+    }
+
+    @Override
+    protected int readFd() {
+        return fd;
     }
 }

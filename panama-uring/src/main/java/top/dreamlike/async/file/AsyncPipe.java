@@ -36,6 +36,7 @@ public class AsyncPipe extends PlainAsyncFd {
 
     }
 
+    @Deprecated
     @Override
     public CompletableFuture<Integer> readUnsafe(int offset, MemorySegment memorySegment) {
         return super.readUnsafe(offset, memorySegment)

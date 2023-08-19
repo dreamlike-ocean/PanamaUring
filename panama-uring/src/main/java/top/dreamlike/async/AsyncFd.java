@@ -6,6 +6,7 @@ import top.dreamlike.async.socket.AsyncServerSocket;
 import top.dreamlike.async.socket.AsyncSocket;
 import top.dreamlike.epoll.async.EpollAsyncServerSocket;
 import top.dreamlike.eventloop.IOUringEventLoop;
+import top.dreamlike.nativeLib.unistd.unistd_h;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -13,6 +14,8 @@ import java.util.function.Consumer;
 sealed public abstract class AsyncFd implements EventLoopAccess permits PlainAsyncFd, AsyncWatchService, AsyncServerSocket, AsyncSocket, EpollAsyncServerSocket {
 
     protected IOUringEventLoop eventLoop;
+
+    protected final AtomicBoolean closed = new AtomicBoolean(false);
 
     private static final Consumer<Integer> DO_NOTHING = i -> {
     };
@@ -33,5 +36,31 @@ sealed public abstract class AsyncFd implements EventLoopAccess permits PlainAsy
                     // todo 这里异常被吞了。。。
                     // 取消失败 不释放资源等待async op回调
                 });
+    }
+
+    public boolean closed() {
+        return closed.get();
+    }
+
+    protected abstract int readFd();
+
+    protected void close() {
+        eventLoop.runOnEventLoop(() -> {
+            if (closed.compareAndSet(false, true)) {
+                try {
+                    if (readFd() != writeFd()) {
+                        unistd_h.close(writeFd());
+                    }
+                    unistd_h.close(readFd());
+                } catch (RuntimeException e) {
+                    closed.set(false);
+                    throw e;
+                }
+            }
+        });
+    }
+
+    protected int writeFd() {
+        return readFd();
     }
 }

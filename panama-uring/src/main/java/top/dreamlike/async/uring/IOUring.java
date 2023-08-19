@@ -58,7 +58,7 @@ public class IOUring implements AutoCloseable {
 
     private Map<Long, IOOpResult> context;
 
-    private final Map<Long, Runnable> canncelCallBack = new HashMap<>();
+    private final Map<Long, Runnable> cancelCallBack = new HashMap<>();
 
     private MemorySegment[] selectedBuffer;
 
@@ -380,7 +380,7 @@ public class IOUring implements AutoCloseable {
         MemorySegment sqeStruct = NativeHelper.unsafePointConvertor(sqe);
         context.put(opsCount, IOOpResult.bindCallBack(Op.CANCEL, (res, __) -> {
             if (res >= 0) {
-                Runnable canncelCallback = canncelCallBack.remove(need_cancel_user_data);
+                Runnable canncelCallback = cancelCallBack.remove(need_cancel_user_data);
                 if (canncelCallback != null) {
                     canncelCallback.run();
                 }
@@ -668,7 +668,7 @@ public class IOUring implements AutoCloseable {
         }));
         io_uring_prep_multishot_accept(sqe, serverFd, client_addr, client_addr_len, 0);
         io_uring_sqe.user_data$set(sqeSegment, opsCount);
-        canncelCallBack.put(opsCount, tmp::close);
+        cancelCallBack.put(opsCount, tmp::close);
 
         return opsCount;
     }

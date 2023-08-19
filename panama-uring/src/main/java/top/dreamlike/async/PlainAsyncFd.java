@@ -9,7 +9,6 @@ import top.dreamlike.extension.memory.OwnershipMemory;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Pair;
-import top.dreamlike.nativeLib.unistd.unistd_h;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -20,8 +19,6 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 public abstract non-sealed class PlainAsyncFd extends AsyncFd {
     protected IOUring ioUring;
-
-    protected final AtomicBoolean closed = new AtomicBoolean(false);
 
     protected PlainAsyncFd(IOUringEventLoop eventLoop) {
         super(eventLoop);
@@ -176,28 +173,8 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
         return lazyRes;
     }
 
-    public boolean closed() {
-        return closed.get();
-    }
 
-    protected abstract int readFd();
 
-    protected void close() {
-        if (closed.compareAndSet(false, true)) {
-            try {
-                if (readFd() != writeFd()) {
-                    unistd_h.close(writeFd());
-                }
-                unistd_h.close(readFd());
-            } catch (RuntimeException e) {
-                closed.set(false);
-                throw e;
-            }
-        }
-    }
 
-    protected int writeFd() {
-        return readFd();
-    }
 
 }
