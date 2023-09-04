@@ -98,5 +98,8 @@ public final class EpollAsyncServerSocket extends AsyncFd implements AsyncServer
         return eventLoop;
     }
 
-
+    @Override
+    protected int readFd() {
+        throw new UnsupportedOperationException();
+    }
 }
