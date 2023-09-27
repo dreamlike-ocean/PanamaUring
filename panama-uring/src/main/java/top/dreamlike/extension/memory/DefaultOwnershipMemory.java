@@ -39,7 +39,6 @@ public class DefaultOwnershipMemory implements OwnershipMemory {
         this.memorySegment = memorySegment;
     }
 
-
     @Override
     public MemorySegment resource() {
         return memorySegment;

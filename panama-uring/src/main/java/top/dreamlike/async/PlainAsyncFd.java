@@ -68,7 +68,7 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
         return future;
     }
 
-    protected Uni<Pair<OwnershipMemory, Integer>> readUnsafeLazy(int offset, OwnershipMemory memory) {
+    public Uni<Pair<OwnershipMemory, Integer>> readUnsafeLazy(int offset, OwnershipMemory memory) {
         if (closed()) {
             throw new NativeCallException("file has closed");
         }
@@ -144,7 +144,7 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
      * @param memorySegment 所有权移交给io_uring语义的内存段
      * @return
      */
-    protected Uni<Pair<OwnershipMemory, Integer>> writeUnsafeLazy(int offset, OwnershipMemory memorySegment) {
+    public Uni<Pair<OwnershipMemory, Integer>> writeUnsafeLazy(int offset, OwnershipMemory memorySegment) {
         if (closed.get()) {
             throw new NativeCallException("file has closed");
         }
@@ -155,7 +155,7 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
                     long userData = ioUring.prep_write_and_get_user_data(writeFd(), offset, memorySegment.resource(), (sysCallRes) -> {
                                 //即使cancel成功了 io_uring仍旧存在回调
                                 // 转移所有权给下游
-                                if (end.compareAndExchange(false, true)) {
+                        if (end.compareAndSet(false, true)) {
                                     ue.complete(new Pair<>(memorySegment, sysCallRes));
                                 } else  {
                                     //发现被取消了直接drop

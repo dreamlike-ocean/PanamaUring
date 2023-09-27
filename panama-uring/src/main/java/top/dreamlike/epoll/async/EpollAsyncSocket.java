@@ -1,5 +1,6 @@
 package top.dreamlike.epoll.async;
 
+import io.smallrye.mutiny.Uni;
 import top.dreamlike.async.socket.AsyncSocket;
 import top.dreamlike.async.socket.extension.EpollFlow;
 import top.dreamlike.eventloop.EpollUringEventLoop;
@@ -20,14 +21,7 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
-
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static top.dreamlike.nativeLib.epoll.epoll_h.EPOLLIN;
-import static top.dreamlike.nativeLib.epoll.epoll_h.EPOLLOUT;
-import static top.dreamlike.nativeLib.errno.errno_h.EAGAIN;
 
 /**
  * 基于epoll的aysnc socket 不走io_uring
@@ -35,41 +29,20 @@ import static top.dreamlike.nativeLib.errno.errno_h.EAGAIN;
  */
 public class EpollAsyncSocket extends AsyncSocket {
 
-    /**
-     * multi shot模式下的缓冲
-     */
-    private final Queue<Buffer> recvBuffers;
-
-    private final Queue<Runnable> recvQuest;
-
-    private final AtomicInteger maxReadBufferQueueLength;
 
     private final Queue<Buffer> sendBuffers = new ArrayDeque<>();
 
     private int event = 0;
 
-    private final static int recvSize = 1024;
-
-    private final AtomicBoolean connected;
-
-    private final AtomicBoolean multiMode = new AtomicBoolean(false);
 
     public EpollAsyncSocket(int fd, String host, int port, EpollUringEventLoop eventLoop) {
         super(fd, host, port, eventLoop);
-        recvBuffers = new ArrayDeque<>();
-        recvQuest = new ArrayDeque<>();
-        maxReadBufferQueueLength = new AtomicInteger(10);
         NativeHelper.makeNoBlocking(fd);
-        connected = new AtomicBoolean(true);
     }
 
     public EpollAsyncSocket(SocketAddress address, IOUringEventLoop eventLoop) {
         super(address, eventLoop);
-        recvBuffers = new ArrayDeque<>();
-        recvQuest = new ArrayDeque<>();
-        maxReadBufferQueueLength = new AtomicInteger(10);
         NativeHelper.makeNoBlocking(fd);
-        connected = new AtomicBoolean(false);
     }
 
     @Override
@@ -81,59 +54,81 @@ public class EpollAsyncSocket extends AsyncSocket {
     public CompletableFuture<byte[]> recvSelected(int expectSize) {
         byte[] res = new byte[expectSize];
         return recv(res)
-                .thenApply(i -> Arrays.copyOfRange(res, 0, i));
+                .thenApply(i -> Arrays.copyOfRange(res, 0, i.intValue()));
     }
 
     @Override
-    public CompletableFuture<Integer> recv(byte[] buffer) {
-        if (!connected.get()) {
-            throw new NativeCallException("must connect first");
-        }
-        if (multiMode.get()) {
-            throw new IllegalStateException("in multi shot mode");
-        }
-        CompletableFuture<Integer> recvFuture = new CompletableFuture<>();
-        eventLoop.runOnEventLoop(() -> {
-            //fast path
-            if (!recvBuffers.isEmpty()) {
-                int res = readFromBuffer(buffer);
-                recvFuture.complete(res);
-                return;
-            }
-
-            recvQuest.offer(() -> {
-                int res = readFromBuffer(buffer);
-                recvFuture.complete(res);
+    public CompletableFuture<Long> recv(byte[] buffer) {
+        checkStateBeforeRecv();
+        return eventLoop.runOnEventLoop(promise -> {
+            event = event | epoll_h.EPOLLIN() | epoll_h.EPOLLONESHOT();
+            fetchEventLoop().modifyAll(fd, epoll_h.EPOLLIN() | epoll_h.EPOLLONESHOT(), event -> {
+                try (Arena session = Arena.ofConfined()) {
+                    this.event &= ~(epoll_h.EPOLLIN() | epoll_h.EPOLLONESHOT());
+                    MemorySegment buff = session.allocate(buffer.length);
+                    long res = inet_h.recv(fd, buff, buffer.length, 0);
+                    MemorySegment.ofArray(buffer).copyFrom(buff.reinterpret(res));
+                    promise.complete(res);
+                }
             });
-
-            if ((event & EPOLLIN()) == 0) {
-                fetchEventLoop().modifyAll(fd, event | epoll_h.EPOLLIN(), this::handleEvent);
-            }
         });
+    }
 
-        return recvFuture;
+    @Override
+    public Uni<Integer> recvLazy(byte[] buffer) {
+        checkStateBeforeRecv();
+        return Uni.createFrom().emitter(ue -> eventLoop.runOnEventLoop(() -> {
+            AtomicBoolean isTerminated = new AtomicBoolean(false);
+            //如果先取消这里会先比回调执行 不任何处理 oneshot模式激活一次 无所谓。。。
+            ue.onTermination(() -> isTerminated.compareAndSet(false, true));
+            event = event | epoll_h.EPOLLIN() | epoll_h.EPOLLONESHOT();
+            fetchEventLoop().modifyAll(fd, epoll_h.EPOLLIN() | epoll_h.EPOLLONESHOT(), event -> {
+                if (isTerminated.compareAndSet(false, true)) {
+                    this.event &= ~(epoll_h.EPOLLIN() | epoll_h.EPOLLONESHOT());
+                    try (Arena session = Arena.ofConfined()) {
+                        MemorySegment buff = session.allocate(buffer.length);
+                        long res = inet_h.recv(fd, buff, buffer.length, 0);
+                        MemorySegment.ofArray(buffer).copyFrom(buff.reinterpret(res));
+                        ue.complete((int) res);
+                    }
+                }
+            });
+        }));
     }
 
     @Override
     public Flow.Subscription recvMulti(Consumer<byte[]> consumer) {
-        if (multiMode.compareAndSet(false, true)) {
-            throw new IllegalStateException("in multi shot mode");
+        if (state.get() != CONNECTED) {
+            throw new IllegalStateException("Socket is not connected");
         }
-        EpollFlow<byte[]> flow = new EpollFlow<byte[]>(Integer.MAX_VALUE, fd, fetchEventLoop(), consumer);
-        //这里实际上只是将被压从原来的Socket内实现转为了Flow实现而已。。。
-        recursiveOffer(() -> flow.offer(readFromBuffer()), flow::cancel, flow::isFull);
-        return flow;
-    }
+        if (!multiMode.compareAndSet(false, true)) {
+            throw new IllegalStateException("current in multi mode");
+        }
+        EpollFlow<byte[]> flow = new EpollFlow<>(Integer.MAX_VALUE, fd, fetchEventLoop(), consumer);
+        eventLoop
+                .runOnEventLoop(() -> {
+                    event = event | epoll_h.EPOLLIN();
+                    fetchEventLoop().modifyAll(fd, epoll_h.EPOLLIN(), event -> {
+                        try (Arena session = Arena.ofConfined()) {
+                            MemorySegment buff = session.allocate(1024 * 4);
+                            long res = inet_h.recv(fd, buff, buff.byteSize(), 0);
+                            if (res < 0) {
+                                deRegisteredOpDirectly();
+                                flow.onError(new NativeCallException(NativeHelper.getNowError()));
+                                return;
+                            }
+                            byte[] heap = new byte[1024 * 4];
+                            MemorySegment.ofArray(heap).copyFrom(buff.reinterpret(res));
+                            flow.onNext(heap);
+                            if (flow.isFull()) {
+                                deRegisteredOpDirectly();
+                                multiMode.compareAndSet(true, false);
+                            }
+                        }
+                    });
+                });
 
-    private void recursiveOffer(Runnable operator, Runnable endHandle, Supplier<Boolean> allowRecursion) {
-        if (allowRecursion.get()) {
-            recvQuest.offer(() -> {
-                operator.run();
-                recursiveOffer(operator, endHandle, allowRecursion);
-            });
-        } else {
-            endHandle.run();
-        }
+        return flow;
     }
 
     @Override
@@ -161,58 +156,8 @@ public class EpollAsyncSocket extends AsyncSocket {
                 }
             }
 
-            recvQuest.offer(() -> {
-                connected.set(true);
-                conncetFuture.complete(0);
-                fetchEventLoop().modifyEvent(fd, 0);
-                event = 0;
-            });
-            fetchEventLoop().registerEvent(fd, EPOLLIN(), this::handleEvent);
-            event |= EPOLLIN();
         });
         return conncetFuture;
-    }
-
-    private void handleEvent(int event) {
-        if ((event & EPOLLIN()) != 0) {
-            if (connected.get()) {
-                multiShotModeRead();
-            } else {
-                recvQuest.poll().run();
-            }
-        }
-
-        //写读事件
-        if ((event & EPOLLOUT()) != 0) {
-            while (!sendBuffers.isEmpty()) {
-                Buffer peek = sendBuffers.peek();
-                int expectWrite = peek.base.length - peek.offset;
-                //就是在eventloop上面
-                Integer res = write(peek.base, peek.offset, expectWrite).resultNow();
-                if (res < expectWrite) {
-                    break;
-                }
-            }
-
-            event &= ~EPOLLOUT();
-            fetchEventLoop().modifyEvent(fd, event);
-        }
-
-    }
-
-    private int readFromBuffer(byte[] buffer) {
-        var recvBuffer = this.recvBuffers.peek();
-        int res = Math.min(recvBuffer.base.length - recvBuffer.offset, buffer.length);
-        System.arraycopy(recvBuffer.base, recvBuffer.offset, buffer, 0, res);
-        recvBuffer.offset += res;
-        if (recvBuffer.offset == recvBuffer.base.length) {
-            this.recvBuffers.poll();
-        }
-        return res;
-    }
-
-    private byte[] readFromBuffer() {
-        return recvBuffers.poll().base;
     }
 
     @Override
@@ -227,8 +172,6 @@ public class EpollAsyncSocket extends AsyncSocket {
                 writeBuffer.copyFrom(MemorySegment.ofArray(buffer).asSlice(offset));
                 long sendRes = inet_h.send(fd, writeBuffer, length - offset, 0);
                 if (sendRes < length - offset) {
-                    event |= EPOLLOUT();
-                    fetchEventLoop().modifyEvent(fd, event);
                     sendBuffers.offer(new Buffer(buffer, offset + length));
                 }
                 return (int) sendRes;
@@ -236,40 +179,17 @@ public class EpollAsyncSocket extends AsyncSocket {
         });
     }
 
+    protected void deRegisteredOpDirectly() {
+        this.event &= ~(epoll_h.EPOLLIN() | epoll_h.EPOLLONESHOT());
+        fetchEventLoop().modifyEvent(fd, this.event);
+    }
+
     @Override
     public CompletableFuture<Integer> write(byte[] buffer) {
         return write(buffer, 0, buffer.length);
     }
 
-    public void setMaxReadBufferQueueLength(int maxReadBufferQueueLength) {
-        if (maxReadBufferQueueLength < 1) {
-            throw new IllegalArgumentException("too small queueLength");
-        }
-        this.maxReadBufferQueueLength.setRelease(maxReadBufferQueueLength);
-    }
 
-
-    private void multiShotModeRead() {
-        try (Arena session = Arena.ofConfined()) {
-            MemorySegment buff = session.allocate(recvSize);
-            long recv = inet_h.recv(fd, buff, recvSize, 0);
-            if (recv < 0 && NativeHelper.getErrorNo() == EAGAIN()) {
-                return;
-            }
-
-            byte[] base = buff.asSlice(0, recv).toArray(JAVA_BYTE);
-            recvBuffers.offer(new Buffer(base, 0));
-            if (recvBuffers.size() == maxReadBufferQueueLength.get()) {
-                // 停止监听 被压策略
-                event &= ~EPOLLIN();
-                fetchEventLoop().removeEventUnsafe(fd, EPOLLIN());
-            }
-            //存在时间顺序 不会npe
-            var poll = recvQuest.poll();
-            poll.run();
-
-        }
-    }
 
     private static class Buffer {
         byte[] base;
