@@ -3,10 +3,10 @@
 package top.dreamlike.nativeLib.unistd;
 
 import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
-
 class constants$9 {
 
     static final FunctionDescriptor seteuid$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,

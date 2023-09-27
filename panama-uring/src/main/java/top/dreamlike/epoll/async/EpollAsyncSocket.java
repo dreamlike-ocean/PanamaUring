@@ -8,7 +8,7 @@ import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Pair;
 import top.dreamlike.nativeLib.epoll.epoll_h;
-import top.dreamlike.nativeLib.in.in_h;
+import top.dreamlike.nativeLib.inet.inet_h;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -144,7 +144,7 @@ public class EpollAsyncSocket extends AsyncSocket {
         CompletableFuture<Integer> conncetFuture = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
 
-            try (Arena session = Arena.openConfined()) {
+            try (Arena session = Arena.ofConfined()) {
                 Pair<MemorySegment, Boolean> socketInfo = null;
                 try {
                     socketInfo = NativeHelper.getSockAddr(session, host, port);
@@ -153,7 +153,7 @@ public class EpollAsyncSocket extends AsyncSocket {
                     return;
                 }
                 MemorySegment sockaddrSegement = socketInfo.t1();
-                int res = in_h.connect(fd, sockaddrSegement, (int) sockaddrSegement.byteSize());
+                int res = inet_h.connect(fd, sockaddrSegement, (int) sockaddrSegement.byteSize());
                 if (res == 0) {
                     connected.set(true);
                     conncetFuture.complete(0);
@@ -222,10 +222,10 @@ public class EpollAsyncSocket extends AsyncSocket {
                 sendBuffers.offer(new Buffer(buffer, 0));
                 return 0;
             }
-            try (Arena session = Arena.openConfined()) {
+            try (Arena session = Arena.ofConfined()) {
                 MemorySegment writeBuffer = session.allocate(length - offset);
                 writeBuffer.copyFrom(MemorySegment.ofArray(buffer).asSlice(offset));
-                long sendRes = in_h.send(fd, writeBuffer, length - offset, 0);
+                long sendRes = inet_h.send(fd, writeBuffer, length - offset, 0);
                 if (sendRes < length - offset) {
                     event |= EPOLLOUT();
                     fetchEventLoop().modifyEvent(fd, event);
@@ -250,9 +250,9 @@ public class EpollAsyncSocket extends AsyncSocket {
 
 
     private void multiShotModeRead() {
-        try (Arena session = Arena.openConfined()) {
+        try (Arena session = Arena.ofConfined()) {
             MemorySegment buff = session.allocate(recvSize);
-            long recv = in_h.recv(fd, buff, recvSize, 0);
+            long recv = inet_h.recv(fd, buff, recvSize, 0);
             if (recv < 0 && NativeHelper.getErrorNo() == EAGAIN()) {
                 return;
             }

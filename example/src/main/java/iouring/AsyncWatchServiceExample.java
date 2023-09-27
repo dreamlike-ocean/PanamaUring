@@ -17,7 +17,7 @@ public class AsyncWatchServiceExample {
         var watchService = new AsyncWatchService(ioUringEventLoop);
         int demoFd = watchService.register(Path.of("demo.txt"), inotify_h.IN_MODIFY()).get();
         System.out.println(demoFd);
-        int dirFd = watchService.register(Path.of("/home/dreamlike/uringDemo"), inotify_h.IN_CREATE()).get();
+        int dirFd = watchService.register(Path.of(""), inotify_h.IN_CREATE()).get();
         System.out.println(dirFd);
         System.out.println("select");
         while (true) {

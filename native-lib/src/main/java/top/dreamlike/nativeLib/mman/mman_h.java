@@ -5,6 +5,7 @@ package top.dreamlike.nativeLib.mman;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
+import top.dreamlike.helper.RuntimeHelper;
 public class mman_h {
 
     /* package-private */ mman_h() {

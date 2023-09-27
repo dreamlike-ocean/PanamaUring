@@ -3,7 +3,7 @@
 package top.dreamlike.nativeLib.epoll;
 
 import top.dreamlike.common.CType;
-
+import top.dreamlike.helper.RuntimeHelper;
 import java.lang.foreign.*;
 
 public class sigset_t {
@@ -23,9 +23,6 @@ public class sigset_t {
         return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
     }
 
-    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
-        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
-    }
 }
 
 

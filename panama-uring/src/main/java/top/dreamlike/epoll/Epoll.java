@@ -22,7 +22,7 @@ public class Epoll implements AutoCloseable{
     private final MemorySegment events;
 
     public Epoll() {
-        allocator = Arena.openShared();
+        allocator = Arena.ofShared();
         events = allocator.allocateArray(epoll_event.$LAYOUT(), 1024);
         epollFd = epoll_create1(0);
         if (epollFd == -1) {
@@ -35,14 +35,14 @@ public class Epoll implements AutoCloseable{
         if (epollFd == -1) {
             throw new IllegalStateException("epoll create fail");
         }
-        allocator = Arena.openShared();
+        allocator = Arena.ofShared();
         events = allocator.allocateArray(epoll_event.$LAYOUT(), 1024);
         epollFd = epollFd;
     }
 
 
     public int register(int fd, int event) {
-        try (Arena session = Arena.openConfined()) {
+        try (Arena session = Arena.ofConfined()) {
             MemorySegment epollEvent = epoll_event.allocate(session);
             epoll_event.events$set(epollEvent, event);
             epoll_data.fd$set(epoll_event.data$slice(epollEvent), fd);
@@ -51,7 +51,7 @@ public class Epoll implements AutoCloseable{
     }
 
     public int modify(int fd, int event) {
-        try (Arena session = Arena.openConfined()) {
+        try (Arena session = Arena.ofConfined()) {
             MemorySegment epollEvent = epoll_event.allocate(session);
             epoll_event.events$set(epollEvent, event);
             epoll_data.fd$set(epoll_event.data$slice(epollEvent), fd);

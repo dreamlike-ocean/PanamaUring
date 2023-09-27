@@ -3,25 +3,36 @@
 package top.dreamlike.nativeLib.fcntl;
 
 import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
 
 class constants$0 {
 
-    static final FunctionDescriptor fcntl$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
-        CType.C_INT$LAYOUT,
-        CType.C_INT$LAYOUT
+    static final FunctionDescriptor fcntl3Args$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_INT$LAYOUT, CType.C_INT$LAYOUT, CType.C_INT$LAYOUT
     );
-    static final MethodHandle fcntl$MH = RuntimeHelper.downcallHandleVariadic(
-        "fcntl",
-        constants$0.fcntl$FUNC
+
+    static final FunctionDescriptor fcntl2Args$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
+            CType.C_INT$LAYOUT, CType.C_INT$LAYOUT
     );
+
+    static final MethodHandle fcntl3Args$MH = RuntimeHelper.downcallHandle(
+            "fcntl",
+            constants$0.fcntl3Args$FUNC
+    );
+
+    static final MethodHandle fcntl2Args$MH = RuntimeHelper.downcallHandle(
+            "fcntl",
+            constants$0.fcntl2Args$FUNC
+    );
+
     static final FunctionDescriptor open$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
         CType.C_POINTER$LAYOUT,
         CType.C_INT$LAYOUT
     );
-    static final MethodHandle open$MH = RuntimeHelper.downcallHandleVariadic(
+    static final MethodHandle open$MH = RuntimeHelper.downcallHandle(
         "open",
         constants$0.open$FUNC
     );
@@ -30,7 +41,7 @@ class constants$0 {
         CType.C_POINTER$LAYOUT,
         CType.C_INT$LAYOUT
     );
-    static final MethodHandle openat$MH = RuntimeHelper.downcallHandleVariadic(
+    static final MethodHandle openat$MH = RuntimeHelper.downcallHandle(
         "openat",
         constants$0.openat$FUNC
     );

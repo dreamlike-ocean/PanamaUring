@@ -4,6 +4,7 @@ import top.dreamlike.epoll.Epoll;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
 
 import static top.dreamlike.nativeLib.epoll.epoll_h.EPOLLIN;
@@ -15,7 +16,7 @@ import static top.dreamlike.nativeLib.unistd.unistd_h.read;
  */
 public class EpollExample {
     public static void main(String[] args) {
-        try (Arena allocator = Arena.openConfined()) {
+        try (Arena allocator = Arena.ofConfined()) {
             MemorySegment memorySegment = allocator.allocate(1024);
             int flags = fcntl(0, F_GETFL(), 0);
             int res = fcntl(0, F_SETFL(), flags | O_NONBLOCK());
@@ -28,6 +29,7 @@ public class EpollExample {
 
             long read = read(0, memorySegment, memorySegment.byteSize());
             System.out.println(read);
+            System.out.println(new String(memorySegment.reinterpret(read).toArray(ValueLayout.JAVA_BYTE)));
         }
 
 

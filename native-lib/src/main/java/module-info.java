@@ -5,12 +5,10 @@ module top.dreamlike.nativeLib {
     exports top.dreamlike.nativeLib.epoll;
     exports top.dreamlike.nativeLib.unistd;
     exports top.dreamlike.nativeLib.eventfd;
-    exports top.dreamlike.nativeLib.in;
     exports top.dreamlike.nativeLib.inet;
     exports top.dreamlike.nativeLib.string;
     exports top.dreamlike.nativeLib.errno;
     exports top.dreamlike.nativeLib.flock;
-    exports top.dreamlike.nativeLib.shm;
     exports top.dreamlike.nativeLib.mman;
     exports top.dreamlike.common;
 }

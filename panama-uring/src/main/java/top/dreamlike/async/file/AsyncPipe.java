@@ -24,7 +24,7 @@ public class AsyncPipe extends PlainAsyncFd {
 
     public AsyncPipe(IOUringEventLoop eventLoop) {
         super(eventLoop);
-        try (Arena session = Arena.openConfined()) {
+        try (Arena session = Arena.ofConfined()) {
             MemorySegment pipes = session.allocateArray(JAVA_INT, 2);
             int res = pipe(pipes);
             if (res == -1) {

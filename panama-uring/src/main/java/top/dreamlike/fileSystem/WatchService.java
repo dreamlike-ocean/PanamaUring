@@ -39,7 +39,7 @@ public class WatchService {
         if (ifd <= 0) {
             throw new NativeCallException(NativeHelper.getNowError());
         }
-        session = Arena.openShared();
+        session = Arena.ofShared();
         buf = session.allocate(4096);
 
     }
@@ -77,7 +77,7 @@ public class WatchService {
     }
 
     public int register(String absolutePath, int mask) {
-        try (Arena session = Arena.openConfined()) {
+        try (Arena session = Arena.ofConfined()) {
             MemorySegment file = session.allocateUtf8String(absolutePath);
             int res = inotify_add_watch(ifd, file, mask);
             if (res <= 0) {

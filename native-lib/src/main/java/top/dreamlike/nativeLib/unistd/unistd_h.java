@@ -2,14 +2,14 @@
 
 package top.dreamlike.nativeLib.unistd;
 
-import top.dreamlike.common.CType;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
 
-import static java.lang.foreign.ValueLayout.*;
+
+import top.dreamlike.helper.RuntimeHelper;
 public class unistd_h  {
 
     /* package-private */ unistd_h() {}
@@ -53,38 +53,6 @@ public class unistd_h  {
     public static int F_TEST() {
         return (int)3L;
     }
-    public static OfShort __int16_t = CType.C_SHORT$LAYOUT;
-    public static OfInt __int32_t = CType.C_INT$LAYOUT;
-    public static OfLong __int64_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfShort __int_least16_t = CType.C_SHORT$LAYOUT;
-    public static OfInt __int_least32_t = CType.C_INT$LAYOUT;
-    public static OfLong __int_least64_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __quad_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __intmax_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __off_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __off64_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfInt __pid_t = CType.C_INT$LAYOUT;
-    public static OfLong __clock_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __time_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __suseconds_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfInt __daddr_t = CType.C_INT$LAYOUT;
-    public static OfInt __key_t = CType.C_INT$LAYOUT;
-    public static OfInt __clockid_t = CType.C_INT$LAYOUT;
-    public static OfAddress __timer_t = CType.C_POINTER$LAYOUT;
-    public static OfLong __blksize_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __blkcnt_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __blkcnt64_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __fsword_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __ssize_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __syscall_slong_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __loff_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfAddress __caddr_t = CType.C_POINTER$LAYOUT;
-    public static OfLong __intptr_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfInt __sig_atomic_t = CType.C_INT$LAYOUT;
-    public static OfLong ssize_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong off_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfInt pid_t = CType.C_INT$LAYOUT;
-    public static OfLong intptr_t = CType.C_LONG_LONG$LAYOUT;
 
     public static MethodHandle access$MH() {
         return RuntimeHelper.requireNonNull(constants$0.access$MH, "access");

@@ -3,6 +3,7 @@
 package top.dreamlike.nativeLib.fcntl;
 
 import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;

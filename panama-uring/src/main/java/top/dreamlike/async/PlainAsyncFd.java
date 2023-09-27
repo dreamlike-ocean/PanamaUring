@@ -34,7 +34,7 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
         if (closed()) {
             throw new NativeCallException("file has closed");
         }
-        Arena arena = Arena.openShared();
+        Arena arena = Arena.ofShared();
         MemorySegment buffer = arena.allocate(length);
         return readUnsafe(offset, buffer)
                 .thenCompose(i -> i < 0
@@ -59,7 +59,9 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
 
         CompletableFuture<Integer> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
-            if (!ioUring.prep_read(readFd(), offset, memorySegment, future::complete)) {
+            //防止有Confined的内存跨线程
+            MemorySegment unsafeMemory = MemorySegment.ofAddress(memorySegment.address()).reinterpret(memorySegment.byteSize());
+            if (!ioUring.prep_read(readFd(), offset, unsafeMemory, future::complete)) {
                 future.completeExceptionally(new NotEnoughSqeException());
             }
         });
@@ -101,7 +103,7 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
             throw new NativeCallException("file has closed");
         }
 
-        Arena session = Arena.openShared();
+        Arena session = Arena.ofShared();
         CompletableFuture<Integer> future = new CompletableFuture<>();
         MemorySegment memorySegment = session.allocate(bufferLength);
         MemorySegment.copy(buffer, bufferOffset, memorySegment, JAVA_BYTE, 0, bufferLength);
@@ -126,7 +128,9 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
         }
         CompletableFuture<Integer> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
-            if (!ioUring.prep_write(writeFd(), offset, memorySegment, future::complete)) {
+            MemorySegment unsafeMemory = MemorySegment.ofAddress(memorySegment.address())
+                    .reinterpret(memorySegment.byteSize());
+            if (!ioUring.prep_write(writeFd(), offset, unsafeMemory, future::complete)) {
                 future.completeExceptionally(new NotEnoughSqeException());
             }
         });

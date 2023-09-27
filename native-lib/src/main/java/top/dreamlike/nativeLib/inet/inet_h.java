@@ -2,13 +2,11 @@
 
 package top.dreamlike.nativeLib.inet;
 
-import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandle;
-
-import static java.lang.foreign.ValueLayout.*;
 public class inet_h  {
 
     /* package-private */ inet_h() {}
@@ -853,120 +851,6 @@ public class inet_h  {
     public static int INET6_ADDRSTRLEN() {
         return (int)46L;
     }
-    public static OfShort __int16_t = CType.C_SHORT$LAYOUT;
-    public static OfInt __int32_t = CType.C_INT$LAYOUT;
-    public static OfLong __int64_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfShort __int_least16_t = CType.C_SHORT$LAYOUT;
-    public static OfInt __int_least32_t = CType.C_INT$LAYOUT;
-    public static OfLong __int_least64_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __quad_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __intmax_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __off_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __off64_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfInt __pid_t = CType.C_INT$LAYOUT;
-    public static OfLong __clock_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __time_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __suseconds_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfInt __daddr_t = CType.C_INT$LAYOUT;
-    public static OfInt __key_t = CType.C_INT$LAYOUT;
-    public static OfInt __clockid_t = CType.C_INT$LAYOUT;
-    public static OfAddress __timer_t = CType.C_POINTER$LAYOUT;
-    public static OfLong __blksize_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __blkcnt_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __blkcnt64_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __fsword_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __ssize_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __syscall_slong_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __loff_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfAddress __caddr_t = CType.C_POINTER$LAYOUT;
-    public static OfLong __intptr_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfInt __sig_atomic_t = CType.C_INT$LAYOUT;
-    public static OfLong quad_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong loff_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong off_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfInt pid_t = CType.C_INT$LAYOUT;
-    public static OfLong ssize_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfInt daddr_t = CType.C_INT$LAYOUT;
-    public static OfAddress caddr_t = CType.C_POINTER$LAYOUT;
-    public static OfInt key_t = CType.C_INT$LAYOUT;
-    public static OfLong clock_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfInt clockid_t = CType.C_INT$LAYOUT;
-    public static OfLong time_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfAddress timer_t = CType.C_POINTER$LAYOUT;
-    public static OfShort int16_t = CType.C_SHORT$LAYOUT;
-    public static OfInt int32_t = CType.C_INT$LAYOUT;
-    public static OfLong int64_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong register_t = CType.C_LONG_LONG$LAYOUT;
-    public static MethodHandle __bswap_16$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.__bswap_16$MH,"__bswap_16");
-    }
-    public static short __bswap_16 ( short __bsx) {
-        var mh$ = __bswap_16$MH();
-        try {
-            return (short)mh$.invokeExact(__bsx);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle __bswap_32$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.__bswap_32$MH,"__bswap_32");
-    }
-    public static int __bswap_32 ( int __bsx) {
-        var mh$ = __bswap_32$MH();
-        try {
-            return (int)mh$.invokeExact(__bsx);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle __bswap_64$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.__bswap_64$MH,"__bswap_64");
-    }
-    public static long __bswap_64 ( long __bsx) {
-        var mh$ = __bswap_64$MH();
-        try {
-            return (long)mh$.invokeExact(__bsx);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle __uint16_identity$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.__uint16_identity$MH,"__uint16_identity");
-    }
-    public static short __uint16_identity ( short __x) {
-        var mh$ = __uint16_identity$MH();
-        try {
-            return (short)mh$.invokeExact(__x);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle __uint32_identity$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.__uint32_identity$MH,"__uint32_identity");
-    }
-    public static int __uint32_identity ( int __x) {
-        var mh$ = __uint32_identity$MH();
-        try {
-            return (int)mh$.invokeExact(__x);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static MethodHandle __uint64_identity$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.__uint64_identity$MH,"__uint64_identity");
-    }
-    public static long __uint64_identity ( long __x) {
-        var mh$ = __uint64_identity$MH();
-        try {
-            return (long)mh$.invokeExact(__x);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    public static OfLong suseconds_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __fd_mask = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong fd_mask = CType.C_LONG_LONG$LAYOUT;
-
     public static MethodHandle select$MH() {
         return RuntimeHelper.requireNonNull(constants$1.select$MH, "select");
     }
@@ -992,10 +876,7 @@ public class inet_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
-    public static OfLong blksize_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong blkcnt_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfInt pthread_once_t = CType.C_INT$LAYOUT;
-    public static OfInt pthread_spinlock_t = CType.C_INT$LAYOUT;
+
     public static int SOCK_STREAM() {
         return (int)1L;
     }
@@ -1087,18 +968,6 @@ public class inet_h  {
         return (int)1073741824L;
     }
 
-    public static MethodHandle __cmsg_nxthdr$MH() {
-        return RuntimeHelper.requireNonNull(constants$1.__cmsg_nxthdr$MH, "__cmsg_nxthdr");
-    }
-
-    public static MemorySegment __cmsg_nxthdr(MemorySegment __mhdr, MemorySegment __cmsg) {
-        var mh$ = __cmsg_nxthdr$MH();
-        try {
-            return (java.lang.foreign.MemorySegment) mh$.invokeExact(__mhdr, __cmsg);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
 
     public static int SCM_RIGHTS() {
         return (int) 1L;

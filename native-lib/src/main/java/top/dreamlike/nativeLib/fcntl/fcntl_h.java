@@ -2,8 +2,11 @@
 
 package top.dreamlike.nativeLib.fcntl;
 
+import top.dreamlike.helper.RuntimeHelper;
+
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
+
 public class fcntl_h  {
 
     /* package-private */ fcntl_h() {}
@@ -285,13 +288,27 @@ public class fcntl_h  {
         return (int)3L;
     }
 
-    private static MethodHandle fcntl$MH() {
-        return RuntimeHelper.requireNonNull(constants$0.fcntl$MH,"fcntl");
+    private static MethodHandle fcntl3Args$MH() {
+        return RuntimeHelper.requireNonNull(constants$0.fcntl3Args$MH, "fcntl");
     }
-    public static int fcntl ( int __fd,  int __cmd, Object... x2) {
-        var mh$ = fcntl$MH();
+
+    private static MethodHandle fcntl2Args$MH() {
+        return RuntimeHelper.requireNonNull(constants$0.fcntl2Args$MH, "fcntl");
+    }
+
+    public static int fcntl(int __fd, int __cmd, int args) {
+        var mh$ = fcntl3Args$MH();
         try {
-            return (int)mh$.invokeExact(__fd, __cmd, x2);
+            return (int) mh$.invokeExact(__fd, __cmd, args);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    public static int fcntl(int __fd, int __cmd) {
+        var mh$ = fcntl2Args$MH();
+        try {
+            return (int) mh$.invokeExact(__fd, __cmd);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -301,10 +318,10 @@ public class fcntl_h  {
         return RuntimeHelper.requireNonNull(constants$0.open$MH, "open");
     }
 
-    public static int open(MemorySegment __file, int __oflag, Object... x2) {
+    public static int open(MemorySegment __file, int __oflag) {
         var mh$ = open$MH();
         try {
-            return (int) mh$.invokeExact(__file, __oflag, x2);
+            return (int) mh$.invokeExact(__file, __oflag);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -314,10 +331,10 @@ public class fcntl_h  {
         return RuntimeHelper.requireNonNull(constants$0.openat$MH, "openat");
     }
 
-    public static int openat(int __fd, MemorySegment __file, int __oflag, Object... x3) {
+    public static int openat(int __fd, MemorySegment __file, int __oflag) {
         var mh$ = openat$MH();
         try {
-            return (int) mh$.invokeExact(__fd, __file, __oflag, x3);
+            return (int) mh$.invokeExact(__fd, __file, __oflag);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }

@@ -2,9 +2,10 @@
 
 package top.dreamlike.nativeLib.inotify;
 
+import top.dreamlike.helper.RuntimeHelper;
+
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
-
 public class inotify_h {
 
     /* package-private */ inotify_h() {

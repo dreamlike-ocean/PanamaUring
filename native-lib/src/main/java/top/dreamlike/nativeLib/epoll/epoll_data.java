@@ -2,19 +2,24 @@
 
 package top.dreamlike.nativeLib.epoll;
 
-import top.dreamlike.common.CType;
-
-import java.lang.foreign.*;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.VarHandle;
+
+import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static top.dreamlike.common.CType.POINTER;
 
 public class epoll_data {
 
     static final  GroupLayout $union$LAYOUT = MemoryLayout.unionLayout(
-            CType.C_POINTER$LAYOUT.withName("ptr"),
-            CType.C_INT$LAYOUT.withName("res"),
-            CType.C_INT$LAYOUT.withName("u32"),
-            CType.C_LONG_LONG$LAYOUT.withName("u64")
-    ).withName("epoll_data");
+            POINTER.withByteAlignment(1).withName("ptr"),
+            JAVA_INT.withByteAlignment(1).withName("fd"),
+            JAVA_INT.withByteAlignment(1).withName("u32"),
+            JAVA_LONG.withByteAlignment(1).withName("u64")
+    ).withName("data");
 
     public static MemoryLayout $LAYOUT() {
         return epoll_data.$union$LAYOUT;
@@ -42,7 +47,7 @@ public class epoll_data {
         epoll_data.ptr$VH.set(seg.asSlice(index * sizeof()), x);
     }
 
-    static final VarHandle fd$VH = $union$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("res"));
+    static final VarHandle fd$VH = $union$LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("fd"));
 
     public static VarHandle fd$VH() {
         return epoll_data.fd$VH;
@@ -99,9 +104,6 @@ public class epoll_data {
         return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
     }
 
-    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
-        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
-    }
 }
 
 

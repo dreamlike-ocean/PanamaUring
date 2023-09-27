@@ -17,7 +17,8 @@ public class DefaultOwnershipMemory implements OwnershipMemory {
             throw new NullPointerException("releaseFn is null");
         }
         this.dropTrait = releaseFn;
-        this.memorySegment = memorySegment;
+        this.memorySegment = MemorySegment.ofAddress(memorySegment.address())
+                .reinterpret(memorySegment.byteSize());
     }
 
     /**

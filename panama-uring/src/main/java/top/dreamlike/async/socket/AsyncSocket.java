@@ -190,7 +190,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
             throw new IllegalStateException("Socket is not connected");
         }
         CompletableFuture<Integer> completableFuture = new CompletableFuture<>();
-        Arena malloc = Arena.openShared();
+        Arena malloc = Arena.ofShared();
         MemorySegment buf = malloc.allocateArray(JAVA_BYTE, buffer.length);
         eventLoop.runOnEventLoop(() -> {
             boolean res = ring.prep_recv(fd, buf, completableFuture::complete);
@@ -216,7 +216,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
                         ue.fail(new IllegalStateException("Socket is not connected"));
                         return;
                     }
-                    Arena malloc = Arena.openShared();
+                    Arena malloc = Arena.ofShared();
                     MemorySegment buf = malloc.allocateArray(JAVA_BYTE, buffer.length);
                     AtomicBoolean end = new AtomicBoolean(false);
                     long userData = ring.prep_recv_and_get_user_data(fd, buf, i -> {
@@ -263,6 +263,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
                             if (i < 0) {
                                 ue.fail(new NativeCallException(NativeHelper.getErrorStr(-i)));
                             } else {
+                                state.compareAndSet(CONNECTING, CONNECTED);
                                 ue.complete(i);
                             }
                         });
@@ -295,7 +296,10 @@ public non-sealed class AsyncSocket extends AsyncFd {
         CompletableFuture<Integer> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
             try {
-                if (!ring.prep_connect(new SocketInfo(fd, host, port), future::complete)) {
+                if (!ring.prep_connect(new SocketInfo(fd, host, port), info -> {
+                    state.compareAndSet(CONNECTING, CONNECTED);
+                    future.complete(info);
+                })) {
                     future.completeExceptionally(new NotEnoughSqeException());
                 }
             } catch (UnknownHostException e) {
@@ -313,7 +317,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
         if (state.get() != CONNECTED) {
             throw new IllegalStateException("Socket is not connected");
         }
-        Arena session = Arena.openShared();
+        Arena session = Arena.ofShared();
         CompletableFuture<Integer> future = new CompletableFuture<>();
         MemorySegment memorySegment = session.allocate(length);
         MemorySegment.copy(buffer, offset, memorySegment, JAVA_BYTE, 0, length);
@@ -338,7 +342,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
                         return;
                     }
                     AtomicBoolean end = new AtomicBoolean(false);
-                    Arena session = Arena.openConfined();
+                    Arena session = Arena.ofConfined();
                     MemorySegment memorySegment = session.allocate(length);
                     MemorySegment.copy(buffer, offset, memorySegment, JAVA_BYTE, 0, length);
                     long userData = ring.prep_send_and_get_user_data(fd, memorySegment, i -> {

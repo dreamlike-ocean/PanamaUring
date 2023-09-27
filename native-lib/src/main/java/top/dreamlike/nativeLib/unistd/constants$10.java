@@ -3,10 +3,10 @@
 package top.dreamlike.nativeLib.unistd;
 
 import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
-
 class constants$10 {
 
     static final FunctionDescriptor ttyname$FUNC = FunctionDescriptor.of(CType.C_POINTER$LAYOUT,

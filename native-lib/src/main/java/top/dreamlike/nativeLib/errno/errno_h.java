@@ -2,6 +2,8 @@
 
 package top.dreamlike.nativeLib.errno;
 
+import top.dreamlike.helper.RuntimeHelper;
+
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 public class errno_h  {
@@ -428,12 +430,12 @@ public class errno_h  {
         return (int)133L;
     }
 
-    private static MethodHandle __errno_location$MH() {
+    private static MethodHandle errnoLocation$MH() {
         return RuntimeHelper.requireNonNull(constants$0.__errno_location$MH, "__errno_location");
     }
 
-    public static MemorySegment __errno_location() {
-        var mh$ = __errno_location$MH();
+    public static MemorySegment errno_location() {
+        var mh$ = errnoLocation$MH();
         try {
             return (java.lang.foreign.MemorySegment) mh$.invokeExact();
         } catch (Throwable ex$) {

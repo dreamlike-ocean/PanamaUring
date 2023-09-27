@@ -10,9 +10,9 @@ import top.dreamlike.extension.fp.Result;
 import top.dreamlike.helper.*;
 import top.dreamlike.nativeLib.eventfd.EventFd;
 import top.dreamlike.nativeLib.eventfd.eventfd_h;
-import top.dreamlike.nativeLib.in.iovec;
-import top.dreamlike.nativeLib.in.sockaddr;
-import top.dreamlike.nativeLib.in.sockaddr_in;
+import top.dreamlike.nativeLib.inet.iovec;
+import top.dreamlike.nativeLib.inet.sockaddr;
+import top.dreamlike.nativeLib.inet.sockaddr_in;
 import top.dreamlike.nativeLib.liburing.io_uring;
 import top.dreamlike.nativeLib.liburing.io_uring_cqe;
 import top.dreamlike.nativeLib.liburing.io_uring_sqe;
@@ -98,7 +98,7 @@ public class IOUring implements AutoCloseable {
     }
 
     private void initRing() {
-        allocator = Arena.openShared();
+        allocator = Arena.ofShared();
         this.ring = io_uring.allocate(allocator);
         var ret = io_uring_queue_init(ringSize, ring, 0);
         if (ret < 0) {
@@ -176,10 +176,10 @@ public class IOUring implements AutoCloseable {
         MemorySegment sqe = getSqe();
         if (sqe == null)
             return NO_SQE;
-        try (Arena allocator = Arena.openConfined()) {
+        try (Arena allocator = Arena.ofConfined()) {
             MemorySegment iovecStruct = iovec.allocate(allocator);
             iovec.iov_len$set(iovecStruct, length);
-            MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof());
+            MemorySegment sqeSegment = sqe.reinterpret(io_uring_sqe.sizeof());
             IOOpResult result = new IOOpResult(fd, -1, Op.FILE_SELECTED_READ, null, (res, bid) -> {
                 if (res == -ENOBUFS()) {
                     var t = new NotEnoughBufferException(gid);
@@ -227,7 +227,7 @@ public class IOUring implements AutoCloseable {
         MemorySegment sqe = getSqe();
         if (sqe == null)
             return NO_SQE;
-        MemorySegment sqeStruct = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof());
+        MemorySegment sqeStruct = sqe.reinterpret(io_uring_sqe.sizeof());
         long opsCount = count.getAndIncrement();
         IOOpResult result = new IOOpResult(socketFd, -1, Op.SOCKET_SELECTED_READ, null, (res, bid) -> {
             if (res == -ENOBUFS()) {
@@ -254,7 +254,7 @@ public class IOUring implements AutoCloseable {
         MemorySegment sqe = getSqe();
         if (sqe == null)
             return NO_SQE;
-        MemorySegment sqeStruct = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof());
+        MemorySegment sqeStruct = sqe.reinterpret(io_uring_sqe.sizeof());
         long opsCount = count.getAndIncrement();
         io_uring_prep_recv(sqe, socketFd, buf, buf.byteSize(), 0);
         io_uring_sqe.user_data$set(sqeStruct, opsCount);
@@ -301,7 +301,7 @@ public class IOUring implements AutoCloseable {
         if (sqe == null)
             return NO_SQE;
 
-        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof());
+        MemorySegment sqeSegment = sqe.reinterpret(io_uring_sqe.sizeof());
         long opsCount = count.getAndIncrement();
 
         context.put(opsCount, new IOOpResult(socketFd, -1, Op.SOCKET_WRITE, buffer, (res, __) -> callback.accept(res)));
@@ -330,12 +330,12 @@ public class IOUring implements AutoCloseable {
         MemorySegment sqe = getSqe();
         if (sqe == null)
             return NO_SQE;
-        Arena tmp = Arena.openShared();
+        Arena tmp = Arena.ofShared();
         MemorySegment client_addr = sockaddr.allocate(tmp);
         MemorySegment client_addr_len = tmp.allocate(JAVA_INT, (int) sockaddr.sizeof());
 
         long opsCount = count.getAndIncrement();
-        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof());
+        MemorySegment sqeSegment = sqe.reinterpret(io_uring_sqe.sizeof());
 
         context.put(opsCount, new IOOpResult(serverFd, -1, Op.ACCEPT, null, (res, __) -> {
             try {
@@ -346,7 +346,7 @@ public class IOUring implements AutoCloseable {
                     int port = Short.toUnsignedInt(ntohs(sin_port));
                     MemorySegment remoteHost = inet_ntoa(sockaddr_in.sin_addr$slice(client_addr));
                     long strlen = strlen(remoteHost);
-                    String host = new String(MemorySegment.ofAddress(remoteHost.address(), strlen).toArray(JAVA_BYTE));
+                    String host = new String(remoteHost.reinterpret(strlen).toArray(JAVA_BYTE));
                     callback.accept(new SocketInfo(res, host, port));
                 }
             } finally {
@@ -402,17 +402,12 @@ public class IOUring implements AutoCloseable {
         if (sqe == null)
             return NO_SQE;
         // byte*,len
-        try (Arena allocator = Arena.openConfined()) {
-            MemorySegment iovecStruct = iovec.allocate(allocator);
-            iovec.iov_base$set(iovecStruct, buffer);
-            iovec.iov_len$set(iovecStruct, buffer.byteSize());
-            MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof());
-            long opsCount = count.getAndIncrement();
-            io_uring_prep_read(sqe, fd, buffer, (int) buffer.byteSize(), offset);
-            io_uring_sqe.user_data$set(sqeSegment, opsCount);
-            context.put(opsCount, new IOOpResult(fd, -1, Op.FILE_READ, buffer, (res, __) -> callback.accept(res)));
-            return opsCount;
-        }
+        MemorySegment sqeSegment = sqe.reinterpret(io_uring_sqe.sizeof());
+        long opsCount = count.getAndIncrement();
+        io_uring_prep_read(sqe, fd, buffer, (int) buffer.byteSize(), offset);
+        io_uring_sqe.user_data$set(sqeSegment, opsCount);
+        context.put(opsCount, new IOOpResult(fd, -1, Op.FILE_READ, buffer, (res, __) -> callback.accept(res)));
+        return opsCount;
     }
 
     public boolean prep_time_out(long waitMs, Runnable runnable) {
@@ -423,11 +418,11 @@ public class IOUring implements AutoCloseable {
         MemorySegment sqe = getSqe();
         if (sqe == null)
             return NO_SQE;
-        try (Arena allocator = Arena.openConfined()) {
+        try (Arena allocator = Arena.ofConfined()) {
             MemorySegment ts = __kernel_timespec.allocate(allocator);
             __kernel_timespec.tv_sec$set(ts, waitMs / 1000);
             __kernel_timespec.tv_nsec$set(ts, (waitMs % 1000) * 1000000);
-            MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof());
+            MemorySegment sqeSegment = sqe.reinterpret(io_uring_sqe.sizeof());
 
             long opsCount = count.getAndIncrement();
             io_uring_prep_timeout(sqeSegment, ts, 0, 0);
@@ -461,7 +456,7 @@ public class IOUring implements AutoCloseable {
         if (isStartLinked()) {
             io_uring_sqe.flags$and(NativeHelper.unsafePointConvertor(sqe), (byte) IOSQE_IO_LINK());
         }
-        sqe = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof());
+        sqe = sqe.reinterpret(io_uring_sqe.sizeof());
         return sqe;
     }
     // sqe -> cqe
@@ -470,7 +465,7 @@ public class IOUring implements AutoCloseable {
         MemorySegment sqe = getSqe();
         if (sqe == null)
             return NO_SQE;
-        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof());
+        MemorySegment sqeSegment = sqe.reinterpret(io_uring_sqe.sizeof());
         long opsCount = count.getAndIncrement();
         io_uring_prep_write(sqe, fd, buffer, (int) buffer.byteSize(), offset);
         io_uring_sqe.user_data$set(sqeSegment, opsCount);
@@ -490,7 +485,7 @@ public class IOUring implements AutoCloseable {
         MemorySegment sqe = getSqe();
         if (sqe == null)
             return NO_SQE;
-        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof());
+        MemorySegment sqeSegment = sqe.reinterpret(io_uring_sqe.sizeof());
         long opsCount = count.getAndIncrement();
         io_uring_prep_nop(sqeSegment);
         io_uring_sqe.user_data$set(sqeSegment, opsCount);
@@ -502,7 +497,7 @@ public class IOUring implements AutoCloseable {
         MemorySegment sqe = getSqe();
         if (sqe == null)
             return NO_SQE;
-        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof());
+        MemorySegment sqeSegment = sqe.reinterpret(io_uring_sqe.sizeof());
         long opsCount = count.getAndIncrement();
 
         context.put(opsCount, new IOOpResult(-1, -1, Op.FILE_SYNC, null, (res, __) -> runnable.accept(res)));
@@ -522,13 +517,13 @@ public class IOUring implements AutoCloseable {
             return NO_SQE;
         }
         InetSocketAddress inetAddress = InetSocketAddress.createUnresolved(info.host(), info.port());
-        Arena session = Arena.openConfined();
+        Arena session = Arena.ofConfined();
         String host = inetAddress.getHostString();
         int port = inetAddress.getPort();
         Pair<MemorySegment, Boolean> socketInfo = NativeHelper.getSockAddr(session, host, port);
         MemorySegment sockaddrSegement = socketInfo.t1();
         long opsCount = count.getAndIncrement();
-        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof());
+        MemorySegment sqeSegment = sqe.reinterpret(io_uring_sqe.sizeof());
         context.put(opsCount, new IOOpResult(-1, -1, Op.CONNECT, null, (res, __) -> callback.accept(res)));
         io_uring_prep_connect(sqe, fd, sockaddrSegement, (int) sockaddrSegement.byteSize());
         io_uring_sqe.user_data$set(sqeSegment, opsCount);
@@ -552,7 +547,7 @@ public class IOUring implements AutoCloseable {
 
         io_uring_prep_provide_buffers(sqe, buffer, (int) buffer.byteSize(), 1, gid, bid);
 
-        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof());
+        MemorySegment sqeSegment = sqe.reinterpret(io_uring_sqe.sizeof());
         io_uring_sqe.user_data$set(sqeSegment, -IORING_OP_PROVIDE_BUFFERS());
         if (needSubmit) {
             submit();
@@ -576,7 +571,7 @@ public class IOUring implements AutoCloseable {
      * @return
      */
     public List<IOOpResult> batchGetCqe(int max) {
-        try (Arena tmp = Arena.openConfined()) {
+        try (Arena tmp = Arena.ofConfined()) {
             MemorySegment ref = tmp.allocate(CType.C_POINTER$LAYOUT.byteSize());
             int count = 0;
             ArrayList<IOOpResult> results = new ArrayList<>();
@@ -616,7 +611,7 @@ public class IOUring implements AutoCloseable {
     public List<IOOpResult> waitFd() {
         // 及时释放内存
         // 太弱智了 不支持栈上分配
-        try (Arena tmp = Arena.openConfined()) {
+        try (Arena tmp = Arena.ofConfined()) {
             MemorySegment ref = tmp.allocate(CType.C_POINTER$LAYOUT.byteSize());
             io_uring_wait_cqe(ring, ref);
             MemorySegment cqePoint = ref.get(CType.C_POINTER$LAYOUT, 0);
@@ -647,12 +642,12 @@ public class IOUring implements AutoCloseable {
         MemorySegment sqe = getSqe();
         if (sqe == null)
             return NO_SQE;
-        Arena tmp = Arena.openConfined();
+        Arena tmp = Arena.ofConfined();
         MemorySegment client_addr = sockaddr.allocate(tmp);
         MemorySegment client_addr_len = tmp.allocate(JAVA_INT, (int) sockaddr.sizeof());
 
         long opsCount = count.getAndIncrement();
-        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof());
+        MemorySegment sqeSegment = sqe.reinterpret(io_uring_sqe.sizeof());
 
         context.put(opsCount, new IOOpResult(serverFd, -1, Op.MULTI_SHOT_ACCEPT, null, (res, __) -> {
             if (res < 0) {
@@ -662,7 +657,7 @@ public class IOUring implements AutoCloseable {
                 int port = Short.toUnsignedInt(ntohs(sin_port));
                 MemorySegment remoteHost = inet_ntoa(sockaddr_in.sin_addr$slice(client_addr));
                 long strlen = strlen(remoteHost);
-                String host = new String(MemorySegment.ofAddress(remoteHost.address(), strlen).toArray(JAVA_BYTE));
+                String host = new String(remoteHost.reinterpret(strlen).toArray(JAVA_BYTE));
                 callback.accept(new SocketInfo(res, host, port));
             }
         }));
@@ -674,7 +669,7 @@ public class IOUring implements AutoCloseable {
     }
 
     public void waitComplete(long waitMs) {
-        try (Arena session = Arena.openConfined()) {
+        try (Arena session = Arena.ofConfined()) {
             MemorySegment cqe_ptr = session.allocate(CType.C_POINTER$LAYOUT.byteSize());
             if (waitMs == -1) {
                 io_uring_wait_cqe(ring, cqe_ptr);

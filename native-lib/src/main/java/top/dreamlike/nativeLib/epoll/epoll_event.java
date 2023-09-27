@@ -2,21 +2,26 @@
 
 package top.dreamlike.nativeLib.epoll;
 
-import top.dreamlike.common.CType;
-
-import java.lang.foreign.*;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.VarHandle;
+
+import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static top.dreamlike.common.CType.POINTER;
 
 public class epoll_event {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
-        CType.C_INT$LAYOUT.withName("events"),
-        MemoryLayout.unionLayout(
-                CType.C_POINTER$LAYOUT.withName("ptr"),
-                CType.C_INT$LAYOUT.withName("res"),
-                CType.C_INT$LAYOUT.withName("u32"),
-                CType.C_LONG_LONG$LAYOUT.withName("u64")
-        ).withName("data")
+            JAVA_INT.withByteAlignment(1).withName("events"),
+            MemoryLayout.unionLayout(
+                    POINTER.withByteAlignment(1).withName("ptr"),
+                    JAVA_INT.withByteAlignment(1).withName("fd"),
+                    JAVA_INT.withByteAlignment(1).withName("u32"),
+                    JAVA_LONG.withByteAlignment(1).withName("u64")
+            ).withName("data")
     ).withName("epoll_event");
     public static MemoryLayout $LAYOUT() {
         return epoll_event.$struct$LAYOUT;
@@ -52,9 +57,6 @@ public class epoll_event {
         return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
     }
 
-    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
-        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
-    }
 }
 
 

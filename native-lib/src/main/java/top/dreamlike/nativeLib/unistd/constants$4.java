@@ -3,16 +3,17 @@
 package top.dreamlike.nativeLib.unistd;
 
 import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
 
-import static java.lang.foreign.ValueLayout.OfAddress;
 class constants$4 {
 
-    static final  OfAddress __environ$LAYOUT = CType.C_POINTER$LAYOUT;
+    static final AddressLayout __environ$LAYOUT = CType.C_POINTER$LAYOUT;
     static final VarHandle __environ$VH = constants$4.__environ$LAYOUT.varHandle();
     static final MemorySegment __environ$SEGMENT = RuntimeHelper.lookupGlobalVariable("__environ", constants$4.__environ$LAYOUT);
     static final FunctionDescriptor execve$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
