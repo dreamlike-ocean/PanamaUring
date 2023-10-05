@@ -3,6 +3,7 @@ package top.dreamlike.eventloop;
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.epoll.Epoll;
 import top.dreamlike.epoll.extension.ListenContext;
+import top.dreamlike.epoll.extension.ListenContextFactory;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Pair;
@@ -23,11 +24,18 @@ public class EpollEventLoop extends BaseEventLoop {
 
     private final Queue<Epoll.Event> processingEvent;
 
-    private final static ListenContext EMPTY = new ListenContext(0, 0, (__) -> {
-    });
     private final IntObjectHashMap<ListenContext> fdHandler;
 
     private final EventFd wakeUpFd;
+
+    static {
+//        AccessHelper.setEpollEventLoopTasks = EpollEventLoop::setTaskQueue;
+        AccessHelper.setEpollEventLoopTasks = ((eventLoop, tasks) -> eventLoop.tasks = tasks);
+        AccessHelper.registerToEpollDirectly = (EpollEventLoop loop, Pair<Epoll.Event, IntConsumer> p) -> {
+            Epoll.Event event = p.t1();
+            loop.registerReadEvent0(event.fd(), event.event(), p.t2());
+        };
+    }
 
     public EpollEventLoop() {
         epoll = new Epoll();
@@ -35,7 +43,7 @@ public class EpollEventLoop extends BaseEventLoop {
         fdHandler = new IntObjectHashMap<>();
         wakeUpFd = new EventFd();
         wakeUpFd.transToNoBlock();
-        registerEvent0(wakeUpFd.getFd(), EPOLLIN(), (__) -> {
+        registerReadEvent0(wakeUpFd.getFd(), EPOLLIN(), (__) -> {
             long readSync = wakeUpFd.readSync();
         });
     }
@@ -43,36 +51,56 @@ public class EpollEventLoop extends BaseEventLoop {
     /**
      * @param fd        需要监听的fd
      * @param eventMask 事件
-     * @param callback  当epoll被触发时给出的event处理程序的回调
+     * @param readCallback  当epoll被触发时给出的event处理程序的回调
      * @return 注册结果 要切线程
      */
-    public CompletableFuture<Void> registerEvent(int fd, int eventMask, IntConsumer callback) {
-        return runOnEventLoop(() -> registerEvent0(fd, eventMask, callback))
+    public CompletableFuture<Void> registerReadEvent(int fd, int eventMask, IntConsumer readCallback) {
+        return runOnEventLoop(() -> registerReadEvent0(fd, eventMask, readCallback))
                 .thenCompose(NativeHelper::errorNoTransform);
     }
 
-    private int registerEvent0(int fd, int eventMask, IntConsumer callback) {
-        int register = epoll.register(fd, eventMask);
+    public CompletableFuture<Void> registerWriteEvent(int fd, int eventMask, IntConsumer writeCallback) {
+        return runOnEventLoop(() -> registerWriteEvent0(fd, eventMask, writeCallback))
+                .thenCompose(NativeHelper::errorNoTransform);
+    }
 
+    private int registerReadEvent0(int fd, int eventMask, IntConsumer readCallback) {
+        int register = epoll.register(fd, eventMask);
         if (register == 0) {
-            fdHandler.put(fd, new ListenContext(fd, eventMask, callback));
+            ListenContext context = fdHandler.get(fd);
+            if (context == null) {
+                context = ListenContextFactory.readMode(fd, eventMask, readCallback);
+            } else {
+                context = ListenContextFactory.merge(ListenContextFactory.readMode(fd, eventMask, readCallback), context);
+            }
+            fdHandler.put(fd, context);
         }
         return register;
     }
 
-    public CompletableFuture<Void> modifyCallBack(int fd, IntConsumer callback) {
+    private int registerWriteEvent0(int fd, int eventMask, IntConsumer writeCallback) {
+        int register = epoll.register(fd, eventMask);
+        if (register == 0) {
+            ListenContext context = fdHandler.get(fd);
+            if (context == null) {
+                context = ListenContextFactory.writeMode(fd, eventMask, writeCallback);
+            } else {
+                context = ListenContextFactory.merge(ListenContextFactory.writeMode(fd, eventMask, writeCallback), context);
+            }
+            fdHandler.put(fd, context);
+        }
+        return register;
+    }
+
+    public CompletableFuture<Void> modifyReadCallBack(int fd, IntConsumer readCallback) {
         return runOnEventLoop(() -> {
             ListenContext oldValue = fdHandler.get(fd);
             if (oldValue == null) {
                 throw new NativeCallException("res need to be registered to epoll");
             }
-            fdHandler.put(fd, new ListenContext(fd, oldValue.eventMask(), callback));
+            fdHandler.put(fd, ListenContextFactory.readMode(fd, oldValue.eventMask(), readCallback));
             return null;
         });
-    }
-
-    public int fetchFdEventMask(int fd) {
-        return fdHandler.getOrDefault(fd, EMPTY).eventMask();
     }
 
     public CompletableFuture<Void> addEvent(int fd, int event) {
@@ -91,8 +119,8 @@ public class EpollEventLoop extends BaseEventLoop {
         }).thenCompose(NativeHelper::errorNoTransform);
     }
 
-    public CompletableFuture<Void> removeEvent(int fd, int event) {
-        return runOnEventLoop(() -> removeEventUnsafe(fd, event)).thenCompose(NativeHelper::errorNoTransform);
+    public int fetchFdEventMask(int fd) {
+        return fdHandler.getOrDefault(fd, ListenContextFactory.EMPTY).eventMask();
     }
 
     public int removeEventUnsafe(int fd, int event) {
@@ -109,18 +137,6 @@ public class EpollEventLoop extends BaseEventLoop {
         return modifyEventUnsafe(fd, eventMask, listenContext);
     }
 
-
-    public CompletableFuture<Void> modifyAll(int fd, int eventMask, IntConsumer callback) {
-        return runOnEventLoop(() -> {
-            if (fdHandler.get(fd) == null) {
-                throw new NativeCallException("res need to be registered to epoll");
-            }
-            fdHandler.put(fd, new ListenContext(fd, eventMask, callback));
-            return epoll.modify(fd, eventMask);
-        }).thenCompose(NativeHelper::errorNoTransform);
-    }
-
-
     public CompletableFuture<Void> modifyEvent(int fd, int event) {
         return runOnEventLoop(() -> {
             ListenContext listenContext = fdHandler.get(fd);
@@ -131,13 +147,9 @@ public class EpollEventLoop extends BaseEventLoop {
         }).thenCompose(NativeHelper::errorNoTransform);
     }
 
-    @Unsafe("自行保证线程安全")
-    public int modifyEventUnsafe(int fd, int event, ListenContext listenContext) {
-        int res = epoll.modify(fd, event);
-        if (res == 0) {
-            fdHandler.put(fd, new ListenContext(fd, event, listenContext.callback()));
-        }
-        return res;
+    public CompletableFuture<Void> removeEvent(int fd, int event) {
+        return runOnEventLoop(() -> removeEventUnsafe(fd, event))
+                .thenCompose(NativeHelper::errorNoTransform);
     }
 
     public CompletableFuture<Void> unregisterEvent(int fd) {
@@ -166,23 +178,37 @@ public class EpollEventLoop extends BaseEventLoop {
         wakeUpFd.close();
     }
 
+    @Unsafe("自行保证线程安全")
+    public int modifyEventUnsafe(int fd, int currentEventMask, ListenContext oldListenContext) {
+        int res = epoll.modify(fd, currentEventMask);
+        if (res == 0) {
+            ListenContext expectListenContext = oldListenContext;
+            if ((currentEventMask & epoll_h.EPOLLIN()) == 0) {
+                expectListenContext = expectListenContext.removeReadCallback();
+            }
+            if ((currentEventMask & epoll_h.EPOLLOUT()) == 0) {
+                expectListenContext = expectListenContext.removeWriteCallback();
+            }
+            fdHandler.put(fd, expectListenContext);
+        }
+        return res;
+    }
+
     @Override
     protected void afterSelect() {
         while (!processingEvent.isEmpty()) {
             Epoll.Event event = processingEvent.poll();
-            var eventHandler = (event.event() & epoll_h.EPOLLONESHOT()) != 0 ? fdHandler.remove(event.fd()) : fdHandler.get(event.fd());
+            int eventMask = event.event();
+            var eventHandler = (eventMask & epoll_h.EPOLLONESHOT()) != 0 ? fdHandler.remove(event.fd()) : fdHandler.get(event.fd());
             if (eventHandler != null) {
-                eventHandler.callback().accept(event.event());
+                if ((eventMask & epoll_h.EPOLLIN()) != 0) {
+                    eventHandler.readCallback().accept(eventMask);
+                }
+
+                if ((eventMask & epoll_h.EPOLLOUT()) != 0) {
+                    eventHandler.writeCallback().accept(eventMask);
+                }
             }
         }
-    }
-
-    static {
-//        AccessHelper.setEpollEventLoopTasks = EpollEventLoop::setTaskQueue;
-        AccessHelper.setEpollEventLoopTasks = ((eventLoop, tasks) -> eventLoop.tasks = tasks);
-        AccessHelper.registerToEpollDirectly = (EpollEventLoop loop, Pair<Epoll.Event, IntConsumer> p) -> {
-            Epoll.Event event = p.t1();
-            loop.registerEvent0(event.fd(), event.event(), p.t2());
-        };
     }
 }

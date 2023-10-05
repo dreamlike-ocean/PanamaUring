@@ -5,11 +5,8 @@ import top.dreamlike.access.AccessHelper;
 import top.dreamlike.epoll.Epoll;
 import top.dreamlike.epoll.async.EpollAsyncSocket;
 import top.dreamlike.helper.Pair;
-import top.dreamlike.helper.Unsafe;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.IntConsumer;
 
 import static top.dreamlike.nativeLib.epoll.epoll_h.EPOLLIN;
 
@@ -42,35 +39,8 @@ public class EpollUringEventLoop extends IOUringEventLoop {
         return new EpollAsyncSocket(new InetSocketAddress(host, port), this);
     }
 
-    public CompletableFuture<Void> registerEvent(int fd, int event, IntConsumer callback) {
-        return epollEventLoop.registerEvent(fd, event, callback);
-    }
-
-    public CompletableFuture<Void> modifyCallBack(int fd, IntConsumer callback) {
-        return epollEventLoop.modifyCallBack(fd, callback);
-    }
-
-    public CompletableFuture<Void> modifyAll(int fd, int event, IntConsumer callback) {
-        return epollEventLoop.modifyAll(fd, event, callback);
-    }
-
-    public CompletableFuture<Void> removeEvent(int fd, int event) {
-        return epollEventLoop.removeEvent(fd, event);
-    }
-
-    @Unsafe("强行从epoll remove掉，自己保证线程安全")
-    public void removeEventUnsafe(int fd, int event) {
-        epollEventLoop.removeEventUnsafe(fd, event);
-    }
-
-
-    public CompletableFuture<Void> modifyEvent(int fd, int event) {
-        return epollEventLoop.modifyEvent(fd, event);
-    }
-
-
-    public CompletableFuture<Void> unregisterEvent(int fd) {
-        return epollEventLoop.unregisterEvent(fd);
+    public EpollEventLoop epollMode() {
+        return epollEventLoop;
     }
 
 

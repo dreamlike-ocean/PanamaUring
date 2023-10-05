@@ -34,7 +34,6 @@ public class MultiShotExample {
         Thread.sleep(10000);
         resFlow.cancel();
 
-
         System.out.println(count);
     }
 

@@ -17,7 +17,7 @@ sealed public abstract class AsyncFd implements EventLoopAccess permits PlainAsy
 
     protected final AtomicBoolean closed = new AtomicBoolean(false);
 
-    private static final Consumer<Integer> DO_NOTHING = i -> {
+    protected static final Consumer<Integer> DO_NOTHING = i -> {
     };
 
     protected AsyncFd(IOUringEventLoop eventLoop) {
