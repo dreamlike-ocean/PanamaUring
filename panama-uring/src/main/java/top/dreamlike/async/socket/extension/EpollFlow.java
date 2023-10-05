@@ -26,7 +26,7 @@ public class EpollFlow<T> extends DispatchPublisher<T> implements Flow.Subscribe
 
     public void cancelCallback() {
         eventLoop.runOnEventLoop(() -> {
-            eventLoop.removeEventUnsafe(fd, EPOLLIN());
+            eventLoop.epollMode().removeEventUnsafe(fd, EPOLLIN());
         });
     }
 

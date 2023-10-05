@@ -44,7 +44,7 @@ public final class EpollAsyncServerSocket extends AsyncFd implements AsyncServer
     public CompletableFuture<EpollAsyncSocket> accept() {
         var res = new CompletableFuture<EpollAsyncSocket>();
         eventLoop.runOnEventLoop(() -> {
-            fetchEventLoop().registerEvent(serverFd, EPOLLIN() | EPOLLONESHOT(), (__) -> {
+            fetchEventLoop().epollMode().registerReadEvent(serverFd, EPOLLIN() | EPOLLONESHOT(), (__) -> {
                 try (Arena session = Arena.ofConfined()) {
                     MemorySegment client_addr = sockaddr.allocate(session);
                     MemorySegment client_addr_len = session.allocate(JAVA_INT, (int) sockaddr.sizeof());
@@ -69,7 +69,7 @@ public final class EpollAsyncServerSocket extends AsyncFd implements AsyncServer
     public Flow.Subscription acceptMulti(Consumer<EpollAsyncSocket> socketCallBack) {
         var flow = new EpollFlow<>(Integer.MAX_VALUE, serverFd, eventLoop, socketCallBack);
         eventLoop.runOnEventLoop(() -> {
-            eventLoop.registerEvent(serverFd, EPOLLIN(), (__) -> {
+            fetchEventLoop().epollMode().registerReadEvent(serverFd, EPOLLIN(), (__) -> {
                 try (Arena session = Arena.ofConfined()) {
                     MemorySegment client_addr = sockaddr.allocate(session);
                     MemorySegment client_addr_len = session.allocate(JAVA_INT, (int) sockaddr.sizeof());
@@ -97,10 +97,10 @@ public final class EpollAsyncServerSocket extends AsyncFd implements AsyncServer
     public Multi<EpollAsyncSocket> acceptMultiLazy(Supplier<EpollUringEventLoop> epollEventLoopSupplier) {
         return Multi.createFrom()
                 .emitter(me -> eventLoop.runOnEventLoop(() -> {
-                    eventLoop.registerEvent(serverFd, EPOLLIN(), (__) -> {
+                    fetchEventLoop().epollMode().registerReadEvent(serverFd, EPOLLIN(), (__) -> {
 
                         if (me.isCancelled()) {
-                            eventLoop.removeEventUnsafe(serverFd, EPOLLIN());
+                            fetchEventLoop().epollMode().removeEvent(serverFd, EPOLLIN());
                             return;
                         }
 
@@ -109,7 +109,7 @@ public final class EpollAsyncServerSocket extends AsyncFd implements AsyncServer
                             MemorySegment client_addr_len = session.allocate(JAVA_INT, (int) sockaddr.sizeof());
                             int fd = inet_h.accept(serverFd, client_addr, client_addr_len);
                             if (fd < -1) {
-                                eventLoop.removeEventUnsafe(serverFd, EPOLLIN());
+                                fetchEventLoop().epollMode().removeEvent(serverFd, EPOLLIN());
                                 me.fail(new NativeCallException(NativeHelper.getErrorStr(-fd)));
                                 return;
                             }

@@ -43,7 +43,7 @@ public class EpollSocketExample {
             byte[] bytes = new byte[1024];
             //socket read 基于epoll做的 这里简单直接get阻塞到完成
             Integer recvLength = socket.recv(bytes)
-                    .get();
+                    .get().intValue();
             System.out.println(new String(bytes, 0, recvLength));
         }
     }
