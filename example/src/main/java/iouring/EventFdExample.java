@@ -12,7 +12,7 @@ public class EventFdExample {
 
         EpollEventLoop epollEventLoop = new EpollEventLoop();
         epollEventLoop.start();
-        epollEventLoop.registerEvent(eventFd.getFd(), EPOLLIN(), (i) -> {
+        epollEventLoop.registerReadEvent(eventFd.getFd(), EPOLLIN(), (i) -> {
             System.out.println(eventFd.readSync());
         });
 

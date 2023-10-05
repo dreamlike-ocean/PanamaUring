@@ -3,11 +3,10 @@
 package top.dreamlike.nativeLib.unistd;
 
 import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
-
 class constants$18 {
 
     static final FunctionDescriptor lockf$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
@@ -42,8 +41,7 @@ class constants$18 {
         "getentropy",
         constants$18.getentropy$FUNC
     );
-    static final MemorySegment __ILP32_OFF32_CFLAGS$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("-m32");
-    static final MemorySegment __ILP32_OFF32_LDFLAGS$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("-m32");
+
 }
 
 

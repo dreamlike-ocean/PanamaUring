@@ -3,10 +3,10 @@
 package top.dreamlike.nativeLib.inet;
 
 import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
-
 class constants$4 {
 
     static final FunctionDescriptor setsockopt$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,

@@ -4,8 +4,10 @@ package top.dreamlike.nativeLib.inet;
 
 import top.dreamlike.common.CType;
 
-import java.lang.foreign.*;
-
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 public class in6_addr {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
@@ -17,9 +19,6 @@ public class in6_addr {
     ).withName("in6_addr");
     public static MemoryLayout $LAYOUT() {
         return in6_addr.$struct$LAYOUT;
-    }
-    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
-        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
     }
 
     public static MemorySegment __in6_u$slice(MemorySegment seg) {
@@ -55,10 +54,6 @@ public class in6_addr {
         public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
         public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
             return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
-        }
-
-        public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
-            return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
         }
     }
 }

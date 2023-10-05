@@ -2,6 +2,8 @@
 
 package top.dreamlike.nativeLib.eventfd;
 
+import top.dreamlike.helper.RuntimeHelper;
+
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 public class eventfd_h  {

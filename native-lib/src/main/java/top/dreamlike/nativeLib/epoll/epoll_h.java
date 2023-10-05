@@ -2,6 +2,8 @@
 
 package top.dreamlike.nativeLib.epoll;
 
+import top.dreamlike.helper.RuntimeHelper;
+
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 public class epoll_h  {

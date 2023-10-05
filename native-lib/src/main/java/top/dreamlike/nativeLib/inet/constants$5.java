@@ -3,13 +3,13 @@
 package top.dreamlike.nativeLib.inet;
 
 import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
-
 class constants$5 {
 
     static final  GroupLayout in6addr_any$LAYOUT = MemoryLayout.structLayout(

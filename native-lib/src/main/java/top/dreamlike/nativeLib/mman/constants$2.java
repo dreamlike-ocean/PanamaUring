@@ -3,11 +3,11 @@
 package top.dreamlike.nativeLib.mman;
 
 import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
-
 class constants$2 {
 
     static final FunctionDescriptor shm_unlink$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,

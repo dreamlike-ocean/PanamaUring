@@ -3,9 +3,9 @@
 package top.dreamlike.nativeLib.liburing;
 
 import top.dreamlike.helper.NativeHelper;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
 import java.lang.invoke.MethodHandle;
 public class liburing_h extends liburing_h_1 {
 
@@ -861,7 +861,7 @@ public class liburing_h extends liburing_h_1 {
 //        io_uring_prep_rw(IORING_OP_FSYNC, sqe, res, NULL, 0, 0);
 //	sqe->fsync_flags = fsync_flags;
         io_uring_prep_rw(IORING_OP_FSYNC(), sqe, fd, MemorySegment.NULL, 0, 0);
-        MemorySegment sqeSegment = MemorySegment.ofAddress(sqe.address(), io_uring_sqe.sizeof(), SegmentScope.global());
+        MemorySegment sqeSegment = sqe.reinterpret(io_uring.sizeof());
         io_uring_sqe.fsync_flags$set(sqeSegment, fsync_flags);
     }
 

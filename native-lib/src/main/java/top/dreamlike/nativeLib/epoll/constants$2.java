@@ -3,9 +3,9 @@
 package top.dreamlike.nativeLib.epoll;
 
 import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
 class constants$2 {
@@ -21,7 +21,7 @@ class constants$2 {
         "epoll_pwait",
         constants$2.epoll_pwait$FUNC
     );
-    static final MemorySegment __FD_ZERO_STOS$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("stosq");
+
 }
 
 

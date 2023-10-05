@@ -11,7 +11,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 public class PipeExample {
     public static void main(String[] args) {
-        try (Arena session = Arena.openShared();
+        try (Arena session = Arena.ofConfined();
              IOUringEventLoop eventLoop = new IOUringEventLoop(32, 8, 100)) {
             eventLoop.start();
             AsyncPipe pipe = new AsyncPipe(eventLoop);

@@ -5,7 +5,10 @@ package top.dreamlike.nativeLib.inotify;
 import top.dreamlike.common.CType;
 import top.dreamlike.helper.NativeHelper;
 
-import java.lang.foreign.*;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.VarHandle;
 
 public class inotify_event {
@@ -133,7 +136,4 @@ public class inotify_event {
         return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
     }
 
-    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
-        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
-    }
 }

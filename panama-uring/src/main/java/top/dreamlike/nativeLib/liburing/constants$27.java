@@ -3,10 +3,10 @@
 package top.dreamlike.nativeLib.liburing;
 
 import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
-
 class constants$27 {
 
     static final FunctionDescriptor io_uring_register_restrictions$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,

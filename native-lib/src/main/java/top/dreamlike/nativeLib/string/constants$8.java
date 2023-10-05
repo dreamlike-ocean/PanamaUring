@@ -3,11 +3,11 @@
 package top.dreamlike.nativeLib.string;
 
 import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
-
 class constants$8 {
 
     static final FunctionDescriptor stpcpy$FUNC = FunctionDescriptor.of(CType.C_POINTER$LAYOUT,

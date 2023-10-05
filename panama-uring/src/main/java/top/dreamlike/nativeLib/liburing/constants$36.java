@@ -3,11 +3,11 @@
 package top.dreamlike.nativeLib.liburing;
 
 import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
-
 class constants$36 {
 
     static final FunctionDescriptor io_uring_wait_cqe_nr$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,

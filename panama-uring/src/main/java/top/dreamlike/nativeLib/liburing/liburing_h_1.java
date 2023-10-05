@@ -10,6 +10,7 @@ import java.lang.invoke.MethodHandle;
 
 import static top.dreamlike.nativeLib.liburing.liburing_h.*;
 
+import top.dreamlike.helper.RuntimeHelper;
 class liburing_h_1 {
 
     public static MethodHandle io_uring_prep_timeout$MH() {

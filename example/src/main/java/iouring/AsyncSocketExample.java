@@ -7,7 +7,6 @@ import top.dreamlike.eventloop.IOUringEventLoop;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class AsyncSocketExample {
@@ -46,19 +45,11 @@ public class AsyncSocketExample {
             //recv示例
 //            String s = new String(asyncSocket.recvSelected(1024).get());
             byte[] buf = new byte[1024];
-            Integer recvRes = asyncSocket.recv(buf).get();
-            String hello = new String(buf, 0, recvRes);
+            Long recvRes = asyncSocket.recv(buf).get();
+            String hello = new String(buf, 0, recvRes.intValue());
             System.out.println("client recv:" + hello);
             CountDownLatch count = new CountDownLatch(10);
 
-            Flow.Subscription recvMulti = asyncSocket.recvMulti(bytes -> {
-                System.out.println("GET:" + new String(bytes));
-                count.countDown();
-            });
-            recvMulti.request(10);
-            count.await();
-
-            recvMulti.cancel();
             vertx.close();
         } catch (Exception e) {
         }

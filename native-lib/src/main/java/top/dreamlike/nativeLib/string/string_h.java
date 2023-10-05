@@ -7,7 +7,8 @@ import top.dreamlike.common.CType;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
-import static java.lang.foreign.ValueLayout.OfAddress;
+import top.dreamlike.helper.RuntimeHelper;
+
 public class string_h  {
 
     /* package-private */ string_h() {}
@@ -193,8 +194,6 @@ public class string_h  {
             throw new AssertionError("should not reach here", ex$);
         }
     }
-    public static OfAddress __locale_t = CType.C_POINTER$LAYOUT;
-    public static OfAddress locale_t = CType.C_POINTER$LAYOUT;
 
     public static MethodHandle strcoll_l$MH() {
         return RuntimeHelper.requireNonNull(constants$2.strcoll_l$MH, "strcoll_l");

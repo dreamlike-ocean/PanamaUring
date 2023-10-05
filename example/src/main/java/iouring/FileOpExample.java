@@ -26,17 +26,16 @@ public class FileOpExample {
         Integer integer = write.get();
         System.out.println("async write res:" + integer);
         AsyncFile readFile = ioUringEventLoop.openFile("demo.txt", O_RDONLY());
-        try (Arena arena = Arena.openShared()) {
+        try (Arena arena = Arena.ofConfined()) {
             MemorySegment memorySegment = arena.allocate(1024);
             CompletableFuture<Integer> read = readFile.readUnsafe(0, memorySegment);
             Integer length = read.get();
+            System.out.println("async read Length" + length);
             byte[] res = memorySegment.asSlice(0, length).toArray(ValueLayout.JAVA_BYTE);
             System.out.println("read all :" + new String(res));
         }
 
         ioUringEventLoop.shutdown();
-
-
     }
 
 

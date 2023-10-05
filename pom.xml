@@ -12,14 +12,15 @@
     <packaging>pom</packaging>
     <version>1.0</version>
     <properties>
-        <java.version>20</java.version>
-        <maven.compiler.source>20</maven.compiler.source>
-        <maven.compiler.target>20</maven.compiler.target>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <panama.version>2.2.0</panama.version>
+        <panama.version>3.0.0</panama.version>
         <vertx.version>4.3.7</vertx.version>
-        <vertx-async.version>2.2.0</vertx-async.version>
-        <native-lib>2.2.0</native-lib>
+        <vertx-async.version>3.0.0</vertx-async.version>
+        <native-lib>3.0.0</native-lib>
+        <mutiny.version>2.5.0</mutiny.version>
     </properties>
     <licenses>
         <license>
@@ -130,6 +131,11 @@
     </profiles>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.smallrye.reactive</groupId>
+                <artifactId>mutiny</artifactId>
+                <version>${mutiny.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.github.dreamlike-ocean</groupId>
                 <artifactId>native-lib</artifactId>

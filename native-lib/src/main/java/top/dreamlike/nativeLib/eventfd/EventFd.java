@@ -36,7 +36,7 @@ public class EventFd implements AutoCloseable {
     }
 
     public long readSync() {
-        try (Arena session = Arena.openConfined()) {
+        try (Arena session = Arena.ofConfined()) {
             MemorySegment tmp = session.allocate(JAVA_LONG, 0);
             readSyncUnsafe(tmp);
             return tmp.get(JAVA_LONG, 0);

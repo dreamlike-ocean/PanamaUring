@@ -1,5 +1,6 @@
 package top.dreamlike.eventloop;
 
+import io.smallrye.mutiny.Uni;
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.AsyncFd;
 import top.dreamlike.async.IOOpResult;
@@ -37,7 +38,7 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         ioUring = new IOUring(ringSize, autoBufferSize);
         setName("io-uring-eventloop-" + atomicInteger.getAndIncrement());
         this.autoSubmitDuration = new AtomicLong(autoSubmitDuration);
-//        scheduleTask(this::autoFlushTask, Duration.ofMillis(autoSubmitDuration));
+        // scheduleTask(this::autoFlushTask, Duration.ofMillis(autoSubmitDuration));
         // 直接投递 不用考虑线程安全问题 此时没有竞争
         timerTasks.offer(new TimerTask(this::autoFlushTask, System.currentTimeMillis() + autoSubmitDuration));
     }
@@ -46,7 +47,6 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         flush();
         scheduleTask(this::autoFlushTask, Duration.ofMillis(autoSubmitDuration.get()));
     }
-
 
     public void setAutoSubmitDuration(long autoSubmitDuration) {
         this.autoSubmitDuration.set(autoSubmitDuration);
@@ -75,7 +75,6 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         ioUring.waitComplete(duration);
     }
 
-
     public void shutdown() {
         close.compareAndSet(false, true);
     }
@@ -96,17 +95,14 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         return new AsyncWatchService(this);
     }
 
-
     public AsyncSocket openSocket(String host, int port) {
         InetSocketAddress address = new InetSocketAddress(host, port);
         return new AsyncSocket(address, this);
     }
 
-
     public CompletableFuture<Integer> registerEventFd() {
         return runOnEventLoop(ioUring::registerEventFd);
     }
-
 
     @Unsafe("并发问题，不推荐直接使用")
     public List<IOOpResult> submitAndWait(int max) {
@@ -145,12 +141,12 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         return future;
     }
 
-
     public <T> CompletableFuture<T> submitLinkedOpSafe(Supplier<CompletableFuture<T>> ops) {
         checkCaptureContainAsyncFd(ops);
         return submitLinkedOpUnsafe(ops);
     }
 
+    @Deprecated
     public CompletableFuture<Integer> cancel(long userData, int flag, boolean needSummit) {
         return runOnEventLoop((promise) -> {
             boolean contain = ioUring.contain(userData);
@@ -159,7 +155,7 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
                 return;
             }
             ioUring.prep_cancel(userData, flag, res -> {
-                //errno_h.EALREADY 也算取消成功
+                // errno_h.EALREADY 也算取消成功
                 if (res >= 0) {
                     promise.complete(res);
                     return;
@@ -174,8 +170,9 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
                 String errorMsg = switch (res) {
                     case errno_h.ENOENT -> "user_data could not be located";
                     case errno_h.EINVAL -> "One of the fields set in the SQE was invalid";
-//                    case errno_h.EALREADY ->
-//                            " The execution state of the request has progressed far enough that cancellation is no longer possible";
+                    // case errno_h.EALREADY ->
+                    // " The execution state of the request has progressed far enough that
+                    // cancellation is no longer possible";
                     default -> NativeHelper.getErrorStr(res);
                 };
                 promise.completeExceptionally(new NativeCallException(errorMsg));
@@ -183,12 +180,30 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
             flush();
         });
     }
+
+    @Deprecated
     public CompletableFuture<Integer> cancel(long userData, int flag) {
-       return cancel(userData, flag,  false);
+        return cancel(userData, flag, false);
     }
 
+    /**
+     * 不支持cancel cancel_op 要不就太复杂了
+     *
+     * @param userData 对应op返回的userdata
+     * @param flag     cancel的flag
+     * @return
+     */
+    public Uni<Integer> cancelAsync(long userData, int flag) {
+        return Uni.createFrom()
+                .completionStage(() -> cancel(userData, flag, false));
+    }
 
-    //要求全部捕获的参数都得是同一个eventloop才可以
+    public Uni<Integer> cancelAsync(long userData, int flag, boolean needSummit) {
+        return Uni.createFrom()
+         .completionStage(() -> cancel(userData, flag, needSummit));
+    }
+
+    // 要求全部捕获的参数都得是同一个eventloop才可以
     private boolean checkCaptureContainAsyncFd(Object ops) {
         try {
             for (Field field : ops.getClass().getDeclaredFields()) {
@@ -209,7 +224,6 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         return true;
     }
 
-
     static {
         AccessHelper.fetchIOURing = loop -> loop.ioUring;
     }
@@ -229,7 +243,6 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         ioUring.close();
     }
 
-
     @Override
     protected void afterClose() {
         for (TimerTask task : timerTasks) {
@@ -237,7 +250,7 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
                 task.future.cancel(true);
             }
         }
-        //若当前的io uring关闭 可能会导致有些服务不能结束
+        // 若当前的io uring关闭 可能会导致有些服务不能结束
         while (!tasks.isEmpty()) {
             tasks.poll().run();
         }

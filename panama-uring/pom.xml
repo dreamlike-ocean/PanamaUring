@@ -18,6 +18,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.smallrye.reactive</groupId>
+            <artifactId>mutiny</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.github.dreamlike-ocean</groupId>
             <artifactId>native-lib</artifactId>
         </dependency>
@@ -54,7 +58,7 @@
                     <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
                 <executions>
-                    <execution>
+                  <execution>
                         <id>package-all-dependency</id>
                         <phase>package</phase>
                         <goals>

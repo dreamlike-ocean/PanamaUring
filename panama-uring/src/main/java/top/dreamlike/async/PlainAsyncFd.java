@@ -1,12 +1,14 @@
 package top.dreamlike.async;
 
+import io.smallrye.mutiny.Uni;
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.eventloop.IOUringEventLoop;
 import top.dreamlike.extension.NotEnoughSqeException;
+import top.dreamlike.extension.memory.OwnershipMemory;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
-import top.dreamlike.nativeLib.unistd.unistd_h;
+import top.dreamlike.helper.Pair;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -18,8 +20,6 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 public abstract non-sealed class PlainAsyncFd extends AsyncFd {
     protected IOUring ioUring;
 
-    protected final AtomicBoolean closed = new AtomicBoolean(false);
-
     protected PlainAsyncFd(IOUringEventLoop eventLoop) {
         super(eventLoop);
         ioUring = AccessHelper.fetchIOURing.apply(eventLoop);
@@ -30,15 +30,16 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
         return eventLoop;
     }
 
-
     public CompletableFuture<byte[]> read(int offset, int length) {
         if (closed()) {
             throw new NativeCallException("file has closed");
         }
-        Arena arena = Arena.openShared();
+        Arena arena = Arena.ofShared();
         MemorySegment buffer = arena.allocate(length);
         return readUnsafe(offset, buffer)
-                .thenCompose(i -> i < 0 ? CompletableFuture.failedStage(new NativeCallException(NativeHelper.getErrorStr(-i))) : CompletableFuture.completedFuture(i))
+                .thenCompose(i -> i < 0
+                        ? CompletableFuture.failedStage(new NativeCallException(NativeHelper.getErrorStr(-i)))
+                        : CompletableFuture.completedFuture(i))
                 .thenApply(i -> {
                     byte[] bytes = buffer.asSlice(0, i).toArray(JAVA_BYTE);
                     arena.close();
@@ -58,11 +59,39 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
 
         CompletableFuture<Integer> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
-            if (!ioUring.prep_read(readFd(), offset, memorySegment, future::complete)) {
+            //防止有Confined的内存跨线程
+            MemorySegment unsafeMemory = MemorySegment.ofAddress(memorySegment.address()).reinterpret(memorySegment.byteSize());
+            if (!ioUring.prep_read(readFd(), offset, unsafeMemory, future::complete)) {
                 future.completeExceptionally(new NotEnoughSqeException());
             }
         });
         return future;
+    }
+
+    public Uni<Pair<OwnershipMemory, Integer>> readUnsafeLazy(int offset, OwnershipMemory memory) {
+        if (closed()) {
+            throw new NativeCallException("file has closed");
+        }
+        Uni<Pair<OwnershipMemory, Integer>> lazyRes = Uni.createFrom()
+                .emitter(ue -> eventLoop.runOnEventLoop(() -> {
+                    AtomicBoolean end = new AtomicBoolean(false);
+                    long userData = ioUring.prep_read_and_get_user_data(readFd(), offset, memory.resource(), sysCallRes -> {
+                        if (end.compareAndSet(false, true)) {
+                            ue.complete(new Pair<>(memory, sysCallRes));
+                        }else {
+                            //async op被取消的场景
+                            memory.drop();
+                        }
+                    });
+                    if (userData == IOUring.NO_SQE) {
+                        memory.drop();
+                        end.set(true);
+                        ue.fail(new NotEnoughSqeException());
+                        return;
+                    }
+                    ue.onTermination(() -> onTermination(end, userData));
+                }));
+        return lazyRes;
     }
 
     public CompletableFuture<Integer> write(int fileOffset, byte[] buffer, int bufferOffset, int bufferLength) {
@@ -74,7 +103,7 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
             throw new NativeCallException("file has closed");
         }
 
-        Arena session = Arena.openShared();
+        Arena session = Arena.ofShared();
         CompletableFuture<Integer> future = new CompletableFuture<>();
         MemorySegment memorySegment = session.allocate(bufferLength);
         MemorySegment.copy(buffer, bufferOffset, memorySegment, JAVA_BYTE, 0, bufferLength);
@@ -99,35 +128,57 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
         }
         CompletableFuture<Integer> future = new CompletableFuture<>();
         eventLoop.runOnEventLoop(() -> {
-            if (!ioUring.prep_write(writeFd(), offset, memorySegment, future::complete)) {
+            MemorySegment unsafeMemory = MemorySegment.ofAddress(memorySegment.address())
+                    .reinterpret(memorySegment.byteSize());
+            if (!ioUring.prep_write(writeFd(), offset, unsafeMemory, future::complete)) {
                 future.completeExceptionally(new NotEnoughSqeException());
             }
         });
         return future;
     }
 
-    public boolean closed() {
-        return closed.get();
-    }
-
-    protected abstract int readFd();
-
-
-    protected void close() {
-        if (closed.compareAndSet(false, true)) {
-            try {
-                unistd_h.close(readFd());
-                if (readFd() != writeFd()) {
-                    unistd_h.close(writeFd());
-                }
-            } catch (RuntimeException e) {
-                closed.set(false);
-                throw e;
-            }
+    /**
+     * 这里解决的是流的终止和MemorySegment所有权生命周期并不一致的问题
+     * 只有成功回调才会将所有权释放回用户侧
+     * @param offset        文件偏移量
+     * @param memorySegment 所有权移交给io_uring语义的内存段
+     * @return
+     */
+    public Uni<Pair<OwnershipMemory, Integer>> writeUnsafeLazy(int offset, OwnershipMemory memorySegment) {
+        if (closed.get()) {
+            throw new NativeCallException("file has closed");
         }
+        Uni<Pair<OwnershipMemory, Integer>> lazyRes = Uni.createFrom()
+                .emitter((ue) -> eventLoop.runOnEventLoop(() -> {
+
+                    AtomicBoolean end = new AtomicBoolean(false);
+                    long userData = ioUring.prep_write_and_get_user_data(writeFd(), offset, memorySegment.resource(), (sysCallRes) -> {
+                                //即使cancel成功了 io_uring仍旧存在回调
+                                // 转移所有权给下游
+                        if (end.compareAndSet(false, true)) {
+                                    ue.complete(new Pair<>(memorySegment, sysCallRes));
+                                } else  {
+                                    //发现被取消了直接drop
+                                    memorySegment.drop();
+                                }
+                            });
+
+                    if (userData == IOUring.NO_SQE) {
+                        end.set(true);
+                        memorySegment.drop();
+                        ue.fail(new NotEnoughSqeException());
+                        return;
+                    }
+
+                    ue.onTermination(() -> onTermination(end, userData));
+
+                }));
+
+        return lazyRes;
     }
 
-    protected int writeFd() {
-        return readFd();
-    }
+
+
+
+
 }

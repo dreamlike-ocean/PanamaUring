@@ -4,8 +4,11 @@ module top.dremalike.panama.uring.linux.x86_64 {
     exports top.dreamlike.async.socket;
     exports top.dreamlike.async;
     exports top.dreamlike.eventloop;
+    exports top.dreamlike.extension.memory;
+    exports top.dreamlike.extension.fp;
     requires jctools.core;
     requires jdk.unsupported;
     requires top.dreamlike.nativeLib;
     requires org.slf4j;
+    requires io.smallrye.mutiny;
 }

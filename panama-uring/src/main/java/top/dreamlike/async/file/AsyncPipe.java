@@ -24,7 +24,7 @@ public class AsyncPipe extends PlainAsyncFd {
 
     public AsyncPipe(IOUringEventLoop eventLoop) {
         super(eventLoop);
-        try (Arena session = Arena.openConfined()) {
+        try (Arena session = Arena.ofConfined()) {
             MemorySegment pipes = session.allocateArray(JAVA_INT, 2);
             int res = pipe(pipes);
             if (res == -1) {
@@ -36,12 +36,12 @@ public class AsyncPipe extends PlainAsyncFd {
 
     }
 
+    @Deprecated
     @Override
     public CompletableFuture<Integer> readUnsafe(int offset, MemorySegment memorySegment) {
         return super.readUnsafe(offset, memorySegment)
                 .thenCompose(res -> res < 0 ? CompletableFuture.failedFuture(new NativeCallException(NativeHelper.getErrorStr(-res))) : CompletableFuture.completedFuture(res));
     }
-
     @Override
     public IOUringEventLoop fetchEventLoop() {
         return eventLoop;

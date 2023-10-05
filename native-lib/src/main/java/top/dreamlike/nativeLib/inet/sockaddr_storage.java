@@ -61,10 +61,6 @@ public class sockaddr_storage {
     public static MemorySegment allocateArray(int len, SegmentAllocator allocator) {
         return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
     }
-
-    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
-        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
-    }
 }
 
 

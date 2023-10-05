@@ -1,21 +1,22 @@
 package top.dreamlike.epoll.async;
 
+import io.smallrye.mutiny.Multi;
 import top.dreamlike.async.AsyncFd;
 import top.dreamlike.async.socket.extension.AsyncServerSocketOps;
 import top.dreamlike.async.socket.extension.EpollFlow;
 import top.dreamlike.eventloop.EpollUringEventLoop;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
-import top.dreamlike.nativeLib.in.in_h;
-import top.dreamlike.nativeLib.in.sockaddr;
-import top.dreamlike.nativeLib.in.sockaddr_in;
+import top.dreamlike.nativeLib.inet.inet_h;
+import top.dreamlike.nativeLib.inet.sockaddr;
+import top.dreamlike.nativeLib.inet.sockaddr_in;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
@@ -43,11 +44,11 @@ public final class EpollAsyncServerSocket extends AsyncFd implements AsyncServer
     public CompletableFuture<EpollAsyncSocket> accept() {
         var res = new CompletableFuture<EpollAsyncSocket>();
         eventLoop.runOnEventLoop(() -> {
-            fetchEventLoop().registerEvent(serverFd, EPOLLIN() | EPOLLONESHOT(), (__) -> {
-                try (Arena session = Arena.openConfined()) {
+            fetchEventLoop().epollMode().registerReadEvent(serverFd, EPOLLIN() | EPOLLONESHOT(), (__) -> {
+                try (Arena session = Arena.ofConfined()) {
                     MemorySegment client_addr = sockaddr.allocate(session);
                     MemorySegment client_addr_len = session.allocate(JAVA_INT, (int) sockaddr.sizeof());
-                    int fd = in_h.accept(serverFd, client_addr, client_addr_len);
+                    int fd = inet_h.accept(serverFd, client_addr, client_addr_len);
                     if (fd < -1) {
                         res.completeExceptionally(new NativeCallException(NativeHelper.getNowError()));
                         return;
@@ -56,7 +57,7 @@ public final class EpollAsyncServerSocket extends AsyncFd implements AsyncServer
                     int port = Short.toUnsignedInt(ntohs(sin_port));
                     MemorySegment remoteHost = inet_ntoa(sockaddr_in.sin_addr$slice(client_addr));
                     long strlen = strlen(remoteHost);
-                    String host = new String(MemorySegment.ofAddress(remoteHost.address(), strlen, SegmentScope.global()).toArray(JAVA_BYTE));
+                    String host = new String(remoteHost.reinterpret(strlen).toArray(JAVA_BYTE));
                     res.complete(new EpollAsyncSocket(fd, host, port, fetchEventLoop()));
                 }
             });
@@ -68,11 +69,11 @@ public final class EpollAsyncServerSocket extends AsyncFd implements AsyncServer
     public Flow.Subscription acceptMulti(Consumer<EpollAsyncSocket> socketCallBack) {
         var flow = new EpollFlow<>(Integer.MAX_VALUE, serverFd, eventLoop, socketCallBack);
         eventLoop.runOnEventLoop(() -> {
-            eventLoop.registerEvent(serverFd, EPOLLIN(), (__) -> {
-                try (Arena session = Arena.openConfined()) {
+            fetchEventLoop().epollMode().registerReadEvent(serverFd, EPOLLIN(), (__) -> {
+                try (Arena session = Arena.ofConfined()) {
                     MemorySegment client_addr = sockaddr.allocate(session);
                     MemorySegment client_addr_len = session.allocate(JAVA_INT, (int) sockaddr.sizeof());
-                    int fd = in_h.accept(serverFd, client_addr, client_addr_len);
+                    int fd = inet_h.accept(serverFd, client_addr, client_addr_len);
                     if (fd < -1) {
                         flow.onError(new NativeCallException(NativeHelper.getErrorStr(-fd)));
                         flow.cancel();
@@ -82,7 +83,7 @@ public final class EpollAsyncServerSocket extends AsyncFd implements AsyncServer
                     int port = Short.toUnsignedInt(ntohs(sin_port));
                     MemorySegment remoteHost = inet_ntoa(sockaddr_in.sin_addr$slice(client_addr));
                     long strlen = strlen(remoteHost);
-                    String host = new String(MemorySegment.ofAddress(remoteHost.address(), strlen, SegmentScope.global()).toArray(JAVA_BYTE));
+                    String host = new String(remoteHost.reinterpret(strlen).toArray(JAVA_BYTE));
                     boolean allowNext = flow.offer(new EpollAsyncSocket(fd, host, port, eventLoop));
                     if (!allowNext) {
                         flow.cancel();
@@ -93,10 +94,48 @@ public final class EpollAsyncServerSocket extends AsyncFd implements AsyncServer
         return flow;
     }
 
+    public Multi<EpollAsyncSocket> acceptMultiLazy(Supplier<EpollUringEventLoop> epollEventLoopSupplier) {
+        return Multi.createFrom()
+                .emitter(me -> eventLoop.runOnEventLoop(() -> {
+                    fetchEventLoop().epollMode().registerReadEvent(serverFd, EPOLLIN(), (__) -> {
+
+                        if (me.isCancelled()) {
+                            fetchEventLoop().epollMode().removeEvent(serverFd, EPOLLIN());
+                            return;
+                        }
+
+                        try (Arena session = Arena.ofConfined()) {
+                            MemorySegment client_addr = sockaddr.allocate(session);
+                            MemorySegment client_addr_len = session.allocate(JAVA_INT, (int) sockaddr.sizeof());
+                            int fd = inet_h.accept(serverFd, client_addr, client_addr_len);
+                            if (fd < -1) {
+                                fetchEventLoop().epollMode().removeEvent(serverFd, EPOLLIN());
+                                me.fail(new NativeCallException(NativeHelper.getErrorStr(-fd)));
+                                return;
+                            }
+                            short sin_port = sockaddr_in.sin_port$get(client_addr);
+                            int port = Short.toUnsignedInt(ntohs(sin_port));
+                            MemorySegment remoteHost = inet_ntoa(sockaddr_in.sin_addr$slice(client_addr));
+                            long strlen = strlen(remoteHost);
+                            String host = new String(remoteHost.reinterpret(strlen).toArray(JAVA_BYTE));
+                            me.emit(new EpollAsyncSocket(fd, host, port, epollEventLoopSupplier.get()));
+                        }
+                    });
+                }));
+    }
+
+    public Multi<EpollAsyncSocket> acceptMultiLazy() {
+        return acceptMultiLazy(() -> eventLoop);
+    }
+
+
     @Override
     public EpollUringEventLoop fetchEventLoop() {
         return eventLoop;
     }
 
-
+    @Override
+    protected int readFd() {
+        throw new UnsupportedOperationException();
+    }
 }

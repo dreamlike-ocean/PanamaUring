@@ -3,11 +3,10 @@
 package top.dreamlike.nativeLib.inet;
 
 import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
-
 class constants$8 {
 
     static final FunctionDescriptor inet_net_ntop$FUNC = FunctionDescriptor.of(CType.C_POINTER$LAYOUT,
@@ -49,7 +48,6 @@ class constants$8 {
         "inet_nsap_ntoa",
         constants$8.inet_nsap_ntoa$FUNC
     );
-    static final MemorySegment __FD_ZERO_STOS$SEGMENT = RuntimeHelper.CONSTANT_ALLOCATOR.allocateUtf8String("stosq");
 }
 
 

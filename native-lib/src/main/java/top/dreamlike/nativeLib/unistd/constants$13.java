@@ -3,17 +3,19 @@
 package top.dreamlike.nativeLib.unistd;
 
 import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
 
-import static java.lang.foreign.ValueLayout.OfAddress;
 import static java.lang.foreign.ValueLayout.OfInt;
+
 class constants$13 {
 
-    static final  OfAddress optarg$LAYOUT = CType.C_POINTER$LAYOUT;
+    static final AddressLayout optarg$LAYOUT = CType.C_POINTER$LAYOUT;
     static final VarHandle optarg$VH = constants$13.optarg$LAYOUT.varHandle();
     static final MemorySegment optarg$SEGMENT = RuntimeHelper.lookupGlobalVariable("optarg", constants$13.optarg$LAYOUT);
     static final  OfInt optind$LAYOUT = CType.C_INT$LAYOUT;

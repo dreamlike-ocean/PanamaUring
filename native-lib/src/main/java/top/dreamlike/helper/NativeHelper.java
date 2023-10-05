@@ -1,7 +1,7 @@
 package top.dreamlike.helper;
 
 import top.dreamlike.nativeLib.errno.errno_h;
-import top.dreamlike.nativeLib.in.sockaddr_in;
+import top.dreamlike.nativeLib.inet.sockaddr_in;
 import top.dreamlike.nativeLib.inet.sockaddr_in6;
 
 import java.io.*;
@@ -80,7 +80,7 @@ public class NativeHelper {
         for (int errNo = 0; errNo <= 256; errNo++) {
             MemorySegment memoryAddress = strerror(errNo);
             long strlen = strlen(memoryAddress);
-            MemorySegment memorySegment = MemorySegment.ofAddress(memoryAddress.address(), strlen);
+            MemorySegment memorySegment = memoryAddress.reinterpret(strlen);
             errStr[errNo] = new String(memorySegment.toArray(JAVA_BYTE));
         }
     }
@@ -107,7 +107,7 @@ public class NativeHelper {
     public static int serverListen(String host, int port) {
         int socketFd = socket(AF_INET(), SOCK_STREAM(), 0);
         if (socketFd == -1) throw new IllegalStateException("open listen socket fail");
-        try (Arena session = Arena.openConfined()) {
+        try (Arena session = Arena.ofConfined()) {
             MemorySegment serverAddr = sockaddr_in.allocate(session);
             bzero(serverAddr, sockaddr_in.sizeof());
             sockaddr_in.sin_family$set(serverAddr, (short) AF_INET());
@@ -163,7 +163,7 @@ public class NativeHelper {
     }
 
     public static int getErrorNo(){
-        return  errno_h.__errno_location().get(ValueLayout.JAVA_INT, 0);
+        return errno_h.errno_location().reinterpret(Long.MAX_VALUE).get(ValueLayout.JAVA_INT, 0);
     }
 
     public static String getNowError() {
@@ -182,11 +182,11 @@ public class NativeHelper {
     public static int makeNoBlocking(int fd) {
         int flags = fcntl(fd, F_GETFL(), 0);
         if (flags == -1) {
-            return errno_h.__errno_location().get(ValueLayout.JAVA_INT, 0);
+            return errno_h.errno_location().get(ValueLayout.JAVA_INT, 0);
         }
         int res = fcntl(fd, F_SETFL(), flags | O_NONBLOCK());
         if (res == -1) {
-            return errno_h.__errno_location().get(ValueLayout.JAVA_INT, 0);
+            return errno_h.errno_location().get(ValueLayout.JAVA_INT, 0);
         }
         return 0;
     }
@@ -194,18 +194,18 @@ public class NativeHelper {
     public static int makeBlocking(int fd) {
         int flags = fcntl(fd, F_GETFL(), 0);
         if (flags == -1) {
-            return errno_h.__errno_location().get(ValueLayout.JAVA_INT, 0);
+            return errno_h.errno_location().get(ValueLayout.JAVA_INT, 0);
         }
         flags &= ~O_NONBLOCK();
         int res = fcntl(fd, F_SETFL(), flags);
         if (res == -1) {
-            return errno_h.__errno_location().get(ValueLayout.JAVA_INT, 0);
+            return errno_h.errno_location().get(ValueLayout.JAVA_INT, 0);
         }
         return 0;
     }
 
     public static int setSocket(int fd,int optName){
-        try (Arena session = Arena.openConfined()) {
+        try (Arena session = Arena.ofConfined()) {
             MemorySegment val = session.allocate(JAVA_INT, 1);
             return setsockopt(fd, SOL_SOCKET(), optName, val, (int) val.byteSize());
         }
@@ -218,7 +218,7 @@ public class NativeHelper {
     public static String getIpV4Host(MemorySegment sockaddrSegement) {
         MemorySegment memoryAddress = inet_ntoa(sockaddr_in.sin_addr$slice(sockaddrSegement));
         long strlen = strlen(memoryAddress);
-        return new String(MemorySegment.ofAddress(memoryAddress.address(), strlen).toArray(JAVA_BYTE));
+        return new String(memoryAddress.reinterpret(strlen).toArray(JAVA_BYTE));
     }
 
 
@@ -290,7 +290,7 @@ public class NativeHelper {
      */
     @Unsafe("存在段错误风险")
     public static MemorySegment unsafePointConvertor(MemorySegment p) {
-        return MemorySegment.ofAddress(p.address(), Long.MAX_VALUE);
+        return p.reinterpret(Long.MAX_VALUE);
     }
 
 

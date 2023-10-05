@@ -4,8 +4,10 @@ package top.dreamlike.nativeLib.inet;
 
 import top.dreamlike.common.CType;
 
-import java.lang.foreign.*;
-
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 public class ip_mreq_source {
 
     static final  GroupLayout $struct$LAYOUT = MemoryLayout.structLayout(
@@ -37,9 +39,6 @@ public class ip_mreq_source {
         return allocator.allocate(MemoryLayout.sequenceLayout(len, $LAYOUT()));
     }
 
-    public static MemorySegment ofAddress(MemorySegment addr, Arena session) {
-        return RuntimeHelper.asArray(addr, $LAYOUT(), 1, session);
-    }
 }
 
 

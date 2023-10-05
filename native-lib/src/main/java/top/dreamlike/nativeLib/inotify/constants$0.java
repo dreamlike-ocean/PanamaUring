@@ -3,10 +3,10 @@
 package top.dreamlike.nativeLib.inotify;
 
 import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
-
 class constants$0 {
 
     static final FunctionDescriptor inotify_init$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT);

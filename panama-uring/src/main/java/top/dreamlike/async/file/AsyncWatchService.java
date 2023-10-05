@@ -93,4 +93,9 @@ non-sealed public class AsyncWatchService extends AsyncFd {
     public boolean closed() {
         return closed.get();
     }
+
+    @Override
+    protected int readFd() {
+        return ifd;
+    }
 }

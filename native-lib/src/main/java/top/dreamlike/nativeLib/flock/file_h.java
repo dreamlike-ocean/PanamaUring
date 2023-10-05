@@ -3,11 +3,13 @@
 package top.dreamlike.nativeLib.flock;
 
 import top.dreamlike.common.CType;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
-import static java.lang.foreign.ValueLayout.*;
+import static java.lang.foreign.ValueLayout.OfInt;
+import static java.lang.foreign.ValueLayout.OfLong;
 
 public class file_h {
 
@@ -396,34 +398,6 @@ public class file_h {
         return (int) 2L;
     }
 
-    public static OfShort __int16_t = CType.C_SHORT$LAYOUT;
-    public static OfInt __int32_t = CType.C_INT$LAYOUT;
-    public static OfLong __int64_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfShort __int_least16_t = CType.C_SHORT$LAYOUT;
-    public static OfInt __int_least32_t = CType.C_INT$LAYOUT;
-    public static OfLong __int_least64_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __quad_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __intmax_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __off_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __off64_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfInt __pid_t = CType.C_INT$LAYOUT;
-    public static OfLong __clock_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __time_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __suseconds_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfInt __daddr_t = CType.C_INT$LAYOUT;
-    public static OfInt __key_t = CType.C_INT$LAYOUT;
-    public static OfInt __clockid_t = CType.C_INT$LAYOUT;
-    public static OfAddress __timer_t = CType.C_POINTER$LAYOUT;
-    public static OfLong __blksize_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __blkcnt_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __blkcnt64_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __fsword_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __ssize_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __syscall_slong_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfLong __loff_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfAddress __caddr_t = CType.C_POINTER$LAYOUT;
-    public static OfLong __intptr_t = CType.C_LONG_LONG$LAYOUT;
-    public static OfInt __sig_atomic_t = CType.C_INT$LAYOUT;
     public static OfLong off_t = CType.C_LONG_LONG$LAYOUT;
     public static OfInt pid_t = CType.C_INT$LAYOUT;
 
@@ -531,17 +505,7 @@ public class file_h {
         }
     }
 
-    public static long _POSIX_C_SOURCE() {
-        return 200809L;
-    }
 
-    public static long __STDC_ISO_10646__() {
-        return 201706L;
-    }
-
-    public static int __TIMESIZE() {
-        return (int) 64L;
-    }
 
     public static int O_NDELAY() {
         return (int) 2048L;

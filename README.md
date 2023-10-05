@@ -64,7 +64,7 @@ API仍在变动之中**
 > 注意 jdk版本不能升级也不能降级，Panama api可能不一致
 
 - Maven 3.8.4
-- OpenJDK 20
+- OpenJDK 21
 - Linux >= 5.10
 
 构建非常简单
