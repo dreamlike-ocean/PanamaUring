@@ -160,7 +160,7 @@ public class AsyncFile extends PlainAsyncFd {
 
 
     @Override
-    protected int readFd() {
+    public int readFd() {
         return fd;
     }
 
@@ -228,5 +228,11 @@ public class AsyncFile extends PlainAsyncFd {
         eventLoop.scheduleTask(() -> lock0(completableFuture, duration), duration);
     }
 
-
+    @Override
+    public String toString() {
+        return "AsyncFile{" +
+                "fd=" + fd +
+                ", hasLocked=" + hasLocked +
+                '}';
+    }
 }

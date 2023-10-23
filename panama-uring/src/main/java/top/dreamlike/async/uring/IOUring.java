@@ -72,13 +72,26 @@ public class IOUring implements AutoCloseable {
     private EventFd wakeUpFd;
     private MemorySegment wakeUpReadBuffer;
 
-    // todo jdk20之后更换为ScopeLocal实现
-    public static final ThreadLocal<Boolean> startLinked = ThreadLocal.withInitial(() -> false);
+    private static final ThreadLocal<Boolean> startLinked = ThreadLocal.withInitial(() -> false);
+
+    public final LinkedState current = new LinkedState();
 
     private final Queue<Runnable> submitCallBack = new ArrayDeque<>();
 
     public IOUring(int ringSize) {
         this(ringSize, 16);
+    }
+
+    public long prep_splice(int in_fd, int out_fd, long in_offset, long out_offset, int size, int flags, Consumer<IOOpResult> syscallResHandle) {
+        MemorySegment sqe = getSqe();
+        if (sqe == null)
+            return NO_SQE;
+        long opsCount = count.getAndIncrement();
+        io_uring_prep_splice(sqe, in_fd, in_offset, out_fd, out_offset, size, flags);
+        io_uring_sqe.user_data$set(sqe, opsCount);
+        IOOpResult result = new IOOpResult(Op.SPlICE, syscallResHandle);
+        context.put(opsCount, result);
+        return opsCount;
     }
 
     public IOUring(int ringSize, int autoBufferSize) {
@@ -434,7 +447,17 @@ public class IOUring implements AutoCloseable {
     }
 
     protected MemorySegment getSqe() {
-        return getSqe(false);
+        return getSqe(true);
+    }
+
+    public static class LinkedState {
+        public void turnOn() {
+            startLinked.set(true);
+        }
+
+        public void turnoff() {
+            startLinked.set(false);
+        }
     }
 
     protected MemorySegment getSqe(boolean loopUntilGet) {

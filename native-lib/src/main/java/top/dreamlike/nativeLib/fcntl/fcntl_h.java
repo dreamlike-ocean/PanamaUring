@@ -7,6 +7,8 @@ import top.dreamlike.helper.RuntimeHelper;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
+import static top.dreamlike.nativeLib.fcntl.constants$0.splice$MH;
+
 public class fcntl_h  {
 
     /* package-private */ fcntl_h() {}
@@ -288,6 +290,22 @@ public class fcntl_h  {
         return (int)3L;
     }
 
+    public static int SPLICE_F_MOVE() {
+        return 1;
+    }
+
+    public static int SPLICE_F_NONBLOCK() {
+        return 2;
+    }
+
+    public static int SPLICE_F_MORE() {
+        return 4;
+    }
+
+    public static int SPLICE_F_GIFT() {
+        return 8;
+    }
+
     private static MethodHandle fcntl3Args$MH() {
         return RuntimeHelper.requireNonNull(constants$0.fcntl3Args$MH, "fcntl");
     }
@@ -311,6 +329,16 @@ public class fcntl_h  {
             return (int) mh$.invokeExact(__fd, __cmd);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    public static long splice(int fd_in, MemorySegment off_in, int fd_out,
+                              MemorySegment off_out, long len,
+                              int splice_flags) {
+        try {
+            return (long) splice$MH.invoke(fd_in, off_in, fd_out, off_out, len, splice_flags);
+        } catch (Throwable t) {
+            throw new AssertionError("should not reach here", t);
         }
     }
 

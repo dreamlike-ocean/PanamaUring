@@ -72,6 +72,15 @@ class constants$0 {
         "posix_fadvise",
         constants$0.posix_fadvise$FUNC
     );
+
+    static final MethodHandle splice$MH = RuntimeHelper.downcallHandle(
+            "splice",
+            FunctionDescriptor.of(
+                    /*返回值*/CType.C_SSIZE_t$LAYOUT,
+                    /*fd_in*/CType.C_INT$LAYOUT,/*off_in*/ CType.POINTER,
+                    /*fd_out*/ CType.C_INT$LAYOUT,/*off_out*/ CType.POINTER,
+                    /* len */ CType.C_SIZE_t$LAYOUT, /*flags*/ CType.C_INT$LAYOUT)
+    );
 }
 
 

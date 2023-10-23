@@ -19,6 +19,10 @@ public class CType {
     public static final AddressLayout C_POINTER$LAYOUT = ADDRESS.withByteAlignment(8);
     public static final MemorySegment NULL = MemorySegment.NULL;
 
+    public static final OfLong C_SSIZE_t$LAYOUT = JAVA_LONG.withByteAlignment(8);
+
+    public static final OfLong C_SIZE_t$LAYOUT = C_SSIZE_t$LAYOUT;
+
     public static final AddressLayout POINTER = ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE));
 
 }

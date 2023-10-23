@@ -713,10 +713,6 @@ public class liburing_h extends liburing_h_1 {
         }
     }
 
-    public static MethodHandle io_uring_prep_rw$MH() {
-        return RuntimeHelper.requireNonNull(constants$28.io_uring_prep_rw$MH, "io_uring_prep_rw");
-    }
-
     public static void io_uring_prep_rw(int op, MemorySegment sqe, int fd, MemorySegment addr, int len, long offset) {
         MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe);
         io_uring_sqe.opcode$set(sqeSegment, (byte) op);
@@ -733,30 +729,19 @@ public class liburing_h extends liburing_h_1 {
         io_uring_sqe.__pad2$slice(sqeSegment).fill((byte) 0);
     }
 
-    public static MethodHandle io_uring_prep_splice$MH() {
-        return RuntimeHelper.requireNonNull(constants$28.io_uring_prep_splice$MH, "io_uring_prep_splice");
-    }
 
     public static void io_uring_prep_splice(MemorySegment sqe, int fd_in, long off_in, int fd_out, long off_out, int nbytes, int splice_flags) {
-        var mh$ = io_uring_prep_splice$MH();
-        try {
-            mh$.invokeExact(sqe, fd_in, off_in, fd_out, off_out, nbytes, splice_flags);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-
-    public static MethodHandle io_uring_prep_tee$MH() {
-        return RuntimeHelper.requireNonNull(constants$28.io_uring_prep_tee$MH, "io_uring_prep_tee");
+        io_uring_prep_rw(IORING_OP_SPLICE(), sqe, fd_out, MemorySegment.NULL, nbytes, off_out);
+        io_uring_sqe.splice_off_in$set(sqe, off_in);
+        io_uring_sqe.splice_fd_in$set(sqe, fd_in);
+        io_uring_sqe.splice_flags$set(sqe, splice_flags);
     }
 
     public static void io_uring_prep_tee(MemorySegment sqe, int fd_in, int fd_out, int nbytes, int splice_flags) {
-        var mh$ = io_uring_prep_tee$MH();
-        try {
-            mh$.invokeExact(sqe, fd_in, fd_out, nbytes, splice_flags);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
+        io_uring_prep_rw(IORING_OP_TEE(), sqe, fd_out, MemorySegment.NULL, nbytes, 0);
+        io_uring_sqe.splice_off_in$set(sqe, 0);
+        io_uring_sqe.splice_fd_in$set(sqe, fd_in);
+        io_uring_sqe.splice_flags$set(sqe, splice_flags);
     }
 
     public static MethodHandle io_uring_prep_readv$MH() {

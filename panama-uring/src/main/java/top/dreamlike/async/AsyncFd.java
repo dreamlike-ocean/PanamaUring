@@ -42,7 +42,7 @@ sealed public abstract class AsyncFd implements EventLoopAccess permits PlainAsy
         return closed.get();
     }
 
-    protected abstract int readFd();
+    public abstract int readFd();
 
     protected void close() {
         eventLoop.runOnEventLoop(() -> {
@@ -60,7 +60,7 @@ sealed public abstract class AsyncFd implements EventLoopAccess permits PlainAsy
         });
     }
 
-    protected int writeFd() {
+    public int writeFd() {
         return readFd();
     }
 }

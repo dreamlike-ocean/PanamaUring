@@ -424,7 +424,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
     }
 
     @Override
-    protected int readFd() {
+    public int readFd() {
         return fd;
     }
 

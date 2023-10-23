@@ -135,7 +135,7 @@ public final class EpollAsyncServerSocket extends AsyncFd implements AsyncServer
     }
 
     @Override
-    protected int readFd() {
+    public int readFd() {
         throw new UnsupportedOperationException();
     }
 }

@@ -53,12 +53,17 @@ public class AsyncPipe extends PlainAsyncFd {
     }
 
     @Override
-    protected int readFd() {
+    public int readFd() {
         return readFd;
     }
 
     @Override
-    protected int writeFd() {
+    public int writeFd() {
         return writeFd;
+    }
+
+    @Override
+    public String toString() {
+        return STR. "AsyncPipe{ read fd: \{ readFd }, write fd: \{ writeFd } }" ;
     }
 }
