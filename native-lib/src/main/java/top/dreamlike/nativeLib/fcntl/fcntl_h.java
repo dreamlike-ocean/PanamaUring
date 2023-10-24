@@ -7,6 +7,7 @@ import top.dreamlike.helper.RuntimeHelper;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
+import static top.dreamlike.nativeLib.fcntl.constants$0.fstat$MH;
 import static top.dreamlike.nativeLib.fcntl.constants$0.splice$MH;
 
 public class fcntl_h  {
@@ -363,6 +364,14 @@ public class fcntl_h  {
         var mh$ = openat$MH();
         try {
             return (int) mh$.invokeExact(__fd, __file, __oflag);
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    public static int fstat(int fd, MemorySegment statBuf) {
+        try {
+            return (int) fstat$MH.invokeExact(fd, statBuf);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }

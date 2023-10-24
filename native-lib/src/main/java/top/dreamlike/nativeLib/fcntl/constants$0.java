@@ -81,6 +81,15 @@ class constants$0 {
                     /*fd_out*/ CType.C_INT$LAYOUT,/*off_out*/ CType.POINTER,
                     /* len */ CType.C_SIZE_t$LAYOUT, /*flags*/ CType.C_INT$LAYOUT)
     );
+
+    static final MethodHandle fstat$MH = RuntimeHelper.downcallHandle(
+            "fstat",
+            FunctionDescriptor.of(
+                    CType.C_INT$LAYOUT,
+                    /* fd*/CType.C_INT$LAYOUT,
+                    /*statbuf*/ CType.C_POINTER$LAYOUT
+            )
+    );
 }
 
 

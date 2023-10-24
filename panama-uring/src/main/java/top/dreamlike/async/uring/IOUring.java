@@ -74,12 +74,22 @@ public class IOUring implements AutoCloseable {
 
     private static final ThreadLocal<Boolean> startLinked = ThreadLocal.withInitial(() -> false);
 
+    private static final ThreadLocal<Boolean> submitAfterFill = ThreadLocal.withInitial(() -> false);
+
     public final LinkedState current = new LinkedState();
 
     private final Queue<Runnable> submitCallBack = new ArrayDeque<>();
 
     public IOUring(int ringSize) {
         this(ringSize, 16);
+    }
+
+    public void submitAfterFill() {
+        submitAfterFill.set(true);
+    }
+
+    public void closeSubmitAfterFill() {
+        submitAfterFill.set(false);
     }
 
     public long prep_splice(int in_fd, int out_fd, long in_offset, long out_offset, int size, int flags, Consumer<IOOpResult> syscallResHandle) {

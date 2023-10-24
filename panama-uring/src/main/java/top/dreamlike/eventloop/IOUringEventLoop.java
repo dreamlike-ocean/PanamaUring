@@ -1,6 +1,7 @@
 package top.dreamlike.eventloop;
 
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.subscription.UniEmitter;
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.AsyncFd;
 import top.dreamlike.async.IOOpResult;
@@ -16,7 +17,6 @@ import top.dreamlike.helper.Unsafe;
 import top.dreamlike.nativeLib.errno.errno_h;
 import top.dreamlike.nativeLib.fcntl.fcntl_h;
 
-import java.lang.foreign.MemorySegment;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.time.Duration;
@@ -32,19 +32,10 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
     final IOUring ioUring;
 
     private final AtomicLong autoSubmitDuration;
-    private static final AtomicInteger atomicInteger = new AtomicInteger();
+    private static final AtomicInteger eventloopCount = new AtomicInteger();
 
     private final AtomicBoolean start = new AtomicBoolean(false);
-
-    public IOUringEventLoop(int ringSize, int autoBufferSize, long autoSubmitDuration) {
-        super();
-        ioUring = new IOUring(ringSize, autoBufferSize);
-        setName("io-uring-eventloop-" + atomicInteger.getAndIncrement());
-        this.autoSubmitDuration = new AtomicLong(autoSubmitDuration);
-        // scheduleTask(this::autoFlushTask, Duration.ofMillis(autoSubmitDuration));
-        // 直接投递 不用考虑线程安全问题 此时没有竞争
-        timerTasks.offer(new TimerTask(this::autoFlushTask, System.currentTimeMillis() + autoSubmitDuration));
-    }
+    private static final int SENDFILE_STEP = 8 * 1024;
 
     private void autoFlushTask() {
         flush();
@@ -132,12 +123,18 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
         submitLinkedOpUnsafe(ops);
     }
 
-    public Uni<Long> spliceLazy(AsyncFd in, AsyncPipe out, MemorySegment inOffset, int size) {
-        return spliceLazy(in, out, inOffset.address(), -1, size, fcntl_h.SPLICE_F_MOVE());
+    public IOUringEventLoop(int ringSize, int autoBufferSize, long autoSubmitDuration) {
+        super();
+        ioUring = new IOUring(ringSize, autoBufferSize);
+        setName("io-uring-eventloop-" + eventloopCount.getAndIncrement());
+        this.autoSubmitDuration = new AtomicLong(autoSubmitDuration);
+        // scheduleTask(this::autoFlushTask, Duration.ofMillis(autoSubmitDuration));
+        // 直接投递 不用考虑线程安全问题 此时没有竞争
+        timerTasks.offer(new TimerTask(this::autoFlushTask, System.currentTimeMillis() + autoSubmitDuration));
     }
 
-    public Uni<Long> spliceLazy(AsyncPipe in, AsyncFd out, MemorySegment outOffset, int size) {
-        return spliceLazy(in, out, -1, outOffset.address(), size, fcntl_h.SPLICE_F_MOVE());
+    public Uni<Long> spliceLazy(AsyncFd in, AsyncPipe out, long inOffset, int size) {
+        return spliceLazy(in, out, inOffset, -1, size, fcntl_h.SPLICE_F_MOVE());
     }
 
     private Uni<Long> spliceLazy(AsyncFd in, AsyncFd out, long inOffset, long outOffset, int size, int flags) {
@@ -164,6 +161,37 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
                     });
                 }));
     }
+
+    public Uni<Long> spliceLazy(AsyncPipe in, AsyncFd out, long outOffset, int size) {
+        return spliceLazy(in, out, -1, outOffset, size, fcntl_h.SPLICE_F_MOVE());
+    }
+
+    public Uni<Long> sendFile(AsyncFd in, AsyncFd out, long offset, long size) {
+        if (offset < 0) {
+            throw new IllegalArgumentException("offset must greater than 0");
+        }
+        AsyncPipe pipe = new AsyncPipe(this);
+        return Uni.createFrom()
+                .emitter(ue -> {
+                    sendFileSingle(in, out, pipe, offset, 0L, size, ue);
+                });
+    }
+
+    private void sendFileSingle(AsyncFd in, AsyncFd out, AsyncPipe pipe, long in_offset, long hasWrite, long size, UniEmitter<? super Long> ue) {
+        spliceLazy(in, pipe, in_offset, SENDFILE_STEP)
+                .subscribe().with(writeRes -> {
+                    spliceLazy(pipe, out, hasWrite, Math.min(writeRes.intValue(), SENDFILE_STEP))
+                            .subscribe().with(l -> {
+                                long currentWrite = hasWrite + l;
+                                if (l == 0 || currentWrite == size) {
+                                    ue.complete(currentWrite);
+                                } else {
+                                    sendFileSingle(in, out, pipe, currentWrite, currentWrite, size, ue);
+                                }
+                            }, ue::fail);
+                }, ue::fail);
+    }
+
 
     private void setNextOpLinked(Runnable r) {
         try {

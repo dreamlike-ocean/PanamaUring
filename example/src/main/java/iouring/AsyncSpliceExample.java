@@ -4,7 +4,6 @@ import top.dreamlike.async.file.AsyncFile;
 import top.dreamlike.async.file.AsyncPipe;
 import top.dreamlike.eventloop.IOUringEventLoop;
 
-import java.lang.foreign.MemorySegment;
 import java.util.concurrent.CompletableFuture;
 
 import static top.dreamlike.nativeLib.fcntl.fcntl_h.O_RDONLY;
@@ -20,13 +19,14 @@ public class AsyncSpliceExample {
             System.out.println(file);
             System.out.println(pipe);
             CompletableFuture<Void> promise = new CompletableFuture<>();
+
             eventLoop.submitLinkedOpSafe((state) -> {
-                eventLoop.spliceLazy(file, pipe, MemorySegment.NULL, 1024)
-                        .subscribe().with(i -> System.out.println(STR. "file -> pipe res: \{ i }" ));
+                eventLoop.spliceLazy(file, pipe, 0, 4 * 1024)
+                        .subscribe().with(i -> System.out.println(STR. "file -> pipe res: \{ i } " ));
                 state.turnoff();
-                eventLoop.spliceLazy(pipe, targetFile, MemorySegment.NULL, 1024)
+                eventLoop.spliceLazy(pipe, targetFile, 0, 4 * 1024)
                         .subscribe().with(i -> {
-                            System.out.println(STR. "pipe -> file res: \{ i }" );
+                            System.out.println(STR. "pipe -> file res: \{ i } " );
                             promise.complete(null);
                         });
             });
