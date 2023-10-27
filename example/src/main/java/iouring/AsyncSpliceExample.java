@@ -23,7 +23,7 @@ public class AsyncSpliceExample {
             eventLoop.submitLinkedOpSafe((state) -> {
                 eventLoop.spliceLazy(file, pipe, 0, 4 * 1024)
                         .subscribe().with(i -> System.out.println(STR. "file -> pipe res: \{ i } " ));
-                state.turnoff();
+                state.endLink();
                 eventLoop.spliceLazy(pipe, targetFile, 0, 4 * 1024)
                         .subscribe().with(i -> {
                             System.out.println(STR. "pipe -> file res: \{ i } " );

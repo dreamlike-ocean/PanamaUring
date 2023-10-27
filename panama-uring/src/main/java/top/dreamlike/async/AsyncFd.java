@@ -44,7 +44,7 @@ sealed public abstract class AsyncFd implements EventLoopAccess permits PlainAsy
 
     public abstract int readFd();
 
-    protected void close() {
+    public void close() {
         eventLoop.runOnEventLoop(() -> {
             if (closed.compareAndSet(false, true)) {
                 try {

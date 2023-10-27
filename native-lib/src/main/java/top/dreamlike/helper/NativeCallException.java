@@ -5,6 +5,10 @@ public class NativeCallException extends RuntimeException {
         super(message);
     }
 
+    public NativeCallException(Throwable cause) {
+        super(cause);
+    }
+
     public NativeCallException(String message, Throwable cause) {
         super(message, cause);
     }

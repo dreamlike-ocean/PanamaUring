@@ -5,10 +5,7 @@ package top.dreamlike.nativeLib.inet;
 import top.dreamlike.common.CType;
 import top.dreamlike.helper.RuntimeHelper;
 
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
+import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 class constants$5 {
 
@@ -40,14 +37,16 @@ class constants$5 {
     );
     static final MethodHandle ntohs$MH = RuntimeHelper.downcallHandle(
         "ntohs",
-        constants$5.ntohs$FUNC
+            constants$5.ntohs$FUNC,
+            Linker.Option.isTrivial()
     );
     static final FunctionDescriptor htonl$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
         CType.C_INT$LAYOUT
     );
     static final MethodHandle htonl$MH = RuntimeHelper.downcallHandle(
         "htonl",
-        constants$5.htonl$FUNC
+            constants$5.htonl$FUNC,
+            Linker.Option.isTrivial()
     );
     static final FunctionDescriptor htons$FUNC = FunctionDescriptor.of(CType.C_SHORT$LAYOUT,
         CType.C_SHORT$LAYOUT

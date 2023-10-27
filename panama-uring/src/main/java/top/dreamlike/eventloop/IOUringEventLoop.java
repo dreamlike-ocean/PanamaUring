@@ -111,14 +111,14 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
      * @param ops 在这里面写各个对应的async op
      */
     @Unsafe("不校验任何fd是否属于这个eventLoop")
-    public void submitLinkedOpUnsafe(Consumer<IOUring.LinkedState> ops) {
+    public void submitLinkedOpUnsafe(Consumer<IOUring.SqeContext> ops) {
         runOnEventLoop(() -> {
-            ioUring.current.turnOn();
+            ioUring.current.startLink();
             ops.accept(ioUring.current);
         });
     }
 
-    public void submitLinkedOpSafe(Consumer<IOUring.LinkedState> ops) {
+    public void submitLinkedOpSafe(Consumer<IOUring.SqeContext> ops) {
         checkCaptureContainAsyncFd(ops);
         submitLinkedOpUnsafe(ops);
     }
@@ -195,10 +195,10 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
 
     private void setNextOpLinked(Runnable r) {
         try {
-            ioUring.current.turnOn();
+            ioUring.current.startLink();
             r.run();
         } finally {
-            ioUring.current.turnoff();
+            ioUring.current.endLink();
         }
     }
 

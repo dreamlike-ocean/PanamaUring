@@ -6,6 +6,7 @@ import top.dreamlike.common.CType;
 import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
 import java.lang.invoke.MethodHandle;
 class constants$27 {
 
@@ -57,7 +58,8 @@ class constants$27 {
     );
     static final MethodHandle io_uring_cqe_seen$MH = RuntimeHelper.downcallHandle(
         "io_uring_cqe_seen",
-        constants$27.io_uring_cqe_seen$FUNC
+            constants$27.io_uring_cqe_seen$FUNC,
+            Linker.Option.isTrivial()
     );
 }
 
