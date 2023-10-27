@@ -90,7 +90,7 @@ public final class AsyncServerSocket extends AsyncFd implements AsyncServerSocke
                     AtomicLong userDataLazy = new AtomicLong();
                     long userData = uring.prep_accept_multi_and_get_user_data(serverFd, socketInfo -> {
                         if (me.isCancelled()) {
-                            eventLoop.cancelAsync(userDataLazy.get(), 0, true);
+                            eventLoop.cancelAsync(userDataLazy.get(), 0, true).subscribe().with(DO_NOTHING);
                             if (socketInfo.res() >= 0) {
                                 //close 对端fd
                                 unistd_h.close(socketInfo.res());
@@ -99,7 +99,7 @@ public final class AsyncServerSocket extends AsyncFd implements AsyncServerSocke
                         }
                         if (socketInfo.res() < 0) {
                             me.fail(new NativeCallException(NativeHelper.getErrorStr(-socketInfo.res())));
-                            eventLoop.cancelAsync(userDataLazy.get(), 0, true);
+                            eventLoop.cancelAsync(userDataLazy.get(), 0, true).subscribe().with(DO_NOTHING);
                             return;
                         }
                         me.emit(new AsyncSocket(socketInfo.res(), socketInfo.host(), socketInfo.port(), eventLoop));
@@ -123,7 +123,7 @@ public final class AsyncServerSocket extends AsyncFd implements AsyncServerSocke
     }
 
     @Override
-    protected int readFd() {
+    public int readFd() {
         return serverFd;
     }
 }

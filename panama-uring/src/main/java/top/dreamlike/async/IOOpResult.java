@@ -2,16 +2,17 @@ package top.dreamlike.async;
 
 import top.dreamlike.async.uring.Op;
 import top.dreamlike.helper.BiIntConsumer;
+import top.dreamlike.helper.NativeHelper;
 
 import java.lang.foreign.MemorySegment;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public class IOOpResult {
     public int fd;
     public int res;
     public MemorySegment segment;
-
-//    public BiIntConsumer callback;
 
     public final Consumer<IOOpResult> callback;
 
@@ -23,15 +24,26 @@ public class IOOpResult {
 
     public long userData;
 
+    private Map<Object, Object> captureState = new HashMap<>();
+
     private IOOpResult(Op op, BiIntConsumer callback) {
         this.callback = (__) -> callback.consumer(res, bid);
         this.op = op;
     }
 
-    private IOOpResult(Op op, Consumer<IOOpResult> callback) {
+    public IOOpResult(Op op, Consumer<IOOpResult> callback) {
         this.callback = callback;
         this.op = op;
     }
+
+    public <S> S peekState(Object key) {
+        return (S) captureState.get(key);
+    }
+
+    public void captureState(Object key, Object value) {
+        captureState.put(key, value);
+    }
+
 
 
     public static IOOpResult bindCallBack(Op op, BiIntConsumer callback) {
@@ -56,6 +68,14 @@ public class IOOpResult {
         } catch (Throwable throwable) {
             //ignore
         }
+    }
+
+    public String errorMsg() {
+        return NativeHelper.getErrorStr(-res);
+    }
+
+    public boolean hasError() {
+        return res < 0;
     }
 
     @Override

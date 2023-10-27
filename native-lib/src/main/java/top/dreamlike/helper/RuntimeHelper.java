@@ -37,6 +37,13 @@ public final class RuntimeHelper {
                 orElse(null);
     }
 
+
+    public static MethodHandle downcallHandle(String name, FunctionDescriptor fdesc, Linker.Option... options) {
+        return SYMBOL_LOOKUP.find(name).
+                map(addr -> LINKER.downcallHandle(addr, fdesc, options)).
+                orElse(null);
+    }
+
     public static MethodHandle downcallHandleVariadic(String name, FunctionDescriptor fdesc) {
         return SYMBOL_LOOKUP.find(name).
                 map(addr -> VarargsInvoker.make(addr, fdesc)).

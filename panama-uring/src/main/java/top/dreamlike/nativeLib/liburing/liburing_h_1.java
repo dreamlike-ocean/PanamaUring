@@ -4,13 +4,12 @@ package top.dreamlike.nativeLib.liburing;
 
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
+import top.dreamlike.helper.RuntimeHelper;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
 import static top.dreamlike.nativeLib.liburing.liburing_h.*;
-
-import top.dreamlike.helper.RuntimeHelper;
 class liburing_h_1 {
 
     public static MethodHandle io_uring_prep_timeout$MH() {
@@ -61,8 +60,7 @@ class liburing_h_1 {
 
     public static void io_uring_prep_accept(MemorySegment sqe, int fd, MemorySegment addr, MemorySegment addrlen, int flags) {
         io_uring_prep_rw(IORING_OP_ACCEPT(), sqe, fd, addr, 0, addrlen.address());
-        MemorySegment sqeSegment = NativeHelper.unsafePointConvertor(sqe);
-        io_uring_sqe.accept_flags$set(sqeSegment, flags);
+        io_uring_sqe.accept_flags$set(sqe, flags);
     }
 
     public static void io_uring_prep_multishot_accept(MemorySegment sqe, int fd, MemorySegment addr, MemorySegment addrlen, int flags) {

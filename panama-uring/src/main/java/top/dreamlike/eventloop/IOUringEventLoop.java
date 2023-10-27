@@ -1,10 +1,12 @@
 package top.dreamlike.eventloop;
 
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.subscription.UniEmitter;
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.AsyncFd;
 import top.dreamlike.async.IOOpResult;
 import top.dreamlike.async.file.AsyncFile;
+import top.dreamlike.async.file.AsyncPipe;
 import top.dreamlike.async.file.AsyncWatchService;
 import top.dreamlike.async.socket.AsyncServerSocket;
 import top.dreamlike.async.socket.AsyncSocket;
@@ -13,6 +15,7 @@ import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Unsafe;
 import top.dreamlike.nativeLib.errno.errno_h;
+import top.dreamlike.nativeLib.fcntl.fcntl_h;
 
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
@@ -22,26 +25,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
+import java.util.function.Consumer;
 
 public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
 
     final IOUring ioUring;
 
     private final AtomicLong autoSubmitDuration;
-    private static final AtomicInteger atomicInteger = new AtomicInteger();
+    private static final AtomicInteger eventloopCount = new AtomicInteger();
 
     private final AtomicBoolean start = new AtomicBoolean(false);
-
-    public IOUringEventLoop(int ringSize, int autoBufferSize, long autoSubmitDuration) {
-        super();
-        ioUring = new IOUring(ringSize, autoBufferSize);
-        setName("io-uring-eventloop-" + atomicInteger.getAndIncrement());
-        this.autoSubmitDuration = new AtomicLong(autoSubmitDuration);
-        // scheduleTask(this::autoFlushTask, Duration.ofMillis(autoSubmitDuration));
-        // 直接投递 不用考虑线程安全问题 此时没有竞争
-        timerTasks.offer(new TimerTask(this::autoFlushTask, System.currentTimeMillis() + autoSubmitDuration));
-    }
+    private static final int SENDFILE_STEP = 8 * 1024;
 
     private void autoFlushTask() {
         flush();
@@ -115,35 +109,97 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
      * 不校验任何fd是否属于这个eventLoop！
      *
      * @param ops 在这里面写各个对应的async op
-     * @return ops返回的future代表的结果
      */
     @Unsafe("不校验任何fd是否属于这个eventLoop")
-    public <T> CompletableFuture<T> submitLinkedOpUnsafe(Supplier<CompletableFuture<T>> ops) {
-        CompletableFuture<T> future = new CompletableFuture<>();
+    public void submitLinkedOpUnsafe(Consumer<IOUring.SqeContext> ops) {
         runOnEventLoop(() -> {
-            try {
-                IOUring.startLinked.set(true);
-                ops.get()
-                        .whenComplete((r, t) -> {
-                            if (t != null) {
-                                future.completeExceptionally(t);
-                            } else {
-                                future.complete(r);
-                            }
-                        });
-
-            } catch (Throwable e) {
-                future.completeExceptionally(e);
-            } finally {
-                IOUring.startLinked.set(false);
-            }
+            ioUring.current.startLink();
+            ops.accept(ioUring.current);
         });
-        return future;
     }
 
-    public <T> CompletableFuture<T> submitLinkedOpSafe(Supplier<CompletableFuture<T>> ops) {
+    public void submitLinkedOpSafe(Consumer<IOUring.SqeContext> ops) {
         checkCaptureContainAsyncFd(ops);
-        return submitLinkedOpUnsafe(ops);
+        submitLinkedOpUnsafe(ops);
+    }
+
+    public IOUringEventLoop(int ringSize, int autoBufferSize, long autoSubmitDuration) {
+        super();
+        ioUring = new IOUring(ringSize, autoBufferSize);
+        setName("io-uring-eventloop-" + eventloopCount.getAndIncrement());
+        this.autoSubmitDuration = new AtomicLong(autoSubmitDuration);
+        // scheduleTask(this::autoFlushTask, Duration.ofMillis(autoSubmitDuration));
+        // 直接投递 不用考虑线程安全问题 此时没有竞争
+        timerTasks.offer(new TimerTask(this::autoFlushTask, System.currentTimeMillis() + autoSubmitDuration));
+    }
+
+    public Uni<Long> spliceLazy(AsyncFd in, AsyncPipe out, long inOffset, int size) {
+        return spliceLazy(in, out, inOffset, -1, size, fcntl_h.SPLICE_F_MOVE());
+    }
+
+    private Uni<Long> spliceLazy(AsyncFd in, AsyncFd out, long inOffset, long outOffset, int size, int flags) {
+        return Uni.createFrom()
+                .emitter(ue -> runOnEventLoop(() -> {
+                    AtomicBoolean end = new AtomicBoolean(false);
+                    var userData = ioUring.prep_splice(in.readFd(), out.writeFd(), inOffset, outOffset, size, flags, ioOpResult -> {
+                        if (!end.compareAndSet(false, true)) {
+                            return;
+                        }
+                        if (ioOpResult.hasError()) {
+                            ue.fail(new NativeCallException(STR. "errorNo: \{ -ioOpResult.res } msg:\{ ioOpResult.errorMsg() }" ));
+                        } else {
+                            ue.complete((long) ioOpResult.res);
+                        }
+                    });
+                    ue.onTermination(() -> {
+                        if (!end.compareAndSet(false, true)) {
+                            return;
+                        }
+                        // 非正常结束比如说cancel了
+                        cancelAsync(userData, 0, true).subscribe().with((__) -> {
+                        });
+                    });
+                }));
+    }
+
+    public Uni<Long> spliceLazy(AsyncPipe in, AsyncFd out, long outOffset, int size) {
+        return spliceLazy(in, out, -1, outOffset, size, fcntl_h.SPLICE_F_MOVE());
+    }
+
+    public Uni<Long> sendFile(AsyncFd in, AsyncFd out, long offset, long size) {
+        if (offset < 0) {
+            throw new IllegalArgumentException("offset must greater than 0");
+        }
+        AsyncPipe pipe = new AsyncPipe(this);
+        return Uni.createFrom()
+                .emitter(ue -> {
+                    sendFileSingle(in, out, pipe, offset, 0L, size, ue);
+                });
+    }
+
+    private void sendFileSingle(AsyncFd in, AsyncFd out, AsyncPipe pipe, long in_offset, long hasWrite, long size, UniEmitter<? super Long> ue) {
+        spliceLazy(in, pipe, in_offset, SENDFILE_STEP)
+                .subscribe().with(writeRes -> {
+                    spliceLazy(pipe, out, hasWrite, Math.min(writeRes.intValue(), SENDFILE_STEP))
+                            .subscribe().with(l -> {
+                                long currentWrite = hasWrite + l;
+                                if (l == 0 || currentWrite == size) {
+                                    ue.complete(currentWrite);
+                                } else {
+                                    sendFileSingle(in, out, pipe, currentWrite, currentWrite, size, ue);
+                                }
+                            }, ue::fail);
+                }, ue::fail);
+    }
+
+
+    private void setNextOpLinked(Runnable r) {
+        try {
+            ioUring.current.startLink();
+            r.run();
+        } finally {
+            ioUring.current.endLink();
+        }
     }
 
     @Deprecated
@@ -177,7 +233,9 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
                 };
                 promise.completeExceptionally(new NativeCallException(errorMsg));
             });
-            flush();
+            if (needSummit) {
+                flush();
+            }
         });
     }
 

@@ -11,7 +11,9 @@ import top.dreamlike.extension.NotEnoughSqeException;
 import top.dreamlike.extension.fp.Result;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
+import top.dreamlike.helper.StackValue;
 import top.dreamlike.helper.Unsafe;
+import top.dreamlike.nativeLib.fcntl.stat;
 import top.dreamlike.nativeLib.unistd.unistd_h;
 
 import java.lang.foreign.Arena;
@@ -160,7 +162,7 @@ public class AsyncFile extends PlainAsyncFd {
 
 
     @Override
-    protected int readFd() {
+    public int readFd() {
         return fd;
     }
 
@@ -228,5 +230,21 @@ public class AsyncFile extends PlainAsyncFd {
         eventLoop.scheduleTask(() -> lock0(completableFuture, duration), duration);
     }
 
+    public long size() {
+        try (StackValue stackValue = StackValue.currentStack()) {
+            MemorySegment buffer = stat.allocate(stackValue);
+            int i = fstat(fd, buffer);
+            return stat.st_size$get(buffer);
+        } catch (Throwable t) {
+            throw new AssertionError("should not reach here", t);
+        }
+    }
 
+    @Override
+    public String toString() {
+        return "AsyncFile{" +
+                "fd=" + fd +
+                ", hasLocked=" + hasLocked +
+                '}';
+    }
 }

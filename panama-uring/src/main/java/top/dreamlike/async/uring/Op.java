@@ -14,5 +14,6 @@ public enum Op {
     SOCKET_WRITE,
     NO,
     TIMEOUT,
-    CANCEL
+    CANCEL,
+    SPlICE
 }

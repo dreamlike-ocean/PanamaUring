@@ -66,7 +66,7 @@ public class AsyncEventFd extends PlainAsyncFd {
 
 
     @Override
-    protected int readFd() {
+    public int readFd() {
         return eventfd;
     }
 

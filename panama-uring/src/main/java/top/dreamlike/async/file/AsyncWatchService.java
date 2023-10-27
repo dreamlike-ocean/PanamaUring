@@ -95,7 +95,7 @@ non-sealed public class AsyncWatchService extends AsyncFd {
     }
 
     @Override
-    protected int readFd() {
+    public int readFd() {
         return ifd;
     }
 }

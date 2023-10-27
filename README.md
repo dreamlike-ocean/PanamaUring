@@ -37,6 +37,7 @@ API仍在变动之中**
 #### IO_Uring
 
 - [x] 任意数量的IOSQE_IO_LINK
+- [x] 异步版本的splice api以及基于此的异步版本sendfile
 
 #### 其余的异步fd
 

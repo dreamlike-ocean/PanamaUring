@@ -16,7 +16,7 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <panama.version>3.0.0</panama.version>
+        <panama.version>3.0.1</panama.version>
         <vertx.version>4.3.7</vertx.version>
         <vertx-async.version>3.0.0</vertx-async.version>
         <native-lib>3.0.0</native-lib>
