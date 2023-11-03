@@ -1,12 +1,13 @@
-package top.dreamlike.panama.genertor;
+package top.dreamlike.panama.genertor.helper;
 
 import java.lang.foreign.MemoryLayout;
 import java.util.ArrayList;
+import java.util.List;
 
 import static java.lang.foreign.MemoryLayout.paddingLayout;
 
 public class StructHelper {
-    public static ArrayList<MemoryLayout> calAlignLayout(MemoryLayout... memoryLayouts) {
+    public static MemoryLayout calAlignLayout(List<MemoryLayout> memoryLayouts) {
         long size = 0;
         long align = 1;
         ArrayList<MemoryLayout> layouts = new ArrayList<>();
@@ -34,6 +35,6 @@ public class StructHelper {
         }
 
         System.out.println(STR. "支持对齐的序列为\{ layouts }, sizeof(layouts): \{ size }, align: \{ align }" );
-        return layouts;
+        return MemoryLayout.structLayout(layouts.toArray(MemoryLayout[]::new));
     }
 }
