@@ -1,9 +1,6 @@
 package top.dreamlike.panama.genertor.proxy;
 
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.util.Optional;
 
@@ -20,5 +17,19 @@ class NativeLibLookup implements SymbolLookup {
         return find(name)
                 .map(functionAddr -> Linker.nativeLinker().downcallHandle(functionAddr, functionDescriptor, options))
                 .orElseThrow(() -> new IllegalArgumentException(STR. "cant link \{ name }" ));
+    }
+
+    public static MemoryLayout primitiveMapToMemoryLayout(Class source) {
+        return switch (source) {
+            case Class c when c == int.class -> ValueLayout.JAVA_INT;
+            case Class c when c == long.class -> ValueLayout.JAVA_LONG;
+            case Class c when c == double.class -> ValueLayout.JAVA_DOUBLE;
+            case Class c when c == float.class -> ValueLayout.JAVA_FLOAT;
+            case Class c when c == byte.class -> ValueLayout.JAVA_BYTE;
+            case Class c when c == boolean.class -> ValueLayout.JAVA_BOOLEAN;
+            case Class c when c == char.class -> ValueLayout.JAVA_CHAR;
+            case Class c when c == short.class -> ValueLayout.JAVA_SHORT;
+            default -> null;
+        };
     }
 }

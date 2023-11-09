@@ -21,6 +21,7 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
@@ -34,10 +35,24 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 import static net.bytebuddy.matcher.ElementMatchers.named;
+import static top.dreamlike.panama.genertor.proxy.NativeLibLookup.primitiveMapToMemoryLayout;
 
 public class StructProxyGenerator {
 
     private static final String MEMORY_FIELD = "_realMemory";
+
+    private static final MethodHandle REINTERPRET_MH;
+
+    static {
+        try {
+            REINTERPRET_MH = MethodHandles.lookup().findVirtual(MemorySegment.class, "reinterpret", MethodType.methodType(MemorySegment.class, long.class));
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     final Map<Class<?>, MethodHandleInvocationHandle> ctorCaches = new ConcurrentHashMap<>();
 
     private Map<Class<?>, MemoryLayout> layoutCaches = new ConcurrentHashMap<>();
@@ -48,19 +63,6 @@ public class StructProxyGenerator {
         this.byteBuddy = new ByteBuddy(ClassFileVersion.JAVA_V21);
     }
 
-    private static MemoryLayout primitiveMap(Class source) {
-        return switch (source) {
-            case Class c when c == int.class -> ValueLayout.JAVA_INT;
-            case Class c when c == long.class -> ValueLayout.JAVA_LONG;
-            case Class c when c == double.class -> ValueLayout.JAVA_DOUBLE;
-            case Class c when c == float.class -> ValueLayout.JAVA_FLOAT;
-            case Class c when c == byte.class -> ValueLayout.JAVA_BYTE;
-            case Class c when c == boolean.class -> ValueLayout.JAVA_BOOLEAN;
-            case Class c when c == char.class -> ValueLayout.JAVA_CHAR;
-            case Class c when c == short.class -> ValueLayout.JAVA_SHORT;
-            default -> null;
-        };
-    }
 
     private static String upperFirstChar(String s) {
         return Character.toUpperCase(s.charAt(0)) + s.substring(1);
@@ -77,9 +79,13 @@ public class StructProxyGenerator {
 
     }
 
+    public static boolean isNativeStruct(Object o) {
+        return o instanceof NativeStructEnhanceMark;
+    }
+
     private <T> MethodHandleInvocationHandle enhance(Class<T> targetClass) {
         try {
-
+            MemoryLayout structMemoryLayout = extract(targetClass);
             var precursor = byteBuddy.subclass(targetClass)
                     .implement(NativeStructEnhanceMark.class)
                     .defineField(MEMORY_FIELD, MemorySegment.class)
@@ -93,7 +99,6 @@ public class StructProxyGenerator {
                                     .andThen(FieldAccessor.ofField(MEMORY_FIELD).setsArgumentAt(0))
                     );
 
-            MemoryLayout structMemoryLayout = extract(targetClass);
             precursor = precursor.method(named("sizeof")).intercept(FixedValue.value(structMemoryLayout.byteSize()));
             precursor = precursor.method(named("layout")).intercept(FixedValue.value(structMemoryLayout));
 
@@ -102,7 +107,7 @@ public class StructProxyGenerator {
                     continue;
                 }
 
-                if (primitiveMap(field.getType()) != null) {
+                if (primitiveMapToMemoryLayout(field.getType()) != null) {
                     VarHandle nativeVarhandle = structMemoryLayout.varHandle(MemoryLayout.PathElement.groupElement(field.getName()));
                     precursor = precursor
                             .defineMethod(STR. "get\{ upperFirstChar(field.getName()) }" , field.getType(), Modifier.PUBLIC)
@@ -119,24 +124,50 @@ public class StructProxyGenerator {
 
             }
 
-
             DynamicType.Unloaded<?> unloaded = precursor.make();
             unloaded.saveIn(new File("structProxy"));
 
             DynamicType.Loaded<?> load = unloaded.load(targetClass.getClassLoader());
             Class<?> loaded = load.getLoaded();
-            return new MethodHandleInvocationHandle(MethodHandles.lookup().findConstructor(loaded, MethodType.methodType(void.class, MemorySegment.class)));
+            return new MethodHandleInvocationHandle(
+                    MethodHandles.filterArguments(
+                            MethodHandles.lookup().findConstructor(loaded, MethodType.methodType(void.class, MemorySegment.class)),
+                            0,
+                            MethodHandles.insertArguments(REINTERPRET_MH, 1, structMemoryLayout.byteSize())
+                    )
+            );
         } catch (Throwable e) {
             throw new StructException("should not reach here!", e);
         }
     }
 
-    private <T> MemoryLayout extract(Class<T> structClass) {
+
+    private MemoryLayout setAlignment(MemoryLayout memoryLayout, Alignment alignment) {
+        if (alignment == null || alignment.byteSize() <= 0) {
+            return memoryLayout;
+        }
+        return memoryLayout.withByteAlignment(alignment.byteSize());
+    }
+
+    public boolean isUnionField(Field field) {
+        return field.getAnnotation(Union.class) != null || field.getType().getAnnotation(Union.class) != null;
+    }
+
+    public void s(Integer obj) {
+        switch (obj) {
+            case -1, 1 -> System.out.println();             // Special cases
+            case Integer i when i > 0 -> System.out.println();  // Positive integer cases
+            // All the remaining integers
+            default -> throw new IllegalStateException("Unexpected value: " + obj);
+        }
+    }
+
+    <T> MemoryLayout extract(Class<T> structClass) {
         MemoryLayout memoryLayout = layoutCaches.get(structClass);
         if (memoryLayout != null) {
             return memoryLayout;
         }
-        MemoryLayout mayPrimitive = primitiveMap(structClass);
+        MemoryLayout mayPrimitive = primitiveMapToMemoryLayout(structClass);
         if (mayPrimitive != null) {
             layoutCaches.put(structClass, mayPrimitive);
             return mayPrimitive;
@@ -184,27 +215,6 @@ public class StructProxyGenerator {
         return layout;
     }
 
-
-    private MemoryLayout setAlignment(MemoryLayout memoryLayout, Alignment alignment) {
-        if (alignment == null || alignment.byteSize() <= 0) {
-            return memoryLayout;
-        }
-        return memoryLayout.withByteAlignment(alignment.byteSize());
-    }
-
-    public boolean isUnionField(Field field) {
-        return field.getAnnotation(Union.class) != null || field.getType().getAnnotation(Union.class) != null;
-    }
-
-    public void s(Integer obj) {
-        switch (obj) {
-            case -1, 1 -> System.out.println();             // Special cases
-            case Integer i when i > 0 -> System.out.println();  // Positive integer cases
-            // All the remaining integers
-            default -> throw new IllegalStateException("Unexpected value: " + obj);
-        }
-    }
-
     /**
      * @param field 已经递归到原子化的字段
      * @return 对应的FFI布局
@@ -218,7 +228,7 @@ public class StructProxyGenerator {
             }
             throw new StructException(STR. "\{ field } type is \{ source },so it cant be point" );
         }
-        MemoryLayout layout = primitiveMap(source);
+        MemoryLayout layout = primitiveMapToMemoryLayout(source);
         if (layout == null) {
             if (!isUnionField(field)) {
                 throw new StructException("Unexpected value: " + source);
