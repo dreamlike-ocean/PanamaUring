@@ -3,9 +3,7 @@ package top.dreamlike.panama.genertor.proxy;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.ClassFileVersion;
 import net.bytebuddy.dynamic.DynamicType;
-import net.bytebuddy.implementation.FieldAccessor;
-import net.bytebuddy.implementation.MethodCall;
-import net.bytebuddy.implementation.bytecode.assign.Assigner;
+import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import top.dreamlike.panama.genertor.annotation.NativeFunction;
 import top.dreamlike.panama.genertor.annotation.Pointer;
 import top.dreamlike.panama.genertor.exception.StructException;
@@ -24,8 +22,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static net.bytebuddy.matcher.ElementMatchers.isTypeInitializer;
-
 public class NativeCallGenerator {
     private final ByteBuddy byteBuddy;
 
@@ -37,9 +33,7 @@ public class NativeCallGenerator {
         try {
             TRANSFORM_OBJECT_TO_STRUCT_MH = MethodHandles.lookup()
                     .findStatic(NativeCallGenerator.class, "transToPoint", MethodType.methodType(MemorySegment.class, Object.class));
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
+        } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }
@@ -69,6 +63,7 @@ public class NativeCallGenerator {
         throw new StructException(STR. "\{ o.getClass() } is not struct,pleace call StructProxyGenerator::enhance before calling native function" );
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T generate(Class<T> nativeInterface) {
         Objects.requireNonNull(nativeInterface);
         try {
@@ -78,7 +73,6 @@ public class NativeCallGenerator {
             throw new StructException("should not reach here!", throwable);
         }
     }
-
 
     private <T> MethodHandleInvocationHandle bind(Class<T> nativeInterface) {
         try {
@@ -96,16 +90,9 @@ public class NativeCallGenerator {
                 MethodHandle methodHandle = nativeMethodHandle(method);
                 definition = definition
                         .defineField(mhFieldName, MethodHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
-                        //fixme: 静态字段为空
-                        .invokable(isTypeInitializer()).intercept(FieldAccessor.ofField(mhFieldName).setsReference(methodHandle))
                         .defineMethod(method.getName(), method.getReturnType(), Modifier.PUBLIC)
                         .withParameters(method.getParameterTypes())
-                        .intercept(
-                                MethodCall.invoke(MethodHandle.class.getMethod("invokeExact", Object[].class))
-                                        .onField(mhFieldName)
-                                        .withArgumentArray()
-                                        .withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC)
-                        );
+                        .intercept(InvocationHandlerAdapter.of(new MethodHandleInvocationHandle(methodHandle)));
             }
             DynamicType.Unloaded<Object> unloaded = definition.make();
             if (structProxyGenerator.proxySavePath != null) {
@@ -134,7 +121,10 @@ public class NativeCallGenerator {
         MemoryLayout[] layouts = new MemoryLayout[method.getParameterCount()];
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; i++) {
-            if (parameters[i].getType().isAssignableFrom(MemorySegment.class) || (!parameters[i].getType().isPrimitive() && parameters[i].getAnnotation(Pointer.class) != null)) {
+            if (parameters[i].getType().isAssignableFrom(MemorySegment.class)
+                    || parameters[i].getType().isAssignableFrom(NativeStructEnhanceMark.class)
+                    || (!parameters[i].getType().isPrimitive() && parameters[i].getAnnotation(Pointer.class) != null)
+            ) {
                 layouts[i] = ValueLayout.ADDRESS;
                 pointIndex.add(i);
                 continue;

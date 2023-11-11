@@ -9,7 +9,7 @@ import net.bytebuddy.implementation.FixedValue;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.implementation.MethodCall;
 import top.dreamlike.panama.genertor.annotation.Alignment;
-import top.dreamlike.panama.genertor.annotation.NativeArray;
+import top.dreamlike.panama.genertor.annotation.NativeArrayMark;
 import top.dreamlike.panama.genertor.annotation.Pointer;
 import top.dreamlike.panama.genertor.annotation.Union;
 import top.dreamlike.panama.genertor.exception.StructException;
@@ -34,13 +34,16 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
-import static net.bytebuddy.matcher.ElementMatchers.isTypeInitializer;
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static top.dreamlike.panama.genertor.proxy.NativeLibLookup.primitiveMapToMemoryLayout;
 
 public class StructProxyGenerator {
 
     private static final String MEMORY_FIELD = "_realMemory";
+
+    private static final String GENERATOR_FIELD = "_generator";
+
+    private static final String LAYOUT_FIELD = "_layout";
 
     String proxySavePath;
 
@@ -49,18 +52,16 @@ public class StructProxyGenerator {
     static {
         try {
             REINTERPRET_MH = MethodHandles.lookup().findVirtual(MemorySegment.class, "reinterpret", MethodType.methodType(MemorySegment.class, long.class));
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
+        } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }
 
     final Map<Class<?>, MethodHandleInvocationHandle> ctorCaches = new ConcurrentHashMap<>();
 
-    private Map<Class<?>, MemoryLayout> layoutCaches = new ConcurrentHashMap<>();
+    private final Map<Class<?>, MemoryLayout> layoutCaches = new ConcurrentHashMap<>();
 
-    private ByteBuddy byteBuddy;
+    private final ByteBuddy byteBuddy;
 
     public StructProxyGenerator() {
         this.byteBuddy = new ByteBuddy(ClassFileVersion.JAVA_V21);
@@ -71,15 +72,24 @@ public class StructProxyGenerator {
         return Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T enhance(Class<T> t, MemorySegment binder) {
         Objects.requireNonNull(t);
         try {
-            return (T) ctorCaches.computeIfAbsent(t, key -> enhance(t))
+            return (T) ctorCaches.computeIfAbsent(t, this::enhance)
                     .target().invoke(binder);
         } catch (Throwable throwable) {
             throw new StructException("should not reach here!", throwable);
         }
+    }
 
+    @SuppressWarnings("unchecked")
+    public <T> T enhance(MemorySegment binder, T... dummy) {
+        return this.enhance((Class<T>) dummy.getClass().componentType(), binder);
+    }
+
+    public <T> NativeArray<T> enhanceArray(MemorySegment chunk, T... dummy) {
+        return new NativeArray<>(this, chunk, dummy);
     }
 
     public static boolean isNativeStruct(Object o) {
@@ -92,17 +102,22 @@ public class StructProxyGenerator {
             var precursor = byteBuddy.subclass(targetClass)
                     .implement(NativeStructEnhanceMark.class)
                     .defineField(MEMORY_FIELD, MemorySegment.class)
-                    .method(named("fetchStructProxyGenerator")).intercept(FixedValue.value(this))
+                    .defineField(GENERATOR_FIELD, StructProxyGenerator.class)
+                    .defineField(LAYOUT_FIELD, MemoryLayout.class)
+                    .method(named("fetchStructProxyGenerator")).intercept(FieldAccessor.ofField(GENERATOR_FIELD))
                     //这里 不能用 MethodDelegation.toField(MEMORY_FIELD) 因为会在对应字段MemorySegment里面寻找签名对得上的方法 就会找到asReadOnly
                     .method(named("realMemory")).intercept(FieldAccessor.ofField(MEMORY_FIELD))
-                    .defineConstructor(Modifier.PUBLIC).withParameters(MemorySegment.class)
+                    .defineConstructor(Modifier.PUBLIC)
+                    .withParameters(MemorySegment.class, StructProxyGenerator.class, MemoryLayout.class)
                     .intercept(
                             MethodCall.invoke(targetClass.getDeclaredConstructor()).onSuper()
                                     .andThen(FieldAccessor.ofField(MEMORY_FIELD).setsArgumentAt(0))
+                                    .andThen(FieldAccessor.ofField(GENERATOR_FIELD).setsArgumentAt(1))
+                                    .andThen(FieldAccessor.ofField(LAYOUT_FIELD).setsArgumentAt(2))
                     );
 
             precursor = precursor.method(named("sizeof")).intercept(FixedValue.value(structMemoryLayout.byteSize()));
-            precursor = precursor.method(named("layout")).intercept(FixedValue.value(structMemoryLayout));
+            precursor = precursor.method(named("layout")).intercept(FieldAccessor.ofField(LAYOUT_FIELD));
 
             for (Field field : targetClass.getDeclaredFields()) {
                 if (field.isSynthetic()) {
@@ -113,9 +128,6 @@ public class StructProxyGenerator {
                     VarHandle nativeVarhandle = structMemoryLayout.varHandle(MemoryLayout.PathElement.groupElement(field.getName()));
                     String varHandleFieldName = STR. "\{ field.getName() }_native_struct_vh" ;
                     precursor = precursor
-                            //给静态字段赋值
-                            .defineField(varHandleFieldName, VarHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
-                            .invokable(isTypeInitializer()).intercept(FieldAccessor.ofField(varHandleFieldName).setsReference(nativeVarhandle))
                             //转到对应的调用
                             .defineMethod(STR. "get\{ upperFirstChar(field.getName()) }" , field.getType(), Modifier.PUBLIC)
                             .intercept(InvocationHandlerAdapter.of(new DereferenceGetterInvocationHandle(nativeVarhandle)))
@@ -140,13 +152,20 @@ public class StructProxyGenerator {
 
             DynamicType.Loaded<?> load = unloaded.load(targetClass.getClassLoader());
             Class<?> loaded = load.getLoaded();
-            return new MethodHandleInvocationHandle(
-                    MethodHandles.filterArguments(
-                            MethodHandles.lookup().findConstructor(loaded, MethodType.methodType(void.class, MemorySegment.class)),
-                            0,
-                            MethodHandles.insertArguments(REINTERPRET_MH, 1, structMemoryLayout.byteSize())
-                    )
+            //reinterpret 第一个参数到sizeof大小
+            MethodHandle handle = MethodHandles.filterArguments(
+                    MethodHandles.lookup().findConstructor(loaded, MethodType.methodType(void.class, MemorySegment.class, StructProxyGenerator.class, MemoryLayout.class)),
+                    0,
+                    MethodHandles.insertArguments(REINTERPRET_MH, 1, structMemoryLayout.byteSize())
             );
+            //第二个参数绑定当前this
+            //第三个参数给当前的layout
+            handle = MethodHandles.insertArguments(
+                    handle,
+                    1,
+                    this, structMemoryLayout
+            );
+            return new MethodHandleInvocationHandle(handle);
         } catch (Throwable e) {
             throw new StructException("should not reach here!", e);
         }
@@ -196,9 +215,9 @@ public class StructProxyGenerator {
                         list.add(ValueLayout.ADDRESS.withName(field.getName()));
                         continue;
                     }
-                    NativeArray nativeArray = field.getAnnotation(NativeArray.class);
-                    if (nativeArray != null) {
-                        SequenceLayout layout = MemoryLayout.sequenceLayout(nativeArray.length(), extract(nativeArray.size()));
+                    NativeArrayMark nativeArrayMark = field.getAnnotation(NativeArrayMark.class);
+                    if (nativeArrayMark != null) {
+                        SequenceLayout layout = MemoryLayout.sequenceLayout(nativeArrayMark.length(), extract(nativeArrayMark.size()));
                         list.add(layout.withName(field.getName()));
                         continue;
                     } else {
@@ -231,7 +250,7 @@ public class StructProxyGenerator {
         MemoryLayout layout = primitiveMapToMemoryLayout(source);
         if (layout == null) {
             if (!isUnionField(field)) {
-                throw new StructException("Unexpected value: " + source);
+                throw new StructException(STR. "Unexpected value: \{ source }" );
             }
             Alignment alignment = field.getType().getAnnotation(Alignment.class);
             var subLayout = Arrays.stream(source.getDeclaredFields())
