@@ -7,7 +7,7 @@ import java.lang.reflect.Method;
 record MethodHandleInvocationHandle(MethodHandle target) implements InvocationHandler {
 
     @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    public Object invoke(Object __, Method ___, Object[] args) throws Throwable {
         return target.invokeWithArguments(args);
     }
 }

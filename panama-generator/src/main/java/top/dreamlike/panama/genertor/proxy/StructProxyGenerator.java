@@ -34,12 +34,15 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
+import static net.bytebuddy.matcher.ElementMatchers.isTypeInitializer;
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static top.dreamlike.panama.genertor.proxy.NativeLibLookup.primitiveMapToMemoryLayout;
 
 public class StructProxyGenerator {
 
     private static final String MEMORY_FIELD = "_realMemory";
+
+    String proxySavePath;
 
     private static final MethodHandle REINTERPRET_MH;
 
@@ -83,7 +86,7 @@ public class StructProxyGenerator {
         return o instanceof NativeStructEnhanceMark;
     }
 
-    private <T> MethodHandleInvocationHandle enhance(Class<T> targetClass) {
+    <T> MethodHandleInvocationHandle enhance(Class<T> targetClass) {
         try {
             MemoryLayout structMemoryLayout = extract(targetClass);
             var precursor = byteBuddy.subclass(targetClass)
@@ -91,7 +94,6 @@ public class StructProxyGenerator {
                     .defineField(MEMORY_FIELD, MemorySegment.class)
                     .method(named("fetchStructProxyGenerator")).intercept(FixedValue.value(this))
                     //这里 不能用 MethodDelegation.toField(MEMORY_FIELD) 因为会在对应字段MemorySegment里面寻找签名对得上的方法 就会找到asReadOnly
-//                    .method(named("realMemory")).intercept(MethodDelegation.toField(MEMORY_FIELD))
                     .method(named("realMemory")).intercept(FieldAccessor.ofField(MEMORY_FIELD))
                     .defineConstructor(Modifier.PUBLIC).withParameters(MemorySegment.class)
                     .intercept(
@@ -109,9 +111,15 @@ public class StructProxyGenerator {
 
                 if (primitiveMapToMemoryLayout(field.getType()) != null) {
                     VarHandle nativeVarhandle = structMemoryLayout.varHandle(MemoryLayout.PathElement.groupElement(field.getName()));
+                    String varHandleFieldName = STR. "\{ field.getName() }_native_struct_vh" ;
                     precursor = precursor
+                            //给静态字段赋值
+                            .defineField(varHandleFieldName, VarHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
+                            .invokable(isTypeInitializer()).intercept(FieldAccessor.ofField(varHandleFieldName).setsReference(nativeVarhandle))
+                            //转到对应的调用
                             .defineMethod(STR. "get\{ upperFirstChar(field.getName()) }" , field.getType(), Modifier.PUBLIC)
                             .intercept(InvocationHandlerAdapter.of(new DereferenceGetterInvocationHandle(nativeVarhandle)))
+
                             .defineMethod(STR. "set\{ upperFirstChar(field.getName()) }" , void.class, Modifier.PUBLIC)
                             .withParameters(field.getType())
                             .intercept(InvocationHandlerAdapter.of(new DereferenceSetterInvocationHandle(nativeVarhandle)));
@@ -125,7 +133,10 @@ public class StructProxyGenerator {
             }
 
             DynamicType.Unloaded<?> unloaded = precursor.make();
-            unloaded.saveIn(new File("structProxy"));
+
+            if (proxySavePath != null) {
+                unloaded.saveIn(new File(proxySavePath));
+            }
 
             DynamicType.Loaded<?> load = unloaded.load(targetClass.getClassLoader());
             Class<?> loaded = load.getLoaded();
@@ -141,6 +152,9 @@ public class StructProxyGenerator {
         }
     }
 
+    public void setProxySavePath(String proxySavePath) {
+        this.proxySavePath = proxySavePath;
+    }
 
     private MemoryLayout setAlignment(MemoryLayout memoryLayout, Alignment alignment) {
         if (alignment == null || alignment.byteSize() <= 0) {
@@ -153,66 +167,52 @@ public class StructProxyGenerator {
         return field.getAnnotation(Union.class) != null || field.getType().getAnnotation(Union.class) != null;
     }
 
-    public void s(Integer obj) {
-        switch (obj) {
-            case -1, 1 -> System.out.println();             // Special cases
-            case Integer i when i > 0 -> System.out.println();  // Positive integer cases
-            // All the remaining integers
-            default -> throw new IllegalStateException("Unexpected value: " + obj);
-        }
-    }
+    public <T> MemoryLayout extract(Class<T> structClass) {
+        return layoutCaches.computeIfAbsent(structClass, (s) -> {
+            MemoryLayout mayPrimitive = primitiveMapToMemoryLayout(structClass);
+            if (mayPrimitive != null) return mayPrimitive;
 
-    <T> MemoryLayout extract(Class<T> structClass) {
-        MemoryLayout memoryLayout = layoutCaches.get(structClass);
-        if (memoryLayout != null) {
-            return memoryLayout;
-        }
-        MemoryLayout mayPrimitive = primitiveMapToMemoryLayout(structClass);
-        if (mayPrimitive != null) {
-            layoutCaches.put(structClass, mayPrimitive);
-            return mayPrimitive;
-        }
-        ArrayList<MemoryLayout> list = new ArrayList<>();
-        Alignment alignment = structClass.getAnnotation(Alignment.class);
-        if (alignment != null && alignment.byteSize() <= 0) {
-            throw new StructException(STR. "alignment cant be \{ alignment.byteSize() }" );
-        }
-        var alignmentByteSize = alignment == null ? -1 : alignment.byteSize();
-        for (Field field : structClass.getDeclaredFields()) {
-            if (field.isSynthetic()) {
-                continue;
+            ArrayList<MemoryLayout> list = new ArrayList<>();
+            Alignment alignment = structClass.getAnnotation(Alignment.class);
+            if (alignment != null && alignment.byteSize() <= 0) {
+                throw new StructException(STR. "alignment cant be \{ alignment.byteSize() }" );
             }
-            //类型为原语
-            if (field.getType().isPrimitive() || isUnionField(field)) {
-                MemoryLayout layout = extract0(field).withName(field.getName());
-                layout = alignmentByteSize == -1 || isUnionField(field) ? layout : layout.withByteAlignment(alignmentByteSize);
+            var alignmentByteSize = alignment == null ? -1 : alignment.byteSize();
+            for (Field field : structClass.getDeclaredFields()) {
+                if (field.isSynthetic()) {
+                    continue;
+                }
+                //类型为原语
+                if (field.getType().isPrimitive() || isUnionField(field)) {
+                    MemoryLayout layout = extract0(field).withName(field.getName());
+                    layout = alignmentByteSize == -1 || isUnionField(field) ? layout : layout.withByteAlignment(alignmentByteSize);
+                    list.add(layout);
+                    continue;
+                }
+
+                //类型为数组or指针
+                if (field.getType() == MemorySegment.class) {
+                    if (field.getAnnotation(Pointer.class) != null) {
+                        list.add(ValueLayout.ADDRESS.withName(field.getName()));
+                        continue;
+                    }
+                    NativeArray nativeArray = field.getAnnotation(NativeArray.class);
+                    if (nativeArray != null) {
+                        SequenceLayout layout = MemoryLayout.sequenceLayout(nativeArray.length(), extract(nativeArray.size()));
+                        list.add(layout.withName(field.getName()));
+                        continue;
+                    } else {
+                        throw new StructException(STR. "\{ field } must be pointer or nativeArray" );
+                    }
+                }
+                //类型为结构体
+                MemoryLayout layout = extract(field.getType()).withName(field.getName());
+                layout = alignmentByteSize == -1 ? layout : layout.withByteAlignment(alignmentByteSize);
                 list.add(layout);
-                continue;
             }
+            return StructHelper.calAlignLayout(list);
+        });
 
-            //类型为数组or指针
-            if (field.getType() == MemorySegment.class) {
-                if (field.getAnnotation(Pointer.class) != null) {
-                    list.add(ValueLayout.ADDRESS.withName(field.getName()));
-                    continue;
-                }
-                NativeArray nativeArray = field.getAnnotation(NativeArray.class);
-                if (nativeArray != null) {
-                    SequenceLayout layout = MemoryLayout.sequenceLayout(nativeArray.length(), extract(nativeArray.size()));
-                    list.add(layout.withName(field.getName()));
-                    continue;
-                } else {
-                    throw new StructException(STR. "\{ field } must be pointer or nativeArray" );
-                }
-            }
-            //类型为结构体
-            MemoryLayout layout = extract(field.getType()).withName(field.getName());
-            layout = alignmentByteSize == -1 ? layout : layout.withByteAlignment(alignmentByteSize);
-            list.add(layout);
-        }
-        MemoryLayout layout = StructHelper.calAlignLayout(list);
-        layoutCaches.put(structClass, layout);
-        return layout;
     }
 
     /**

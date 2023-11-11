@@ -3,8 +3,9 @@ package top.dreamlike.panama.genertor.proxy;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.ClassFileVersion;
 import net.bytebuddy.dynamic.DynamicType;
-import net.bytebuddy.implementation.InvocationHandlerAdapter;
+import net.bytebuddy.implementation.FieldAccessor;
 import net.bytebuddy.implementation.MethodCall;
+import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import top.dreamlike.panama.genertor.annotation.NativeFunction;
 import top.dreamlike.panama.genertor.annotation.Pointer;
 import top.dreamlike.panama.genertor.exception.StructException;
@@ -22,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static net.bytebuddy.matcher.ElementMatchers.isTypeInitializer;
 
 public class NativeCallGenerator {
     private final ByteBuddy byteBuddy;
@@ -60,10 +63,13 @@ public class NativeCallGenerator {
         if (o instanceof NativeStructEnhanceMark struct) {
             return struct.realMemory();
         }
+        if (o instanceof MemorySegment memorySegment) {
+            return memorySegment;
+        }
         throw new StructException(STR. "\{ o.getClass() } is not struct,pleace call StructProxyGenerator::enhance before calling native function" );
     }
 
-    private <T> T generate(Class<T> nativeInterface) {
+    public <T> T generate(Class<T> nativeInterface) {
         Objects.requireNonNull(nativeInterface);
         try {
             return (T) ctorCaches.computeIfAbsent(nativeInterface, key -> bind(nativeInterface))
@@ -73,28 +79,42 @@ public class NativeCallGenerator {
         }
     }
 
+
     private <T> MethodHandleInvocationHandle bind(Class<T> nativeInterface) {
         try {
-            if (nativeInterface.isInterface()) {
+            if (!nativeInterface.isInterface()) {
                 throw new IllegalArgumentException(STR. "\{ nativeInterface } is not interface" );
             }
             var definition = byteBuddy.subclass(Object.class)
                     .implement(nativeInterface)
-                    .defineConstructor(Modifier.PUBLIC)
-                    .intercept(MethodCall.invokeSuper());
+                    .name(STR. "\{ nativeInterface.getName() }_native_call_enhance" );
             for (Method method : nativeInterface.getMethods()) {
                 if (method.isBridge() || method.isDefault() || method.isSynthetic()) {
                     continue;
                 }
-                definition = definition.defineMethod(method.getName(), method.getClass(), Modifier.PUBLIC)
+                String mhFieldName = STR. "\{ method.getName() }_native_method_handle" ;
+                MethodHandle methodHandle = nativeMethodHandle(method);
+                definition = definition
+                        .defineField(mhFieldName, MethodHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
+                        //fixme: 静态字段为空
+                        .invokable(isTypeInitializer()).intercept(FieldAccessor.ofField(mhFieldName).setsReference(methodHandle))
+                        .defineMethod(method.getName(), method.getReturnType(), Modifier.PUBLIC)
                         .withParameters(method.getParameterTypes())
-                        .intercept(InvocationHandlerAdapter.of(new MethodHandleInvocationHandle(nativeMethodHandle(method))));
+                        .intercept(
+                                MethodCall.invoke(MethodHandle.class.getMethod("invokeExact", Object[].class))
+                                        .onField(mhFieldName)
+                                        .withArgumentArray()
+                                        .withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC)
+                        );
             }
             DynamicType.Unloaded<Object> unloaded = definition.make();
-            unloaded.saveIn(new File("structProxy"));
+            if (structProxyGenerator.proxySavePath != null) {
+                unloaded.saveIn(new File(structProxyGenerator.proxySavePath));
+            }
+
             Class<?> aClass = unloaded.load(nativeInterface.getClassLoader()).getLoaded();
             return new MethodHandleInvocationHandle(
-                    MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class, MemorySegment.class))
+                    MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class))
             );
         } catch (Throwable e) {
             throw new StructException("should not reach here!", e);
@@ -107,18 +127,19 @@ public class NativeCallGenerator {
         if (function != null && function.fast()) {
             options.add(Linker.Option.isTrivial());
         }
-        boolean allowPastHeap = function != null && function.allowPassHeap();
+        boolean allowPassHeap = function != null && function.allowPassHeap();
         String functionName = function == null ? method.getName() : function.value();
 
         ArrayList<Integer> pointIndex = new ArrayList<>();
         MemoryLayout[] layouts = new MemoryLayout[method.getParameterCount()];
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; i++) {
-            if (!parameters[i].getType().isPrimitive() && parameters[i].getAnnotation(Pointer.class) != null) {
+            if (parameters[i].getType().isAssignableFrom(MemorySegment.class) || (!parameters[i].getType().isPrimitive() && parameters[i].getAnnotation(Pointer.class) != null)) {
                 layouts[i] = ValueLayout.ADDRESS;
                 pointIndex.add(i);
                 continue;
             }
+
             layouts[i] = structProxyGenerator.extract(parameters[i].getType());
         }
         FunctionDescriptor fd = method.getReturnType() == void.class
