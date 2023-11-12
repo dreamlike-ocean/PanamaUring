@@ -217,12 +217,12 @@ public class StructProxyGenerator {
                     //这里 不能用 MethodDelegation.toField(MEMORY_FIELD) 因为会在对应字段MemorySegment里面寻找签名对得上的方法 就会找到asReadOnly
                     .method(named("realMemory")).intercept(FieldAccessor.ofField(MEMORY_FIELD))
                     .defineConstructor(Modifier.PUBLIC)
-                    .withParameters(MemorySegment.class, StructProxyGenerator.class, MemoryLayout.class)
+                    .withParameters(MemoryLayout.class, StructProxyGenerator.class, MemorySegment.class)
                     .intercept(
                             MethodCall.invoke(targetClass.getDeclaredConstructor()).onSuper()
-                                    .andThen(FieldAccessor.ofField(MEMORY_FIELD).setsArgumentAt(0))
+                                    .andThen(FieldAccessor.ofField(LAYOUT_FIELD).setsArgumentAt(0))
                                     .andThen(FieldAccessor.ofField(GENERATOR_FIELD).setsArgumentAt(1))
-                                    .andThen(FieldAccessor.ofField(LAYOUT_FIELD).setsArgumentAt(2))
+                                    .andThen(FieldAccessor.ofField(MEMORY_FIELD).setsArgumentAt(2))
                     );
 
             precursor = precursor.method(named("sizeof")).intercept(FixedValue.value(structMemoryLayout.byteSize()));
@@ -270,21 +270,8 @@ public class StructProxyGenerator {
             Class<?> loaded = load.getLoaded();
             //强制初始化执行cInit
             MethodHandles.lookup().ensureInitialized(loaded);
-            //reinterpret 第一个参数到sizeof大小
-            MethodHandle handle = MethodHandles.filterArguments(
-                    MethodHandles.lookup().findConstructor(loaded, MethodType.methodType(void.class, MemorySegment.class, StructProxyGenerator.class, MemoryLayout.class)),
-                    0,
-                    MethodHandles.insertArguments(REINTERPRET_MH, 1, structMemoryLayout.byteSize())
-            );
-            //第二个参数绑定当前this
-            //第三个参数给当前的layout
-            handle = MethodHandles.insertArguments(
-                    handle,
-                    1,
-                    this, structMemoryLayout
-            );
-            //todo fixme : 无效的methodhandle
-            return NativeHelper.memoryBinder(handle);
+            MethodHandle ctorMh = MethodHandles.lookup().findConstructor(loaded, MethodType.methodType(void.class, MemoryLayout.class, StructProxyGenerator.class, MemorySegment.class));
+            return NativeHelper.memoryBinder(ctorMh, structMemoryLayout, this);
         } catch (Throwable e) {
             throw new StructException("should not reach here!", e);
         } finally {

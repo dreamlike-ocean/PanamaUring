@@ -1,5 +1,7 @@
 package top.dreamlike.panama.genertor.helper;
 
+import top.dreamlike.panama.genertor.proxy.StructProxyGenerator;
+
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.*;
@@ -77,17 +79,21 @@ public class NativeHelper {
         System.out.println("Empty");
     }
 
-    public static Function<MemorySegment, Object> memoryBinder(MethodHandle methodHandle) throws Throwable {
+    public static Function<MemorySegment, Object> memoryBinder(MethodHandle methodHandle, MemoryLayout memoryLayout, StructProxyGenerator generator) throws Throwable {
         CallSite callSite = LambdaMetafactory.metafactory(
                 MethodHandles.lookup(),
                 "apply",
-                MethodType.methodType(Function.class),
+                MethodType.methodType(Function.class, MemoryLayout.class, StructProxyGenerator.class),
                 MethodType.methodType(Object.class, Object.class),
                 methodHandle,
-                methodHandle.type()
+                MethodType.methodType(Object.class, MemorySegment.class)
         );
 
-        return ((Function<MemorySegment, Object>) callSite.getTarget().invoke());
+        MethodHandle target = callSite.getTarget();
+        Function<MemorySegment, Object> lambdaFunction = (Function<MemorySegment, Object>) target.invoke(memoryLayout, generator);
+        return (ms) -> {
+            return lambdaFunction.apply(ms.reinterpret(memoryLayout.byteSize()));
+        };
     }
 
     public static Supplier<Object> ctorBinder(MethodHandle methodHandle, Class enhanceClass) throws Throwable {
