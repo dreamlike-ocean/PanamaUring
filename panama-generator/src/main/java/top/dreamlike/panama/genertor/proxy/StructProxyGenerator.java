@@ -13,8 +13,8 @@ import top.dreamlike.panama.genertor.annotation.NativeArrayMark;
 import top.dreamlike.panama.genertor.annotation.Pointer;
 import top.dreamlike.panama.genertor.annotation.Union;
 import top.dreamlike.panama.genertor.exception.StructException;
+import top.dreamlike.panama.genertor.helper.NativeHelper;
 import top.dreamlike.panama.genertor.helper.NativeStructEnhanceMark;
-import top.dreamlike.panama.genertor.helper.StructHelper;
 
 import java.io.File;
 import java.lang.foreign.MemoryLayout;
@@ -229,7 +229,7 @@ public class StructProxyGenerator {
                 layout = alignmentByteSize == -1 ? layout : layout.withByteAlignment(alignmentByteSize);
                 list.add(layout);
             }
-            return StructHelper.calAlignLayout(list);
+            return NativeHelper.calAlignLayout(list);
         });
 
     }

@@ -5,21 +5,26 @@ import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.foreign.MemoryLayout.paddingLayout;
 
-public class StructHelper {
+public class NativeHelper {
 
     private final static MethodHandle REAL_MEMORY_MH;
+
+    public final static Method EMPTY_METHOD;
+
+    public final static Method MH_CALL_METHOD;
 
     static {
         try {
             REAL_MEMORY_MH = MethodHandles.lookup().findVirtual(NativeStructEnhanceMark.class, "realMemory", MethodType.methodType(MemorySegment.class));
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
+            EMPTY_METHOD = NativeHelper.class.getMethod("empty");
+            MH_CALL_METHOD = MethodHandle.class.getMethod("invokeWithArguments", Object[].class);
+        } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }
@@ -67,4 +72,9 @@ public class StructHelper {
                 REAL_MEMORY_MH
         );
     }
+
+    public static void empty() {
+    }
+
+    ;
 }
