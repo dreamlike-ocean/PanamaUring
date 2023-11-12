@@ -2,12 +2,12 @@ package top.dreamlike.panama.genertor.helper;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
+import java.lang.invoke.*;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static java.lang.foreign.MemoryLayout.paddingLayout;
 
@@ -74,7 +74,32 @@ public class NativeHelper {
     }
 
     public static void empty() {
+        System.out.println("Empty");
     }
 
-    ;
+    public static Function<MemorySegment, Object> memoryBinder(MethodHandle methodHandle) throws Throwable {
+        CallSite callSite = LambdaMetafactory.metafactory(
+                MethodHandles.lookup(),
+                "apply",
+                MethodType.methodType(Function.class),
+                MethodType.methodType(Object.class, Object.class),
+                methodHandle,
+                methodHandle.type()
+        );
+
+        return ((Function<MemorySegment, Object>) callSite.getTarget().invoke());
+    }
+
+    public static Supplier<Object> ctorBinder(MethodHandle methodHandle, Class enhanceClass) throws Throwable {
+
+        CallSite callSite = LambdaMetafactory.metafactory(
+                MethodHandles.lookup(),
+                "get",
+                MethodType.methodType(Supplier.class),
+                MethodType.methodType(Object.class),
+                methodHandle,
+                methodHandle.type()
+        );
+        return (Supplier<Object>) callSite.getTarget().invoke();
+    }
 }

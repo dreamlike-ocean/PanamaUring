@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import static net.bytebuddy.matcher.ElementMatchers.named;
 
@@ -53,7 +54,7 @@ public class NativeCallGenerator {
         }
     }
 
-    final Map<Class<?>, MethodHandleInvocationHandle> ctorCaches = new ConcurrentHashMap<>();
+    final Map<Class<?>, Supplier<Object>> ctorCaches = new ConcurrentHashMap<>();
     private final StructProxyGenerator structProxyGenerator;
 
     public NativeCallGenerator() {
@@ -83,7 +84,7 @@ public class NativeCallGenerator {
         Objects.requireNonNull(nativeInterface);
         try {
             return (T) ctorCaches.computeIfAbsent(nativeInterface, key -> bind(nativeInterface))
-                    .target().invoke();
+                    .get();
         } catch (Throwable throwable) {
             throw new StructException("should not reach here!", throwable);
         }
@@ -139,7 +140,8 @@ public class NativeCallGenerator {
         return methodHandle;
     }
 
-    private <T> MethodHandleInvocationHandle bind(Class<T> nativeInterface) {
+    @SuppressWarnings("unchecked")
+    private Supplier<Object> bind(Class<?> nativeInterface) {
         try {
             if (!nativeInterface.isInterface()) {
                 throw new IllegalArgumentException(STR. "\{ nativeInterface } is not interface" );
@@ -174,13 +176,12 @@ public class NativeCallGenerator {
                 unloaded.saveIn(new File(structProxyGenerator.proxySavePath));
             }
 
-            Class<?> aClass = unloaded.load(nativeInterface.getClassLoader(), ClassLoadingStrategy.Default.CHILD_FIRST)
+            ClassLoader loader = Thread.currentThread().getContextClassLoader();
+            Class<?> aClass = unloaded.load(nativeInterface.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(MethodHandles.lookup()))
                     .getLoaded();
             //强制初始化执行cInit
-            Class.forName(aClass.getName(), true, aClass.getClassLoader());
-            return new MethodHandleInvocationHandle(
-                    MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class))
-            );
+            MethodHandles.lookup().ensureInitialized(aClass);
+            return NativeHelper.ctorBinder(MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class)), aClass);
         } catch (Throwable e) {
             throw new StructException("should not reach here!", e);
         } finally {
