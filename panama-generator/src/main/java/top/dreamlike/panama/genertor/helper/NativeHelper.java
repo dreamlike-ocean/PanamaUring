@@ -76,24 +76,27 @@ public class NativeHelper {
     }
 
     public static void empty() {
-        System.out.println("Empty");
     }
 
     public static Function<MemorySegment, Object> memoryBinder(MethodHandle methodHandle, MemoryLayout memoryLayout, StructProxyGenerator generator) throws Throwable {
         CallSite callSite = LambdaMetafactory.metafactory(
                 MethodHandles.lookup(),
                 "apply",
+                //返回值为目标sam 其余的为捕获变量
                 MethodType.methodType(Function.class, MemoryLayout.class, StructProxyGenerator.class),
+                //sam的方法签名
                 MethodType.methodType(Object.class, Object.class),
+                //转发到的目标方法 这里是(MemoryLayout.class, StructProxyGenerator.class, MemorySegment.class) -> ${EnhanceClass}
                 methodHandle,
+                //最终想要的调用形式
                 MethodType.methodType(Object.class, MemorySegment.class)
         );
 
         MethodHandle target = callSite.getTarget();
+        //传入捕获的变量
         Function<MemorySegment, Object> lambdaFunction = (Function<MemorySegment, Object>) target.invoke(memoryLayout, generator);
-        return (ms) -> {
-            return lambdaFunction.apply(ms.reinterpret(memoryLayout.byteSize()));
-        };
+        //对传入的memorysegment再reinterpret
+        return (ms) -> lambdaFunction.apply(ms.reinterpret(memoryLayout.byteSize()));
     }
 
     public static Supplier<Object> ctorBinder(MethodHandle methodHandle, Class enhanceClass) throws Throwable {

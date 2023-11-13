@@ -7,7 +7,12 @@ import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.Implementation;
 import net.bytebuddy.implementation.MethodCall;
-import net.bytebuddy.implementation.bytecode.assign.Assigner;
+import net.bytebuddy.implementation.bytecode.StackManipulation;
+import net.bytebuddy.implementation.bytecode.member.HandleInvocation;
+import net.bytebuddy.implementation.bytecode.member.MethodReturn;
+import net.bytebuddy.implementation.bytecode.member.MethodVariableAccess;
+import net.bytebuddy.jar.asm.MethodVisitor;
+import net.bytebuddy.jar.asm.Opcodes;
 import net.bytebuddy.utility.JavaConstant;
 import top.dreamlike.panama.genertor.annotation.NativeFunction;
 import top.dreamlike.panama.genertor.annotation.Pointer;
@@ -102,6 +107,13 @@ public class NativeCallGenerator {
     }
 
 
+    private static boolean needTransToPointer(Parameter parameter) {
+        Class<?> typeClass = parameter.getType();
+        return typeClass.isAssignableFrom(MemorySegment.class)
+                || typeClass.isAssignableFrom(NativeStructEnhanceMark.class)
+                || (!typeClass.isPrimitive() && parameter.getAnnotation(Pointer.class) != null);
+    }
+
     private MethodHandle nativeMethodHandle(Method method) {
         NativeFunction function = method.getAnnotation(NativeFunction.class);
         ArrayList<Linker.Option> options = new ArrayList<>(2);
@@ -115,16 +127,14 @@ public class NativeCallGenerator {
         MemoryLayout[] layouts = new MemoryLayout[method.getParameterCount()];
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; i++) {
-            if (parameters[i].getType().isAssignableFrom(MemorySegment.class)
-                    || parameters[i].getType().isAssignableFrom(NativeStructEnhanceMark.class)
-                    || (!parameters[i].getType().isPrimitive() && parameters[i].getAnnotation(Pointer.class) != null)
-            ) {
+            Class<?> typeClass = parameters[i].getType();
+            if (needTransToPointer(parameters[i])) {
                 layouts[i] = ValueLayout.ADDRESS;
                 pointIndex.add(i);
                 continue;
             }
 
-            layouts[i] = structProxyGenerator.extract(parameters[i].getType());
+            layouts[i] = structProxyGenerator.extract(typeClass);
         }
         FunctionDescriptor fd = method.getReturnType() == void.class
                 ? FunctionDescriptor.ofVoid(layouts)
@@ -147,9 +157,10 @@ public class NativeCallGenerator {
                 throw new IllegalArgumentException(STR. "\{ nativeInterface } is not interface" );
             }
             currentGenerator.set(this);
+            String className = STR. "\{ nativeInterface.getName() }_native_call_enhance" ;
             var definition = byteBuddy.subclass(Object.class)
                     .implement(nativeInterface)
-                    .name(STR. "\{ nativeInterface.getName() }_native_call_enhance" );
+                    .name(className);
             Implementation.Composable cInitBlock = MethodCall.invoke(NativeHelper.EMPTY_METHOD);
             for (Method method : nativeInterface.getMethods()) {
                 if (method.isBridge() || method.isDefault() || method.isSynthetic()) {
@@ -159,14 +170,13 @@ public class NativeCallGenerator {
                 //cInit 类初始化的时候赋值下静态字段
                 cInitBlock = cInitBlock.andThen(MethodCall.invoke(NativeCallGenerator.class.getMethod("generateInGeneratorContext", Class.class, String.class, MethodType.class))
                         .with(nativeInterface, method.getName()).with(JavaConstant.MethodType.of(method)).setsField(named(mhFieldName)));
-
                 definition = definition
                         .defineField(mhFieldName, MethodHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
                         .defineMethod(method.getName(), method.getReturnType(), Modifier.PUBLIC)
                         .withParameters(method.getParameterTypes())
-                        .intercept(
-                                MethodCall.invoke(NativeHelper.MH_CALL_METHOD).onField(mhFieldName).withArgumentArray().withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC)
-                        );
+                        //todo 如果返回一个结构体 or MemorySegment怎么办
+                        .intercept(new Implementation.Simple(new ConstFieldInvokerStackManipulation(className, mhFieldName, method)));
+
             }
 
             definition = definition.invokable(MethodDescription::isTypeInitializer)
@@ -176,7 +186,6 @@ public class NativeCallGenerator {
                 unloaded.saveIn(new File(structProxyGenerator.proxySavePath));
             }
 
-            ClassLoader loader = Thread.currentThread().getContextClassLoader();
             Class<?> aClass = unloaded.load(nativeInterface.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(MethodHandles.lookup()))
                     .getLoaded();
             //强制初始化执行cInit
@@ -186,6 +195,80 @@ public class NativeCallGenerator {
             throw new StructException("should not reach here!", e);
         } finally {
             currentGenerator.remove();
+        }
+    }
+
+    private record ConstFieldInvokerStackManipulation(String className, String mhFieldName,
+                                                      Method method) implements StackManipulation {
+
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+
+        @Override
+        public Size apply(MethodVisitor methodVisitor, Implementation.Context implementationContext) {
+            Size res = Size.ZERO;
+            methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, className.replace(".", "/"), mhFieldName, "Ljava/lang/invoke/MethodHandle;");
+            Size vistStaticSize = new Size(1, 1);
+            res = res.aggregate(vistStaticSize);
+            StackManipulation[] manipulations = new StackManipulation[method.getParameterCount() + 2];
+            Parameter[] parameters = method.getParameters();
+            int offset = 1;
+            int targetAddOffset = 0;
+            Class[] classes = new Class[parameters.length];
+            for (int i = 0; i < parameters.length; i++) {
+                Class<?> type = parameters[i].getType();
+                StackManipulation wait = null;
+                if (type == long.class && type.isPrimitive()) {
+                    wait = MethodVariableAccess.LONG.loadFrom(offset);
+                    targetAddOffset = 2;
+                } else if (type == double.class && type.isPrimitive()) {
+                    wait = MethodVariableAccess.DOUBLE.loadFrom(offset);
+                    targetAddOffset = 2;
+                } else if (type == float.class && type.isPrimitive()) {
+                    wait = MethodVariableAccess.FLOAT.loadFrom(offset);
+                    targetAddOffset = 1;
+                } else if (type == int.class && type.isPrimitive()) {
+                    wait = MethodVariableAccess.INTEGER.loadFrom(offset);
+                    targetAddOffset = 1;
+                } else {
+                    wait = MethodVariableAccess.REFERENCE.loadFrom(offset);
+                    targetAddOffset = 1;
+                }
+                offset += targetAddOffset;
+                manipulations[i] = wait;
+                if (NativeCallGenerator.needTransToPointer(parameters[i])) {
+                    //擦除了防止跟methodHandle = MethodHandles.filterArguments(
+                    //                    methodHandle,
+                    //                    i,
+                    //                    TRANSFORM_OBJECT_TO_STRUCT_MH
+                    //            ); 的签名不一致
+                    classes[i] = Object.class;
+                } else {
+                    classes[i] = type;
+                }
+            }
+
+            JavaConstant.MethodType methodType = JavaConstant.MethodType.of(method.getReturnType(), classes);
+            HandleInvocation handleInvocation = new HandleInvocation(methodType);
+            manipulations[parameters.length] = handleInvocation;
+            Class returnType = method.getReturnType();
+
+            manipulations[parameters.length + 1] = calMethodReturn(returnType);
+
+            StackManipulation stackManipulation = new StackManipulation.Compound(manipulations);
+            res = res.aggregate(stackManipulation.apply(methodVisitor, implementationContext));
+            return res;
+        }
+
+        public MethodReturn calMethodReturn(Class c) {
+            if (c == int.class) return MethodReturn.INTEGER;
+            if (c == double.class) return MethodReturn.DOUBLE;
+            if (c == float.class) return MethodReturn.FLOAT;
+            if (c == long.class) return MethodReturn.LONG;
+            if (c == void.class) return MethodReturn.VOID;
+            return MethodReturn.REFERENCE;
         }
     }
 }
