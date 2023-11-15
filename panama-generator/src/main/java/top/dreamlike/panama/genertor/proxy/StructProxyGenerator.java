@@ -3,16 +3,25 @@ package top.dreamlike.panama.genertor.proxy;
 
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.ClassFileVersion;
+import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.*;
+import net.bytebuddy.implementation.bytecode.StackManipulation;
+import net.bytebuddy.implementation.bytecode.member.MethodInvocation;
+import net.bytebuddy.implementation.bytecode.member.MethodVariableAccess;
+import net.bytebuddy.jar.asm.MethodVisitor;
+import net.bytebuddy.jar.asm.Opcodes;
+import net.bytebuddy.utility.JavaConstant;
 import top.dreamlike.panama.genertor.annotation.Alignment;
 import top.dreamlike.panama.genertor.annotation.NativeArrayMark;
 import top.dreamlike.panama.genertor.annotation.Pointer;
 import top.dreamlike.panama.genertor.annotation.Union;
 import top.dreamlike.panama.genertor.exception.StructException;
+import top.dreamlike.panama.genertor.helper.MethodVariableAccessLoader;
 import top.dreamlike.panama.genertor.helper.NativeHelper;
 import top.dreamlike.panama.genertor.helper.NativeStructEnhanceMark;
+import top.dreamlike.panama.genertor.helper.VarHandlerInvocation;
 
 import java.io.File;
 import java.lang.foreign.MemoryLayout;
@@ -24,6 +33,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,8 +60,11 @@ public class StructProxyGenerator {
 
     private static final ThreadLocal<MemoryLayout> currentLayout = new ThreadLocal<>();
 
+    private static final Method REALMEMORY_METHOD;
+
     static {
         try {
+            REALMEMORY_METHOD = NativeStructEnhanceMark.class.getMethod("realMemory");
             REINTERPRET_MH = MethodHandles.lookup().findVirtual(MemorySegment.class, "reinterpret", MethodType.methodType(MemorySegment.class, long.class));
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -278,4 +291,97 @@ public class StructProxyGenerator {
             currentLayout.remove();
         }
     }
+
+    private class MemorySegemntVarHandleGetterStackManipulation implements StackManipulation {
+
+        private final JavaConstant.MethodType getMethodType;
+
+        private final String fieldName;
+
+        private final String className;
+
+        private final Class returnClass;
+
+
+        public MemorySegemntVarHandleGetterStackManipulation(String fieldName, String className, Class returnClass) {
+            this.getMethodType = JavaConstant.MethodType.of(returnClass, MemorySegment.class);
+            this.fieldName = fieldName;
+            this.className = className;
+            this.returnClass = returnClass;
+        }
+
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+
+        @Override
+        public Size apply(MethodVisitor methodVisitor, Implementation.Context implementationContext) {
+            Size res = Size.ZERO;
+            //获取静态字段压栈
+            methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, className.replace(".", "/"), fieldName, "Ljava/lang/invoke/VarHandle;");
+            Size vistStaticSize = new Size(1, 1);
+            res = res.aggregate(vistStaticSize);
+            //
+            Size callVarHandleSize = new Compound(
+                    //ALOAD 0
+                    MethodVariableAccess.loadThis(),
+                    // INVOKEVIRTUAL top/dreamlike/panama/genertor/proxy/${currentClass}.realMemory ()Ljava/lang/foreign/MemorySegment;
+                    MethodInvocation.invoke(new MethodDescription.InDefinedShape.ForLoadedMethod(REALMEMORY_METHOD)),
+                    //INVOKEVIRTUAL java/lang/invoke/VarHandle.get (Ljava/lang/foreign/MemorySegment;)I
+                    new VarHandlerInvocation(getMethodType, true),
+                    //IRETURN
+                    NativeCallGenerator.calMethodReturn(returnClass)
+            ).apply(methodVisitor, implementationContext);
+            res = res.aggregate(callVarHandleSize);
+            return res;
+        }
+    }
+
+    private class MemorySegemntVarHandleSetterStackManipulation implements StackManipulation {
+        private final JavaConstant.MethodType getMethodType;
+
+        private final String fieldName;
+
+        private final String className;
+
+        private final Class paramClass;
+
+
+        public MemorySegemntVarHandleSetterStackManipulation(String fieldName, String className, Class paramClass) {
+            this.getMethodType = JavaConstant.MethodType.of(void.class, MemorySegment.class, paramClass);
+            this.fieldName = fieldName;
+            this.className = className;
+            this.paramClass = paramClass;
+        }
+
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+
+        @Override
+        public Size apply(MethodVisitor methodVisitor, Implementation.Context implementationContext) {
+            Size res = Size.ZERO;
+            //获取静态字段压栈
+            methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, className.replace(".", "/"), fieldName, "Ljava/lang/invoke/VarHandle;");
+            Size vistStaticSize = new Size(1, 1);
+            res = res.aggregate(vistStaticSize);
+            Size callVarHandleSize = new Compound(
+                    //ALOAD 0
+                    MethodVariableAccess.loadThis(),
+                    // INVOKEVIRTUAL top/dreamlike/panama/genertor/proxy/${currentClass}.realMemory ()Ljava/lang/foreign/MemorySegment;
+                    MethodInvocation.invoke(new MethodDescription.InDefinedShape.ForLoadedMethod(REALMEMORY_METHOD)),
+                    // ILOAD 1
+                    MethodVariableAccessLoader.calLoader(paramClass, 1).loadOp(),
+                    //INVOKEVIRTUAL java/lang/invoke/VarHandle.get (Ljava/lang/foreign/MemorySegment;)I
+                    new VarHandlerInvocation(getMethodType, false),
+                    //RETURN
+                    NativeCallGenerator.calMethodReturn(void.class)
+            ).apply(methodVisitor, implementationContext);
+            res = res.aggregate(callVarHandleSize);
+            return res;
+        }
+    }
+
 }

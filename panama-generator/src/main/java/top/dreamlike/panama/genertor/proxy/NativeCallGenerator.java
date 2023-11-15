@@ -10,13 +10,13 @@ import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.implementation.bytecode.StackManipulation;
 import net.bytebuddy.implementation.bytecode.member.HandleInvocation;
 import net.bytebuddy.implementation.bytecode.member.MethodReturn;
-import net.bytebuddy.implementation.bytecode.member.MethodVariableAccess;
 import net.bytebuddy.jar.asm.MethodVisitor;
 import net.bytebuddy.jar.asm.Opcodes;
 import net.bytebuddy.utility.JavaConstant;
 import top.dreamlike.panama.genertor.annotation.NativeFunction;
 import top.dreamlike.panama.genertor.annotation.Pointer;
 import top.dreamlike.panama.genertor.exception.StructException;
+import top.dreamlike.panama.genertor.helper.MethodVariableAccessLoader;
 import top.dreamlike.panama.genertor.helper.NativeHelper;
 import top.dreamlike.panama.genertor.helper.NativeStructEnhanceMark;
 
@@ -198,6 +198,15 @@ public class NativeCallGenerator {
         }
     }
 
+    static MethodReturn calMethodReturn(Class c) {
+        if (c == int.class) return MethodReturn.INTEGER;
+        if (c == double.class) return MethodReturn.DOUBLE;
+        if (c == float.class) return MethodReturn.FLOAT;
+        if (c == long.class) return MethodReturn.LONG;
+        if (c == void.class) return MethodReturn.VOID;
+        return MethodReturn.REFERENCE;
+    }
+
     private record ConstFieldInvokerStackManipulation(String className, String mhFieldName,
                                                       Method method) implements StackManipulation {
 
@@ -215,27 +224,12 @@ public class NativeCallGenerator {
             StackManipulation[] manipulations = new StackManipulation[method.getParameterCount() + 2];
             Parameter[] parameters = method.getParameters();
             int offset = 1;
-            int targetAddOffset = 0;
             Class[] classes = new Class[parameters.length];
             for (int i = 0; i < parameters.length; i++) {
                 Class<?> type = parameters[i].getType();
-                StackManipulation wait = null;
-                if (type == long.class && type.isPrimitive()) {
-                    wait = MethodVariableAccess.LONG.loadFrom(offset);
-                    targetAddOffset = 2;
-                } else if (type == double.class && type.isPrimitive()) {
-                    wait = MethodVariableAccess.DOUBLE.loadFrom(offset);
-                    targetAddOffset = 2;
-                } else if (type == float.class && type.isPrimitive()) {
-                    wait = MethodVariableAccess.FLOAT.loadFrom(offset);
-                    targetAddOffset = 1;
-                } else if (type == int.class && type.isPrimitive()) {
-                    wait = MethodVariableAccess.INTEGER.loadFrom(offset);
-                    targetAddOffset = 1;
-                } else {
-                    wait = MethodVariableAccess.REFERENCE.loadFrom(offset);
-                    targetAddOffset = 1;
-                }
+                MethodVariableAccessLoader loader = MethodVariableAccessLoader.calLoader(type, offset);
+                int targetAddOffset = loader.targetOffset();
+                StackManipulation wait = loader.loadOp();
                 offset += targetAddOffset;
                 manipulations[i] = wait;
                 if (NativeCallGenerator.needTransToPointer(parameters[i])) {
@@ -262,13 +256,5 @@ public class NativeCallGenerator {
             return res;
         }
 
-        public MethodReturn calMethodReturn(Class c) {
-            if (c == int.class) return MethodReturn.INTEGER;
-            if (c == double.class) return MethodReturn.DOUBLE;
-            if (c == float.class) return MethodReturn.FLOAT;
-            if (c == long.class) return MethodReturn.LONG;
-            if (c == void.class) return MethodReturn.VOID;
-            return MethodReturn.REFERENCE;
-        }
     }
 }
