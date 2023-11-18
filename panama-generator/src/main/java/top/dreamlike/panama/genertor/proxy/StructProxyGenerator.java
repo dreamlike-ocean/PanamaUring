@@ -56,16 +56,16 @@ public class StructProxyGenerator {
 
     String proxySavePath;
 
-    private static final MethodHandle REINTERPRET_MH;
-
     private static final ThreadLocal<MemoryLayout> currentLayout = new ThreadLocal<>();
 
     private static final Method REALMEMORY_METHOD;
 
+    static final MethodHandle ENHANCE_MH;
+
     static {
         try {
+            ENHANCE_MH = MethodHandles.lookup().findVirtual(StructProxyGenerator.class, "enhance", MethodType.methodType(Object.class, Class.class, MemorySegment.class));
             REALMEMORY_METHOD = NativeStructEnhanceMark.class.getMethod("realMemory");
-            REINTERPRET_MH = MethodHandles.lookup().findVirtual(MemorySegment.class, "reinterpret", MethodType.methodType(MemorySegment.class, long.class));
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -250,13 +250,11 @@ public class StructProxyGenerator {
                 }
 
                 if (primitiveMapToMemoryLayout(field.getType()) != null) {
-                    VarHandle nativeVarhandle = structMemoryLayout.varHandle(MemoryLayout.PathElement.groupElement(field.getName()));
                     String varHandleFieldName = STR. "\{ field.getName() }_native_struct_vh" ;
                     cInitBlock = cInitBlock.andThen(
                             MethodCall.invoke(StructProxyGenerator.class.getMethod("generateVarHandle", String.class))
                                     .with(field.getName()).setsField(named(varHandleFieldName))
                     );
-                    //todo fixme 使用varhandle调用
                     precursor = precursor
                             .defineField(varHandleFieldName, VarHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
                             //转到对应的调用
@@ -281,10 +279,11 @@ public class StructProxyGenerator {
                 unloaded.saveIn(new File(proxySavePath));
             }
 
-            DynamicType.Loaded<?> load = unloaded.load(targetClass.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(MethodHandles.lookup()));
+            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(targetClass, MethodHandles.lookup());
+            DynamicType.Loaded<?> load = unloaded.load(targetClass.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(lookup));
             Class<?> loaded = load.getLoaded();
             //强制初始化执行cInit
-            MethodHandles.lookup().ensureInitialized(loaded);
+            lookup.ensureInitialized(loaded);
             MethodHandle ctorMh = MethodHandles.lookup().findConstructor(loaded, MethodType.methodType(void.class, MemoryLayout.class, StructProxyGenerator.class, MemorySegment.class));
             return NativeHelper.memoryBinder(ctorMh, structMemoryLayout, this);
         } catch (Throwable e) {

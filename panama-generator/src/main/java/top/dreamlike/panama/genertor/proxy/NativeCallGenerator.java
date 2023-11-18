@@ -110,16 +110,22 @@ public class NativeCallGenerator {
     private static boolean needTransToPointer(Parameter parameter) {
         Class<?> typeClass = parameter.getType();
         return typeClass.isAssignableFrom(MemorySegment.class)
-                || typeClass.isAssignableFrom(NativeStructEnhanceMark.class)
+                || NativeStructEnhanceMark.class.isAssignableFrom(typeClass)
                 || (!typeClass.isPrimitive() && parameter.getAnnotation(Pointer.class) != null);
     }
 
     private MethodHandle nativeMethodHandle(Method method) {
         NativeFunction function = method.getAnnotation(NativeFunction.class);
+        boolean returnPointer = function != null && function.returnIsPointer();
         ArrayList<Linker.Option> options = new ArrayList<>(2);
         if (function != null && function.fast()) {
             options.add(Linker.Option.isTrivial());
         }
+
+        if (NativeLibLookup.primitiveMapToMemoryLayout(method.getReturnType()) == null && !returnPointer) {
+            throw new IllegalArgumentException(STR. "\{ method } must return primitive type or is marked returnIsPointer" );
+        }
+
         boolean allowPassHeap = function != null && function.allowPassHeap();
         String functionName = function == null ? method.getName() : function.value();
 
@@ -136,15 +142,40 @@ public class NativeCallGenerator {
 
             layouts[i] = structProxyGenerator.extract(typeClass);
         }
+        MemoryLayout returnLayout = structProxyGenerator.extract(method.getReturnType());
         FunctionDescriptor fd = method.getReturnType() == void.class
                 ? FunctionDescriptor.ofVoid(layouts)
-                : FunctionDescriptor.of(structProxyGenerator.extract(method.getReturnType()), layouts);
+                : FunctionDescriptor.of(returnPointer ? ValueLayout.ADDRESS : returnLayout, layouts);
         MethodHandle methodHandle = nativeLibLookup.downcallHandle(functionName, fd, options.toArray(Linker.Option[]::new));
         for (Integer i : pointIndex) {
+            //调用native的mh之前先把用户的java对象转化为MemorySegment
             methodHandle = MethodHandles.filterArguments(
                     methodHandle,
                     i,
-                    TRANSFORM_OBJECT_TO_STRUCT_MH
+                    TRANSFORM_OBJECT_TO_STRUCT_MH.asType(TRANSFORM_OBJECT_TO_STRUCT_MH.type().changeParameterType(0, parameters[i].getType()))
+            );
+        }
+        if (returnPointer) {
+            //先调整返回值类型对应的memorySegment长度
+            methodHandle = MethodHandles.filterReturnValue(
+                    methodHandle,
+                    MethodHandles.insertArguments(
+                            NativeHelper.REINTERPRET_MH,
+                            1,
+                            returnLayout.byteSize()
+                    )
+            );
+
+            //绑定当前的StructProxyGenerator
+            //绑定的结果是 (MemorySegment) -> ${returnType}
+            MethodHandle returnEnhance = StructProxyGenerator.ENHANCE_MH
+                    .asType(StructProxyGenerator.ENHANCE_MH.type().changeReturnType(method.getReturnType()))
+                    .bindTo(structProxyGenerator)
+                    .bindTo(method.getReturnType());
+            //来把MemorySegment返回值转换为java bean
+            methodHandle = MethodHandles.filterReturnValue(
+                    methodHandle,
+                    returnEnhance
             );
         }
         return methodHandle;
@@ -174,9 +205,7 @@ public class NativeCallGenerator {
                         .defineField(mhFieldName, MethodHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
                         .defineMethod(method.getName(), method.getReturnType(), Modifier.PUBLIC)
                         .withParameters(method.getParameterTypes())
-                        //todo 如果返回一个结构体 or MemorySegment怎么办
                         .intercept(new Implementation.Simple(new ConstFieldInvokerStackManipulation(className, mhFieldName, method)));
-
             }
 
             definition = definition.invokable(MethodDescription::isTypeInitializer)
@@ -186,10 +215,11 @@ public class NativeCallGenerator {
                 unloaded.saveIn(new File(structProxyGenerator.proxySavePath));
             }
 
-            Class<?> aClass = unloaded.load(nativeInterface.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(MethodHandles.lookup()))
+            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(nativeInterface, MethodHandles.lookup());
+            Class<?> aClass = unloaded.load(nativeInterface.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(lookup))
                     .getLoaded();
             //强制初始化执行cInit
-            MethodHandles.lookup().ensureInitialized(aClass);
+            lookup.ensureInitialized(aClass);
             return NativeHelper.ctorBinder(MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class)), aClass);
         } catch (Throwable e) {
             throw new StructException("should not reach here!", e);
@@ -232,16 +262,7 @@ public class NativeCallGenerator {
                 StackManipulation wait = loader.loadOp();
                 offset += targetAddOffset;
                 manipulations[i] = wait;
-                if (NativeCallGenerator.needTransToPointer(parameters[i])) {
-                    //擦除了防止跟methodHandle = MethodHandles.filterArguments(
-                    //                    methodHandle,
-                    //                    i,
-                    //                    TRANSFORM_OBJECT_TO_STRUCT_MH
-                    //            ); 的签名不一致
-                    classes[i] = Object.class;
-                } else {
-                    classes[i] = type;
-                }
+                classes[i] = type;
             }
 
             JavaConstant.MethodType methodType = JavaConstant.MethodType.of(method.getReturnType(), classes);

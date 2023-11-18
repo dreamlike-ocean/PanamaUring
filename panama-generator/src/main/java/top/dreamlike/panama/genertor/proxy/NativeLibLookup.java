@@ -1,5 +1,7 @@
 package top.dreamlike.panama.genertor.proxy;
 
+import top.dreamlike.panama.genertor.helper.NativeStructEnhanceMark;
+
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.util.Optional;
@@ -29,6 +31,7 @@ class NativeLibLookup implements SymbolLookup {
             case Class c when c == boolean.class -> ValueLayout.JAVA_BOOLEAN;
             case Class c when c == char.class -> ValueLayout.JAVA_CHAR;
             case Class c when c == short.class -> ValueLayout.JAVA_SHORT;
+            case Class c when NativeStructEnhanceMark.class.isAssignableFrom(c) -> ValueLayout.ADDRESS;
             default -> null;
         };
     }

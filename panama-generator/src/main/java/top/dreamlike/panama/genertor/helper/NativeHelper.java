@@ -19,13 +19,13 @@ public class NativeHelper {
 
     public final static Method EMPTY_METHOD;
 
-    public final static Method MH_CALL_METHOD;
+    public final static MethodHandle REINTERPRET_MH;
 
     static {
         try {
             REAL_MEMORY_MH = MethodHandles.lookup().findVirtual(NativeStructEnhanceMark.class, "realMemory", MethodType.methodType(MemorySegment.class));
             EMPTY_METHOD = NativeHelper.class.getMethod("empty");
-            MH_CALL_METHOD = MethodHandle.class.getMethod("invokeWithArguments", Object[].class);
+            REINTERPRET_MH = MethodHandles.lookup().findVirtual(MemorySegment.class, "reinterpret", MethodType.methodType(MemorySegment.class, long.class));
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
