@@ -221,7 +221,9 @@ public class StructProxyGenerator {
         try {
             MemoryLayout structMemoryLayout = extract(targetClass);
             currentLayout.set(structMemoryLayout);
+            String className = STR. "\{ targetClass.getName() }_native_struct_proxy" ;
             var precursor = byteBuddy.subclass(targetClass)
+                    .name(className)
                     .implement(NativeStructEnhanceMark.class)
                     .defineField(MEMORY_FIELD, MemorySegment.class)
                     .defineField(GENERATOR_FIELD, StructProxyGenerator.class)
@@ -250,20 +252,20 @@ public class StructProxyGenerator {
                 if (primitiveMapToMemoryLayout(field.getType()) != null) {
                     VarHandle nativeVarhandle = structMemoryLayout.varHandle(MemoryLayout.PathElement.groupElement(field.getName()));
                     String varHandleFieldName = STR. "\{ field.getName() }_native_struct_vh" ;
-                    cInitBlock.andThen(
+                    cInitBlock = cInitBlock.andThen(
                             MethodCall.invoke(StructProxyGenerator.class.getMethod("generateVarHandle", String.class))
-                                    .with(field.getName())
+                                    .with(field.getName()).setsField(named(varHandleFieldName))
                     );
                     //todo fixme 使用varhandle调用
                     precursor = precursor
                             .defineField(varHandleFieldName, VarHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
                             //转到对应的调用
                             .defineMethod(STR. "get\{ upperFirstChar(field.getName()) }" , field.getType(), Modifier.PUBLIC)
-                            .intercept(InvocationHandlerAdapter.of(new DereferenceGetterInvocationHandle(nativeVarhandle)))
+                            .intercept(new Implementation.Simple(new MemorySegemntVarHandleGetterStackManipulation(varHandleFieldName, className, field.getType())))
 
                             .defineMethod(STR. "set\{ upperFirstChar(field.getName()) }" , void.class, Modifier.PUBLIC)
                             .withParameters(field.getType())
-                            .intercept(InvocationHandlerAdapter.of(new DereferenceSetterInvocationHandle(nativeVarhandle)));
+                            .intercept(new Implementation.Simple(new MemorySegemntVarHandleSetterStackManipulation(varHandleFieldName, className, field.getType())));
                 } else {
                     long offset = structMemoryLayout.byteOffset(MemoryLayout.PathElement.groupElement(field.getName()));
                     precursor = precursor
@@ -272,7 +274,7 @@ public class StructProxyGenerator {
                 }
 
             }
-
+            precursor = precursor.invokable(MethodDescription::isTypeInitializer).intercept(cInitBlock);
             DynamicType.Unloaded<?> unloaded = precursor.make();
 
             if (proxySavePath != null) {
@@ -301,7 +303,6 @@ public class StructProxyGenerator {
         private final String className;
 
         private final Class returnClass;
-
 
         public MemorySegemntVarHandleGetterStackManipulation(String fieldName, String className, Class returnClass) {
             this.getMethodType = JavaConstant.MethodType.of(returnClass, MemorySegment.class);
