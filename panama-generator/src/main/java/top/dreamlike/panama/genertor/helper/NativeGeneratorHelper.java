@@ -13,7 +13,7 @@ import java.util.function.Supplier;
 
 import static java.lang.foreign.MemoryLayout.paddingLayout;
 
-public class NativeHelper {
+public class NativeGeneratorHelper {
 
     private final static MethodHandle REAL_MEMORY_MH;
 
@@ -21,13 +21,22 @@ public class NativeHelper {
 
     public final static MethodHandle REINTERPRET_MH;
 
+    public final static Method REBIND_ASSERT_METHOD;
+
     static {
         try {
             REAL_MEMORY_MH = MethodHandles.lookup().findVirtual(NativeStructEnhanceMark.class, "realMemory", MethodType.methodType(MemorySegment.class));
-            EMPTY_METHOD = NativeHelper.class.getMethod("empty");
+            EMPTY_METHOD = NativeGeneratorHelper.class.getMethod("empty");
+            REBIND_ASSERT_METHOD = NativeGeneratorHelper.class.getMethod("assertRebindMemory", MemorySegment.class, MemorySegment.class);
             REINTERPRET_MH = MethodHandles.lookup().findVirtual(MemorySegment.class, "reinterpret", MethodType.methodType(MemorySegment.class, long.class));
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static void assertRebindMemory(MemorySegment segment, MemorySegment origin) {
+        if (segment.byteSize() != origin.byteSize()) {
+            throw new IllegalArgumentException(STR."memorySegment size rebind should equal origin memorySegment size");
         }
     }
 

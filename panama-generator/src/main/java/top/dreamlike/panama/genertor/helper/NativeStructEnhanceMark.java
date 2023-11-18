@@ -14,4 +14,6 @@ public interface NativeStructEnhanceMark {
     public long sizeof();
 
     public MemoryLayout layout();
+
+    public void rebind(MemorySegment memorySegment);
 }

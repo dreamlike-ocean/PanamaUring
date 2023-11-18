@@ -19,7 +19,7 @@ import top.dreamlike.panama.genertor.annotation.Pointer;
 import top.dreamlike.panama.genertor.annotation.Union;
 import top.dreamlike.panama.genertor.exception.StructException;
 import top.dreamlike.panama.genertor.helper.MethodVariableAccessLoader;
-import top.dreamlike.panama.genertor.helper.NativeHelper;
+import top.dreamlike.panama.genertor.helper.NativeGeneratorHelper;
 import top.dreamlike.panama.genertor.helper.NativeStructEnhanceMark;
 import top.dreamlike.panama.genertor.helper.VarHandlerInvocation;
 
@@ -107,6 +107,14 @@ public class StructProxyGenerator {
         return o instanceof NativeStructEnhanceMark;
     }
 
+    public static void rebind(Object proxyObject, MemorySegment memorySegment) {
+        if (proxyObject instanceof NativeStructEnhanceMark memoryHolder) {
+            memoryHolder.rebind(memorySegment);
+            return;
+        }
+        throw new StructException(STR."before rebinding, you should enhance it");
+    }
+
     @SuppressWarnings("unchecked")
     public <T> T enhance(Class<T> t, MemorySegment binder) {
         Objects.requireNonNull(t);
@@ -176,7 +184,7 @@ public class StructProxyGenerator {
                 layout = alignmentByteSize == -1 ? layout : layout.withByteAlignment(alignmentByteSize);
                 list.add(layout);
             }
-            return NativeHelper.calAlignLayout(list);
+            return NativeGeneratorHelper.calAlignLayout(list);
         });
 
     }
@@ -231,6 +239,12 @@ public class StructProxyGenerator {
                     .method(named("fetchStructProxyGenerator")).intercept(FieldAccessor.ofField(GENERATOR_FIELD))
                     //这里 不能用 MethodDelegation.toField(MEMORY_FIELD) 因为会在对应字段MemorySegment里面寻找签名对得上的方法 就会找到asReadOnly
                     .method(named("realMemory")).intercept(FieldAccessor.ofField(MEMORY_FIELD))
+                    .method(named("rebind"))
+                    .intercept(
+                            MethodCall.invoke(NativeGeneratorHelper.REBIND_ASSERT_METHOD).withArgument(0).withField(MEMORY_FIELD)
+                                    .andThen(FieldAccessor.ofField(MEMORY_FIELD).setsArgumentAt(0))
+                    )
+
                     .defineConstructor(Modifier.PUBLIC)
                     .withParameters(MemoryLayout.class, StructProxyGenerator.class, MemorySegment.class)
                     .intercept(
@@ -242,7 +256,7 @@ public class StructProxyGenerator {
 
             precursor = precursor.method(named("sizeof")).intercept(FixedValue.value(structMemoryLayout.byteSize()));
             precursor = precursor.method(named("layout")).intercept(FieldAccessor.ofField(LAYOUT_FIELD));
-            Implementation.Composable cInitBlock = MethodCall.invoke(NativeHelper.EMPTY_METHOD);
+            Implementation.Composable cInitBlock = MethodCall.invoke(NativeGeneratorHelper.EMPTY_METHOD);
 
             for (Field field : targetClass.getDeclaredFields()) {
                 if (field.isSynthetic()) {
@@ -285,7 +299,7 @@ public class StructProxyGenerator {
             //强制初始化执行cInit
             lookup.ensureInitialized(loaded);
             MethodHandle ctorMh = MethodHandles.lookup().findConstructor(loaded, MethodType.methodType(void.class, MemoryLayout.class, StructProxyGenerator.class, MemorySegment.class));
-            return NativeHelper.memoryBinder(ctorMh, structMemoryLayout, this);
+            return NativeGeneratorHelper.memoryBinder(ctorMh, structMemoryLayout, this);
         } catch (Throwable e) {
             throw new StructException("should not reach here!", e);
         } finally {

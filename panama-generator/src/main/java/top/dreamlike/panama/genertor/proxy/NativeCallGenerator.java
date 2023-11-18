@@ -17,7 +17,7 @@ import top.dreamlike.panama.genertor.annotation.NativeFunction;
 import top.dreamlike.panama.genertor.annotation.Pointer;
 import top.dreamlike.panama.genertor.exception.StructException;
 import top.dreamlike.panama.genertor.helper.MethodVariableAccessLoader;
-import top.dreamlike.panama.genertor.helper.NativeHelper;
+import top.dreamlike.panama.genertor.helper.NativeGeneratorHelper;
 import top.dreamlike.panama.genertor.helper.NativeStructEnhanceMark;
 
 import java.io.File;
@@ -160,7 +160,7 @@ public class NativeCallGenerator {
             methodHandle = MethodHandles.filterReturnValue(
                     methodHandle,
                     MethodHandles.insertArguments(
-                            NativeHelper.REINTERPRET_MH,
+                            NativeGeneratorHelper.REINTERPRET_MH,
                             1,
                             returnLayout.byteSize()
                     )
@@ -192,7 +192,7 @@ public class NativeCallGenerator {
             var definition = byteBuddy.subclass(Object.class)
                     .implement(nativeInterface)
                     .name(className);
-            Implementation.Composable cInitBlock = MethodCall.invoke(NativeHelper.EMPTY_METHOD);
+            Implementation.Composable cInitBlock = MethodCall.invoke(NativeGeneratorHelper.EMPTY_METHOD);
             for (Method method : nativeInterface.getMethods()) {
                 if (method.isBridge() || method.isDefault() || method.isSynthetic()) {
                     continue;
@@ -220,7 +220,7 @@ public class NativeCallGenerator {
                     .getLoaded();
             //强制初始化执行cInit
             lookup.ensureInitialized(aClass);
-            return NativeHelper.ctorBinder(MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class)), aClass);
+            return NativeGeneratorHelper.ctorBinder(MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class)), aClass);
         } catch (Throwable e) {
             throw new StructException("should not reach here!", e);
         } finally {
