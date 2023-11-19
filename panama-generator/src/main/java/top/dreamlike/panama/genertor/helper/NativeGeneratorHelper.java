@@ -1,5 +1,6 @@
 package top.dreamlike.panama.genertor.helper;
 
+import top.dreamlike.panama.genertor.proxy.NativeCallGenerator;
 import top.dreamlike.panama.genertor.proxy.StructProxyGenerator;
 
 import java.lang.foreign.MemoryLayout;
@@ -15,29 +16,53 @@ import static java.lang.foreign.MemoryLayout.paddingLayout;
 
 public class NativeGeneratorHelper {
 
-    private final static MethodHandle REAL_MEMORY_MH;
-
     public final static Method EMPTY_METHOD;
 
     public final static MethodHandle REINTERPRET_MH;
 
     public final static Method REBIND_ASSERT_METHOD;
 
+    public final static Method FETCH_CURRENT_NATIVE_CALL_GENERATOR;
+    public final static Method FETCH_CURRENT_STRUCT_CONTEXT_GENERATOR;
+    public final static Method FETCH_CURRENT_STRUCT_LAYOUT_GENERATOR;
+    public final static Method FETCH_CURRENT_STRUCT_GENERATOR_GENERATOR;
+    public static Supplier<NativeCallGenerator> fetchCurrentNativeCallGenerator;
+    public static Supplier<StructProxyContext> fetchCurrentNativeStructGenerator;
+
     static {
         try {
-            REAL_MEMORY_MH = MethodHandles.lookup().findVirtual(NativeStructEnhanceMark.class, "realMemory", MethodType.methodType(MemorySegment.class));
             EMPTY_METHOD = NativeGeneratorHelper.class.getMethod("empty");
+            FETCH_CURRENT_NATIVE_CALL_GENERATOR = NativeGeneratorHelper.class.getMethod("currentNativeCallGenerator");
             REBIND_ASSERT_METHOD = NativeGeneratorHelper.class.getMethod("assertRebindMemory", MemorySegment.class, MemorySegment.class);
             REINTERPRET_MH = MethodHandles.lookup().findVirtual(MemorySegment.class, "reinterpret", MethodType.methodType(MemorySegment.class, long.class));
+            FETCH_CURRENT_STRUCT_CONTEXT_GENERATOR = NativeGeneratorHelper.class.getMethod("currentStructContext");
+            FETCH_CURRENT_STRUCT_LAYOUT_GENERATOR = NativeGeneratorHelper.class.getMethod("currentLayout");
+            FETCH_CURRENT_STRUCT_GENERATOR_GENERATOR = NativeGeneratorHelper.class.getMethod("currentStructGenerator");
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static NativeCallGenerator currentNativeCallGenerator() {
+        return fetchCurrentNativeCallGenerator.get();
     }
 
     public static void assertRebindMemory(MemorySegment segment, MemorySegment origin) {
         if (segment.byteSize() != origin.byteSize()) {
             throw new IllegalArgumentException(STR."memorySegment size rebind should equal origin memorySegment size");
         }
+    }
+
+    public static StructProxyContext currentStructContext() {
+        return fetchCurrentNativeStructGenerator.get();
+    }
+
+    public static MemoryLayout currentLayout() {
+        return fetchCurrentNativeStructGenerator.get().memoryLayout();
+    }
+
+    public static StructProxyGenerator currentStructGenerator() {
+        return fetchCurrentNativeStructGenerator.get().generator();
     }
 
     public static MemoryLayout calAlignLayout(List<MemoryLayout> memoryLayouts) {
@@ -71,31 +96,18 @@ public class NativeGeneratorHelper {
         return MemoryLayout.structLayout(layouts.toArray(MemoryLayout[]::new));
     }
 
-    /**
-     * @param methodHandle 原始的native methodHandle
-     * @param pos          struct转point的参数位置
-     * @return 修正过的mh 支持直接struct转point
-     */
-    public static MethodHandle adjustStructToPoint(MethodHandle methodHandle, int pos) {
-        return MethodHandles.filterArguments(
-                methodHandle,
-                pos,
-                REAL_MEMORY_MH
-        );
-    }
-
     public static void empty() {
     }
 
-    public static Function<MemorySegment, Object> memoryBinder(MethodHandle methodHandle, MemoryLayout memoryLayout, StructProxyGenerator generator) throws Throwable {
+    public static Function<MemorySegment, Object> memoryBinder(MethodHandle methodHandle, MemoryLayout memoryLayout) throws Throwable {
         CallSite callSite = LambdaMetafactory.metafactory(
                 MethodHandles.lookup(),
                 "apply",
                 //返回值为目标sam 其余的为捕获变量
-                MethodType.methodType(Function.class, MemoryLayout.class, StructProxyGenerator.class),
+                MethodType.methodType(Function.class),
                 //sam的方法签名
                 MethodType.methodType(Object.class, Object.class),
-                //转发到的目标方法 这里是(MemoryLayout.class, StructProxyGenerator.class, MemorySegment.class) -> ${EnhanceClass}
+                //转发到的目标方法 这里是(MemorySegment.class) -> ${EnhanceClass}
                 methodHandle,
                 //最终想要的调用形式
                 MethodType.methodType(Object.class, MemorySegment.class)
@@ -103,12 +115,12 @@ public class NativeGeneratorHelper {
 
         MethodHandle target = callSite.getTarget();
         //传入捕获的变量
-        Function<MemorySegment, Object> lambdaFunction = (Function<MemorySegment, Object>) target.invoke(memoryLayout, generator);
+        Function<MemorySegment, Object> lambdaFunction = (Function<MemorySegment, Object>) target.invoke();
         //对传入的memorysegment再reinterpret
         return (ms) -> lambdaFunction.apply(ms.reinterpret(memoryLayout.byteSize()));
     }
 
-    public static Supplier<Object> ctorBinder(MethodHandle methodHandle, Class enhanceClass) throws Throwable {
+    public static Supplier<Object> ctorBinder(MethodHandle methodHandle) throws Throwable {
 
         CallSite callSite = LambdaMetafactory.metafactory(
                 MethodHandles.lookup(),

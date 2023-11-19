@@ -50,10 +50,13 @@ public class NativeCallGenerator {
     //一点辅助的技巧。。。
     private static ThreadLocal<NativeCallGenerator> currentGenerator = new ThreadLocal<>();
 
+    private static final String GENERATOR_FIELD_NAME = "_generator";
+
     static {
         try {
             TRANSFORM_OBJECT_TO_STRUCT_MH = MethodHandles.lookup()
                     .findStatic(NativeCallGenerator.class, "transToPoint", MethodType.methodType(MemorySegment.class, Object.class));
+            NativeGeneratorHelper.fetchCurrentNativeCallGenerator = currentGenerator::get;
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -95,11 +98,8 @@ public class NativeCallGenerator {
         }
     }
 
-    public static MethodHandle generateInGeneratorContext(Class interfaceClass, String methodName, MethodType methodType) throws NoSuchMethodException {
-        NativeCallGenerator current = currentGenerator.get();
-        if (current == null) {
-            throw new IllegalArgumentException("must in context!");
-        }
+    public MethodHandle generateInGeneratorContext(Class interfaceClass, String methodName, MethodType methodType) throws NoSuchMethodException {
+        NativeCallGenerator current = this;
         //第一个是this指针 去掉
         methodType = methodType.dropParameterTypes(0, 1);
         Method method = interfaceClass.getDeclaredMethod(methodName, methodType.parameterArray());
@@ -107,7 +107,7 @@ public class NativeCallGenerator {
     }
 
 
-    private static boolean needTransToPointer(Parameter parameter) {
+    private boolean needTransToPointer(Parameter parameter) {
         Class<?> typeClass = parameter.getType();
         return typeClass.isAssignableFrom(MemorySegment.class)
                 || NativeStructEnhanceMark.class.isAssignableFrom(typeClass)
@@ -191,8 +191,10 @@ public class NativeCallGenerator {
             String className = STR. "\{ nativeInterface.getName() }_native_call_enhance" ;
             var definition = byteBuddy.subclass(Object.class)
                     .implement(nativeInterface)
+                    .defineField(GENERATOR_FIELD_NAME, NativeCallGenerator.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
                     .name(className);
-            Implementation.Composable cInitBlock = MethodCall.invoke(NativeGeneratorHelper.EMPTY_METHOD);
+            Implementation.Composable cInitBlock = MethodCall.invoke(NativeGeneratorHelper.FETCH_CURRENT_NATIVE_CALL_GENERATOR).setsField(named(GENERATOR_FIELD_NAME));
+
             for (Method method : nativeInterface.getMethods()) {
                 if (method.isBridge() || method.isDefault() || method.isSynthetic()) {
                     continue;
@@ -200,7 +202,7 @@ public class NativeCallGenerator {
                 String mhFieldName = STR. "\{ method.getName() }_native_method_handle" ;
                 //cInit 类初始化的时候赋值下静态字段
                 cInitBlock = cInitBlock.andThen(MethodCall.invoke(NativeCallGenerator.class.getMethod("generateInGeneratorContext", Class.class, String.class, MethodType.class))
-                        .with(nativeInterface, method.getName()).with(JavaConstant.MethodType.of(method)).setsField(named(mhFieldName)));
+                        .onField(GENERATOR_FIELD_NAME).with(nativeInterface, method.getName()).with(JavaConstant.MethodType.of(method)).setsField(named(mhFieldName)));
                 definition = definition
                         .defineField(mhFieldName, MethodHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
                         .defineMethod(method.getName(), method.getReturnType(), Modifier.PUBLIC)
@@ -220,7 +222,7 @@ public class NativeCallGenerator {
                     .getLoaded();
             //强制初始化执行cInit
             lookup.ensureInitialized(aClass);
-            return NativeGeneratorHelper.ctorBinder(MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class)), aClass);
+            return NativeGeneratorHelper.ctorBinder(MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class)));
         } catch (Throwable e) {
             throw new StructException("should not reach here!", e);
         } finally {

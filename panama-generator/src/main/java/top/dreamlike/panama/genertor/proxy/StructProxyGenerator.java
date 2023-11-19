@@ -18,10 +18,7 @@ import top.dreamlike.panama.genertor.annotation.NativeArrayMark;
 import top.dreamlike.panama.genertor.annotation.Pointer;
 import top.dreamlike.panama.genertor.annotation.Union;
 import top.dreamlike.panama.genertor.exception.StructException;
-import top.dreamlike.panama.genertor.helper.MethodVariableAccessLoader;
-import top.dreamlike.panama.genertor.helper.NativeGeneratorHelper;
-import top.dreamlike.panama.genertor.helper.NativeStructEnhanceMark;
-import top.dreamlike.panama.genertor.helper.VarHandlerInvocation;
+import top.dreamlike.panama.genertor.helper.*;
 
 import java.io.File;
 import java.lang.foreign.MemoryLayout;
@@ -56,7 +53,7 @@ public class StructProxyGenerator {
 
     String proxySavePath;
 
-    private static final ThreadLocal<MemoryLayout> currentLayout = new ThreadLocal<>();
+    private static final ThreadLocal<StructProxyContext> STRUCT_CONTEXT = new ThreadLocal<>();
 
     private static final Method REALMEMORY_METHOD;
 
@@ -66,6 +63,7 @@ public class StructProxyGenerator {
         try {
             ENHANCE_MH = MethodHandles.lookup().findVirtual(StructProxyGenerator.class, "enhance", MethodType.methodType(Object.class, Class.class, MemorySegment.class));
             REALMEMORY_METHOD = NativeStructEnhanceMark.class.getMethod("realMemory");
+            NativeGeneratorHelper.fetchCurrentNativeStructGenerator = STRUCT_CONTEXT::get;
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -86,11 +84,7 @@ public class StructProxyGenerator {
         return Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
-    public static VarHandle generateVarHandle(String name) {
-        MemoryLayout current = currentLayout.get();
-        if (current == null) {
-            throw new IllegalArgumentException("must in context!");
-        }
+    public static VarHandle generateVarHandle(MemoryLayout current, String name) {
         return current.varHandle(MemoryLayout.PathElement.groupElement(name));
     }
 
@@ -228,14 +222,14 @@ public class StructProxyGenerator {
     <T> Function<MemorySegment, Object> enhance(Class<T> targetClass) {
         try {
             MemoryLayout structMemoryLayout = extract(targetClass);
-            currentLayout.set(structMemoryLayout);
+            STRUCT_CONTEXT.set(new StructProxyContext(this, structMemoryLayout));
             String className = STR. "\{ targetClass.getName() }_native_struct_proxy" ;
             var precursor = byteBuddy.subclass(targetClass)
                     .name(className)
                     .implement(NativeStructEnhanceMark.class)
                     .defineField(MEMORY_FIELD, MemorySegment.class)
-                    .defineField(GENERATOR_FIELD, StructProxyGenerator.class)
-                    .defineField(LAYOUT_FIELD, MemoryLayout.class)
+                    .defineField(GENERATOR_FIELD, StructProxyGenerator.class, Modifier.PUBLIC | Modifier.FINAL | Modifier.STATIC)
+                    .defineField(LAYOUT_FIELD, MemoryLayout.class, Modifier.PUBLIC | Modifier.FINAL | Modifier.STATIC)
                     .method(named("fetchStructProxyGenerator")).intercept(FieldAccessor.ofField(GENERATOR_FIELD))
                     //这里 不能用 MethodDelegation.toField(MEMORY_FIELD) 因为会在对应字段MemorySegment里面寻找签名对得上的方法 就会找到asReadOnly
                     .method(named("realMemory")).intercept(FieldAccessor.ofField(MEMORY_FIELD))
@@ -246,17 +240,16 @@ public class StructProxyGenerator {
                     )
 
                     .defineConstructor(Modifier.PUBLIC)
-                    .withParameters(MemoryLayout.class, StructProxyGenerator.class, MemorySegment.class)
+                    .withParameters(MemorySegment.class)
                     .intercept(
                             MethodCall.invoke(targetClass.getDeclaredConstructor()).onSuper()
-                                    .andThen(FieldAccessor.ofField(LAYOUT_FIELD).setsArgumentAt(0))
-                                    .andThen(FieldAccessor.ofField(GENERATOR_FIELD).setsArgumentAt(1))
-                                    .andThen(FieldAccessor.ofField(MEMORY_FIELD).setsArgumentAt(2))
+                                    .andThen(FieldAccessor.ofField(MEMORY_FIELD).setsArgumentAt(0))
                     );
 
             precursor = precursor.method(named("sizeof")).intercept(FixedValue.value(structMemoryLayout.byteSize()));
             precursor = precursor.method(named("layout")).intercept(FieldAccessor.ofField(LAYOUT_FIELD));
-            Implementation.Composable cInitBlock = MethodCall.invoke(NativeGeneratorHelper.EMPTY_METHOD);
+            Implementation.Composable cInitBlock = MethodCall.invoke(NativeGeneratorHelper.FETCH_CURRENT_STRUCT_LAYOUT_GENERATOR).setsField(named(LAYOUT_FIELD))
+                    .andThen(MethodCall.invoke(NativeGeneratorHelper.FETCH_CURRENT_STRUCT_GENERATOR_GENERATOR).setsField(named(GENERATOR_FIELD)));
 
             for (Field field : targetClass.getDeclaredFields()) {
                 if (field.isSynthetic()) {
@@ -266,8 +259,8 @@ public class StructProxyGenerator {
                 if (primitiveMapToMemoryLayout(field.getType()) != null) {
                     String varHandleFieldName = STR. "\{ field.getName() }_native_struct_vh" ;
                     cInitBlock = cInitBlock.andThen(
-                            MethodCall.invoke(StructProxyGenerator.class.getMethod("generateVarHandle", String.class))
-                                    .with(field.getName()).setsField(named(varHandleFieldName))
+                            MethodCall.invoke(StructProxyGenerator.class.getMethod("generateVarHandle", MemoryLayout.class, String.class))
+                                    .withField(LAYOUT_FIELD).with(field.getName()).setsField(named(varHandleFieldName))
                     );
                     precursor = precursor
                             .defineField(varHandleFieldName, VarHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
@@ -298,16 +291,16 @@ public class StructProxyGenerator {
             Class<?> loaded = load.getLoaded();
             //强制初始化执行cInit
             lookup.ensureInitialized(loaded);
-            MethodHandle ctorMh = MethodHandles.lookup().findConstructor(loaded, MethodType.methodType(void.class, MemoryLayout.class, StructProxyGenerator.class, MemorySegment.class));
-            return NativeGeneratorHelper.memoryBinder(ctorMh, structMemoryLayout, this);
+            MethodHandle ctorMh = MethodHandles.lookup().findConstructor(loaded, MethodType.methodType(void.class, MemorySegment.class));
+            return NativeGeneratorHelper.memoryBinder(ctorMh, structMemoryLayout);
         } catch (Throwable e) {
             throw new StructException("should not reach here!", e);
         } finally {
-            currentLayout.remove();
+            STRUCT_CONTEXT.remove();
         }
     }
 
-    private class MemorySegemntVarHandleGetterStackManipulation implements StackManipulation {
+    private static class MemorySegemntVarHandleGetterStackManipulation implements StackManipulation {
 
         private final JavaConstant.MethodType getMethodType;
 
@@ -352,7 +345,7 @@ public class StructProxyGenerator {
         }
     }
 
-    private class MemorySegemntVarHandleSetterStackManipulation implements StackManipulation {
+    private static class MemorySegemntVarHandleSetterStackManipulation implements StackManipulation {
         private final JavaConstant.MethodType getMethodType;
 
         private final String fieldName;
@@ -397,5 +390,6 @@ public class StructProxyGenerator {
             return res;
         }
     }
+
 
 }
