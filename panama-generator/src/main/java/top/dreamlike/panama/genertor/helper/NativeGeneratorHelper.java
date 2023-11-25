@@ -16,8 +16,6 @@ import static java.lang.foreign.MemoryLayout.paddingLayout;
 
 public class NativeGeneratorHelper {
 
-    public final static Method EMPTY_METHOD;
-
     public final static MethodHandle REINTERPRET_MH;
 
     public final static Method REBIND_ASSERT_METHOD;
@@ -31,7 +29,6 @@ public class NativeGeneratorHelper {
 
     static {
         try {
-            EMPTY_METHOD = NativeGeneratorHelper.class.getMethod("empty");
             FETCH_CURRENT_NATIVE_CALL_GENERATOR = NativeGeneratorHelper.class.getMethod("currentNativeCallGenerator");
             REBIND_ASSERT_METHOD = NativeGeneratorHelper.class.getMethod("assertRebindMemory", MemorySegment.class, MemorySegment.class);
             REINTERPRET_MH = MethodHandles.lookup().findVirtual(MemorySegment.class, "reinterpret", MethodType.methodType(MemorySegment.class, long.class));
@@ -95,10 +92,6 @@ public class NativeGeneratorHelper {
         System.out.println(STR. "支持对齐的序列为\{ layouts }, sizeof(layouts): \{ size }, align: \{ align }" );
         return MemoryLayout.structLayout(layouts.toArray(MemoryLayout[]::new));
     }
-
-    public static void empty() {
-    }
-
     public static Function<MemorySegment, Object> memoryBinder(MethodHandle methodHandle, MemoryLayout memoryLayout) throws Throwable {
         CallSite callSite = LambdaMetafactory.metafactory(
                 MethodHandles.lookup(),

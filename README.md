@@ -10,6 +10,12 @@
 **目前阶段参考价值大于实用价值，<del>在jdk21之后我会做进一步的API适配</del>,(垃圾java毁我人生，这东西jdk21稳定不了)，Panama
 API仍在变动之中**
 
+由于依赖了liburing的代码所以需要一并clone liburing仓库
+
+```shell
+git clone --recurse-submodules https://github.com/dreamlike-ocean/PanamaUring.git
+```
+
 ### 支持的特性
 
 **注意**：若无提及则均为one shot模式
