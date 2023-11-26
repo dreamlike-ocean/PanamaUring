@@ -13,6 +13,7 @@
     <version>${panama.version}</version>
 
     <properties>
+        <liburing.so.name>liburing-ffi.so.2.6</liburing.so.name>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -49,6 +50,74 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <id>compile-libUring</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>make</executable>
+                            <workingDirectory>${project.basedir}/c/liburing</workingDirectory>
+                            <arguments>
+                                <argument>-j</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>clean-libUring</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>make</executable>
+                            <workingDirectory>${project.basedir}/c/liburing</workingDirectory>
+                            <arguments>
+                                <argument>clean</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>rm-libUring</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>rm</executable>
+                            <workingDirectory>${project.basedir}/src/main/resources</workingDirectory>
+                            <arguments>
+                                <argument>-rf</argument>
+                                <argument>liburing-ffi.so</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>mv-liburing</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>mv</executable>
+                            <workingDirectory>${project.basedir}/c/liburing/src</workingDirectory>
+                            <arguments>
+                                <argument>${liburing.so.name}</argument>
+                                <argument>../../../src/main/resources/liburing-ffi.so</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                </executions>
+            </plugin>
+
+            <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
                     <finalName>${artifactId}-${panama.version}-all-release</finalName>
@@ -58,7 +127,7 @@
                     <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
                 <executions>
-                  <execution>
+                    <execution>
                         <id>package-all-dependency</id>
                         <phase>package</phase>
                         <goals>

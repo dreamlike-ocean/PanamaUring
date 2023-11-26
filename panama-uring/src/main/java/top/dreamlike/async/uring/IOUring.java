@@ -75,7 +75,7 @@ public class IOUring implements AutoCloseable {
                 || !NativeHelper.compareWithCurrentLinuxVersion(5, 10)) {
             throw new NativeCallException("please check os version(need linux >= 5.10) and CPU Arch(need X86_64)");
         }
-        NativeHelper.loadSo("liburing-ffi.2.4");
+        NativeHelper.loadSo("liburing-ffi.so");
 
         AccessHelper.fetchContext = uring -> uring.context;
     }

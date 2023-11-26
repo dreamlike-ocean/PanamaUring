@@ -13,4 +13,6 @@ public @interface NativeFunction {
     boolean fast() default false;
 
     boolean allowPassHeap() default false;
+
+    boolean returnIsPointer() default false;
 }

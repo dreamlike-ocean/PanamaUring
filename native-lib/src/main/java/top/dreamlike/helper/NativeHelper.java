@@ -294,15 +294,15 @@ public class NativeHelper {
     }
 
 
-    public static void loadSo(String soName) {
+    public static void loadSo(String fileName) {
         try {
 
             if (!NativeHelper.isLinux() || !NativeHelper.isX86_64()) {
                 throw new NativeCallException("please check os version(need linux >= 5.10) and CPU Arch(need X86_64)");
             }
 
-            InputStream is = NativeHelper.class.getResourceAsStream("/"+soName+".so");
-            File file = File.createTempFile(soName, ".so");
+            InputStream is = NativeHelper.class.getResourceAsStream("/" + fileName);
+            File file = File.createTempFile(fileName, ".so");
             OutputStream os = new FileOutputStream(file);
             byte[] buffer = new byte[1024];
             int length;

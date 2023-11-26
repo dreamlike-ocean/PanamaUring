@@ -1,5 +1,6 @@
 package top.dreamlike.panama.genertor.proxy;
 
+import top.dreamlike.panama.genertor.helper.NativeGeneratorHelper;
 import top.dreamlike.panama.genertor.helper.NativeStructEnhanceMark;
 
 import java.lang.foreign.MemoryLayout;
@@ -13,7 +14,7 @@ import java.util.stream.Stream;
 
 public class NativeArray<T> implements NativeStructEnhanceMark, List<T> {
 
-    private final MemorySegment segment;
+    private MemorySegment segment;
 
     private final MemoryLayout elementLayout;
 
@@ -65,6 +66,11 @@ public class NativeArray<T> implements NativeStructEnhanceMark, List<T> {
         return MemoryLayout.sequenceLayout(len, elementLayout);
     }
 
+    @Override
+    public void rebind(MemorySegment memorySegment) {
+        NativeGeneratorHelper.assertRebindMemory(memorySegment, this.segment);
+        this.segment = memorySegment;
+    }
 
     @Override
     public int size() {

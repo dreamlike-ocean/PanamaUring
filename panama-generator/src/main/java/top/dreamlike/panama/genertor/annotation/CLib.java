@@ -10,4 +10,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface CLib {
     String value();
+
+    boolean inClassPath() default true;
 }
