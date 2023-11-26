@@ -73,6 +73,7 @@ git clone --recurse-submodules https://github.com/dreamlike-ocean/PanamaUring.gi
 - Maven 3.8.4
 - OpenJDK 21
 - Linux >= 5.10
+- makefile GNU Make 4.3
 
 构建非常简单
 

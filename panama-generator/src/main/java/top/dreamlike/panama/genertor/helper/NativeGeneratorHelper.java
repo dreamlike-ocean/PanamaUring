@@ -27,6 +27,8 @@ public class NativeGeneratorHelper {
     public static Supplier<NativeCallGenerator> fetchCurrentNativeCallGenerator;
     public static Supplier<StructProxyContext> fetchCurrentNativeStructGenerator;
 
+    public static final Method LOAD_SO;
+
     static {
         try {
             FETCH_CURRENT_NATIVE_CALL_GENERATOR = NativeGeneratorHelper.class.getMethod("currentNativeCallGenerator");
@@ -35,6 +37,7 @@ public class NativeGeneratorHelper {
             FETCH_CURRENT_STRUCT_CONTEXT_GENERATOR = NativeGeneratorHelper.class.getMethod("currentStructContext");
             FETCH_CURRENT_STRUCT_LAYOUT_GENERATOR = NativeGeneratorHelper.class.getMethod("currentLayout");
             FETCH_CURRENT_STRUCT_GENERATOR_GENERATOR = NativeGeneratorHelper.class.getMethod("currentStructGenerator");
+            LOAD_SO = NativeCallGenerator.class.getMethod("loadSo", Class.class);
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }

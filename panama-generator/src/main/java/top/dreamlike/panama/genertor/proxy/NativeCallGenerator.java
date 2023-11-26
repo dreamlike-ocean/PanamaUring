@@ -13,6 +13,7 @@ import net.bytebuddy.implementation.bytecode.member.MethodReturn;
 import net.bytebuddy.jar.asm.MethodVisitor;
 import net.bytebuddy.jar.asm.Opcodes;
 import net.bytebuddy.utility.JavaConstant;
+import top.dreamlike.panama.genertor.annotation.CLib;
 import top.dreamlike.panama.genertor.annotation.NativeFunction;
 import top.dreamlike.panama.genertor.annotation.Pointer;
 import top.dreamlike.panama.genertor.exception.StructException;
@@ -20,7 +21,7 @@ import top.dreamlike.panama.genertor.helper.MethodVariableAccessLoader;
 import top.dreamlike.panama.genertor.helper.NativeGeneratorHelper;
 import top.dreamlike.panama.genertor.helper.NativeStructEnhanceMark;
 
-import java.io.File;
+import java.io.*;
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -31,14 +32,15 @@ import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import static net.bytebuddy.matcher.ElementMatchers.named;
 
 /**
- * https://shipilev.net/jvm/anatomy-quarks/17-trust-nonstatic-final-fields/
- * 参考这个使用final进行优化
+ * <a href="https://shipilev.net/jvm/anatomy-quarks/17-trust-nonstatic-final-fields/">为什么实例中的final不可以信任</a>
+ * 参考这个使用static final进行优化
  */
 public class NativeCallGenerator {
     private final ByteBuddy byteBuddy;
@@ -48,9 +50,11 @@ public class NativeCallGenerator {
     private static final MethodHandle TRANSFORM_OBJECT_TO_STRUCT_MH;
 
     //一点辅助的技巧。。。
-    private static ThreadLocal<NativeCallGenerator> currentGenerator = new ThreadLocal<>();
+    private static final ThreadLocal<NativeCallGenerator> currentGenerator = new ThreadLocal<>();
 
     private static final String GENERATOR_FIELD_NAME = "_generator";
+
+    private static final int CURRENT_JAVA_MAJOR_VERSION = Runtime.version().feature();
 
     static {
         try {
@@ -106,6 +110,22 @@ public class NativeCallGenerator {
         return current.nativeMethodHandle(method);
     }
 
+
+    public void loadSo(Class<?> interfaceClass) throws IOException {
+        ClassLoader classLoader = interfaceClass.getClassLoader();
+        CLib annotation = interfaceClass.getAnnotation(CLib.class);
+        if (annotation == null || annotation.value().isBlank()) return;
+        InputStream inputStream = annotation.inClassPath()
+                ? classLoader.getResourceAsStream(STR. "/\{ annotation.value() }" )
+                : new FileInputStream(annotation.value());
+        String tmpFileName = STR. "\{ interfaceClass.getSimpleName() }_\{ UUID.randomUUID().toString() }_dynamic.so" ;
+        File file = File.createTempFile(tmpFileName, ".tmp");
+        FileOutputStream fileOutputStream = new FileOutputStream(file);
+        file.deleteOnExit();
+        try (fileOutputStream; inputStream) {
+            inputStream.transferTo(fileOutputStream);
+        }
+    }
 
     private boolean needTransToPointer(Parameter parameter) {
         Class<?> typeClass = parameter.getType();
@@ -193,7 +213,8 @@ public class NativeCallGenerator {
                     .implement(nativeInterface)
                     .defineField(GENERATOR_FIELD_NAME, NativeCallGenerator.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
                     .name(className);
-            Implementation.Composable cInitBlock = MethodCall.invoke(NativeGeneratorHelper.FETCH_CURRENT_NATIVE_CALL_GENERATOR).setsField(named(GENERATOR_FIELD_NAME));
+            Implementation.Composable cInitBlock = MethodCall.invoke(NativeGeneratorHelper.FETCH_CURRENT_NATIVE_CALL_GENERATOR).setsField(named(GENERATOR_FIELD_NAME))
+                    .andThen(MethodCall.invoke(NativeGeneratorHelper.LOAD_SO).onField(GENERATOR_FIELD_NAME).with(nativeInterface));
 
             for (Method method : nativeInterface.getMethods()) {
                 if (method.isBridge() || method.isDefault() || method.isSynthetic()) {
