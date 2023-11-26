@@ -56,7 +56,7 @@
                 <executions>
                     <execution>
                         <id>compile-libUring</id>
-                        <phase>compile</phase>
+                        <phase>generate-resources</phase>
                         <goals>
                             <goal>exec</goal>
                         </goals>
@@ -100,7 +100,7 @@
                     </execution>
                     <execution>
                         <id>mv-liburing</id>
-                        <phase>process-classes</phase>
+                        <phase>generate-resources</phase>
                         <goals>
                             <goal>exec</goal>
                         </goals>
