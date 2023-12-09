@@ -93,8 +93,10 @@ public class StructProxyGenerator {
         return this.enhance((Class<T>) dummy.getClass().componentType(), binder);
     }
 
-    public <T> NativeArray<T> enhanceArray(MemorySegment chunk, T... dummy) {
-        return new NativeArray<>(this, chunk, dummy);
+    @SafeVarargs
+    public final <T> NativeArray<T> enhanceArray(MemorySegment chunk, T... dummy) {
+        Class<T> component = (Class<T>) dummy.getClass().getComponentType();
+        return new NativeArray<>(this, chunk, component);
     }
 
     public static boolean isNativeStruct(Object o) {
@@ -157,17 +159,20 @@ public class StructProxyGenerator {
                     list.add(layout);
                     continue;
                 }
-
                 //类型为数组or指针
-                if (field.getType() == MemorySegment.class) {
+                if (field.getType() == MemorySegment.class || field.getType() == NativeArray.class) {
                     if (field.getAnnotation(Pointer.class) != null) {
                         list.add(ValueLayout.ADDRESS.withName(field.getName()));
                         continue;
                     }
                     NativeArrayMark nativeArrayMark = field.getAnnotation(NativeArrayMark.class);
                     if (nativeArrayMark != null) {
-                        SequenceLayout layout = MemoryLayout.sequenceLayout(nativeArrayMark.length(), extract(nativeArrayMark.size()));
-                        list.add(layout.withName(field.getName()));
+                        if (nativeArrayMark.asPointer()) {
+                            list.add(ValueLayout.ADDRESS.withName(field.getName()));
+                        } else {
+                            SequenceLayout layout = MemoryLayout.sequenceLayout(nativeArrayMark.length(), extract(nativeArrayMark.size()));
+                            list.add(layout.withName(field.getName()));
+                        }
                         continue;
                     } else {
                         throw new StructException(STR. "\{ field } must be pointer or nativeArray" );
@@ -255,30 +260,20 @@ public class StructProxyGenerator {
                 if (field.isSynthetic()) {
                     continue;
                 }
-
-                if (primitiveMapToMemoryLayout(field.getType()) != null) {
-                    String varHandleFieldName = STR. "\{ field.getName() }_native_struct_vh" ;
-                    cInitBlock = cInitBlock.andThen(
-                            MethodCall.invoke(StructProxyGenerator.class.getMethod("generateVarHandle", MemoryLayout.class, String.class))
-                                    .withField(LAYOUT_FIELD).with(field.getName()).setsField(named(varHandleFieldName))
-                    );
-                    precursor = precursor
-                            .defineField(varHandleFieldName, VarHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
-                            //转到对应的调用
+                precursor = switch (field.getType()) {
+                    case Class c when primitiveMapToMemoryLayout(c) != null ->
+                            handlePrimitiveField(precursor, field, className);
+                    case Class c when c.equals(NativeArray.class) ->
+                            handleNativeArrayField(precursor, structMemoryLayout, field);
+                    case Class c when MemorySegment.class.isAssignableFrom(c) ->
+                            handleMemorySegmentField(precursor, structMemoryLayout, field);
+                    default -> precursor
                             .defineMethod(STR. "get\{ upperFirstChar(field.getName()) }" , field.getType(), Modifier.PUBLIC)
-                            .intercept(new Implementation.Simple(new MemorySegemntVarHandleGetterStackManipulation(varHandleFieldName, className, field.getType())))
-
-                            .defineMethod(STR. "set\{ upperFirstChar(field.getName()) }" , void.class, Modifier.PUBLIC)
-                            .withParameters(field.getType())
-                            .intercept(new Implementation.Simple(new MemorySegemntVarHandleSetterStackManipulation(varHandleFieldName, className, field.getType())));
-                } else {
-                    long offset = structMemoryLayout.byteOffset(MemoryLayout.PathElement.groupElement(field.getName()));
-                    precursor = precursor
-                            .defineMethod(STR. "get\{ upperFirstChar(field.getName()) }" , field.getType(), Modifier.PUBLIC)
-                            .intercept(InvocationHandlerAdapter.of(new StructFieldInvocationHandle<>(this, field.getType(), offset)));
-                }
+                            .intercept(InvocationHandlerAdapter.of(new StructFieldInvocationHandle<>(this, field.getType(), structMemoryLayout.byteOffset(MemoryLayout.PathElement.groupElement(field.getName())), field.getAnnotation(Pointer.class) != null)));
+                };
 
             }
+
             precursor = precursor.invokable(MethodDescription::isTypeInitializer).intercept(cInitBlock);
             DynamicType.Unloaded<?> unloaded = precursor.make();
 
@@ -298,6 +293,65 @@ public class StructProxyGenerator {
         } finally {
             STRUCT_CONTEXT.remove();
         }
+    }
+
+    private <T> DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<T> handlePrimitiveField(DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<T> precursor, Field field, String className) {
+        String varHandleFieldName = STR."\{field.getName()}_native_struct_vh";
+        return precursor
+                .defineField(varHandleFieldName, VarHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
+                //转到对应的调用
+                .defineMethod(STR."get\{upperFirstChar(field.getName())}", field.getType(), Modifier.PUBLIC)
+                .intercept(new Implementation.Simple(new MemorySegemntVarHandleGetterStackManipulation(varHandleFieldName, className, field.getType())))
+
+                .defineMethod(STR."set\{upperFirstChar(field.getName())}", void.class, Modifier.PUBLIC)
+                .withParameters(field.getType())
+                .intercept(new Implementation.Simple(new MemorySegemntVarHandleSetterStackManipulation(varHandleFieldName, className, field.getType())));
+    }
+
+    private <T> DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<T> handleMemorySegmentField(DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<T> precursor, MemoryLayout structLayout, Field field) {
+        long offset = structLayout.byteOffset(MemoryLayout.PathElement.groupElement(field.getName()));
+        NativeArrayMark arrayMark = field.getAnnotation(NativeArrayMark.class);
+        boolean asPointer = field.getAnnotation(Pointer.class) != null;
+
+        return precursor
+                .defineMethod(STR."get\{upperFirstChar(field.getName())}", field.getType(), Modifier.PUBLIC)
+                .intercept(InvocationHandlerAdapter.of((Object proxy, Method method, Object[] args) -> {
+                    MemorySegment realMemory = ((NativeStructEnhanceMark) proxy).realMemory();
+                    if (asPointer) {
+                        return MemorySegment.ofAddress(realMemory.asSlice(offset, ValueLayout.ADDRESS).get(ValueLayout.JAVA_LONG, 0))
+                                .reinterpret(Long.MAX_VALUE);
+                    }
+                    //extract保证这俩不会同时为空
+                    MemorySegment needReturn;
+                    MemoryLayout realSize = extract(arrayMark.size());
+                    boolean pointer = arrayMark.asPointer();
+                    if (pointer) {
+                        MemorySegment memory = realMemory.asSlice(offset, ValueLayout.ADDRESS);
+                        needReturn = memory.reinterpret(realSize.byteSize() * arrayMark.length());
+                    } else {
+                        needReturn = realMemory.asSlice(offset, realSize.byteSize() * arrayMark.length());
+                    }
+                    return needReturn;
+                }));
+    }
+
+    private <T> DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<T> handleNativeArrayField(DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<T> precursor, MemoryLayout structLayout, Field field) {
+
+        NativeArrayMark arrayMark = field.getAnnotation(NativeArrayMark.class);
+        if (arrayMark == null) throw new IllegalArgumentException(STR."\{field} must be marked as NativeArrayMark");
+        long offset = structLayout.byteOffset(MemoryLayout.PathElement.groupElement(field.getName()));
+        long newSize = extract(field.getType()).byteSize() * arrayMark.length();
+        boolean asPointer = field.getAnnotation(Pointer.class) != null;
+        return precursor
+                .defineMethod(STR."get\{upperFirstChar(field.getName())}", field.getType(), Modifier.PUBLIC)
+                .intercept(InvocationHandlerAdapter.of((Object proxy, Method method, Object[] args) -> {
+                    MemorySegment realMemory = ((NativeStructEnhanceMark) proxy).realMemory();
+                    if (asPointer) {
+                        realMemory = realMemory.get(ValueLayout.ADDRESS, offset)
+                                .reinterpret(Long.MAX_VALUE);
+                    }
+                    return new NativeArray<>(this, realMemory.asSlice(offset, newSize), field.getType());
+                }));
     }
 
     private static class MemorySegemntVarHandleGetterStackManipulation implements StackManipulation {

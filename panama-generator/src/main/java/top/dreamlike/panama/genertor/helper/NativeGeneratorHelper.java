@@ -5,6 +5,7 @@ import top.dreamlike.panama.genertor.proxy.StructProxyGenerator;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.*;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -33,7 +34,7 @@ public class NativeGeneratorHelper {
         try {
             FETCH_CURRENT_NATIVE_CALL_GENERATOR = NativeGeneratorHelper.class.getMethod("currentNativeCallGenerator");
             REBIND_ASSERT_METHOD = NativeGeneratorHelper.class.getMethod("assertRebindMemory", MemorySegment.class, MemorySegment.class);
-            REINTERPRET_MH = MethodHandles.lookup().findVirtual(MemorySegment.class, "reinterpret", MethodType.methodType(MemorySegment.class, long.class));
+            REINTERPRET_MH = MethodHandles.lookup().findStatic(NativeGeneratorHelper.class, "deReferencePointer", MethodType.methodType(MemorySegment.class, MemorySegment.class, long.class));
             FETCH_CURRENT_STRUCT_CONTEXT_GENERATOR = NativeGeneratorHelper.class.getMethod("currentStructContext");
             FETCH_CURRENT_STRUCT_LAYOUT_GENERATOR = NativeGeneratorHelper.class.getMethod("currentLayout");
             FETCH_CURRENT_STRUCT_GENERATOR_GENERATOR = NativeGeneratorHelper.class.getMethod("currentStructGenerator");
@@ -51,6 +52,10 @@ public class NativeGeneratorHelper {
         if (segment.byteSize() != origin.byteSize()) {
             throw new IllegalArgumentException(STR."memorySegment size rebind should equal origin memorySegment size");
         }
+    }
+
+    public static MemorySegment deReferencePointer(MemorySegment pointer, long sizeof) {
+        return pointer.get(ValueLayout.ADDRESS, 0).reinterpret(sizeof);
     }
 
     public static StructProxyContext currentStructContext() {

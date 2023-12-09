@@ -12,4 +12,6 @@ public @interface NativeArrayMark {
     Class size();
 
     int length();
+
+    boolean asPointer() default false;
 }

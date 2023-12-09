@@ -156,12 +156,13 @@ public abstract non-sealed class PlainAsyncFd extends AsyncFd {
                                 //即使cancel成功了 io_uring仍旧存在回调
                                 // 转移所有权给下游
                         if (end.compareAndSet(false, true)) {
-                                    ue.complete(new Pair<>(memorySegment, sysCallRes));
-                                } else  {
-                                    //发现被取消了直接drop
-                                    memorySegment.drop();
-                                }
-                            });
+                            ue.complete(new Pair<>(memorySegment, sysCallRes));
+                        } else {
+                            //发现被取消了直接drop
+                            memorySegment.drop();
+                        }
+                    });
+
 
                     if (userData == IOUring.NO_SQE) {
                         end.set(true);
