@@ -59,7 +59,7 @@ public class NativeCallGenerator {
     static {
         try {
             TRANSFORM_OBJECT_TO_STRUCT_MH = MethodHandles.lookup()
-                    .findStatic(NativeCallGenerator.class, "transToPoint", MethodType.methodType(MemorySegment.class, Object.class));
+                    .findStatic(NativeCallGenerator.class, "transToStruct", MethodType.methodType(MemorySegment.class, Object.class));
             NativeGeneratorHelper.fetchCurrentNativeCallGenerator = currentGenerator::get;
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -81,7 +81,7 @@ public class NativeCallGenerator {
         this.nativeLibLookup = new NativeLibLookup();
     }
 
-    private static MemorySegment transToPoint(Object o) {
+    private static MemorySegment transToStruct(Object o) {
         if (o instanceof NativeStructEnhanceMark struct) {
             return struct.realMemory();
         }
@@ -116,14 +116,18 @@ public class NativeCallGenerator {
         CLib annotation = interfaceClass.getAnnotation(CLib.class);
         if (annotation == null || annotation.value().isBlank()) return;
         InputStream inputStream = annotation.inClassPath()
-                ? classLoader.getResourceAsStream(STR. "/\{ annotation.value() }" )
+                ? classLoader.getResourceAsStream(STR."\{annotation.value()}")
                 : new FileInputStream(annotation.value());
+        if (inputStream == null) {
+            throw new IllegalArgumentException(STR."cant find clib! classloader: \{classLoader}, path: \{annotation.value()}");
+        }
         String tmpFileName = STR. "\{ interfaceClass.getSimpleName() }_\{ UUID.randomUUID().toString() }_dynamic.so" ;
         File file = File.createTempFile(tmpFileName, ".tmp");
         FileOutputStream fileOutputStream = new FileOutputStream(file);
         file.deleteOnExit();
         try (fileOutputStream; inputStream) {
             inputStream.transferTo(fileOutputStream);
+            System.load(file.getAbsolutePath());
         }
     }
 
@@ -142,32 +146,46 @@ public class NativeCallGenerator {
             options.add(Linker.Option.isTrivial());
         }
 
-        if (NativeLibLookup.primitiveMapToMemoryLayout(method.getReturnType()) == null && !returnPointer) {
+        if ((NativeLibLookup.primitiveMapToMemoryLayout(method.getReturnType()) == null && !returnPointer) && method.getReturnType() != void.class) {
             throw new IllegalArgumentException(STR. "\{ method } must return primitive type or is marked returnIsPointer" );
         }
 
         boolean allowPassHeap = function != null && function.allowPassHeap();
-        String functionName = function == null ? method.getName() : function.value();
+        String functionName = function == null || Objects.requireNonNullElse(function.value(), "").isBlank()
+                ? method.getName()
+                : function.value();
 
-        ArrayList<Integer> pointIndex = new ArrayList<>();
+        ArrayList<Integer> rawMemoryIndex = new ArrayList<>();
         MemoryLayout[] layouts = new MemoryLayout[method.getParameterCount()];
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; i++) {
             Class<?> typeClass = parameters[i].getType();
             if (needTransToPointer(parameters[i])) {
                 layouts[i] = ValueLayout.ADDRESS;
-                pointIndex.add(i);
+                rawMemoryIndex.add(i);
                 continue;
             }
-
             layouts[i] = structProxyGenerator.extract(typeClass);
+            if (!typeClass.isPrimitive()) {
+                rawMemoryIndex.add(i);
+            }
         }
-        MemoryLayout returnLayout = structProxyGenerator.extract(method.getReturnType());
+
+        MemoryLayout returnLayout;
+        if (MemorySegment.class.isAssignableFrom(method.getReturnType())) {
+            returnLayout = ValueLayout.ADDRESS;
+        } else {
+            returnLayout = structProxyGenerator.extract(method.getReturnType());
+        }
         FunctionDescriptor fd = method.getReturnType() == void.class
                 ? FunctionDescriptor.ofVoid(layouts)
-                : FunctionDescriptor.of(returnPointer ? ValueLayout.ADDRESS : returnLayout, layouts);
+                : FunctionDescriptor.of(
+                returnPointer ? ValueLayout.ADDRESS : returnLayout,
+                layouts
+        );
         MethodHandle methodHandle = nativeLibLookup.downcallHandle(functionName, fd, options.toArray(Linker.Option[]::new));
-        for (Integer i : pointIndex) {
+
+        for (Integer i : rawMemoryIndex) {
             //调用native的mh之前先把用户的java对象转化为MemorySegment
             methodHandle = MethodHandles.filterArguments(
                     methodHandle,
@@ -175,12 +193,17 @@ public class NativeCallGenerator {
                     TRANSFORM_OBJECT_TO_STRUCT_MH.asType(TRANSFORM_OBJECT_TO_STRUCT_MH.type().changeParameterType(0, parameters[i].getType()))
             );
         }
+
+        if (MemorySegment.class.isAssignableFrom(method.getReturnType())) {
+            return methodHandle;
+        }
+
         if (returnPointer) {
             //先调整返回值类型对应的memorySegment长度
             methodHandle = MethodHandles.filterReturnValue(
                     methodHandle,
                     MethodHandles.insertArguments(
-                            NativeGeneratorHelper.REINTERPRET_MH,
+                            NativeGeneratorHelper.DEREFERENCE,
                             1,
                             returnLayout.byteSize()
                     )
@@ -222,7 +245,8 @@ public class NativeCallGenerator {
                 }
                 String mhFieldName = STR. "\{ method.getName() }_native_method_handle" ;
                 //cInit 类初始化的时候赋值下静态字段
-                cInitBlock = cInitBlock.andThen(MethodCall.invoke(NativeCallGenerator.class.getMethod("generateInGeneratorContext", Class.class, String.class, MethodType.class))
+                cInitBlock = cInitBlock
+                        .andThen(MethodCall.invoke(NativeCallGenerator.class.getMethod("generateInGeneratorContext", Class.class, String.class, MethodType.class))
                         .onField(GENERATOR_FIELD_NAME).with(nativeInterface, method.getName()).with(JavaConstant.MethodType.of(method)).setsField(named(mhFieldName)));
                 definition = definition
                         .defineField(mhFieldName, MethodHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)

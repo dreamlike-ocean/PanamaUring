@@ -33,12 +33,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static top.dreamlike.panama.genertor.proxy.NativeLibLookup.primitiveMapToMemoryLayout;
@@ -88,13 +86,22 @@ public class StructProxyGenerator {
         return current.varHandle(MemoryLayout.PathElement.groupElement(name));
     }
 
+    public static MemorySegment findMemorySegment(Object o) {
+        if (o instanceof NativeStructEnhanceMark mark) {
+            return mark.realMemory();
+        }
+        return MemorySegment.NULL;
+    }
+
     @SuppressWarnings("unchecked")
     public <T> T enhance(MemorySegment binder, T... dummy) {
         return this.enhance((Class<T>) dummy.getClass().componentType(), binder);
     }
 
-    public <T> NativeArray<T> enhanceArray(MemorySegment chunk, T... dummy) {
-        return new NativeArray<>(this, chunk, dummy);
+    @SafeVarargs
+    public final <T> NativeArray<T> enhanceArray(MemorySegment chunk, T... dummy) {
+        Class<T> component = (Class<T>) dummy.getClass().getComponentType();
+        return new NativeArray<>(this, chunk, component);
     }
 
     public static boolean isNativeStruct(Object o) {
@@ -131,8 +138,8 @@ public class StructProxyGenerator {
         return memoryLayout.withByteAlignment(alignment.byteSize());
     }
 
-    public boolean isUnionField(Field field) {
-        return field.getAnnotation(Union.class) != null || field.getType().getAnnotation(Union.class) != null;
+    public boolean isUnion(Class type) {
+        return type.getAnnotation(Union.class) != null;
     }
 
     public <T> MemoryLayout extract(Class<T> structClass) {
@@ -151,23 +158,26 @@ public class StructProxyGenerator {
                     continue;
                 }
                 //类型为原语
-                if (field.getType().isPrimitive() || isUnionField(field)) {
-                    MemoryLayout layout = extract0(field).withName(field.getName());
-                    layout = alignmentByteSize == -1 || isUnionField(field) ? layout : layout.withByteAlignment(alignmentByteSize);
+                if (field.getType().isPrimitive()) {
+                    MemoryLayout layout = primitiveMapToMemoryLayout(field.getType()).withName(field.getName());
+                    layout = alignmentByteSize == -1 ? layout : layout.withByteAlignment(alignmentByteSize);
                     list.add(layout);
                     continue;
                 }
-
                 //类型为数组or指针
-                if (field.getType() == MemorySegment.class) {
+                if (field.getType() == MemorySegment.class || field.getType() == NativeArray.class) {
                     if (field.getAnnotation(Pointer.class) != null) {
                         list.add(ValueLayout.ADDRESS.withName(field.getName()));
                         continue;
                     }
                     NativeArrayMark nativeArrayMark = field.getAnnotation(NativeArrayMark.class);
                     if (nativeArrayMark != null) {
-                        SequenceLayout layout = MemoryLayout.sequenceLayout(nativeArrayMark.length(), extract(nativeArrayMark.size()));
-                        list.add(layout.withName(field.getName()));
+                        if (nativeArrayMark.asPointer()) {
+                            list.add(ValueLayout.ADDRESS.withName(field.getName()));
+                        } else {
+                            SequenceLayout layout = MemoryLayout.sequenceLayout(nativeArrayMark.length(), extract(nativeArrayMark.size()));
+                            list.add(layout.withName(field.getName()));
+                        }
                         continue;
                     } else {
                         throw new StructException(STR. "\{ field } must be pointer or nativeArray" );
@@ -178,45 +188,12 @@ public class StructProxyGenerator {
                 layout = alignmentByteSize == -1 ? layout : layout.withByteAlignment(alignmentByteSize);
                 list.add(layout);
             }
+            if (isUnion(structClass)) {
+                return MemoryLayout.unionLayout(list.toArray(MemoryLayout[]::new));
+            }
             return NativeGeneratorHelper.calAlignLayout(list);
         });
 
-    }
-
-    /**
-     * @param field 已经递归到原子化的字段
-     * @return 对应的FFI布局
-     */
-    private MemoryLayout extract0(Field field) {
-        Class source = field.getType();
-        boolean isPoint = field.getAnnotation(Pointer.class) != null;
-        if (isPoint) {
-            if (source == int.class || source == long.class) {
-                return ValueLayout.ADDRESS.withName(field.getName());
-            }
-            throw new StructException(STR. "\{ field } type is \{ source },so it cant be point" );
-        }
-        MemoryLayout layout = primitiveMapToMemoryLayout(source);
-        if (layout == null) {
-            if (!isUnionField(field)) {
-                throw new StructException(STR. "Unexpected value: \{ source }" );
-            }
-            Alignment alignment = field.getType().getAnnotation(Alignment.class);
-            var subLayout = Arrays.stream(source.getDeclaredFields())
-                    .filter(Predicate.not(Field::isSynthetic))
-                    .map(this::extract0)
-                    .map(memoryLayout -> setAlignment(memoryLayout, alignment))
-                    .toArray(MemoryLayout[]::new);
-            layout = MemoryLayout.unionLayout(subLayout);
-        }
-
-        layout = layout.withName(field.getName());
-        Alignment alignment = field.getType().getAnnotation(Alignment.class);
-        if (!isUnionField(field) && alignment != null && alignment.byteSize() > 0) {
-            return layout.withByteAlignment(alignment.byteSize());
-        } else {
-            return layout;
-        }
     }
 
     <T> Function<MemorySegment, Object> enhance(Class<T> targetClass) {
@@ -255,30 +232,26 @@ public class StructProxyGenerator {
                 if (field.isSynthetic()) {
                     continue;
                 }
-
-                if (primitiveMapToMemoryLayout(field.getType()) != null) {
-                    String varHandleFieldName = STR. "\{ field.getName() }_native_struct_vh" ;
-                    cInitBlock = cInitBlock.andThen(
-                            MethodCall.invoke(StructProxyGenerator.class.getMethod("generateVarHandle", MemoryLayout.class, String.class))
-                                    .withField(LAYOUT_FIELD).with(field.getName()).setsField(named(varHandleFieldName))
-                    );
-                    precursor = precursor
-                            .defineField(varHandleFieldName, VarHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
-                            //转到对应的调用
+                precursor = switch (field.getType()) {
+                    case Class c when primitiveMapToMemoryLayout(c) != null -> {
+                        String varHandleFieldName = STR."\{field.getName()}_native_struct_vh";
+                        cInitBlock = cInitBlock.andThen(
+                                MethodCall.invoke(StructProxyGenerator.class.getMethod("generateVarHandle", MemoryLayout.class, String.class))
+                                        .withField(LAYOUT_FIELD).with(field.getName()).setsField(named(varHandleFieldName))
+                        );
+                        yield handlePrimitiveField(precursor, field, className);
+                    }
+                    case Class c when c.equals(NativeArray.class) ->
+                            handleNativeArrayField(precursor, structMemoryLayout, field);
+                    case Class c when MemorySegment.class.isAssignableFrom(c) ->
+                            handleMemorySegmentField(precursor, structMemoryLayout, field);
+                    default -> precursor
                             .defineMethod(STR. "get\{ upperFirstChar(field.getName()) }" , field.getType(), Modifier.PUBLIC)
-                            .intercept(new Implementation.Simple(new MemorySegemntVarHandleGetterStackManipulation(varHandleFieldName, className, field.getType())))
-
-                            .defineMethod(STR. "set\{ upperFirstChar(field.getName()) }" , void.class, Modifier.PUBLIC)
-                            .withParameters(field.getType())
-                            .intercept(new Implementation.Simple(new MemorySegemntVarHandleSetterStackManipulation(varHandleFieldName, className, field.getType())));
-                } else {
-                    long offset = structMemoryLayout.byteOffset(MemoryLayout.PathElement.groupElement(field.getName()));
-                    precursor = precursor
-                            .defineMethod(STR. "get\{ upperFirstChar(field.getName()) }" , field.getType(), Modifier.PUBLIC)
-                            .intercept(InvocationHandlerAdapter.of(new StructFieldInvocationHandle<>(this, field.getType(), offset)));
-                }
+                            .intercept(InvocationHandlerAdapter.of(new StructFieldInvocationHandle<>(this, field.getType(), structMemoryLayout.byteOffset(MemoryLayout.PathElement.groupElement(field.getName())), field.getAnnotation(Pointer.class) != null)));
+                };
 
             }
+
             precursor = precursor.invokable(MethodDescription::isTypeInitializer).intercept(cInitBlock);
             DynamicType.Unloaded<?> unloaded = precursor.make();
 
@@ -298,6 +271,65 @@ public class StructProxyGenerator {
         } finally {
             STRUCT_CONTEXT.remove();
         }
+    }
+
+    private <T> DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<T> handlePrimitiveField(DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<T> precursor, Field field, String className) {
+        String varHandleFieldName = STR."\{field.getName()}_native_struct_vh";
+        return precursor
+                .defineField(varHandleFieldName, VarHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
+                //转到对应的调用
+                .defineMethod(STR."get\{upperFirstChar(field.getName())}", field.getType(), Modifier.PUBLIC)
+                .intercept(new Implementation.Simple(new MemorySegemntVarHandleGetterStackManipulation(varHandleFieldName, className, field.getType())))
+
+                .defineMethod(STR."set\{upperFirstChar(field.getName())}", void.class, Modifier.PUBLIC)
+                .withParameters(field.getType())
+                .intercept(new Implementation.Simple(new MemorySegemntVarHandleSetterStackManipulation(varHandleFieldName, className, field.getType())));
+    }
+
+    private <T> DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<T> handleMemorySegmentField(DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<T> precursor, MemoryLayout structLayout, Field field) {
+        long offset = structLayout.byteOffset(MemoryLayout.PathElement.groupElement(field.getName()));
+        NativeArrayMark arrayMark = field.getAnnotation(NativeArrayMark.class);
+        boolean pointerMarked = field.getAnnotation(Pointer.class) != null;
+
+        return precursor
+                .defineMethod(STR."get\{upperFirstChar(field.getName())}", field.getType(), Modifier.PUBLIC)
+                .intercept(InvocationHandlerAdapter.of((Object proxy, Method method, Object[] args) -> {
+                    MemorySegment realMemory = ((NativeStructEnhanceMark) proxy).realMemory();
+                    if (pointerMarked) {
+                        return realMemory.get(ValueLayout.ADDRESS, offset);
+                    }
+                    //extract保证这俩不会同时为空
+                    MemorySegment needReturn;
+                    MemoryLayout realSize = extract(arrayMark.size());
+                    boolean pointer = arrayMark.asPointer();
+                    if (pointer) {
+                        MemorySegment memory = realMemory.get(ValueLayout.ADDRESS, offset);
+                        needReturn = memory.reinterpret(realSize.byteSize() * arrayMark.length());
+                    } else {
+                        needReturn = realMemory.asSlice(offset, realSize.byteSize() * arrayMark.length());
+                    }
+                    return needReturn;
+                }));
+    }
+
+    private <T> DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<T> handleNativeArrayField(DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<T> precursor, MemoryLayout structLayout, Field field) {
+
+        NativeArrayMark arrayMark = field.getAnnotation(NativeArrayMark.class);
+        if (arrayMark == null) throw new IllegalArgumentException(STR."\{field} must be marked as NativeArrayMark");
+        long offset = structLayout.byteOffset(MemoryLayout.PathElement.groupElement(field.getName()));
+        long newSize = extract(arrayMark.size()).byteSize() * arrayMark.length();
+        boolean asPointer = field.getAnnotation(Pointer.class) != null || arrayMark.asPointer();
+        return precursor
+                .defineMethod(STR."get\{upperFirstChar(field.getName())}", field.getType(), Modifier.PUBLIC)
+                .intercept(InvocationHandlerAdapter.of((Object proxy, Method method, Object[] args) -> {
+                    MemorySegment realMemory = ((NativeStructEnhanceMark) proxy).realMemory();
+                    if (asPointer) {
+                        realMemory = realMemory.get(ValueLayout.ADDRESS, offset)
+                                .reinterpret(newSize);
+                        return new NativeArray<>(this, realMemory, arrayMark.size());
+                    }
+                    return new NativeArray<>(this, realMemory.asSlice(offset, newSize), arrayMark.size());
+                }));
     }
 
     private static class MemorySegemntVarHandleGetterStackManipulation implements StackManipulation {

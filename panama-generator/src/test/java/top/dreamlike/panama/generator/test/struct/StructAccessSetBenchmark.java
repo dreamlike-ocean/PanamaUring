@@ -1,4 +1,4 @@
-package struct;
+package top.dreamlike.panama.generator.test.struct;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
