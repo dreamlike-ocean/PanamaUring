@@ -116,14 +116,18 @@ public class NativeCallGenerator {
         CLib annotation = interfaceClass.getAnnotation(CLib.class);
         if (annotation == null || annotation.value().isBlank()) return;
         InputStream inputStream = annotation.inClassPath()
-                ? classLoader.getResourceAsStream(STR. "/\{ annotation.value() }" )
+                ? classLoader.getResourceAsStream(STR."\{annotation.value()}")
                 : new FileInputStream(annotation.value());
+        if (inputStream == null) {
+            throw new IllegalArgumentException(STR."cant find clib! classloader: \{classLoader}, path: \{annotation.value()}");
+        }
         String tmpFileName = STR. "\{ interfaceClass.getSimpleName() }_\{ UUID.randomUUID().toString() }_dynamic.so" ;
         File file = File.createTempFile(tmpFileName, ".tmp");
         FileOutputStream fileOutputStream = new FileOutputStream(file);
         file.deleteOnExit();
         try (fileOutputStream; inputStream) {
             inputStream.transferTo(fileOutputStream);
+            System.load(file.getAbsolutePath());
         }
     }
 
@@ -147,7 +151,9 @@ public class NativeCallGenerator {
         }
 
         boolean allowPassHeap = function != null && function.allowPassHeap();
-        String functionName = function == null ? method.getName() : function.value();
+        String functionName = function == null || Objects.requireNonNullElse(function.value(), "").isBlank()
+                ? method.getName()
+                : function.value();
 
         ArrayList<Integer> pointIndex = new ArrayList<>();
         MemoryLayout[] layouts = new MemoryLayout[method.getParameterCount()];
@@ -180,7 +186,7 @@ public class NativeCallGenerator {
             methodHandle = MethodHandles.filterReturnValue(
                     methodHandle,
                     MethodHandles.insertArguments(
-                            NativeGeneratorHelper.REINTERPRET_MH,
+                            NativeGeneratorHelper.DEREFERENCE,
                             1,
                             returnLayout.byteSize()
                     )
@@ -222,7 +228,8 @@ public class NativeCallGenerator {
                 }
                 String mhFieldName = STR. "\{ method.getName() }_native_method_handle" ;
                 //cInit 类初始化的时候赋值下静态字段
-                cInitBlock = cInitBlock.andThen(MethodCall.invoke(NativeCallGenerator.class.getMethod("generateInGeneratorContext", Class.class, String.class, MethodType.class))
+                cInitBlock = cInitBlock
+                        .andThen(MethodCall.invoke(NativeCallGenerator.class.getMethod("generateInGeneratorContext", Class.class, String.class, MethodType.class))
                         .onField(GENERATOR_FIELD_NAME).with(nativeInterface, method.getName()).with(JavaConstant.MethodType.of(method)).setsField(named(mhFieldName)));
                 definition = definition
                         .defineField(mhFieldName, MethodHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)

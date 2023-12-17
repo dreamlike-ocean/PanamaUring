@@ -33,12 +33,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static top.dreamlike.panama.genertor.proxy.NativeLibLookup.primitiveMapToMemoryLayout;
@@ -133,8 +131,8 @@ public class StructProxyGenerator {
         return memoryLayout.withByteAlignment(alignment.byteSize());
     }
 
-    public boolean isUnionField(Field field) {
-        return field.getAnnotation(Union.class) != null || field.getType().getAnnotation(Union.class) != null;
+    public boolean isUnion(Class type) {
+        return type.getAnnotation(Union.class) != null;
     }
 
     public <T> MemoryLayout extract(Class<T> structClass) {
@@ -153,9 +151,9 @@ public class StructProxyGenerator {
                     continue;
                 }
                 //类型为原语
-                if (field.getType().isPrimitive() || isUnionField(field)) {
-                    MemoryLayout layout = extract0(field).withName(field.getName());
-                    layout = alignmentByteSize == -1 || isUnionField(field) ? layout : layout.withByteAlignment(alignmentByteSize);
+                if (field.getType().isPrimitive()) {
+                    MemoryLayout layout = primitiveMapToMemoryLayout(field.getType()).withName(field.getName());
+                    layout = alignmentByteSize == -1 ? layout : layout.withByteAlignment(alignmentByteSize);
                     list.add(layout);
                     continue;
                 }
@@ -183,45 +181,12 @@ public class StructProxyGenerator {
                 layout = alignmentByteSize == -1 ? layout : layout.withByteAlignment(alignmentByteSize);
                 list.add(layout);
             }
+            if (isUnion(structClass)) {
+                return MemoryLayout.unionLayout(list.toArray(MemoryLayout[]::new));
+            }
             return NativeGeneratorHelper.calAlignLayout(list);
         });
 
-    }
-
-    /**
-     * @param field 已经递归到原子化的字段
-     * @return 对应的FFI布局
-     */
-    private MemoryLayout extract0(Field field) {
-        Class source = field.getType();
-        boolean isPoint = field.getAnnotation(Pointer.class) != null;
-        if (isPoint) {
-            if (source == int.class || source == long.class) {
-                return ValueLayout.ADDRESS.withName(field.getName());
-            }
-            throw new StructException(STR. "\{ field } type is \{ source },so it cant be point" );
-        }
-        MemoryLayout layout = primitiveMapToMemoryLayout(source);
-        if (layout == null) {
-            if (!isUnionField(field)) {
-                throw new StructException(STR. "Unexpected value: \{ source }" );
-            }
-            Alignment alignment = field.getType().getAnnotation(Alignment.class);
-            var subLayout = Arrays.stream(source.getDeclaredFields())
-                    .filter(Predicate.not(Field::isSynthetic))
-                    .map(this::extract0)
-                    .map(memoryLayout -> setAlignment(memoryLayout, alignment))
-                    .toArray(MemoryLayout[]::new);
-            layout = MemoryLayout.unionLayout(subLayout);
-        }
-
-        layout = layout.withName(field.getName());
-        Alignment alignment = field.getType().getAnnotation(Alignment.class);
-        if (!isUnionField(field) && alignment != null && alignment.byteSize() > 0) {
-            return layout.withByteAlignment(alignment.byteSize());
-        } else {
-            return layout;
-        }
     }
 
     <T> Function<MemorySegment, Object> enhance(Class<T> targetClass) {
@@ -261,8 +226,14 @@ public class StructProxyGenerator {
                     continue;
                 }
                 precursor = switch (field.getType()) {
-                    case Class c when primitiveMapToMemoryLayout(c) != null ->
-                            handlePrimitiveField(precursor, field, className);
+                    case Class c when primitiveMapToMemoryLayout(c) != null -> {
+                        String varHandleFieldName = STR."\{field.getName()}_native_struct_vh";
+                        cInitBlock = cInitBlock.andThen(
+                                MethodCall.invoke(StructProxyGenerator.class.getMethod("generateVarHandle", MemoryLayout.class, String.class))
+                                        .withField(LAYOUT_FIELD).with(field.getName()).setsField(named(varHandleFieldName))
+                        );
+                        yield handlePrimitiveField(precursor, field, className);
+                    }
                     case Class c when c.equals(NativeArray.class) ->
                             handleNativeArrayField(precursor, structMemoryLayout, field);
                     case Class c when MemorySegment.class.isAssignableFrom(c) ->
@@ -326,7 +297,7 @@ public class StructProxyGenerator {
                     MemoryLayout realSize = extract(arrayMark.size());
                     boolean pointer = arrayMark.asPointer();
                     if (pointer) {
-                        MemorySegment memory = realMemory.asSlice(offset, ValueLayout.ADDRESS);
+                        MemorySegment memory = realMemory.get(ValueLayout.ADDRESS, offset);
                         needReturn = memory.reinterpret(realSize.byteSize() * arrayMark.length());
                     } else {
                         needReturn = realMemory.asSlice(offset, realSize.byteSize() * arrayMark.length());
@@ -340,17 +311,18 @@ public class StructProxyGenerator {
         NativeArrayMark arrayMark = field.getAnnotation(NativeArrayMark.class);
         if (arrayMark == null) throw new IllegalArgumentException(STR."\{field} must be marked as NativeArrayMark");
         long offset = structLayout.byteOffset(MemoryLayout.PathElement.groupElement(field.getName()));
-        long newSize = extract(field.getType()).byteSize() * arrayMark.length();
-        boolean asPointer = field.getAnnotation(Pointer.class) != null;
+        long newSize = extract(arrayMark.size()).byteSize() * arrayMark.length();
+        boolean asPointer = field.getAnnotation(Pointer.class) != null || arrayMark.asPointer();
         return precursor
                 .defineMethod(STR."get\{upperFirstChar(field.getName())}", field.getType(), Modifier.PUBLIC)
                 .intercept(InvocationHandlerAdapter.of((Object proxy, Method method, Object[] args) -> {
                     MemorySegment realMemory = ((NativeStructEnhanceMark) proxy).realMemory();
                     if (asPointer) {
                         realMemory = realMemory.get(ValueLayout.ADDRESS, offset)
-                                .reinterpret(Long.MAX_VALUE);
+                                .reinterpret(newSize);
+                        return new NativeArray<>(this, realMemory, arrayMark.size());
                     }
-                    return new NativeArray<>(this, realMemory.asSlice(offset, newSize), field.getType());
+                    return new NativeArray<>(this, realMemory.asSlice(offset, newSize), arrayMark.size());
                 }));
     }
 
