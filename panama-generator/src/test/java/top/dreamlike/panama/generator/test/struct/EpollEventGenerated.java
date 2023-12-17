@@ -1,4 +1,4 @@
-package struct;
+package top.dreamlike.panama.generator.test.struct;
 
 import top.dreamlike.panama.genertor.annotation.Alignment;
 import top.dreamlike.panama.genertor.annotation.Pointer;

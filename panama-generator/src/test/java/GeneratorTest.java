@@ -1,7 +1,10 @@
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import top.dreamlike.panama.genertor.annotation.*;
+import top.dreamlike.panama.generator.test.call.LibPerson;
+import top.dreamlike.panama.generator.test.struct.Person;
+import top.dreamlike.panama.generator.test.struct.PointerVersionTestContainer;
+import top.dreamlike.panama.generator.test.struct.TestContainer;
 import top.dreamlike.panama.genertor.proxy.NativeArray;
 import top.dreamlike.panama.genertor.proxy.NativeCallGenerator;
 import top.dreamlike.panama.genertor.proxy.StructProxyGenerator;
@@ -11,16 +14,7 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 
 public class GeneratorTest {
-    //    extern "C" {
-//    int add(int a, int b);
-//    int add1(int a,int b);
-//    struct Person {
-//        int a;
-//        long n;
-//    };
-//
-//    struct Person* fillPerson(int a, long n);
-//};
+
     private static StructProxyGenerator structProxyGenerator;
 
     private static NativeCallGenerator callGenerator;
@@ -116,128 +110,77 @@ public class GeneratorTest {
         }
     }
 
-    @CLib("libperson.so")
-    interface LibPerson {
+    @Test
+    public void testCopyFunction() {
+        MemoryLayout testContainerLayout = structProxyGenerator.extract(TestContainer.class);
+        Assert.assertEquals(libPerson.testContainerSize(), testContainerLayout.byteSize());
 
-        @NativeFunction(fast = true)
-        int add(int a, int b);
+        MemoryLayout personSizeof = structProxyGenerator.extract(Person.class);
+        MemorySegment personInMemory = Arena.global().allocate(personSizeof);
+        Person person = structProxyGenerator.enhance(Person.class, personInMemory);
+        long targetPersonN = 1L;
+        int targetPersonA = 1000;
+        person.setN(targetPersonN);
+        person.setA(targetPersonA);
 
-        @NativeFunction(fast = true, returnIsPointer = true)
-        Person fillPerson(int a, long n);
+        MemorySegment segment = Arena.global().allocate(testContainerLayout);
+        TestContainer testContainer = structProxyGenerator.enhance(TestContainer.class, segment);
 
-        int getA(@Pointer Person person);
+        Assert.assertNotEquals(targetPersonA, testContainer.getSingle().getA());
+        libPerson.setSingle(testContainer, person);
+        Assert.assertEquals(targetPersonA, testContainer.getSingle().getA());
 
-        long getN(@Pointer Person person);
-
-        @NativeFunction(fast = true, returnIsPointer = true)
-        TestContainer initContainer(int size, @Pointer Person person, long unionValue);
-
-        int getSize(@Pointer TestContainer container);
-
-        long getUnionB(@Pointer TestContainer container);
-
-
-        int testContainerSize();
     }
 
-    static class Person {
-        int a;
-        long n;
 
-        public int getA() {
-            return a;
+    @Test
+    public void testMemorySegmentVersionComplexStruct() {
+        MemoryLayout layout = structProxyGenerator.extract(PointerVersionTestContainer.class);
+        Assert.assertEquals(libPerson.testContainerSize(), layout.byteSize());
+
+        MemoryLayout testContainerLayout = structProxyGenerator.extract(TestContainer.class);
+        Assert.assertEquals(libPerson.testContainerSize(), testContainerLayout.byteSize());
+
+        MemoryLayout personSizeof = structProxyGenerator.extract(Person.class);
+        MemorySegment personInMemory = Arena.global().allocate(personSizeof);
+        Person person = structProxyGenerator.enhance(Person.class, personInMemory);
+        long targetPersonN = 1L;
+        int targetPersonA = 1000;
+        person.setN(targetPersonN);
+        person.setA(targetPersonA);
+
+        int testContainerSize = 5;
+        int testContainerUnionValue = 20;
+        TestContainer initContainer = libPerson.initContainer(testContainerSize, person, testContainerUnionValue);
+        MemorySegment pointer = libPerson.getArrayButPointer(initContainer);
+        //_______________________以上是初始化
+        MemorySegment realMemory = StructProxyGenerator.findMemorySegment(initContainer);
+        PointerVersionTestContainer target = structProxyGenerator.enhance(realMemory);
+        MemorySegment arrayButPointer = target.getArrayButPointer();
+        long address = arrayButPointer.address();
+        Assert.assertEquals(personSizeof.byteSize() * 5, arrayButPointer.byteSize());
+        Assert.assertEquals(pointer.address(), address);
+
+        NativeArray<Person> personNativeArray = structProxyGenerator.enhanceArray(arrayButPointer);
+        Assert.assertEquals(5, personNativeArray.size());
+        for (Person p : personNativeArray) {
+            int a = p.getA();
+            Assert.assertEquals(targetPersonA, a);
+            long n = p.getN();
+            Assert.assertEquals(targetPersonN, n);
         }
 
-        public void setA(int a) {
-            this.a = a;
-        }
+        MemorySegment personArray = target.getPersonArray();
 
-        public long getN() {
-            return n;
-        }
-
-        public void setN(long n) {
-            this.n = n;
-        }
-
-        @Override
-        public String toString() {
-            return STR."a: \{getA()}, n: \{getN()}";
-        }
-    }
-
-    static class TestContainer {
-        int size;
-        Person single;
-
-        UnionStruct unionStruct;
-
-        @NativeArrayMark(size = Person.class, length = 3)
-        NativeArray<Person> personArray;
-
-        @NativeArrayMark(size = Person.class, length = 5, asPointer = true)
-        NativeArray<Person> arrayButPointer;
-
-        public int getSize() {
-            return size;
-        }
-
-        public void setSize(int size) {
-            this.size = size;
-        }
-
-        public Person getSingle() {
-            return single;
-        }
-
-        public void setSingle(Person single) {
-            this.single = single;
-        }
-
-        public UnionStruct getUnionStruct() {
-            return unionStruct;
-        }
-
-        public void setUnionStruct(UnionStruct unionStruct) {
-            this.unionStruct = unionStruct;
-        }
-
-        public NativeArray<Person> getPersonArray() {
-            return personArray;
-        }
-
-        public void setPersonArray(NativeArray<Person> personArray) {
-            this.personArray = personArray;
-        }
-
-        public NativeArray<Person> getArrayButPointer() {
-            return arrayButPointer;
-        }
-
-        public void setArrayButPointer(NativeArray<Person> arrayButPointer) {
-            this.arrayButPointer = arrayButPointer;
-        }
-
-        @Union
-        static class UnionStruct {
-            int union_a;
-            long union_b;
-
-            public int getUnion_a() {
-                return union_a;
-            }
-
-            public void setUnion_a(int union_a) {
-                this.union_a = union_a;
-            }
-
-            public long getUnion_b() {
-                return union_b;
-            }
-
-            public void setUnion_b(long union_b) {
-                this.union_b = union_b;
-            }
+        personNativeArray = structProxyGenerator.enhanceArray(personArray);
+        Assert.assertEquals(3, personNativeArray.size());
+        for (Person p : personNativeArray) {
+            int a = p.getA();
+            Assert.assertEquals(targetPersonA, a);
+            long n = p.getN();
+            Assert.assertEquals(targetPersonN, n);
         }
     }
+
+
 }

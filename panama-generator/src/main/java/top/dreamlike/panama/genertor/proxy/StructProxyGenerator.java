@@ -86,6 +86,13 @@ public class StructProxyGenerator {
         return current.varHandle(MemoryLayout.PathElement.groupElement(name));
     }
 
+    public static MemorySegment findMemorySegment(Object o) {
+        if (o instanceof NativeStructEnhanceMark mark) {
+            return mark.realMemory();
+        }
+        return MemorySegment.NULL;
+    }
+
     @SuppressWarnings("unchecked")
     public <T> T enhance(MemorySegment binder, T... dummy) {
         return this.enhance((Class<T>) dummy.getClass().componentType(), binder);
@@ -282,15 +289,14 @@ public class StructProxyGenerator {
     private <T> DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<T> handleMemorySegmentField(DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<T> precursor, MemoryLayout structLayout, Field field) {
         long offset = structLayout.byteOffset(MemoryLayout.PathElement.groupElement(field.getName()));
         NativeArrayMark arrayMark = field.getAnnotation(NativeArrayMark.class);
-        boolean asPointer = field.getAnnotation(Pointer.class) != null;
+        boolean pointerMarked = field.getAnnotation(Pointer.class) != null;
 
         return precursor
                 .defineMethod(STR."get\{upperFirstChar(field.getName())}", field.getType(), Modifier.PUBLIC)
                 .intercept(InvocationHandlerAdapter.of((Object proxy, Method method, Object[] args) -> {
                     MemorySegment realMemory = ((NativeStructEnhanceMark) proxy).realMemory();
-                    if (asPointer) {
-                        return MemorySegment.ofAddress(realMemory.asSlice(offset, ValueLayout.ADDRESS).get(ValueLayout.JAVA_LONG, 0))
-                                .reinterpret(Long.MAX_VALUE);
+                    if (pointerMarked) {
+                        return realMemory.get(ValueLayout.ADDRESS, offset);
                     }
                     //extract保证这俩不会同时为空
                     MemorySegment needReturn;
