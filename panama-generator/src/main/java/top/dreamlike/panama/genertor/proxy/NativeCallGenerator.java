@@ -217,8 +217,9 @@ public class NativeCallGenerator {
              * 所以等价于摘掉第一个参数，用一个()->V类型的MethodHandle作为第一个参数的产出方
              * 等价于
              *  {
+             *     MemorySegment errorBuffer = allocateErrorBuffer();
              *     nativeMethodHandle.invokeExact(
-             *       AllocateErrorBuffer_MH.invokeExact(),
+             *       errorBuffer ,
              *       ....
              *     )
              *  }
