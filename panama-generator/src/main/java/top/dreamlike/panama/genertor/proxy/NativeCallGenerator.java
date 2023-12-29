@@ -6,6 +6,7 @@ import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.Implementation;
+import net.bytebuddy.implementation.InvokeDynamic;
 import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.implementation.bytecode.StackManipulation;
 import net.bytebuddy.implementation.bytecode.member.HandleInvocation;
@@ -23,9 +24,7 @@ import top.dreamlike.panama.genertor.helper.NativeStructEnhanceMark;
 
 import java.io.*;
 import java.lang.foreign.*;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
+import java.lang.invoke.*;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
@@ -45,6 +44,8 @@ import static net.bytebuddy.matcher.ElementMatchers.named;
 public class NativeCallGenerator {
     private final ByteBuddy byteBuddy;
 
+    private static final Method INDY_BOOTSTRAP_METHOD;
+
     private final NativeLibLookup nativeLibLookup;
 
     private static final MethodHandle TRANSFORM_OBJECT_TO_STRUCT_MH;
@@ -58,13 +59,15 @@ public class NativeCallGenerator {
 
     static {
         try {
-            TRANSFORM_OBJECT_TO_STRUCT_MH = MethodHandles.lookup()
-                    .findStatic(NativeCallGenerator.class, "transToStruct", MethodType.methodType(MemorySegment.class, Object.class));
+            TRANSFORM_OBJECT_TO_STRUCT_MH = MethodHandles.lookup().findStatic(NativeCallGenerator.class, "transToStruct", MethodType.methodType(MemorySegment.class, Object.class));
             NativeGeneratorHelper.fetchCurrentNativeCallGenerator = currentGenerator::get;
+            INDY_BOOTSTRAP_METHOD = NativeCallGenerator.class.getMethod("indyFactory", MethodHandles.Lookup.class, String.class, MethodType.class, Object[].class);
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }
+
+    private volatile boolean use_indy = false;
 
     final Map<Class<?>, Supplier<Object>> ctorCaches = new ConcurrentHashMap<>();
     private final StructProxyGenerator structProxyGenerator;
@@ -79,6 +82,20 @@ public class NativeCallGenerator {
         this.structProxyGenerator = structProxyGenerator;
         this.byteBuddy = new ByteBuddy(ClassFileVersion.JAVA_V21);
         this.nativeLibLookup = new NativeLibLookup();
+    }
+
+    public static CallSite indyFactory(MethodHandles.Lookup lookup, String methodName, MethodType methodType, Object... args) throws Throwable {
+        //这里的lookup是当前的代理类
+        Class<?> lookupClass = lookup.lookupClass();
+        NativeCallGenerator generator = (NativeCallGenerator) lookupClass.getField(GENERATOR_FIELD_NAME).get(null);
+        Class<?> targetInterface = lookupClass.getInterfaces()[0];
+        Method method = targetInterface.getMethod(methodName, methodType.parameterArray());
+        MethodHandle nativeCallMH = generator.nativeMethodHandle(method);
+        return new ConstantCallSite(nativeCallMH);
+    }
+
+    public void indyMode() {
+        use_indy = true;
     }
 
     private static MemorySegment transToStruct(Object o) {
@@ -136,6 +153,10 @@ public class NativeCallGenerator {
         return typeClass.isAssignableFrom(MemorySegment.class)
                 || NativeStructEnhanceMark.class.isAssignableFrom(typeClass)
                 || (!typeClass.isPrimitive() && parameter.getAnnotation(Pointer.class) != null);
+    }
+
+    public void plainMode() {
+        use_indy = false;
     }
 
     private MethodHandle nativeMethodHandle(Method method) {
@@ -244,15 +265,25 @@ public class NativeCallGenerator {
                     continue;
                 }
                 String mhFieldName = STR. "\{ method.getName() }_native_method_handle" ;
-                //cInit 类初始化的时候赋值下静态字段
-                cInitBlock = cInitBlock
-                        .andThen(MethodCall.invoke(NativeCallGenerator.class.getMethod("generateInGeneratorContext", Class.class, String.class, MethodType.class))
-                        .onField(GENERATOR_FIELD_NAME).with(nativeInterface, method.getName()).with(JavaConstant.MethodType.of(method)).setsField(named(mhFieldName)));
-                definition = definition
-                        .defineField(mhFieldName, MethodHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
-                        .defineMethod(method.getName(), method.getReturnType(), Modifier.PUBLIC)
+                if (!use_indy) {
+                    //使用传统的static final的方案
+                    //cInit 类初始化的时候赋值下静态字段
+                    cInitBlock = cInitBlock
+                            .andThen(MethodCall.invoke(NativeCallGenerator.class.getMethod("generateInGeneratorContext", Class.class, String.class, MethodType.class))
+                                    .onField(GENERATOR_FIELD_NAME).with(nativeInterface, method.getName()).with(JavaConstant.MethodType.of(method)).setsField(named(mhFieldName)));
+                    definition = definition
+                            .defineField(mhFieldName, MethodHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
+                            .defineMethod(method.getName(), method.getReturnType(), Modifier.PUBLIC)
+                            .withParameters(method.getParameterTypes())
+                            .intercept(new Implementation.Simple(new ConstFieldInvokerStackManipulation(className, mhFieldName, method)));
+                    continue;
+                }
+
+                InvokeDynamic nativeCallIndy = InvokeDynamic.bootstrap(INDY_BOOTSTRAP_METHOD).withMethodArguments();
+                definition = definition.defineMethod(method.getName(), method.getReturnType(), Modifier.PUBLIC)
                         .withParameters(method.getParameterTypes())
-                        .intercept(new Implementation.Simple(new ConstFieldInvokerStackManipulation(className, mhFieldName, method)));
+                        .intercept(nativeCallIndy);
+
             }
 
             definition = definition.invokable(MethodDescription::isTypeInitializer)
@@ -295,12 +326,14 @@ public class NativeCallGenerator {
         @Override
         public Size apply(MethodVisitor methodVisitor, Implementation.Context implementationContext) {
             Size res = Size.ZERO;
+            //获取静态的对应mh字段
             methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, className.replace(".", "/"), mhFieldName, "Ljava/lang/invoke/MethodHandle;");
             Size vistStaticSize = new Size(1, 1);
             res = res.aggregate(vistStaticSize);
             StackManipulation[] manipulations = new StackManipulation[method.getParameterCount() + 2];
             Parameter[] parameters = method.getParameters();
             int offset = 1;
+            //压栈
             Class[] classes = new Class[parameters.length];
             for (int i = 0; i < parameters.length; i++) {
                 Class<?> type = parameters[i].getType();
@@ -313,10 +346,11 @@ public class NativeCallGenerator {
             }
 
             JavaConstant.MethodType methodType = JavaConstant.MethodType.of(method.getReturnType(), classes);
+            //调用handle的invokeExact
             HandleInvocation handleInvocation = new HandleInvocation(methodType);
             manipulations[parameters.length] = handleInvocation;
             Class returnType = method.getReturnType();
-
+            //准备返回值
             manipulations[parameters.length + 1] = calMethodReturn(returnType);
 
             StackManipulation stackManipulation = new StackManipulation.Compound(manipulations);

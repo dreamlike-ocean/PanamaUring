@@ -1,3 +1,5 @@
+package top.dreamlike.panama.generator.test;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -13,7 +15,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 
-public class GeneratorTest {
+public class IndyGeneratorTest {
 
     private static StructProxyGenerator structProxyGenerator;
 
@@ -25,6 +27,7 @@ public class GeneratorTest {
     public static void init() {
         structProxyGenerator = new StructProxyGenerator();
         callGenerator = new NativeCallGenerator(structProxyGenerator);
+        callGenerator.indyMode();
         libPerson = callGenerator.generate(LibPerson.class);
     }
 
