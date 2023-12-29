@@ -84,6 +84,20 @@ public class NativeCallGenerator {
         this.nativeLibLookup = new NativeLibLookup();
     }
 
+    public static CallSite indyFactory(MethodHandles.Lookup lookup, String methodName, MethodType methodType, Object... args) throws Throwable {
+        //这里的lookup是当前的代理类
+        Class<?> lookupClass = lookup.lookupClass();
+        NativeCallGenerator generator = (NativeCallGenerator) lookupClass.getField(GENERATOR_FIELD_NAME).get(null);
+        Class<?> targetInterface = lookupClass.getInterfaces()[0];
+        Method method = targetInterface.getMethod(methodName, methodType.parameterArray());
+        MethodHandle nativeCallMH = generator.nativeMethodHandle(method);
+        return new ConstantCallSite(nativeCallMH);
+    }
+
+    public void indyMode() {
+        use_indy = true;
+    }
+
     private static MemorySegment transToStruct(Object o) {
         if (o instanceof NativeStructEnhanceMark struct) {
             return struct.realMemory();
@@ -141,12 +155,8 @@ public class NativeCallGenerator {
                 || (!typeClass.isPrimitive() && parameter.getAnnotation(Pointer.class) != null);
     }
 
-    public static CallSite indyFactory(MethodHandles.Lookup lookup, String methodName, MethodType methodType, Object... args) throws Throwable {
-        Class<?> lookupClass = lookup.lookupClass();
-        NativeCallGenerator generator = (NativeCallGenerator) lookupClass.getField(GENERATOR_FIELD_NAME).get(null);
-        Method method = lookupClass.getMethod(methodName, methodType.parameterArray());
-        MethodHandle nativeCallMH = generator.nativeMethodHandle(method);
-        return new ConstantCallSite(nativeCallMH);
+    public void plainMode() {
+        use_indy = false;
     }
 
     private MethodHandle nativeMethodHandle(Method method) {
