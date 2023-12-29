@@ -46,7 +46,7 @@ public class NativeCallGenerator {
 
     private static final Method INDY_BOOTSTRAP_METHOD;
 
-    private final NativeLibLookup nativeLibLookup;
+    private final NativeLookup nativeLibLookup;
 
     private static final MethodHandle TRANSFORM_OBJECT_TO_STRUCT_MH;
 
@@ -75,13 +75,13 @@ public class NativeCallGenerator {
     public NativeCallGenerator() {
         this.structProxyGenerator = new StructProxyGenerator();
         this.byteBuddy = new ByteBuddy(ClassFileVersion.JAVA_V21);
-        this.nativeLibLookup = new NativeLibLookup();
+        this.nativeLibLookup = new NativeLookup();
     }
 
     public NativeCallGenerator(StructProxyGenerator structProxyGenerator) {
         this.structProxyGenerator = structProxyGenerator;
         this.byteBuddy = new ByteBuddy(ClassFileVersion.JAVA_V21);
-        this.nativeLibLookup = new NativeLibLookup();
+        this.nativeLibLookup = new NativeLookup();
     }
 
     public static CallSite indyFactory(MethodHandles.Lookup lookup, String methodName, MethodType methodType, Object... args) throws Throwable {
@@ -167,7 +167,12 @@ public class NativeCallGenerator {
             options.add(Linker.Option.isTrivial());
         }
 
-        if ((NativeLibLookup.primitiveMapToMemoryLayout(method.getReturnType()) == null && !returnPointer) && method.getReturnType() != void.class) {
+        boolean needCaptureStatue = function != null && function.needErrorNo();
+        if (needCaptureStatue) {
+            options.add(Linker.Option.captureCallState("errno"));
+        }
+
+        if ((NativeLookup.primitiveMapToMemoryLayout(method.getReturnType()) == null && !returnPointer) && method.getReturnType() != void.class) {
             throw new IllegalArgumentException(STR. "\{ method } must return primitive type or is marked returnIsPointer" );
         }
 
@@ -193,7 +198,7 @@ public class NativeCallGenerator {
         }
 
         MemoryLayout returnLayout;
-        if (MemorySegment.class.isAssignableFrom(method.getReturnType())) {
+        if (MemorySegment.class.isAssignableFrom(method.getReturnType()) || returnPointer) {
             returnLayout = ValueLayout.ADDRESS;
         } else {
             returnLayout = structProxyGenerator.extract(method.getReturnType());
@@ -201,10 +206,29 @@ public class NativeCallGenerator {
         FunctionDescriptor fd = method.getReturnType() == void.class
                 ? FunctionDescriptor.ofVoid(layouts)
                 : FunctionDescriptor.of(
-                returnPointer ? ValueLayout.ADDRESS : returnLayout,
+                returnLayout,
                 layouts
         );
         MethodHandle methodHandle = nativeLibLookup.downcallHandle(functionName, fd, options.toArray(Linker.Option[]::new));
+
+        if (needCaptureStatue) {
+            /*
+             * 因为是V filter2()这种模式的
+             * 所以等价于摘掉第一个参数，用一个()->V类型的MethodHandle作为第一个参数的产出方
+             * 等价于
+             *  {
+             *     nativeMethodHandle.invokeExact(
+             *       AllocateErrorBuffer_MH.invokeExact(),
+             *       ....
+             *     )
+             *  }
+             */
+            methodHandle = MethodHandles.collectArguments(
+                    methodHandle,
+                    0,
+                    NativeLookup.AllocateErrorBuffer_MH
+            );
+        }
 
         for (Integer i : rawMemoryIndex) {
             //调用native的mh之前先把用户的java对象转化为MemorySegment
@@ -217,6 +241,18 @@ public class NativeCallGenerator {
 
         if (MemorySegment.class.isAssignableFrom(method.getReturnType())) {
             return methodHandle;
+        }
+        if (needCaptureStatue) {
+            /*
+             *  别看fillErrorNoAfterReturn 太丑了。。SB java.。
+             *  等价于
+             *  {
+             *    var returnValue = nativeMethodHandle.invokeExact(...);
+             *    fillErrorNo();
+             *    return returnValue;
+             *  }
+             */
+            methodHandle = NativeLookup.fillErrorNoAfterReturn(methodHandle);
         }
 
         if (returnPointer) {
@@ -264,8 +300,8 @@ public class NativeCallGenerator {
                 if (method.isBridge() || method.isDefault() || method.isSynthetic()) {
                     continue;
                 }
-                String mhFieldName = STR. "\{ method.getName() }_native_method_handle" ;
                 if (!use_indy) {
+                    String mhFieldName = STR."\{method.getName()}_native_method_handle";
                     //使用传统的static final的方案
                     //cInit 类初始化的时候赋值下静态字段
                     cInitBlock = cInitBlock
