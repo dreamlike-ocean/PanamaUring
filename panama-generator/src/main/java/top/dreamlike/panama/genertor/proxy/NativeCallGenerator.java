@@ -240,9 +240,6 @@ public class NativeCallGenerator {
             );
         }
 
-        if (MemorySegment.class.isAssignableFrom(method.getReturnType())) {
-            return methodHandle;
-        }
         if (needCaptureStatue) {
             /*
              *  别看fillErrorNoAfterReturn 太丑了。。SB java.。
@@ -254,6 +251,10 @@ public class NativeCallGenerator {
              *  }
              */
             methodHandle = NativeLookup.fillErrorNoAfterReturn(methodHandle);
+        }
+
+        if (MemorySegment.class.isAssignableFrom(method.getReturnType())) {
+            return methodHandle;
         }
 
         if (returnPointer) {
