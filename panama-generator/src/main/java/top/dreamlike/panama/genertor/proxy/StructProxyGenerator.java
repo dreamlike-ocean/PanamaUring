@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import static net.bytebuddy.matcher.ElementMatchers.named;
-import static top.dreamlike.panama.genertor.proxy.NativeLibLookup.primitiveMapToMemoryLayout;
+import static top.dreamlike.panama.genertor.proxy.NativeLookup.primitiveMapToMemoryLayout;
 
 public class StructProxyGenerator {
 
