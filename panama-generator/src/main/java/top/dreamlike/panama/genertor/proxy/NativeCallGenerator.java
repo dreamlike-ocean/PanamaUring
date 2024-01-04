@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import static net.bytebuddy.matcher.ElementMatchers.named;
@@ -42,6 +43,9 @@ import static net.bytebuddy.matcher.ElementMatchers.named;
  * 参考这个使用static final进行优化
  */
 public class NativeCallGenerator {
+
+    private static final AtomicInteger count = new AtomicInteger(0);
+
     private final ByteBuddy byteBuddy;
 
     private static final Method INDY_BOOTSTRAP_METHOD;
@@ -159,6 +163,13 @@ public class NativeCallGenerator {
         use_indy = false;
     }
 
+    /**
+     * This private method handles the native method call based on the given Method.
+     *
+     * @param method The Method object representing the native method.
+     * @return The MethodHandle object for the native method call.
+     * @throws IllegalArgumentException if the return type of the method is not a primitive type or marked as returnIsPointer.
+     */
     private MethodHandle nativeMethodHandle(Method method) {
         NativeFunction function = method.getAnnotation(NativeFunction.class);
         boolean returnPointer = function != null && function.returnIsPointer();
@@ -283,6 +294,14 @@ public class NativeCallGenerator {
         return methodHandle;
     }
 
+    /**
+     * Binds a native interface to a dynamically generated implementation using byteBuddy library.
+     *
+     * @param nativeInterface The native interface to bind. Must be an interface.
+     * @return A supplier that provides an instance of the dynamically generated implementation for the native interface.
+     * @throws IllegalArgumentException If the nativeInterface is not an interface.
+     * @throws StructException          If an error occurs during the binding process.
+     */
     @SuppressWarnings("unchecked")
     private Supplier<Object> bind(Class<?> nativeInterface) {
         try {
@@ -290,7 +309,7 @@ public class NativeCallGenerator {
                 throw new IllegalArgumentException(STR. "\{ nativeInterface } is not interface" );
             }
             currentGenerator.set(this);
-            String className = STR. "\{ nativeInterface.getName() }_native_call_enhance" ;
+            String className = STR."\{nativeInterface.getName()}_native_call_enhance_\{count.getAndIncrement()}";
             var definition = byteBuddy.subclass(Object.class)
                     .implement(nativeInterface)
                     .defineField(GENERATOR_FIELD_NAME, NativeCallGenerator.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
