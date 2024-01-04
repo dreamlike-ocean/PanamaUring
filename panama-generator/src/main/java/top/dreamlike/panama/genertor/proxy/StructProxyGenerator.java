@@ -36,12 +36,15 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static top.dreamlike.panama.genertor.proxy.NativeLookup.primitiveMapToMemoryLayout;
 
 public class StructProxyGenerator {
+
+    private static final AtomicInteger count = new AtomicInteger(0);
 
     private static final String MEMORY_FIELD = "_realMemory";
 
@@ -200,7 +203,7 @@ public class StructProxyGenerator {
         try {
             MemoryLayout structMemoryLayout = extract(targetClass);
             STRUCT_CONTEXT.set(new StructProxyContext(this, structMemoryLayout));
-            String className = STR. "\{ targetClass.getName() }_native_struct_proxy" ;
+            String className = STR."\{targetClass.getName()}_native_struct_proxy_\{count.getAndIncrement()}";
             var precursor = byteBuddy.subclass(targetClass)
                     .name(className)
                     .implement(NativeStructEnhanceMark.class)
