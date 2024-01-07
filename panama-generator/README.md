@@ -235,29 +235,18 @@ var libPerson = callGenerator.generate(LibPerson.class);
 Java Panama FFI errorno api其实是有点奇怪的，所以你需要这样使用
 
 ```java
-try(Arena arena = Arena.ofConfined()){
-        MemoryLifetimeScope.
-
-of(arena)
-                    .
-
-active(() ->{
-long l = libPerson.set_error_no(888, 1);
-                        Assert.
-
-assertEquals(l, 1);
-
-int error = libPerson.current_error(1, 2);
-                        Assert.
-
-assertEquals(error, 888);
-                        Assert.
-
-assertEquals(ErrorNo.error.get().
-
-intValue(), 888);
-        });
-        }
+    public void testError() {
+    try (Arena arena = Arena.ofConfined()) {
+        MemoryLifetimeScope.of(arena)
+                .active(() -> {
+                    long l = libPerson.set_error_no(888, 1);
+                    Assert.assertEquals(l, 1);
+                    int error = libPerson.current_error(1, 2);
+                    Assert.assertEquals(error, 888);
+                    Assert.assertEquals(ErrorNo.error.get().intValue(), 888);
+                });
+    }
+}
 ```
 
 ### indy模式
@@ -266,11 +255,9 @@ indy就是invokeDynamic这个字节码
 
 你可以使用如下代码切换下一次生成的绑定使用传统模式还是indy模式
 
-```java
+```
         callGenerator.indyMode();
-        callGenerator.
-
-plainMode();
+        callGenerator.plainMode();
 ```
 
 对于
