@@ -7,6 +7,16 @@
 这个项目并非与netty的io_uring一样会从系统调用开始处理，而是直接修改[liburing](https://github.com/axboe/liburing)
 源码，在此基础上封装调用，即它最底层只是一层对liburing的封装。
 
+maven坐标为
+
+```xml
+ <dependency>
+    <groupId>io.github.dreamlike-ocean</groupId>
+    <artifactId>panama-uring-linux-x86_64</artifactId>
+    <version>3.0.2</version>
+</dependency>
+```
+
 **目前阶段参考价值大于实用价值，<del>在jdk21之后我会做进一步的API适配</del>,(垃圾java毁我人生，这东西jdk21稳定不了)，Panama
 API仍在变动之中**
 
@@ -61,6 +71,7 @@ git clone --recurse-submodules https://github.com/dreamlike-ocean/PanamaUring.gi
 #### 其余小玩意
 
 - [x] 基于EventFd将IO Uring与Epoll连接在一起,socket api走Epoll驱动,收割cqe也由Epoll驱动,等价于Epoll监听IO Uring
+- [x] Panama FFI的声明式运行时绑定 [点我看文档](./panama-generator/README.md)
 
 ### 构建/运行指南
 
