@@ -1,4 +1,4 @@
-package top.dreamlike.panama.genertor.proxy;
+package top.dreamlike.panama.generator.proxy;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.SegmentAllocator;

@@ -49,6 +49,7 @@
         <module>vertx-io-uring-ext</module>
         <module>native-lib</module>
         <module>panama-generator</module>
+        <module>graal-native-example</module>
     </modules>
     <profiles>
         <profile>

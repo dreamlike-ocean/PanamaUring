@@ -1,8 +1,8 @@
 package top.dreamlike.panama.generator.test.struct;
 
-import top.dreamlike.panama.genertor.annotation.NativeArrayMark;
-import top.dreamlike.panama.genertor.annotation.Union;
-import top.dreamlike.panama.genertor.proxy.NativeArray;
+import top.dreamlike.panama.generator.annotation.NativeArrayMark;
+import top.dreamlike.panama.generator.annotation.Union;
+import top.dreamlike.panama.generator.proxy.NativeArray;
 
 public class TestContainer {
     int size;

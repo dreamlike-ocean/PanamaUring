@@ -1,4 +1,4 @@
-package top.dreamlike.panama.genertor.helper;
+package top.dreamlike.panama.generator.helper;
 
 import net.bytebuddy.build.HashCodeAndEqualsPlugin;
 import net.bytebuddy.implementation.Implementation;

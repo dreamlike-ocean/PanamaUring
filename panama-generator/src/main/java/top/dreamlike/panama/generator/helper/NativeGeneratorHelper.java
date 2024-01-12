@@ -1,7 +1,7 @@
-package top.dreamlike.panama.genertor.helper;
+package top.dreamlike.panama.generator.helper;
 
-import top.dreamlike.panama.genertor.proxy.NativeCallGenerator;
-import top.dreamlike.panama.genertor.proxy.StructProxyGenerator;
+import top.dreamlike.panama.generator.proxy.NativeCallGenerator;
+import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;

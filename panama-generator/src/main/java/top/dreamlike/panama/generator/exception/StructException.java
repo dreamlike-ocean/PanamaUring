@@ -1,4 +1,4 @@
-package top.dreamlike.panama.genertor.exception;
+package top.dreamlike.panama.generator.exception;
 
 public class StructException extends RuntimeException {
     public StructException(String message) {

@@ -1,4 +1,4 @@
-package top.dreamlike.panama.genertor.proxy;
+package top.dreamlike.panama.generator.proxy;
 
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;

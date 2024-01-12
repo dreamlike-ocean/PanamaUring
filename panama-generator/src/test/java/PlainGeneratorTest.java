@@ -1,13 +1,13 @@
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import top.dreamlike.panama.generator.proxy.NativeArray;
+import top.dreamlike.panama.generator.proxy.NativeCallGenerator;
+import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.generator.test.call.LibPerson;
 import top.dreamlike.panama.generator.test.struct.Person;
 import top.dreamlike.panama.generator.test.struct.PointerVersionTestContainer;
 import top.dreamlike.panama.generator.test.struct.TestContainer;
-import top.dreamlike.panama.genertor.proxy.NativeArray;
-import top.dreamlike.panama.genertor.proxy.NativeCallGenerator;
-import top.dreamlike.panama.genertor.proxy.StructProxyGenerator;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;

@@ -1,4 +1,4 @@
-package top.dreamlike.panama.genertor.helper;
+package top.dreamlike.panama.generator.helper;
 
 import net.bytebuddy.implementation.bytecode.StackManipulation;
 import net.bytebuddy.implementation.bytecode.member.MethodVariableAccess;

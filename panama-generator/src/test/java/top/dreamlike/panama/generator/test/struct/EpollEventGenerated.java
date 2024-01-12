@@ -1,8 +1,8 @@
 package top.dreamlike.panama.generator.test.struct;
 
-import top.dreamlike.panama.genertor.annotation.Alignment;
-import top.dreamlike.panama.genertor.annotation.Pointer;
-import top.dreamlike.panama.genertor.annotation.Union;
+import top.dreamlike.panama.generator.annotation.Alignment;
+import top.dreamlike.panama.generator.annotation.Pointer;
+import top.dreamlike.panama.generator.annotation.Union;
 
 public class EpollEventGenerated {
     private int events;

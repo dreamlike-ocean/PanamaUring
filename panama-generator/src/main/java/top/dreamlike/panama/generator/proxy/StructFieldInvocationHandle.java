@@ -1,6 +1,6 @@
-package top.dreamlike.panama.genertor.proxy;
+package top.dreamlike.panama.generator.proxy;
 
-import top.dreamlike.panama.genertor.helper.NativeStructEnhanceMark;
+import top.dreamlike.panama.generator.helper.NativeStructEnhanceMark;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;

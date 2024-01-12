@@ -1,6 +1,6 @@
 package top.dreamlike.panama.generator.test.struct;
 
-import top.dreamlike.panama.genertor.annotation.NativeArrayMark;
+import top.dreamlike.panama.generator.annotation.NativeArrayMark;
 
 import java.lang.foreign.MemorySegment;
 

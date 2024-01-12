@@ -1,4 +1,4 @@
-package top.dreamlike.panama.genertor.annotation;
+package top.dreamlike.panama.generator.annotation;
 
 
 import java.lang.annotation.ElementType;
