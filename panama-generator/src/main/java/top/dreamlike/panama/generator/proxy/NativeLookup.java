@@ -22,6 +22,8 @@ class NativeLookup implements SymbolLookup {
     public static final MethodHandle FILL_ERROR_CODE_ADDRESS_MH;
     private static final VarHandle errorHandle;
 
+    public static final boolean needInjectJar = Boolean.getBoolean("injectJar");
+
     //sb java 只能枚举全部原始类型了
     static ThreadLocal<MemorySegment> errorBuffer = new ThreadLocal<>();
 
@@ -162,4 +164,7 @@ class NativeLookup implements SymbolLookup {
         };
     }
 
+    public static boolean inImageCode() {
+        return "true".equals(System.getProperty("native-mode"));
+    }
 }

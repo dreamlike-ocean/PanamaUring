@@ -18,6 +18,7 @@ import top.dreamlike.panama.generator.annotation.CLib;
 import top.dreamlike.panama.generator.annotation.NativeFunction;
 import top.dreamlike.panama.generator.annotation.Pointer;
 import top.dreamlike.panama.generator.exception.StructException;
+import top.dreamlike.panama.generator.helper.DowncallContext;
 import top.dreamlike.panama.generator.helper.MethodVariableAccessLoader;
 import top.dreamlike.panama.generator.helper.NativeGeneratorHelper;
 import top.dreamlike.panama.generator.helper.NativeStructEnhanceMark;
@@ -43,7 +44,7 @@ import static net.bytebuddy.matcher.ElementMatchers.named;
  */
 public class NativeCallGenerator {
 
-    private final ByteBuddy byteBuddy;
+    public volatile boolean use_lmf = !NativeLookup.inImageCode();
 
     private static final Method INDY_BOOTSTRAP_METHOD;
 
@@ -67,10 +68,8 @@ public class NativeCallGenerator {
             throw new RuntimeException(e);
         }
     }
-
-    private volatile boolean use_indy = false;
-
-    private volatile boolean use_lmf = true;
+    private ByteBuddy byteBuddy;
+    private volatile boolean use_indy = !NativeLookup.inImageCode();
 
     final Map<Class<?>, Supplier<Object>> ctorCaches = new ConcurrentHashMap<>();
     private final StructProxyGenerator structProxyGenerator;
@@ -85,6 +84,11 @@ public class NativeCallGenerator {
         this.structProxyGenerator = structProxyGenerator;
         this.byteBuddy = new ByteBuddy(ClassFileVersion.JAVA_V21);
         this.nativeLibLookup = new NativeLookup();
+    }
+
+    NativeCallGenerator(Object nullUnsafe) {
+        this.nativeLibLookup = new NativeLookup();
+        this.structProxyGenerator = new StructProxyGenerator(nullUnsafe);
     }
 
     public static CallSite indyFactory(MethodHandles.Lookup lookup, String methodName, MethodType methodType, Object... args) throws Throwable {
@@ -151,7 +155,7 @@ public class NativeCallGenerator {
         }
     }
 
-    private boolean needTransToPointer(Parameter parameter) {
+    private static boolean needTransToPointer(Parameter parameter) {
         Class<?> typeClass = parameter.getType();
         return typeClass.isAssignableFrom(MemorySegment.class)
                 || NativeStructEnhanceMark.class.isAssignableFrom(typeClass)
@@ -170,7 +174,97 @@ public class NativeCallGenerator {
      * @throws IllegalArgumentException if the return type of the method is not a primitive type or marked as returnIsPointer.
      */
     private MethodHandle nativeMethodHandle(Method method) {
+
+        DowncallContext downcallContext = parseDowncallContext(method);
+
+        String functionName = downcallContext.functionName();
+        FunctionDescriptor fd = downcallContext.fd();
+        Linker.Option[] options = downcallContext.ops();
+        boolean returnPointer = downcallContext.returnPointer();
+        boolean needCaptureStatue = downcallContext.needCaptureStatue();
+        ArrayList<Integer> rawMemoryIndex = downcallContext.rawMemoryIndex();
+
+        MethodHandle methodHandle = nativeLibLookup.downcallHandle(functionName, fd, options);
+
+        if (needCaptureStatue) {
+            /*
+             * 因为是V filter2()这种模式的
+             * 所以等价于摘掉第一个参数，用一个()->V类型的MethodHandle作为第一个参数的产出方
+             * 等价于
+             *  {
+             *     MemorySegment errorBuffer = allocateErrorBuffer();
+             *     nativeMethodHandle.invokeExact(
+             *       errorBuffer ,
+             *       ....
+             *     )
+             *  }
+             */
+            methodHandle = MethodHandles.collectArguments(
+                    methodHandle,
+                    0,
+                    NativeLookup.AllocateErrorBuffer_MH
+            );
+        }
+        var parameters = method.getParameters();
+
+        for (Integer i : rawMemoryIndex) {
+            //调用native的mh之前先把用户的java对象转化为MemorySegment
+            methodHandle = MethodHandles.filterArguments(
+                    methodHandle,
+                    i,
+                    TRANSFORM_OBJECT_TO_STRUCT_MH.asType(TRANSFORM_OBJECT_TO_STRUCT_MH.type().changeParameterType(0, parameters[i].getType()))
+            );
+        }
+
+        if (needCaptureStatue) {
+            /*
+             *  别看fillErrorNoAfterReturn 太丑了。。SB java.。
+             *  等价于
+             *  {
+             *    var returnValue = nativeMethodHandle.invokeExact(...);
+             *    fillErrorNo();
+             *    return returnValue;
+             *  }
+             */
+            methodHandle = NativeLookup.fillErrorNoAfterReturn(methodHandle);
+        }
+
+        if (MemorySegment.class.isAssignableFrom(method.getReturnType())) {
+            return methodHandle;
+        }
+
+        if (returnPointer) {
+            MemoryLayout returnLayout = fd.returnLayout().get();
+            //先调整返回值类型对应的memorySegment长度
+            methodHandle = MethodHandles.filterReturnValue(
+                    methodHandle,
+                    MethodHandles.insertArguments(
+                            NativeGeneratorHelper.DEREFERENCE,
+                            1,
+                            returnLayout.byteSize()
+                    )
+            );
+
+            //绑定当前的StructProxyGenerator
+            //绑定的结果是 (MemorySegment) -> ${returnType}
+            MethodHandle returnEnhance = StructProxyGenerator.ENHANCE_MH
+                    .asType(StructProxyGenerator.ENHANCE_MH.type().changeReturnType(method.getReturnType()))
+                    .bindTo(structProxyGenerator)
+                    .bindTo(method.getReturnType());
+            //来把MemorySegment返回值转换为java bean
+            methodHandle = MethodHandles.filterReturnValue(
+                    methodHandle,
+                    returnEnhance
+            );
+        }
+        return methodHandle;
+    }
+
+    DowncallContext parseDowncallContext(Method method) {
         NativeFunction function = method.getAnnotation(NativeFunction.class);
+        String functionName = function == null || Objects.requireNonNullElse(function.value(), "").isBlank()
+                ? method.getName()
+                : function.value();
         boolean returnPointer = function != null && function.returnIsPointer();
         ArrayList<Linker.Option> options = new ArrayList<>(2);
         if (function != null && function.fast()) {
@@ -183,13 +277,10 @@ public class NativeCallGenerator {
         }
 
         if ((NativeLookup.primitiveMapToMemoryLayout(method.getReturnType()) == null && !returnPointer) && method.getReturnType() != void.class) {
-            throw new IllegalArgumentException(STR. "\{ method } must return primitive type or is marked returnIsPointer" );
+            throw new IllegalArgumentException(STR."\{method} must return primitive type or is marked returnIsPointer");
         }
 
         boolean allowPassHeap = function != null && function.allowPassHeap();
-        String functionName = function == null || Objects.requireNonNullElse(function.value(), "").isBlank()
-                ? method.getName()
-                : function.value();
 
         ArrayList<Integer> rawMemoryIndex = new ArrayList<>();
         MemoryLayout[] layouts = new MemoryLayout[method.getParameterCount()];
@@ -219,79 +310,9 @@ public class NativeCallGenerator {
                 returnLayout,
                 layouts
         );
-        MethodHandle methodHandle = nativeLibLookup.downcallHandle(functionName, fd, options.toArray(Linker.Option[]::new));
-
-        if (needCaptureStatue) {
-            /*
-             * 因为是V filter2()这种模式的
-             * 所以等价于摘掉第一个参数，用一个()->V类型的MethodHandle作为第一个参数的产出方
-             * 等价于
-             *  {
-             *     MemorySegment errorBuffer = allocateErrorBuffer();
-             *     nativeMethodHandle.invokeExact(
-             *       errorBuffer ,
-             *       ....
-             *     )
-             *  }
-             */
-            methodHandle = MethodHandles.collectArguments(
-                    methodHandle,
-                    0,
-                    NativeLookup.AllocateErrorBuffer_MH
-            );
-        }
-
-        for (Integer i : rawMemoryIndex) {
-            //调用native的mh之前先把用户的java对象转化为MemorySegment
-            methodHandle = MethodHandles.filterArguments(
-                    methodHandle,
-                    i,
-                    TRANSFORM_OBJECT_TO_STRUCT_MH.asType(TRANSFORM_OBJECT_TO_STRUCT_MH.type().changeParameterType(0, parameters[i].getType()))
-            );
-        }
-
-        if (needCaptureStatue) {
-            /*
-             *  别看fillErrorNoAfterReturn 太丑了。。SB java.。
-             *  等价于
-             *  {
-             *    var returnValue = nativeMethodHandle.invokeExact(...);
-             *    fillErrorNo();
-             *    return returnValue;
-             *  }
-             */
-            methodHandle = NativeLookup.fillErrorNoAfterReturn(methodHandle);
-        }
-
-        if (MemorySegment.class.isAssignableFrom(method.getReturnType())) {
-            return methodHandle;
-        }
-
-        if (returnPointer) {
-            //先调整返回值类型对应的memorySegment长度
-            methodHandle = MethodHandles.filterReturnValue(
-                    methodHandle,
-                    MethodHandles.insertArguments(
-                            NativeGeneratorHelper.DEREFERENCE,
-                            1,
-                            returnLayout.byteSize()
-                    )
-            );
-
-            //绑定当前的StructProxyGenerator
-            //绑定的结果是 (MemorySegment) -> ${returnType}
-            MethodHandle returnEnhance = StructProxyGenerator.ENHANCE_MH
-                    .asType(StructProxyGenerator.ENHANCE_MH.type().changeReturnType(method.getReturnType()))
-                    .bindTo(structProxyGenerator)
-                    .bindTo(method.getReturnType());
-            //来把MemorySegment返回值转换为java bean
-            methodHandle = MethodHandles.filterReturnValue(
-                    methodHandle,
-                    returnEnhance
-            );
-        }
-        return methodHandle;
+        return new DowncallContext(fd, options.toArray(Linker.Option[]::new), functionName, returnPointer, needCaptureStatue, rawMemoryIndex);
     }
+
 
     /**
      * Binds a native interface to a dynamically generated implementation using byteBuddy library.
@@ -342,7 +363,6 @@ public class NativeCallGenerator {
                                 .intercept(new Implementation.Simple(new ConstFieldInvokerStackManipulation(className, mhFieldName, method)));
                         continue;
                     }
-
                     InvokeDynamic nativeCallIndy = InvokeDynamic.bootstrap(INDY_BOOTSTRAP_METHOD).withMethodArguments();
                     definition = definition.defineMethod(method.getName(), method.getReturnType(), Modifier.PUBLIC)
                             .withParameters(method.getParameterTypes())
@@ -356,6 +376,15 @@ public class NativeCallGenerator {
                 if (structProxyGenerator.proxySavePath != null) {
                     unloaded.saveIn(new File(structProxyGenerator.proxySavePath));
                 }
+
+                if (NativeLookup.needInjectJar) {
+                    String path = nativeInterface.getProtectionDomain().getCodeSource().getLocation().getPath();
+                    System.out.println(STR."inject to \{path}");
+                    if (path.endsWith(".jar")) {
+                        unloaded.inject(new File(path));
+                    }
+                }
+
                 aClass = unloaded.load(nativeInterface.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(lookup))
                         .getLoaded();
             }

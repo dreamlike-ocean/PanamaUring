@@ -47,13 +47,14 @@ public class StructProxyGenerator {
 
     String proxySavePath;
 
+
     private static final ThreadLocal<StructProxyContext> STRUCT_CONTEXT = new ThreadLocal<>();
 
     private static final Method REALMEMORY_METHOD;
 
     static final MethodHandle ENHANCE_MH;
 
-    private volatile boolean use_lmf = true;
+    private volatile boolean use_lmf = !NativeLookup.inImageCode();
 
     static {
         try {
@@ -69,10 +70,13 @@ public class StructProxyGenerator {
 
     private final Map<Class<?>, MemoryLayout> layoutCaches = new ConcurrentHashMap<>();
 
-    private final ByteBuddy byteBuddy;
+    private ByteBuddy byteBuddy;
 
     public StructProxyGenerator() {
         this.byteBuddy = new ByteBuddy(ClassFileVersion.JAVA_V21);
+    }
+
+    StructProxyGenerator(Object workForGraal) {
     }
 
 
@@ -273,6 +277,14 @@ public class StructProxyGenerator {
                 if (proxySavePath != null) {
                     unloaded.saveIn(new File(proxySavePath));
                 }
+
+                if (NativeLookup.needInjectJar) {
+                    String path = targetClass.getProtectionDomain().getCodeSource().getLocation().getPath();
+                    if (path.endsWith(".jar")) {
+                        unloaded.inject(new File(path));
+                    }
+                }
+
                 aClass = unloaded.load(targetClass.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(lookup)).getLoaded();
             }
 
@@ -283,10 +295,11 @@ public class StructProxyGenerator {
             if (use_lmf) {
                 return NativeGeneratorHelper.memoryBinder(ctorMh, structMemoryLayout);
             }
+            var ctorErased = ctorMh.asType(ctorMh.type().changeReturnType(Object.class));
             return (memorySegment) -> {
                 memorySegment = memorySegment.reinterpret(structMemoryLayout.byteSize());
                 try {
-                    return (Object) ctorMh.invokeExact(memorySegment);
+                    return ctorErased.invokeExact(memorySegment);
                 } catch (Throwable e) {
                     e.printStackTrace();
                 }
