@@ -94,7 +94,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <jvmTarget>1.8</jvmTarget>
+                    <jvmTarget>17</jvmTarget>
                 </configuration>
             </plugin>
             <plugin>
@@ -124,6 +124,13 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <target>${java.version}</target>
+                    <source>${java.version}</source>
+                    <compilerArgs>
+                        <compilerArg>--enable-preview</compilerArg>
+                    </compilerArgs>
+                </configuration>
             </plugin>
         </plugins>
     </build>

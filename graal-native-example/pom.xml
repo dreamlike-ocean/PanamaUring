@@ -39,13 +39,15 @@
                 <configuration>
                     <target>${java.version}</target>
                     <source>${java.version}</source>
-                    <compilerArgs>
-                        --enable-preview
-                    </compilerArgs>
                     <annotationProcessors>
-                        <annotationProcessor>top.dreamlike.panama.generator.proxy.PanamaAnnotationProcessor
+                        <annotationProcessor>
+                            top.dreamlike.panama.generator.proxy.PanamaAnnotationProcessor
                         </annotationProcessor>
                     </annotationProcessors>
+                    <compilerArgs>
+                        <compilerArg>-Aindy.enable=true</compilerArg>
+                        <compilerArg>--enable-preview</compilerArg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>

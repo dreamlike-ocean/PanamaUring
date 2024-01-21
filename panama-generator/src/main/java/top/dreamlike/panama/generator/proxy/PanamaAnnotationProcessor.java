@@ -44,6 +44,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
         this.env = processingEnv;
         this.enableIndy = Boolean.parseBoolean(env.getOptions().getOrDefault(indy_enable_option, "false"));
         this.structProxyGenerator = new StructProxyGenerator();
+        structProxyGenerator.needInit = false;
         this.structProxyGenerator.beforeGenerateCallBack = unloaded -> {
             String className = unloaded.getTypeDescription().getName();
             try (var ouputStream = this.env.getFiler().createClassFile(className).openOutputStream()) {
@@ -81,7 +82,8 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 boolean isInterface = typeElement.getKind().isInterface();
                 Class runtimeClass = toRuntiumeClass(typeElement.asType());
                 if (isInterface) {
-                    nativeCallGenerator.generate(runtimeClass);
+                    MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(runtimeClass, MethodHandles.lookup());
+                    nativeCallGenerator.generateRuntimeProxyClass(lookup, runtimeClass);
                 } else {
                     structProxyGenerator.enhance(runtimeClass);
                 }

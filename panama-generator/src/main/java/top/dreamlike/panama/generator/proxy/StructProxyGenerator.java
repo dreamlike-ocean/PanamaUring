@@ -55,6 +55,8 @@ public class StructProxyGenerator {
 
     private volatile boolean use_lmf = !NativeLookup.inImageCode();
 
+    boolean needInit = true;
+
     static {
         try {
             ENHANCE_MH = MethodHandles.lookup().findVirtual(StructProxyGenerator.class, "enhance", MethodType.methodType(Object.class, Class.class, MemorySegment.class));
@@ -286,9 +288,10 @@ public class StructProxyGenerator {
                 aClass = unloaded.load(targetClass.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(lookup)).getLoaded();
             }
 
-
-            //强制初始化执行cInit
-            lookup.ensureInitialized(aClass);
+            if (needInit) {
+                //强制初始化执行cInit
+                lookup.ensureInitialized(aClass);
+            }
             MethodHandle ctorMh = MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class, MemorySegment.class));
             if (use_lmf) {
                 return NativeGeneratorHelper.memoryBinder(ctorMh, structMemoryLayout);

@@ -59,11 +59,14 @@ public class NativeCallGenerator {
 
     private static final int CURRENT_JAVA_MAJOR_VERSION = Runtime.version().feature();
 
+    private static final Method GENERATE_IN_GENERATOR_CONTEXT;
+
     static {
         try {
             TRANSFORM_OBJECT_TO_STRUCT_MH = MethodHandles.lookup().findStatic(NativeCallGenerator.class, "transToStruct", MethodType.methodType(MemorySegment.class, Object.class));
             NativeGeneratorHelper.fetchCurrentNativeCallGenerator = currentGenerator::get;
             INDY_BOOTSTRAP_METHOD = NativeCallGenerator.class.getMethod("indyFactory", MethodHandles.Lookup.class, String.class, MethodType.class, Object[].class);
+            GENERATE_IN_GENERATOR_CONTEXT = NativeCallGenerator.class.getMethod("generateInGeneratorContext", Class.class, String.class, MethodType.class);
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -314,6 +317,50 @@ public class NativeCallGenerator {
     }
 
 
+    Class generateRuntimeProxyClass(MethodHandles.Lookup lookup, Class nativeInterface) {
+        String className = generateProxyClassName(nativeInterface);
+        var definition = byteBuddy.subclass(Object.class)
+                .implement(nativeInterface)
+                .defineField(GENERATOR_FIELD_NAME, NativeCallGenerator.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
+                .name(className);
+        Implementation.Composable cInitBlock = MethodCall.invoke(NativeGeneratorHelper.FETCH_CURRENT_NATIVE_CALL_GENERATOR).setsField(named(GENERATOR_FIELD_NAME))
+                .andThen(MethodCall.invoke(NativeGeneratorHelper.LOAD_SO).onField(GENERATOR_FIELD_NAME).with(nativeInterface));
+        for (Method method : nativeInterface.getMethods()) {
+            if (method.isBridge() || method.isDefault() || method.isSynthetic()) {
+                continue;
+            }
+            if (!use_indy) {
+                String mhFieldName = STR."\{method.getName()}_native_method_handle";
+                //使用传统的static final的方案
+                //cInit 类初始化的时候赋值下静态字段
+                cInitBlock = cInitBlock
+                        .andThen(MethodCall.invoke(GENERATE_IN_GENERATOR_CONTEXT)
+                                .onField(GENERATOR_FIELD_NAME).with(nativeInterface, method.getName()).with(JavaConstant.MethodType.of(method)).setsField(named(mhFieldName)));
+                definition = definition
+                        .defineField(mhFieldName, MethodHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
+                        .defineMethod(method.getName(), method.getReturnType(), Modifier.PUBLIC)
+                        .withParameters(method.getParameterTypes())
+                        .intercept(new Implementation.Simple(new ConstFieldInvokerStackManipulation(className, mhFieldName, method)));
+                continue;
+            }
+            InvokeDynamic nativeCallIndy = InvokeDynamic.bootstrap(INDY_BOOTSTRAP_METHOD).withMethodArguments();
+            definition = definition.defineMethod(method.getName(), method.getReturnType(), Modifier.PUBLIC)
+                    .withParameters(method.getParameterTypes())
+                    .intercept(nativeCallIndy);
+
+        }
+
+        definition = definition.invokable(MethodDescription::isTypeInitializer)
+                .intercept(cInitBlock);
+        DynamicType.Unloaded<Object> unloaded = definition.make();
+        if (structProxyGenerator.beforeGenerateCallBack != null) {
+            structProxyGenerator.beforeGenerateCallBack.accept(unloaded);
+        }
+
+        return unloaded.load(nativeInterface.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(lookup))
+                .getLoaded();
+    }
+
     /**
      * Binds a native interface to a dynamically generated implementation using byteBuddy library.
      *
@@ -326,9 +373,9 @@ public class NativeCallGenerator {
     private Supplier<Object> bind(Class<?> nativeInterface) {
         try {
             if (!nativeInterface.isInterface()) {
-                throw new IllegalArgumentException(STR. "\{ nativeInterface } is not interface" );
+                throw new IllegalArgumentException(STR."\{nativeInterface} is not interface");
             }
-            String className = STR."\{nativeInterface.getName()}_native_call_enhance";
+            String className = generateProxyClassName(nativeInterface);
             currentGenerator.set(this);
             MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(nativeInterface, MethodHandles.lookup());
             Class<?> aClass = null;
@@ -338,46 +385,7 @@ public class NativeCallGenerator {
             }
             //证明没有生成过
             if (aClass == null) {
-                var definition = byteBuddy.subclass(Object.class)
-                        .implement(nativeInterface)
-                        .defineField(GENERATOR_FIELD_NAME, NativeCallGenerator.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
-                        .name(className);
-                Implementation.Composable cInitBlock = MethodCall.invoke(NativeGeneratorHelper.FETCH_CURRENT_NATIVE_CALL_GENERATOR).setsField(named(GENERATOR_FIELD_NAME))
-                        .andThen(MethodCall.invoke(NativeGeneratorHelper.LOAD_SO).onField(GENERATOR_FIELD_NAME).with(nativeInterface));
-                for (Method method : nativeInterface.getMethods()) {
-                    if (method.isBridge() || method.isDefault() || method.isSynthetic()) {
-                        continue;
-                    }
-                    if (!use_indy) {
-                        String mhFieldName = STR."\{method.getName()}_native_method_handle";
-                        //使用传统的static final的方案
-                        //cInit 类初始化的时候赋值下静态字段
-                        cInitBlock = cInitBlock
-                                .andThen(MethodCall.invoke(NativeCallGenerator.class.getMethod("generateInGeneratorContext", Class.class, String.class, MethodType.class))
-                                        .onField(GENERATOR_FIELD_NAME).with(nativeInterface, method.getName()).with(JavaConstant.MethodType.of(method)).setsField(named(mhFieldName)));
-                        definition = definition
-                                .defineField(mhFieldName, MethodHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
-                                .defineMethod(method.getName(), method.getReturnType(), Modifier.PUBLIC)
-                                .withParameters(method.getParameterTypes())
-                                .intercept(new Implementation.Simple(new ConstFieldInvokerStackManipulation(className, mhFieldName, method)));
-                        continue;
-                    }
-                    InvokeDynamic nativeCallIndy = InvokeDynamic.bootstrap(INDY_BOOTSTRAP_METHOD).withMethodArguments();
-                    definition = definition.defineMethod(method.getName(), method.getReturnType(), Modifier.PUBLIC)
-                            .withParameters(method.getParameterTypes())
-                            .intercept(nativeCallIndy);
-
-                }
-
-                definition = definition.invokable(MethodDescription::isTypeInitializer)
-                        .intercept(cInitBlock);
-                DynamicType.Unloaded<Object> unloaded = definition.make();
-                if (structProxyGenerator.beforeGenerateCallBack != null) {
-                    structProxyGenerator.beforeGenerateCallBack.accept(unloaded);
-                }
-
-                aClass = unloaded.load(nativeInterface.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(lookup))
-                        .getLoaded();
+                aClass = generateRuntimeProxyClass(lookup, nativeInterface);
             }
             //强制初始化执行cInit
             lookup.ensureInitialized(aClass);
@@ -403,6 +411,10 @@ public class NativeCallGenerator {
 
     public void useLmf(boolean use_lmf) {
         this.use_lmf = use_lmf;
+    }
+
+    String generateProxyClassName(Class nativeInterface) {
+        return STR."\{nativeInterface.getName()}_native_call_enhance";
     }
 
     static MethodReturn calMethodReturn(Class c) {
