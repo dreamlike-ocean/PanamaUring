@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static net.bytebuddy.matcher.ElementMatchers.named;
@@ -44,9 +45,7 @@ public class StructProxyGenerator {
     private static final String GENERATOR_FIELD = "_generator";
 
     private static final String LAYOUT_FIELD = "_layout";
-
-    String proxySavePath;
-
+    Consumer<DynamicType.Unloaded> beforeGenerateCallBack;
 
     private static final ThreadLocal<StructProxyContext> STRUCT_CONTEXT = new ThreadLocal<>();
 
@@ -70,7 +69,7 @@ public class StructProxyGenerator {
 
     private final Map<Class<?>, MemoryLayout> layoutCaches = new ConcurrentHashMap<>();
 
-    private ByteBuddy byteBuddy;
+    ByteBuddy byteBuddy;
 
     public StructProxyGenerator() {
         this.byteBuddy = new ByteBuddy(ClassFileVersion.JAVA_V21);
@@ -130,7 +129,13 @@ public class StructProxyGenerator {
     }
 
     public void setProxySavePath(String proxySavePath) {
-        this.proxySavePath = proxySavePath;
+        this.beforeGenerateCallBack = (unloaded) -> {
+            try {
+                unloaded.saveIn(new File(proxySavePath));
+            } catch (Throwable t) {
+                throw new RuntimeException(t);
+            }
+        };
     }
 
     private MemoryLayout setAlignment(MemoryLayout memoryLayout, Alignment alignment) {
@@ -274,15 +279,8 @@ public class StructProxyGenerator {
                 precursor = precursor.invokable(MethodDescription::isTypeInitializer).intercept(cInitBlock);
                 DynamicType.Unloaded<?> unloaded = precursor.make();
 
-                if (proxySavePath != null) {
-                    unloaded.saveIn(new File(proxySavePath));
-                }
-
-                if (NativeLookup.needInjectJar) {
-                    String path = targetClass.getProtectionDomain().getCodeSource().getLocation().getPath();
-                    if (path.endsWith(".jar")) {
-                        unloaded.inject(new File(path));
-                    }
+                if (beforeGenerateCallBack != null) {
+                    beforeGenerateCallBack.accept(unloaded);
                 }
 
                 aClass = unloaded.load(targetClass.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(lookup)).getLoaded();

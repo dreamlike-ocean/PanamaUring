@@ -76,7 +76,7 @@ public class NativeCallGenerator {
 
     public NativeCallGenerator() {
         this.structProxyGenerator = new StructProxyGenerator();
-        this.byteBuddy = new ByteBuddy(ClassFileVersion.JAVA_V21);
+        this.byteBuddy = structProxyGenerator.byteBuddy;
         this.nativeLibLookup = new NativeLookup();
     }
 
@@ -344,7 +344,6 @@ public class NativeCallGenerator {
                         .name(className);
                 Implementation.Composable cInitBlock = MethodCall.invoke(NativeGeneratorHelper.FETCH_CURRENT_NATIVE_CALL_GENERATOR).setsField(named(GENERATOR_FIELD_NAME))
                         .andThen(MethodCall.invoke(NativeGeneratorHelper.LOAD_SO).onField(GENERATOR_FIELD_NAME).with(nativeInterface));
-
                 for (Method method : nativeInterface.getMethods()) {
                     if (method.isBridge() || method.isDefault() || method.isSynthetic()) {
                         continue;
@@ -373,16 +372,8 @@ public class NativeCallGenerator {
                 definition = definition.invokable(MethodDescription::isTypeInitializer)
                         .intercept(cInitBlock);
                 DynamicType.Unloaded<Object> unloaded = definition.make();
-                if (structProxyGenerator.proxySavePath != null) {
-                    unloaded.saveIn(new File(structProxyGenerator.proxySavePath));
-                }
-
-                if (NativeLookup.needInjectJar) {
-                    String path = nativeInterface.getProtectionDomain().getCodeSource().getLocation().getPath();
-                    System.out.println(STR."inject to \{path}");
-                    if (path.endsWith(".jar")) {
-                        unloaded.inject(new File(path));
-                    }
+                if (structProxyGenerator.beforeGenerateCallBack != null) {
+                    structProxyGenerator.beforeGenerateCallBack.accept(unloaded);
                 }
 
                 aClass = unloaded.load(nativeInterface.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(lookup))

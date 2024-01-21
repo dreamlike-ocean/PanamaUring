@@ -1,6 +1,5 @@
 package top.dreamlike;
 
-import top.dreamlike.panama.example.Person;
 import top.dreamlike.panama.example.StdLib;
 import top.dreamlike.panama.generator.proxy.NativeCallGenerator;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
@@ -32,12 +31,13 @@ public class Main {
     }
 
     public static void main(String[] args) throws Throwable {
-        System.out.println("inject " + Boolean.getBoolean("injectJar"));
-        int pid = STD_LIB.getpid();
-        System.out.println(STR."pid: \{pid}");
-        int add = STD_LIB.add(10, 10);
-        System.out.println(STR."add :\{add}");
-        Person person = STD_LIB.fillPerson(1, 100L);
-        System.out.println(person);
+//        System.out.println("inject " + Boolean.getBoolean("injectJar"));
+//        int pid = STD_LIB.getpid();
+//        System.out.println(STR."pid: \{pid}");
+//        int add = STD_LIB.add(10, 10);
+//        System.out.println(STR."add :\{add}");
+//        Person person = STD_LIB.fillPerson(1, 100L);
+//        System.out.println(person);
+
     }
 }
