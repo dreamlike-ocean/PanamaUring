@@ -1,3 +1,4 @@
+
 package top.dreamlike.panama.generator.proxy;
 
 
@@ -53,7 +54,7 @@ public class StructProxyGenerator {
 
     static final MethodHandle ENHANCE_MH;
 
-    private volatile boolean use_lmf = !NativeLookup.inImageCode();
+    private volatile boolean use_lmf = !NativeLookup.inExecutable();
 
     boolean needInit = true;
 
@@ -218,13 +219,12 @@ public class StructProxyGenerator {
         try {
             MemoryLayout structMemoryLayout = extract(targetClass);
             STRUCT_CONTEXT.set(new StructProxyContext(this, structMemoryLayout));
-            String className = STR."\{targetClass.getName()}_native_struct_proxy";
+            String className = generatorProxyClassName(targetClass);
             MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(targetClass, MethodHandles.lookup());
             Class<?> aClass = null;
             try {
                 aClass = lookup.findClass(className);
             } catch (ClassNotFoundException ignore) {
-
             }
             if (aClass == null) {
                 var precursor = byteBuddy.subclass(targetClass)
@@ -318,6 +318,9 @@ public class StructProxyGenerator {
         this.use_lmf = use_lmf;
     }
 
+    String generatorProxyClassName(Class targetClass) {
+        return STR."\{targetClass.getName()}_native_struct_proxy";
+    }
 
     private <T> DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<T> handlePrimitiveField(DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<T> precursor, Field field, String className) {
         String varHandleFieldName = STR."\{field.getName()}_native_struct_vh";

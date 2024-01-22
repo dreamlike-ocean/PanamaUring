@@ -1,3 +1,4 @@
+
 package top.dreamlike.panama.generator.proxy;
 
 import net.bytebuddy.ByteBuddy;
@@ -15,23 +16,45 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandles;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 @SupportedAnnotationTypes("top.dreamlike.panama.generator.annotation.CompileTimeGenerate")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
-@SupportedOptions(PanamaAnnotationProcessor.indy_enable_option)
+@SupportedOptions({PanamaAnnotationProcessor.INDY_ENABLE, PanamaAnnotationProcessor.GENERATE_GRAAL_FEATURE_ENABLE, PanamaAnnotationProcessor.GENERATE_GRAAL_FEATURE_NAME})
 public class PanamaAnnotationProcessor extends AbstractProcessor {
-    final static String indy_enable_option = "indy.enable";
+    final static String INDY_ENABLE = "indy.enable";
+
+    final static String GENERATE_GRAAL_FEATURE_ENABLE = "generate.graal.feature.enable";
+
+    final static String GENERATE_GRAAL_FEATURE_NAME = "generate.graal.feature.name";
+
     MethodHandles.Lookup lookup;
     private ProcessingEnvironment env;
-    private boolean enableIndy = false;
+    private boolean enableIndy;
+
+    private boolean enableGraalFeature;
+
+    private String packageName;
+
+    private String className;
+
+    private String featureName;
+
     private ByteBuddy byteBuddy = new ByteBuddy();
     private StructProxyGenerator structProxyGenerator;
     private NativeCallGenerator nativeCallGenerator;
+    private ArrayList<NativeCallInterfacePair> nativeCallInterfaceNames = new ArrayList<>();
+
+    private ArrayList<String> structProxyNames = new ArrayList<>();
+
     private Map<String, Class> classMap = new HashMap<>(
             Map.of(
                     MemorySegment.class.getCanonicalName(), MemorySegment.class,
@@ -42,7 +65,17 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         this.env = processingEnv;
-        this.enableIndy = Boolean.parseBoolean(env.getOptions().getOrDefault(indy_enable_option, "false"));
+        this.enableIndy = Boolean.parseBoolean(env.getOptions().getOrDefault(INDY_ENABLE, "false"));
+        this.enableGraalFeature = Boolean.parseBoolean(env.getOptions().getOrDefault(GENERATE_GRAAL_FEATURE_ENABLE, "false"));
+        this.featureName = env.getOptions().getOrDefault(GENERATE_GRAAL_FEATURE_NAME, "PanamaGeneratorFeature");
+        this.packageName = null;
+        this.className = featureName;
+        int lastIndexOf = featureName.lastIndexOf(".");
+        if (lastIndexOf != -1) {
+            packageName = featureName.substring(0, lastIndexOf);
+            className = featureName.substring(lastIndexOf + 1);
+        }
+
         this.structProxyGenerator = new StructProxyGenerator();
         structProxyGenerator.needInit = false;
         this.structProxyGenerator.beforeGenerateCallBack = unloaded -> {
@@ -74,6 +107,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         try {
             Set<? extends Element> elements = roundEnv.getElementsAnnotatedWith(CompileTimeGenerate.class);
+
             for (Element element : elements) {
                 if (!(element instanceof TypeElement)) {
                     continue;
@@ -84,17 +118,24 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 if (isInterface) {
                     MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(runtimeClass, MethodHandles.lookup());
                     nativeCallGenerator.generateRuntimeProxyClass(lookup, runtimeClass);
+                    nativeCallInterfaceNames.add(new NativeCallInterfacePair(runtimeClass.getName(), nativeCallGenerator.generateProxyClassName(runtimeClass)));
                 } else {
                     structProxyGenerator.enhance(runtimeClass);
+                    structProxyNames.add(structProxyGenerator.generatorProxyClassName(runtimeClass));
+                }
+            }
+            if (roundEnv.processingOver() && enableGraalFeature) {
+                String generateFeature = generateFeature();
+                try (OutputStream outputStream = env.getFiler().createSourceFile(featureName).openOutputStream()) {
+                    outputStream.write(generateFeature.getBytes(StandardCharsets.UTF_8));
+                    outputStream.flush();
                 }
             }
         } catch (Throwable t) {
             t.printStackTrace();
         }
-
         return false;
     }
-
 
     private Class toRuntiumeClass(TypeMirror mirror) {
         if (mirror.getKind() == TypeKind.VOID) {
@@ -168,10 +209,10 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                         .build());
             }
             Optional.ofNullable(field.getAnnotation(Pointer.class))
-                    .map(p -> AnnotationDescription.Builder.ofType(Pointer.class).build())
+                    .map(__ -> AnnotationDescription.Builder.ofType(Pointer.class).build())
                     .ifPresent(annotationDescriptions::add);
             Optional.ofNullable(field.getAnnotation(Union.class))
-                    .map(p -> AnnotationDescription.Builder.ofType(Union.class).build())
+                    .map(__ -> AnnotationDescription.Builder.ofType(Union.class).build())
                     .ifPresent(annotationDescriptions::add);
             builder = fieldDefinition.annotateField(annotationDescriptions)
                     .annotateType(new Annotation[0]);
@@ -246,5 +287,75 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
         return modifier;
     }
 
+    private String generateDuringSetupBlock() {
+        ArrayList<NativeCallInterfacePair> callInterfaceNames = this.nativeCallInterfaceNames;
+        return callInterfaceNames.stream()
+                .map(nativeCallInterfacePair -> STR."NativeImageHelper.initPanamaFeature(\{nativeCallInterfacePair.origin}.class);")
+                .collect(Collectors.joining("\n"));
+    }
 
+    private String generateBeforeAnalysisBlock() {
+        var nativeCallStream = this.nativeCallInterfaceNames
+                .stream()
+                .map(p -> STR."""
+                        needRegisterClass = Class.forName("\{p.proxy}", false, getClass().getClassLoader());
+                        RuntimeReflection.registerFieldLookup(needRegisterClass, "_generator");
+                        RuntimeReflection.registerConstructorLookup(needRegisterClass);
+                        RuntimeReflection.register(needRegisterClass);
+                """);
+
+        var structProxyStream = this.structProxyNames
+                .stream()
+                .map(p -> STR."""
+                        needRegisterClass = Class.forName("\{p}", false, getClass().getClassLoader());
+                        RuntimeReflection.registerConstructorLookup(needRegisterClass, MemorySegment.class);
+                        RuntimeReflection.register(needRegisterClass);
+                """);
+        return Stream.concat(nativeCallStream, structProxyStream)
+                .collect(Collectors.joining("\n"));
+    }
+
+    private String generateFeature() {
+        ArrayList<String> statements = new ArrayList<>();
+        if (packageName != null) {
+            statements.add(STR."package \{packageName};");
+        }
+        statements.add("""
+                import org.graalvm.nativeimage.hosted.Feature;
+                import org.graalvm.nativeimage.hosted.RuntimeReflection;
+                import java.lang.foreign.MemorySegment;
+                import top.dreamlike.panama.generator.proxy.NativeImageHelper;
+                """);
+        statements.add(STR."""
+            public class \{className} implements Feature {
+                @Override
+                public void duringSetup(DuringSetupAccess access) {
+                   Class needRegisterClass = null;
+                   try {
+                      \{generateDuringSetupBlock()}
+                   } catch(Throwable t) {
+                      t.printStackTrace();
+                   }
+                }
+
+                @Override
+                public void beforeAnalysis(BeforeAnalysisAccess access) {
+                    Class needRegisterClass = null;
+                    try {
+                       \{generateBeforeAnalysisBlock()}
+                    } catch(Throwable t) {
+                      t.printStackTrace();
+                   }
+                }
+            }
+            """);
+        return String.join("\n", statements);
+    }
+
+
+    private record NativeCallInterfacePair(String origin, String proxy) {
+    }
+
+    ;
 }
+

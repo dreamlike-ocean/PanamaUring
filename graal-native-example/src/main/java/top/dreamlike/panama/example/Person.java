@@ -1,6 +1,8 @@
 package top.dreamlike.panama.example;
 
+import top.dreamlike.panama.generator.annotation.CompileTimeGenerate;
 
+@CompileTimeGenerate
 public class Person {
     int a;
     long n;

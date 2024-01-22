@@ -162,7 +162,8 @@ class NativeLookup implements SymbolLookup {
         };
     }
 
-    public static boolean inImageCode() {
-        return "true".equals(System.getProperty("native-mode"));
+    public static boolean inExecutable() {
+        return "executable".equals(System.getProperty("org.graalvm.nativeimage.kind"));
+//        return "true".equals(System.getProperty("native-mode"));
     }
 }

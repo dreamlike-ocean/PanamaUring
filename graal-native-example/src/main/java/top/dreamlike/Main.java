@@ -32,6 +32,7 @@ public class Main {
     }
 
     public static void main(String[] args) throws Throwable {
+        System.out.println(STR."in native?: \{System.getProperty("org.graalvm.nativeimage.kind")}");
         int pid = STD_LIB.getpid();
         System.out.println(STR."pid: \{pid}");
         int add = STD_LIB.add(10, 10);

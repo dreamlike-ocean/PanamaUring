@@ -39,13 +39,16 @@
                 <configuration>
                     <target>${java.version}</target>
                     <source>${java.version}</source>
+                    <useIncrementalCompilation>false</useIncrementalCompilation>
                     <annotationProcessors>
                         <annotationProcessor>
                             top.dreamlike.panama.generator.proxy.PanamaAnnotationProcessor
                         </annotationProcessor>
                     </annotationProcessors>
                     <compilerArgs>
-                        <compilerArg>-Aindy.enable=true</compilerArg>
+                        <compilerArg>-Aindy.enable=false</compilerArg>
+                        <compilerArg>-Agenerate.graal.feature.enable=true</compilerArg>
+                        <compilerArg>-Agenerate.graal.feature.name=top.dreamlike.graal.PanamaFeature</compilerArg>
                         <compilerArg>--enable-preview</compilerArg>
                     </compilerArgs>
                 </configuration>

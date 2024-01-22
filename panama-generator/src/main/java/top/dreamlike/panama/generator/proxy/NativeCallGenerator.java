@@ -44,7 +44,7 @@ import static net.bytebuddy.matcher.ElementMatchers.named;
  */
 public class NativeCallGenerator {
 
-    public volatile boolean use_lmf = !NativeLookup.inImageCode();
+    public volatile boolean use_lmf = !NativeLookup.inExecutable();
 
     private static final Method INDY_BOOTSTRAP_METHOD;
 
@@ -72,7 +72,7 @@ public class NativeCallGenerator {
         }
     }
     private ByteBuddy byteBuddy;
-    private volatile boolean use_indy = !NativeLookup.inImageCode();
+    private volatile boolean use_indy = !NativeLookup.inExecutable();
 
     final Map<Class<?>, Supplier<Object>> ctorCaches = new ConcurrentHashMap<>();
     private final StructProxyGenerator structProxyGenerator;
@@ -390,6 +390,7 @@ public class NativeCallGenerator {
             //强制初始化执行cInit
             lookup.ensureInitialized(aClass);
             MethodHandle methodHandle = MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class));
+            System.out.println(STR."use lmf: \{use_lmf}");
             if (use_lmf) {
                 return NativeGeneratorHelper.ctorBinder(methodHandle);
             }
