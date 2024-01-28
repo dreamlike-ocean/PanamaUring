@@ -6,6 +6,8 @@ import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import top.dreamlike.panama.generator.annotation.*;
+import top.dreamlike.panama.generator.helper.NativeGeneratorHelper;
+import top.dreamlike.panama.generator.helper.NativeStructEnhanceMark;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -302,6 +304,10 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                         RuntimeReflection.registerFieldLookup(needRegisterClass, "_generator");
                         RuntimeReflection.registerConstructorLookup(needRegisterClass);
                         RuntimeReflection.register(needRegisterClass);
+                        needRegisterClass = Class.forName("\{p.origin}", false, getClass().getClassLoader());
+                        RuntimeReflection.registerAllMethods(needRegisterClass);
+
+                        RuntimeReflection.registerAllDeclaredClasses(needRegisterClass);
                       //  RuntimeClassInitialization.initializeAtBuildTime(needRegisterClass);
                 """);
 
@@ -316,7 +322,14 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
 
                       //  RuntimeClassInitialization.initializeAtBuildTime(needRegisterClass);
                 """);
-        return Stream.of(nativeCallStream, structProxyStream)
+
+        var baseStream = Stream.of(NativeStructEnhanceMark.class, NativeGeneratorHelper.class)
+                .map(Class::getName)
+                .map(name -> STR."""
+                        needRegisterClass = Class.forName("\{name}", false, getClass().getClassLoader());
+                         RuntimeReflection.registerAllMethods(needRegisterClass);
+                        """);
+        return Stream.of(baseStream, nativeCallStream, structProxyStream)
                 .flatMap(Function.identity())
                 .collect(Collectors.joining("\n"));
     }

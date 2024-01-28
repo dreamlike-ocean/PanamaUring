@@ -52,11 +52,14 @@ public class NativeCallGenerator {
 
     private static final MethodHandle TRANSFORM_OBJECT_TO_STRUCT_MH;
 
+    //一点辅助的技巧。。。
+    private static final ThreadLocal<NativeCallGenerator> currentGenerator = new ThreadLocal<>();
+
     static {
         try {
             TRANSFORM_OBJECT_TO_STRUCT_MH = MethodHandles.lookup().findStatic(NativeCallGenerator.class, "transToStruct", MethodType.methodType(MemorySegment.class, Object.class));
             DLSYM_MH = MethodHandles.lookup().findVirtual(NativeCallGenerator.class, "dlsym", MethodType.methodType(MemorySegment.class, String.class));
-            NativeGeneratorHelper.fetchCurrentNativeCallGenerator = currentGenerator::get;
+            NativeGeneratorHelper.fetchCurrentNativeCallGenerator = () -> currentGenerator.get();
             INDY_BOOTSTRAP_METHOD = NativeCallGenerator.class.getMethod("indyFactory", MethodHandles.Lookup.class, String.class, MethodType.class, Object[].class);
             GENERATE_IN_GENERATOR_CONTEXT = NativeCallGenerator.class.getMethod("generateInGeneratorContext", Class.class, String.class, MethodType.class);
         } catch (NoSuchMethodException | IllegalAccessException e) {
@@ -64,8 +67,6 @@ public class NativeCallGenerator {
         }
     }
 
-    //一点辅助的技巧。。。
-    private static final ThreadLocal<NativeCallGenerator> currentGenerator = new ThreadLocal<>();
 
     private static final String GENERATOR_FIELD_NAME = "_generator";
 
