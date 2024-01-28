@@ -2,6 +2,7 @@
 package top.dreamlike.panama.generator.proxy;
 
 import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.ClassFileVersion;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
@@ -16,7 +17,6 @@ import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
@@ -254,7 +254,6 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
         }
         try {
             DynamicType.Unloaded unloaded = builder.make();
-            unloaded.saveIn(new File("apt-generator"));
             var c = unloaded.load(PanamaAnnotationProcessor.class.getClassLoader(), new ClassLoadingStrategy.ForUnsafeInjection(this.getClass().getProtectionDomain()))
                     .getLoaded();
             classMap.put(currentTypeElement.getQualifiedName().toString(), c);
@@ -303,6 +302,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                         needRegisterClass = Class.forName("\{p.proxy}", false, getClass().getClassLoader());
                         RuntimeReflection.registerFieldLookup(needRegisterClass, "_generator");
                         RuntimeReflection.registerConstructorLookup(needRegisterClass);
+                        RuntimeReflection.registerMethodLookup(needRegisterClass,"<init>");
                         RuntimeReflection.register(needRegisterClass);
                         needRegisterClass = Class.forName("\{p.origin}", false, getClass().getClassLoader());
                         RuntimeReflection.registerAllMethods(needRegisterClass);
@@ -319,7 +319,8 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                         RuntimeReflection.register(needRegisterClass);
                         RuntimeReflection.registerAllDeclaredFields(needRegisterClass);
                         needRegisterClass = Class.forName("\{p.proxy}", false, getClass().getClassLoader());
-
+                        RuntimeReflection.register(needRegisterClass);
+                        RuntimeReflection.registerAllDeclaredConstructors(needRegisterClass);
                       //  RuntimeClassInitialization.initializeAtBuildTime(needRegisterClass);
                 """);
 
@@ -329,7 +330,13 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                         needRegisterClass = Class.forName("\{name}", false, getClass().getClassLoader());
                          RuntimeReflection.registerAllMethods(needRegisterClass);
                         """);
-        return Stream.of(baseStream, nativeCallStream, structProxyStream)
+        var initInBuildStream = Stream.of(ClassFileVersion.class.getName())
+                .map(name -> STR."""
+                        needRegisterClass = Class.forName("\{name}", false, getClass().getClassLoader());
+                        RuntimeReflection.registerAllMethods(needRegisterClass);
+                        RuntimeClassInitialization.initializeAtBuildTime(needRegisterClass);
+                        """);
+        return Stream.of(baseStream, nativeCallStream, structProxyStream, initInBuildStream)
                 .flatMap(Function.identity())
                 .collect(Collectors.joining("\n"));
     }

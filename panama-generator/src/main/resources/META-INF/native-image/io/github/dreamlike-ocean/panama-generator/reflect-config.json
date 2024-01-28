@@ -1,0 +1,150 @@
+[
+  {
+    "name": "java.lang.Class",
+    "methods": [
+      {
+        "name": "getAnnotatedInterfaces",
+        "parameterTypes": []
+      },
+      {
+        "name": "getAnnotatedSuperclass",
+        "parameterTypes": []
+      },
+      {
+        "name": "getModule",
+        "parameterTypes": []
+      },
+      {
+        "name": "getNestHost",
+        "parameterTypes": []
+      },
+      {
+        "name": "getNestMembers",
+        "parameterTypes": []
+      },
+      {
+        "name": "getPermittedSubclasses",
+        "parameterTypes": []
+      },
+      {
+        "name": "getRecordComponents",
+        "parameterTypes": []
+      },
+      {
+        "name": "isNestmateOf",
+        "parameterTypes": [
+          "java.lang.Class"
+        ]
+      },
+      {
+        "name": "isRecord",
+        "parameterTypes": []
+      },
+      {
+        "name": "isSealed",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "java.lang.ClassLoader",
+    "methods": [
+      {
+        "name": "getUnnamedModule",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "java.lang.Module",
+    "methods": [
+      {
+        "name": "addExports",
+        "parameterTypes": [
+          "java.lang.String",
+          "java.lang.Module"
+        ]
+      },
+      {
+        "name": "isExported",
+        "parameterTypes": [
+          "java.lang.String"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "java.lang.Runtime",
+    "methods": [
+      {
+        "name": "version",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "java.lang.Runtime$Version",
+    "methods": [
+      {
+        "name": "feature",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "java.lang.System",
+    "methods": [
+      {
+        "name": "getSecurityManager",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "java.security.AccessController"
+  },
+  {
+    "name": "java.security.SecureRandomParameters"
+  },
+  {
+    "name": "net.bytebuddy.description.type.TypeDescription$ForLoadedType$Dispatcher",
+    "queryAllPublicMethods": true
+  },
+  {
+    "name": "net.bytebuddy.utility.Invoker",
+    "queryAllPublicMethods": true
+  },
+  {
+    "name": "net.bytebuddy.utility.Invoker$Dispatcher",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "sun.security.provider.NativePRNG",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      },
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "java.security.SecureRandomParameters"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "sun.security.provider.SHA",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  }
+]
