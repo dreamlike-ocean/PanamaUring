@@ -59,6 +59,7 @@ public class TestContainer {
     }
 
     @Union
+    @CompileTimeGenerate
     public static class UnionStruct {
         int union_a;
         long union_b;

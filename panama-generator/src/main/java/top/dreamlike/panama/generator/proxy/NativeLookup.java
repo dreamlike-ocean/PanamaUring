@@ -27,29 +27,30 @@ class NativeLookup implements SymbolLookup {
 
     static {
         try {
-            AllocateErrorBuffer_MH = MethodHandles.lookup()
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            AllocateErrorBuffer_MH = lookup
                     .findStatic(NativeLookup.class, "allocateErrorBuffer", MethodType.methodType(MemorySegment.class));
             errorHandle = Linker.Option.captureStateLayout()
                     .varHandle(MemoryLayout.PathElement.groupElement("errno"));
-            FILL_ERROR_CODE_VOID_MH = MethodHandles.lookup()
+            FILL_ERROR_CODE_VOID_MH = lookup
                     .findStatic(NativeLookup.class, "fillTLErrorVoid", MethodType.methodType(void.class));
-            FILL_ERROR_CODE_BYTE_MH = MethodHandles.lookup()
+            FILL_ERROR_CODE_BYTE_MH = lookup
                     .findStatic(NativeLookup.class, "fillTLErrorByte", MethodType.methodType(byte.class, byte.class));
-            FILL_ERROR_CODE_SHORT_MH = MethodHandles.lookup()
+            FILL_ERROR_CODE_SHORT_MH = lookup
                     .findStatic(NativeLookup.class, "fillTLErrorShort", MethodType.methodType(short.class, short.class));
-            FILL_ERROR_CODE_INT_MH = MethodHandles.lookup()
+            FILL_ERROR_CODE_INT_MH = lookup
                     .findStatic(NativeLookup.class, "fillTLErrorInt", MethodType.methodType(int.class, int.class));
-            FILL_ERROR_CODE_LONG_MH = MethodHandles.lookup()
+            FILL_ERROR_CODE_LONG_MH = lookup
                     .findStatic(NativeLookup.class, "fillTLErrorLong", MethodType.methodType(long.class, long.class));
-            FILL_ERROR_CODE_FLOAT_MH = MethodHandles.lookup()
+            FILL_ERROR_CODE_FLOAT_MH = lookup
                     .findStatic(NativeLookup.class, "fillTLErrorFloat", MethodType.methodType(float.class, float.class));
-            FILL_ERROR_CODE_DOUBLE_MH = MethodHandles.lookup()
+            FILL_ERROR_CODE_DOUBLE_MH = lookup
                     .findStatic(NativeLookup.class, "fillTLErrorDouble", MethodType.methodType(double.class, double.class));
-            FILL_ERROR_CODE_BOOLEAN_MH = MethodHandles.lookup()
+            FILL_ERROR_CODE_BOOLEAN_MH = lookup
                     .findStatic(NativeLookup.class, "fillTLErrorBoolean", MethodType.methodType(boolean.class, boolean.class));
-            FILL_ERROR_CODE_CHAR_MH = MethodHandles.lookup()
+            FILL_ERROR_CODE_CHAR_MH = lookup
                     .findStatic(NativeLookup.class, "fillTLErrorChar", MethodType.methodType(char.class, char.class));
-            FILL_ERROR_CODE_ADDRESS_MH = MethodHandles.lookup()
+            FILL_ERROR_CODE_ADDRESS_MH = lookup
                     .findStatic(NativeLookup.class, "fillTLErrorAddress", MethodType.methodType(MemorySegment.class, MemorySegment.class));
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -141,6 +142,11 @@ class NativeLookup implements SymbolLookup {
                 .or(() -> Linker.nativeLinker().defaultLookup().find(name));
     }
 
+    public MemorySegment findOrException(String name) {
+        return find(name)
+                .orElseThrow(() -> new IllegalArgumentException(STR."cant link to \{name}"));
+    }
+
     public MethodHandle downcallHandle(String name, FunctionDescriptor functionDescriptor, Linker.Option... options) {
         return find(name)
                 .map(functionAddr -> Linker.nativeLinker().downcallHandle(functionAddr, functionDescriptor, options))
@@ -162,8 +168,5 @@ class NativeLookup implements SymbolLookup {
         };
     }
 
-    public static boolean inExecutable() {
-        return "executable".equals(System.getProperty("org.graalvm.nativeimage.kind"));
-//        return "true".equals(System.getProperty("native-mode"));
-    }
+
 }

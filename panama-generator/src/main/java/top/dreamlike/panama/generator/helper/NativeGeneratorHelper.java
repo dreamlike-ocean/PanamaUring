@@ -62,7 +62,11 @@ public class NativeGeneratorHelper {
     }
 
     public static MemoryLayout currentLayout() {
-        return fetchCurrentNativeStructGenerator.get().memoryLayout();
+        StructProxyContext context = fetchCurrentNativeStructGenerator.get();
+        if (context == null) {
+            new RuntimeException().printStackTrace();
+        }
+        return context.memoryLayout();
     }
 
     public static StructProxyGenerator currentStructGenerator() {

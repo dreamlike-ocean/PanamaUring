@@ -22,6 +22,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -51,9 +52,9 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
     private ByteBuddy byteBuddy = new ByteBuddy();
     private StructProxyGenerator structProxyGenerator;
     private NativeCallGenerator nativeCallGenerator;
-    private ArrayList<NativeCallInterfacePair> nativeCallInterfaceNames = new ArrayList<>();
+    private ArrayList<NativeProxyPair> nativeCallInterfaceNames = new ArrayList<>();
 
-    private ArrayList<String> structProxyNames = new ArrayList<>();
+    private ArrayList<NativeProxyPair> structProxyNames = new ArrayList<>();
 
     private Map<String, Class> classMap = new HashMap<>(
             Map.of(
@@ -77,7 +78,6 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
         }
 
         this.structProxyGenerator = new StructProxyGenerator();
-        structProxyGenerator.needInit = false;
         this.structProxyGenerator.beforeGenerateCallBack = unloaded -> {
             String className = unloaded.getTypeDescription().getName();
             try (var ouputStream = this.env.getFiler().createClassFile(className).openOutputStream()) {
@@ -117,11 +117,12 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 Class runtimeClass = toRuntiumeClass(typeElement.asType());
                 if (isInterface) {
                     MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(runtimeClass, MethodHandles.lookup());
-                    nativeCallGenerator.generateRuntimeProxyClass(lookup, runtimeClass);
-                    nativeCallInterfaceNames.add(new NativeCallInterfacePair(runtimeClass.getName(), nativeCallGenerator.generateProxyClassName(runtimeClass)));
+//                    nativeCallGenerator.generateRuntimeProxyClass(lookup, runtimeClass);
+                    nativeCallGenerator.bind(runtimeClass);
+                    nativeCallInterfaceNames.add(new NativeProxyPair(runtimeClass.getName(), nativeCallGenerator.generateProxyClassName(runtimeClass)));
                 } else {
                     structProxyGenerator.enhance(runtimeClass);
-                    structProxyNames.add(structProxyGenerator.generatorProxyClassName(runtimeClass));
+                    structProxyNames.add(new NativeProxyPair(runtimeClass.getName(), structProxyGenerator.generatorProxyClassName(runtimeClass)));
                 }
             }
             if (roundEnv.processingOver() && enableGraalFeature) {
@@ -165,18 +166,17 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
             return aClass;
         }
 
-
         List<VariableElement> fields = ElementFilter.fieldsIn(currentTypeElement.getEnclosedElements());
         //这里不在乎什么继承啥的 只需要解析内部结构数据就行了
         boolean isInterface = currentTypeElement.getKind().isInterface();
         DynamicType.Builder builder;
         if (isInterface) {
             builder = byteBuddy.makeInterface()
-                    .name(currentTypeElement.getQualifiedName().toString());
+                    .name(getRealName(currentTypeElement));
         } else {
             builder = byteBuddy
                     .subclass(Object.class)
-                    .name(currentTypeElement.getQualifiedName().toString());
+                    .name(getRealName(currentTypeElement));
         }
         builder = Optional.ofNullable(currentTypeElement.getAnnotation(Alignment.class))
                 .map(builder::annotateType)
@@ -288,9 +288,9 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
     }
 
     private String generateDuringSetupBlock() {
-        ArrayList<NativeCallInterfacePair> callInterfaceNames = this.nativeCallInterfaceNames;
+        ArrayList<NativeProxyPair> callInterfaceNames = this.nativeCallInterfaceNames;
         return callInterfaceNames.stream()
-                .map(nativeCallInterfacePair -> STR."NativeImageHelper.initPanamaFeature(\{nativeCallInterfacePair.origin}.class);")
+                .map(nativeProxyPair -> STR."NativeImageHelper.initPanamaFeature(\{nativeProxyPair.origin}.class);")
                 .collect(Collectors.joining("\n"));
     }
 
@@ -302,16 +302,22 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                         RuntimeReflection.registerFieldLookup(needRegisterClass, "_generator");
                         RuntimeReflection.registerConstructorLookup(needRegisterClass);
                         RuntimeReflection.register(needRegisterClass);
+                      //  RuntimeClassInitialization.initializeAtBuildTime(needRegisterClass);
                 """);
 
         var structProxyStream = this.structProxyNames
                 .stream()
                 .map(p -> STR."""
-                        needRegisterClass = Class.forName("\{p}", false, getClass().getClassLoader());
+                        needRegisterClass = Class.forName("\{p.origin}", false, getClass().getClassLoader());
                         RuntimeReflection.registerConstructorLookup(needRegisterClass, MemorySegment.class);
                         RuntimeReflection.register(needRegisterClass);
+                        RuntimeReflection.registerAllDeclaredFields(needRegisterClass);
+                        needRegisterClass = Class.forName("\{p.proxy}", false, getClass().getClassLoader());
+
+                      //  RuntimeClassInitialization.initializeAtBuildTime(needRegisterClass);
                 """);
-        return Stream.concat(nativeCallStream, structProxyStream)
+        return Stream.of(nativeCallStream, structProxyStream)
+                .flatMap(Function.identity())
                 .collect(Collectors.joining("\n"));
     }
 
@@ -325,6 +331,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 import org.graalvm.nativeimage.hosted.RuntimeReflection;
                 import java.lang.foreign.MemorySegment;
                 import top.dreamlike.panama.generator.proxy.NativeImageHelper;
+                import org.graalvm.nativeimage.hosted.RuntimeClassInitialization;
                 """);
         statements.add(STR."""
             public class \{className} implements Feature {
@@ -352,10 +359,31 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
         return String.join("\n", statements);
     }
 
+    public String getRealName(TypeElement typeElement) {
+        String qualifiedName = typeElement.getQualifiedName().toString();
+        if (!typeElement.getNestingKind().isNested()) {
+            return qualifiedName;
+        }
+        ArrayDeque<String> realNameDeque = new ArrayDeque<>();
 
-    private record NativeCallInterfacePair(String origin, String proxy) {
+        while (true) {
+            int lastIndexOf = qualifiedName.lastIndexOf(".");
+            String mayHost = qualifiedName.substring(0, lastIndexOf);
+            TypeElement element = env.getElementUtils().getTypeElement(mayHost);
+            realNameDeque.addFirst(qualifiedName.substring(lastIndexOf + 1));
+            realNameDeque.addFirst("$");
+            if (element == null || !element.getNestingKind().isNested()) {
+                realNameDeque.addFirst(mayHost);
+                break;
+            }
+            qualifiedName = mayHost;
+        }
+        return String.join("", realNameDeque);
     }
 
-    ;
+    private record NativeProxyPair(String origin, String proxy) {
+    }
+
+
 }
 
