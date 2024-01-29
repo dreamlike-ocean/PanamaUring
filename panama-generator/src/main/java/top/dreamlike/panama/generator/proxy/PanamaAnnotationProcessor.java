@@ -128,9 +128,9 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 }
             }
             if (roundEnv.processingOver() && enableGraalFeature) {
-                String generateFeature = generateFeature();
+                String generatedFeatureJsonFile = generateFeature();
                 try (OutputStream outputStream = env.getFiler().createSourceFile(featureName).openOutputStream()) {
-                    outputStream.write(generateFeature.getBytes(StandardCharsets.UTF_8));
+                    outputStream.write(generatedFeatureJsonFile.getBytes(StandardCharsets.UTF_8));
                     outputStream.flush();
                 }
             }
@@ -304,6 +304,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                         RuntimeReflection.registerConstructorLookup(needRegisterClass);
                         RuntimeReflection.registerMethodLookup(needRegisterClass,"<init>");
                         RuntimeReflection.register(needRegisterClass);
+                        RuntimeReflection.registerForReflectiveInstantiation(needRegisterClass);
                         needRegisterClass = Class.forName("\{p.origin}", false, getClass().getClassLoader());
                         RuntimeReflection.registerAllMethods(needRegisterClass);
 
@@ -319,8 +320,13 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                         RuntimeReflection.register(needRegisterClass);
                         RuntimeReflection.registerAllDeclaredFields(needRegisterClass);
                         needRegisterClass = Class.forName("\{p.proxy}", false, getClass().getClassLoader());
+                        constructor = needRegisterClass.getDeclaredConstructor(MemorySegment.class);
+                        RuntimeReflection.register(constructor);
                         RuntimeReflection.register(needRegisterClass);
                         RuntimeReflection.registerAllDeclaredConstructors(needRegisterClass);
+
+                        RuntimeReflection.registerForReflectiveInstantiation(needRegisterClass);
+
                       //  RuntimeClassInitialization.initializeAtBuildTime(needRegisterClass);
                 """);
 
@@ -352,12 +358,14 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 import java.lang.foreign.MemorySegment;
                 import top.dreamlike.panama.generator.proxy.NativeImageHelper;
                 import org.graalvm.nativeimage.hosted.RuntimeClassInitialization;
+                import java.lang.reflect.Constructor;
                 """);
         statements.add(STR."""
             public class \{className} implements Feature {
                 @Override
                 public void duringSetup(DuringSetupAccess access) {
                    Class needRegisterClass = null;
+
                    try {
                       \{generateDuringSetupBlock()}
                    } catch(Throwable t) {
@@ -368,6 +376,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 @Override
                 public void beforeAnalysis(BeforeAnalysisAccess access) {
                     Class needRegisterClass = null;
+                     Constructor constructor;
                     try {
                        \{generateBeforeAnalysisBlock()}
                     } catch(Throwable t) {
