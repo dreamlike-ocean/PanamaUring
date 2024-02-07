@@ -59,7 +59,7 @@ public class StructProxyGenerator {
     static {
         try {
             ENHANCE_MH = MethodHandles.lookup().findVirtual(StructProxyGenerator.class, "enhance", MethodType.methodType(Object.class, Class.class, MemorySegment.class));
-            REALMEMORY_METHOD = NativeStructEnhanceMark.class.getMethod("realMemory");
+            REALMEMORY_METHOD = NativeAddressable.class.getMethod("realMemory");
             NativeGeneratorHelper.fetchCurrentNativeStructGenerator = STRUCT_CONTEXT::get;
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -151,6 +151,9 @@ public class StructProxyGenerator {
     }
 
     public <T> MemoryLayout extract(Class<T> structClass) {
+        if (structClass == void.class) {
+            return null;
+        }
         MemoryLayout memoryLayout = layoutCaches.get(structClass);
         if (memoryLayout != null) {
             return memoryLayout;
@@ -169,7 +172,7 @@ public class StructProxyGenerator {
         }
         var alignmentByteSize = alignment == null ? -1 : alignment.byteSize();
         for (Field field : structClass.getDeclaredFields()) {
-            if (field.isSynthetic()) {
+            if (field.isSynthetic() || Modifier.isStatic(field.getModifiers())) {
                 continue;
             }
             //类型为原语
@@ -253,7 +256,7 @@ public class StructProxyGenerator {
                         .andThen(MethodCall.invoke(NativeGeneratorHelper.FETCH_CURRENT_STRUCT_GENERATOR_GENERATOR).setsField(named(GENERATOR_FIELD)));
 
                 for (Field field : targetClass.getDeclaredFields()) {
-                    if (field.isSynthetic()) {
+                    if (field.isSynthetic() || Modifier.isStatic(field.getModifiers())) {
                         continue;
                     }
                     precursor = switch (field.getType()) {

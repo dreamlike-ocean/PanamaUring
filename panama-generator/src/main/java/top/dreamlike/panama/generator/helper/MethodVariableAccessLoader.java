@@ -18,7 +18,7 @@ public record MethodVariableAccessLoader(int targetOffset, StackManipulation loa
         } else if (type == float.class && type.isPrimitive()) {
             wait = MethodVariableAccess.FLOAT.loadFrom(offset);
             targetAddOffset = 1;
-        } else if (type == int.class && type.isPrimitive()) {
+        } else if (type.isPrimitive()) {
             wait = MethodVariableAccess.INTEGER.loadFrom(offset);
             targetAddOffset = 1;
         } else {

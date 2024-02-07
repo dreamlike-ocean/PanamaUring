@@ -18,10 +18,7 @@ import top.dreamlike.panama.generator.annotation.CLib;
 import top.dreamlike.panama.generator.annotation.NativeFunction;
 import top.dreamlike.panama.generator.annotation.Pointer;
 import top.dreamlike.panama.generator.exception.StructException;
-import top.dreamlike.panama.generator.helper.DowncallContext;
-import top.dreamlike.panama.generator.helper.MethodVariableAccessLoader;
-import top.dreamlike.panama.generator.helper.NativeGeneratorHelper;
-import top.dreamlike.panama.generator.helper.NativeStructEnhanceMark;
+import top.dreamlike.panama.generator.helper.*;
 
 import java.io.*;
 import java.lang.foreign.*;
@@ -114,13 +111,13 @@ public class NativeCallGenerator {
     }
 
     private static MemorySegment transToStruct(Object o) {
-        if (o instanceof NativeStructEnhanceMark struct) {
-            return struct.realMemory();
+        if (o instanceof NativeAddressable nativeAddressable) {
+            return nativeAddressable.realMemory();
         }
         if (o instanceof MemorySegment memorySegment) {
             return memorySegment;
         }
-        throw new StructException(STR. "\{ o.getClass() } is not struct,pleace call StructProxyGenerator::enhance before calling native function" );
+        throw new StructException(STR."\{o.getClass()} is not struct,pleace call StructProxyGenerator::enhance before calling native function");
     }
 
     @SuppressWarnings("unchecked")
@@ -134,6 +131,23 @@ public class NativeCallGenerator {
         }
     }
 
+    private static boolean needTransToPointer(Parameter parameter) {
+        Class<?> typeClass = parameter.getType();
+        return typeClass.isAssignableFrom(MemorySegment.class)
+                || NativeAddressable.class.isAssignableFrom(typeClass)
+                || (!typeClass.isPrimitive() && parameter.getAnnotation(Pointer.class) != null);
+    }
+
+    static MethodReturn calMethodReturn(Class c) {
+        if (c == int.class) return MethodReturn.INTEGER;
+        if (c == double.class) return MethodReturn.DOUBLE;
+        if (c == float.class) return MethodReturn.FLOAT;
+        if (c == long.class) return MethodReturn.LONG;
+        if (c == void.class) return MethodReturn.VOID;
+        if (c.isPrimitive()) return MethodReturn.INTEGER;
+        return MethodReturn.REFERENCE;
+    }
+
     public MethodHandle generateInGeneratorContext(Class interfaceClass, String methodName, MethodType methodType) throws NoSuchMethodException {
         NativeCallGenerator current = this;
         //第一个是this指针 去掉
@@ -142,32 +156,85 @@ public class NativeCallGenerator {
         return current.nativeMethodHandle(method);
     }
 
-
-    public void loadSo(Class<?> interfaceClass) throws IOException {
-        ClassLoader classLoader = interfaceClass.getClassLoader();
-        CLib annotation = interfaceClass.getAnnotation(CLib.class);
-        if (annotation == null || annotation.value().isBlank()) return;
-        InputStream inputStream = annotation.inClassPath()
-                ? classLoader.getResourceAsStream(STR."\{annotation.value()}")
-                : new FileInputStream(annotation.value());
-        if (inputStream == null) {
-            throw new IllegalArgumentException(STR."cant find clib! classloader: \{classLoader}, path: \{annotation.value()}");
+    public MemorySegment generateUpcall(Arena scope, Method method, Object... receiver) {
+        //实例方法
+        if (!Modifier.isStatic(method.getModifiers())) {
+            if (receiver.length != 1) {
+                throw new IllegalArgumentException("receiver length must be 1");
+            }
+            //判断当前method是否归于属receiver
+            if (!method.getDeclaringClass().isAssignableFrom(receiver[0].getClass())) {
+                throw new IllegalArgumentException("receiver type must be assignable from method declaring class");
+            }
         }
-        String tmpFileName = STR. "\{ interfaceClass.getSimpleName() }_\{ UUID.randomUUID().toString() }_dynamic.so" ;
-        File file = File.createTempFile(tmpFileName, ".tmp");
-        FileOutputStream fileOutputStream = new FileOutputStream(file);
-        file.deleteOnExit();
-        try (fileOutputStream; inputStream) {
-            inputStream.transferTo(fileOutputStream);
-            System.load(file.getAbsolutePath());
+        try {
+            MethodHandle handle = MethodHandles.lookup().unreflect(method);
+            if (!Modifier.isStatic(method.getModifiers())) {
+                handle = handle.bindTo(receiver[0]);
+            }
+            Parameter[] parameters = method.getParameters();
+            MemoryLayout[] memoryLayouts = new MemoryLayout[parameters.length];
+            ArrayList<Integer> pointerIndex = new ArrayList<>(parameters.length / 2);
+            for (int i = 0; i < parameters.length; i++) {
+                Class<?> type = parameters[i].getType();
+                if (type.isPrimitive()) {
+                    memoryLayouts[i] = NativeLookup.primitiveMapToMemoryLayout(type);
+                } else {
+                    //默认是指针吧。。。
+                    memoryLayouts[i] = ValueLayout.ADDRESS;
+                    pointerIndex.add(i);
+                }
+            }
+            MemoryLayout returnMemoryLayout = method.getReturnType().isPrimitive() ? NativeLookup.primitiveMapToMemoryLayout(method.getReturnType()) : ValueLayout.ADDRESS;
+
+            FunctionDescriptor fd = method.getReturnType() == void.class
+                    ? FunctionDescriptor.ofVoid(memoryLayouts)
+                    : FunctionDescriptor.of(
+                    returnMemoryLayout,
+                    memoryLayouts
+            );
+
+            for (Integer index : pointerIndex) {
+                int i = index;
+                Class<?> argType = parameters[i].getType();
+                MethodHandle argEnhanceMH = StructProxyGenerator.ENHANCE_MH
+                        .asType(StructProxyGenerator.ENHANCE_MH.type().changeReturnType(argType))
+                        .bindTo(structProxyGenerator)
+                        .bindTo(argType);
+                //第二步将MemorySegment转为对应的java对象
+                handle = MethodHandles.filterArguments(
+                        handle,
+                        i,
+                        argEnhanceMH
+                );
+                MemoryLayout layout = structProxyGenerator.extract(argType);
+                //第一步 先从零长度的指针转换为对应长度的MemorySegment
+                handle = MethodHandles.filterArguments(
+                        handle,
+                        i,
+                        MethodHandles.insertArguments(
+                                NativeGeneratorHelper.DEREFERENCE,
+                                1,
+                                layout.byteSize()
+                        )
+                );
+            }
+            //非原始类型则需要通过返回指针
+            if (!method.getReturnType().isPrimitive()) {
+                handle = MethodHandles.filterReturnValue(
+                        handle,
+                        TRANSFORM_OBJECT_TO_STRUCT_MH.asType(TRANSFORM_OBJECT_TO_STRUCT_MH.type().changeParameterType(0, method.getReturnType()))
+                );
+            }
+            return Linker.nativeLinker()
+                    .upcallStub(handle, fd, scope);
+        } catch (Throwable t) {
+            throw new StructException("should not reach here!", t);
         }
     }
 
-    private static boolean needTransToPointer(Parameter parameter) {
-        Class<?> typeClass = parameter.getType();
-        return typeClass.isAssignableFrom(MemorySegment.class)
-                || NativeStructEnhanceMark.class.isAssignableFrom(typeClass)
-                || (!typeClass.isPrimitive() && parameter.getAnnotation(Pointer.class) != null);
+    public FunctionPointer generateUpcallFP(Arena scope, Method method, Object... receiver) {
+        return new FunctionPointer(generateUpcall(scope, method, receiver));
     }
 
     public void plainMode() {
@@ -437,14 +504,24 @@ public class NativeCallGenerator {
         return foreignFunctionAddressCache.computeIfAbsent(name, nativeLibLookup::findOrException);
     }
 
-
-    static MethodReturn calMethodReturn(Class c) {
-        if (c == int.class) return MethodReturn.INTEGER;
-        if (c == double.class) return MethodReturn.DOUBLE;
-        if (c == float.class) return MethodReturn.FLOAT;
-        if (c == long.class) return MethodReturn.LONG;
-        if (c == void.class) return MethodReturn.VOID;
-        return MethodReturn.REFERENCE;
+    public void loadSo(Class<?> interfaceClass) throws IOException {
+        ClassLoader classLoader = interfaceClass.getClassLoader();
+        CLib annotation = interfaceClass.getAnnotation(CLib.class);
+        if (annotation == null || annotation.value().isBlank()) return;
+        InputStream inputStream = annotation.inClassPath()
+                ? classLoader.getResourceAsStream(STR."\{annotation.value()}")
+                : new FileInputStream(annotation.value());
+        if (inputStream == null) {
+            throw new IllegalArgumentException(STR."cant find clib! classloader: \{classLoader}, path: \{annotation.value()}");
+        }
+        String tmpFileName = STR."\{interfaceClass.getSimpleName()}_\{UUID.randomUUID().toString()}_dynamic.so";
+        File file = File.createTempFile(tmpFileName, ".tmp");
+        FileOutputStream fileOutputStream = new FileOutputStream(file);
+        file.deleteOnExit();
+        try (fileOutputStream; inputStream) {
+            inputStream.transferTo(fileOutputStream);
+            System.load(file.getAbsolutePath());
+        }
     }
 
     private record ConstFieldInvokerStackManipulation(String className, String mhFieldName,

@@ -5,11 +5,9 @@ import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 
-public interface NativeStructEnhanceMark {
+public interface NativeStructEnhanceMark extends NativeAddressable {
 
     public StructProxyGenerator fetchStructProxyGenerator();
-
-    public MemorySegment realMemory();
 
     public long sizeof();
 
