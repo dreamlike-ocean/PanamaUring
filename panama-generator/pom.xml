@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>panama-generator</artifactId>
-    <version>1.1-snapshot</version>
+    <version>1.1</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -31,7 +31,7 @@
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
-            <version>1.14.11</version>
+            <version>1.14.12</version>
         </dependency>
         <dependency>
             <groupId>org.openjdk.jmh</groupId>

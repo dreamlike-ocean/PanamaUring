@@ -33,10 +33,6 @@ public class UpcallTest {
         comparInstanceMethod = UpcallTest.class.getDeclaredMethod("comparInInstance", Person.class, Person.class);
     }
 
-    public static int compar(Person a, Person b) {
-        return (int) (a.getN() - b.getN());
-    }
-
     public static int javaMethod(int a, int b) {
         return a + b;
     }
@@ -114,13 +110,16 @@ public class UpcallTest {
         }
     }
 
-    public int comparInInstance(Person a, Person b) {
+    public static int compar(Person a, Person b) {
         return (int) (a.getN() - b.getN());
     }
 
-
     interface Qsort {
         void qsort(@Pointer NativeArray<Person> base, long nmemb, long size, FunctionPointer compar);
+    }
+
+    public int comparInInstance(Person a, Person b) {
+        return (int) (a.getN() - b.getN());
     }
 
 }
