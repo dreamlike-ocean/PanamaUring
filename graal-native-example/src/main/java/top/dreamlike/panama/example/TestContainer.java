@@ -1,9 +1,11 @@
-package top.dreamlike.panama.generator.test.struct;
+package top.dreamlike.panama.example;
 
+import top.dreamlike.panama.generator.annotation.CompileTimeGenerate;
 import top.dreamlike.panama.generator.annotation.NativeArrayMark;
 import top.dreamlike.panama.generator.annotation.Union;
 import top.dreamlike.panama.generator.proxy.NativeArray;
 
+@CompileTimeGenerate
 public class TestContainer {
     int size;
     Person single;
@@ -57,6 +59,7 @@ public class TestContainer {
     }
 
     @Union
+    @CompileTimeGenerate
     public static class UnionStruct {
         int union_a;
         long union_b;

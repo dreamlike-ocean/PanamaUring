@@ -3,11 +3,11 @@ package top.dreamlike.panama.generator.test;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import top.dreamlike.panama.generator.proxy.ErrorNo;
+import top.dreamlike.panama.generator.proxy.MemoryLifetimeScope;
+import top.dreamlike.panama.generator.proxy.NativeCallGenerator;
+import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.generator.test.call.LibPerson;
-import top.dreamlike.panama.genertor.proxy.ErrorNo;
-import top.dreamlike.panama.genertor.proxy.MemoryLifetimeScope;
-import top.dreamlike.panama.genertor.proxy.NativeCallGenerator;
-import top.dreamlike.panama.genertor.proxy.StructProxyGenerator;
 
 import java.lang.foreign.Arena;
 

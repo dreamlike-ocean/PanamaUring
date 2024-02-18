@@ -1,10 +1,10 @@
 package top.dreamlike.panama.generator.test.call;
 
+import top.dreamlike.panama.generator.annotation.CLib;
+import top.dreamlike.panama.generator.annotation.NativeFunction;
+import top.dreamlike.panama.generator.annotation.Pointer;
 import top.dreamlike.panama.generator.test.struct.Person;
 import top.dreamlike.panama.generator.test.struct.TestContainer;
-import top.dreamlike.panama.genertor.annotation.CLib;
-import top.dreamlike.panama.genertor.annotation.NativeFunction;
-import top.dreamlike.panama.genertor.annotation.Pointer;
 
 import java.lang.foreign.MemorySegment;
 
