@@ -3,6 +3,7 @@ package top.dreamlike.panama.example;
 import top.dreamlike.panama.generator.annotation.CLib;
 import top.dreamlike.panama.generator.annotation.CompileTimeGenerate;
 import top.dreamlike.panama.generator.annotation.NativeFunction;
+import top.dreamlike.panama.generator.annotation.Pointer;
 
 
 @CompileTimeGenerate
@@ -17,4 +18,6 @@ public interface StdLib {
     @NativeFunction(fast = true, returnIsPointer = true)
     Person fillPerson(int a, long n);
 
+    @NativeFunction(fast = true, returnIsPointer = true)
+    TestContainer initContainer(int size, @Pointer Person person, long unionValue);
 }

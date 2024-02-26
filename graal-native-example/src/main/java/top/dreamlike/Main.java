@@ -1,6 +1,6 @@
 package top.dreamlike;
 
-import net.bytebuddy.dynamic.scaffold.TypeWriter;
+
 import top.dreamlike.panama.example.Person;
 import top.dreamlike.panama.example.StdLib;
 import top.dreamlike.panama.example.TestContainer;
@@ -12,8 +12,8 @@ public class Main {
     private static final StdLib STD_LIB;
 
     static {
-        String dumpFolder = System.getProperty(TypeWriter.DUMP_PROPERTY);
-        System.out.println(dumpFolder);
+//        String dumpFolder = System.getProperty(TypeWriter.DUMP_PROPERTY);
+//        System.out.println(dumpFolder);
         StructProxyGenerator proxyGenerator = new StructProxyGenerator();
         NativeCallGenerator generator = new NativeCallGenerator(proxyGenerator);
         STD_LIB = generator.generate(StdLib.class);

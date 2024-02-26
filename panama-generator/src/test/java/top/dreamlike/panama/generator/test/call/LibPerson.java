@@ -35,7 +35,7 @@ public interface LibPerson {
     @NativeFunction(fast = true, returnIsPointer = true)
     MemorySegment getArrayButPointer(@Pointer TestContainer container);
 
-    @NativeFunction(fast = true, needErrorNo = true)
+    @NativeFunction(fast = false, needErrorNo = true)
     int current_error(int dummy, long dummy2);
 
     @NativeFunction(fast = true)

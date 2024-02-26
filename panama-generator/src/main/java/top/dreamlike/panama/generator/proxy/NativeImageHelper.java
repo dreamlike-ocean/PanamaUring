@@ -21,7 +21,7 @@ public class NativeImageHelper {
         if (!nativeInterface.isInterface()) {
             throw new IllegalArgumentException(STR."\{nativeInterface} is not interface");
         }
-        NativeCallGenerator generator = new NativeCallGenerator((Object) null);
+        NativeCallGenerator generator = new NativeCallGenerator();
         for (Method method : nativeInterface.getMethods()) {
             if (method.isBridge() || method.isDefault() || method.isSynthetic()) {
                 continue;

@@ -12,4 +12,6 @@ public @interface CLib {
     String value();
 
     boolean inClassPath() default true;
+
+    boolean isLib() default false;
 }

@@ -4,12 +4,15 @@ import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.reflect.Method;
 
 public interface NativeStructEnhanceMark extends NativeAddressable {
 
     public StructProxyGenerator fetchStructProxyGenerator();
 
-    public long sizeof();
+    public default long sizeof() {
+        return layout().byteSize();
+    }
 
     public MemoryLayout layout();
 

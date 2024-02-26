@@ -92,7 +92,7 @@ public class UpcallTest {
     public void upcallQsortTest() throws Throwable {
 
         MemoryLayout layout = structProxyGenerator.extract(Person.class);
-        MemorySegment nativeArrayBase = Arena.global().allocateArray(layout, 3);
+        MemorySegment nativeArrayBase = Arena.global().allocate(layout, 3);
         NativeArray<Person> nativeArray = structProxyGenerator.enhanceArray(nativeArrayBase);
         for (int i = 0; i < nativeArray.size(); i++) {
             // 3 2 1

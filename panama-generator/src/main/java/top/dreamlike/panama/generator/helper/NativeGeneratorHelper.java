@@ -3,6 +3,7 @@ package top.dreamlike.panama.generator.helper;
 import top.dreamlike.panama.generator.proxy.NativeCallGenerator;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.*;
@@ -24,10 +25,26 @@ public class NativeGeneratorHelper {
     public final static Method FETCH_CURRENT_STRUCT_CONTEXT_GENERATOR;
     public final static Method FETCH_CURRENT_STRUCT_LAYOUT_GENERATOR;
     public final static Method FETCH_CURRENT_STRUCT_GENERATOR_GENERATOR;
-    public static Supplier<NativeCallGenerator> fetchCurrentNativeCallGenerator;
-    public static Supplier<StructProxyContext> fetchCurrentNativeStructGenerator;
+    public static final ThreadLocal<NativeCallGenerator> CURRENT_GENERATOR = new ThreadLocal<>();
+    public static Supplier<NativeCallGenerator> fetchCurrentNativeCallGenerator = CURRENT_GENERATOR::get;
+
+    public static final ThreadLocal<StructProxyContext> STRUCT_CONTEXT = new ThreadLocal<>();
+    public static Supplier<StructProxyContext> fetchCurrentNativeStructGenerator = STRUCT_CONTEXT::get;
 
     public static final Method LOAD_SO;
+
+    public static final Method FETCH_STRUCT_PROXY_GENERATOR;
+    public static final Method REAL_MEMORY;
+
+    public static final Method REBIND_MEMORY;
+
+    public static final Method GET_ADDRESS_FROM_MEMORY_SEGMENT;
+
+    public static final Method REINTERPRET;
+
+    public static final Method AS_SLICE;
+
+    public static final Method ENHANCE;
 
     static {
         try {
@@ -38,6 +55,13 @@ public class NativeGeneratorHelper {
             FETCH_CURRENT_STRUCT_LAYOUT_GENERATOR = NativeGeneratorHelper.class.getMethod("currentLayout");
             FETCH_CURRENT_STRUCT_GENERATOR_GENERATOR = NativeGeneratorHelper.class.getMethod("currentStructGenerator");
             LOAD_SO = NativeCallGenerator.class.getMethod("loadSo", Class.class);
+            FETCH_STRUCT_PROXY_GENERATOR = NativeStructEnhanceMark.class.getMethod("fetchStructProxyGenerator");
+            REAL_MEMORY =  NativeStructEnhanceMark.class.getMethod("realMemory");
+            REBIND_MEMORY = NativeStructEnhanceMark.class.getMethod("rebind", MemorySegment.class);
+            GET_ADDRESS_FROM_MEMORY_SEGMENT = MemorySegment.class.getMethod("get", AddressLayout.class, long.class);
+            REINTERPRET = MemorySegment.class.getMethod("reinterpret", long.class);
+            AS_SLICE = MemorySegment.class.getMethod("asSlice", long.class, long.class);
+            ENHANCE = StructProxyGenerator.class.getMethod("enhance", Class.class, MemorySegment.class);
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }

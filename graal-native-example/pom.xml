@@ -47,6 +47,7 @@
                                 <buildArg>-O3</buildArg>
                                 <buildArg>--gc=G1</buildArg>
                                 <buildArg>-march=native</buildArg>
+                                <buildArg>-H:+ForeignAPISupport</buildArg>
                             </buildArgs>
                             <skipNativeTests>true</skipNativeTests>
                             <mainClass>${main.class}</mainClass>
@@ -81,6 +82,7 @@
                                 <buildArg>--enable-preview</buildArg>
                                 <buildArg>--features=${graal.feature}</buildArg>
                                 <buildArg>-Ob</buildArg>
+                                <buildArg>-H:+ForeignAPISupport</buildArg>
                                 <buildArg>-g</buildArg>
                             </buildArgs>
                             <skipNativeTests>true</skipNativeTests>
@@ -103,7 +105,6 @@
         <dependency>
             <groupId>io.github.dreamlike-ocean</groupId>
             <artifactId>panama-generator</artifactId>
-            <version>1.1</version>
         </dependency>
     </dependencies>
     <build>

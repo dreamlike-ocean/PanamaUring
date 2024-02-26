@@ -24,7 +24,7 @@ public class NativeArray<T> implements NativeStructEnhanceMark, List<T> {
 
     private final List<T> mappingJavaBean;
 
-    NativeArray(StructProxyGenerator generator, MemorySegment memorySegment, Class<T> component) {
+    public NativeArray(StructProxyGenerator generator, MemorySegment memorySegment, Class<T> component) {
         if (component == Object.class) {
             throw new IllegalArgumentException(STR."please fill generic param");
         }
