@@ -56,6 +56,44 @@
                     </compilerArgs>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <id>prepare-test-libPerson</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>cmake</executable>
+                            <workingDirectory>${project.basedir}/src/test/c</workingDirectory>
+                            <arguments>
+                                <argument>-DCMAKE_BUILD_TYPE=Release .</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>compile-test-libPerson</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>cmake</executable>
+                            <workingDirectory>${project.basedir}/src/test/c</workingDirectory>
+                            <arguments>
+                                <argument>--build</argument>
+                                <argument>.</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

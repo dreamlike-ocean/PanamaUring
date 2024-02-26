@@ -12,7 +12,6 @@ public record DowncallContext(FunctionDescriptor fd, Linker.Option[] ops,
     public boolean fast() {
         return Arrays
                 .stream(ops)
-                .filter(op -> op == Linker.Option.critical(true) || op == Linker.Option.critical(false))
-                .findFirst().isEmpty();
+                .anyMatch(op -> op == Linker.Option.critical(true) || op == Linker.Option.critical(false));
     }
 }
