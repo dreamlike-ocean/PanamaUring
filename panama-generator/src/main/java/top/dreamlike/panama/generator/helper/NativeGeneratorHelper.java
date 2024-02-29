@@ -1,5 +1,7 @@
 package top.dreamlike.panama.generator.helper;
 
+import top.dreamlike.panama.generator.exception.StructException;
+import top.dreamlike.panama.generator.proxy.NativeArray;
 import top.dreamlike.panama.generator.proxy.NativeCallGenerator;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 
@@ -46,6 +48,10 @@ public class NativeGeneratorHelper {
 
     public static final Method ENHANCE;
 
+    public static final MethodHandle TRANSFORM_OBJECT_TO_STRUCT_MH;
+
+    public static final MethodHandle NATIVE_ARRAY_CTOR;
+
     static {
         try {
             FETCH_CURRENT_NATIVE_CALL_GENERATOR = NativeGeneratorHelper.class.getMethod("currentNativeCallGenerator");
@@ -62,6 +68,8 @@ public class NativeGeneratorHelper {
             REINTERPRET = MemorySegment.class.getMethod("reinterpret", long.class);
             AS_SLICE = MemorySegment.class.getMethod("asSlice", long.class, long.class);
             ENHANCE = StructProxyGenerator.class.getMethod("enhance", Class.class, MemorySegment.class);
+            TRANSFORM_OBJECT_TO_STRUCT_MH = MethodHandles.lookup().findStatic(NativeGeneratorHelper.class, "transToStruct", MethodType.methodType(MemorySegment.class, Object.class));
+            NATIVE_ARRAY_CTOR = MethodHandles.lookup().findConstructor(NativeArray.class, MethodType.methodType(void.class, StructProxyGenerator.class, MemorySegment.class, Class.class));
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -84,6 +92,17 @@ public class NativeGeneratorHelper {
     public static StructProxyContext currentStructContext() {
         return fetchCurrentNativeStructGenerator.get();
     }
+
+    public static MemorySegment transToStruct(Object o) {
+        if (o instanceof NativeAddressable nativeAddressable) {
+            return nativeAddressable.realMemory();
+        }
+        if (o instanceof MemorySegment memorySegment) {
+            return memorySegment;
+        }
+        throw new StructException(STR."\{o.getClass()} is not struct,pleace call StructProxyGenerator::enhance before calling native function");
+    }
+
 
     public static MemoryLayout currentLayout() {
         StructProxyContext context = fetchCurrentNativeStructGenerator.get();

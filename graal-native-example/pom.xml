@@ -92,6 +92,45 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>native-static</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <version>0.9.28</version>
+                        <extensions>true</extensions>
+                        <executions>
+                            <execution>
+                                <id>build-native</id>
+                                <goals>
+                                    <goal>compile-no-fork</goal>
+                                </goals>
+                                <phase>package</phase>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <buildArgs>
+                                <buildArg>--enable-native-access=ALL-UNNAMED</buildArg>
+                                <buildArg>--no-fallback</buildArg>
+                                <buildArg>--enable-preview</buildArg>
+                                <buildArg>--features=${graal.feature}</buildArg>
+                                <buildArg>-Ob</buildArg>
+                                <buildArg>-H:+ForeignAPISupport</buildArg>
+                                <buildArg>-g</buildArg>
+                                <buildArg>--static</buildArg>
+                                <buildArg>--libc=musl</buildArg>
+                            </buildArgs>
+                            <skipNativeTests>true</skipNativeTests>
+                            <mainClass>${main.class}</mainClass>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+
     </profiles>
 
     <dependencies>

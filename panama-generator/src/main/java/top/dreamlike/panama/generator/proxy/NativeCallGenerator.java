@@ -26,6 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static top.dreamlike.panama.generator.helper.NativeGeneratorHelper.TRANSFORM_OBJECT_TO_STRUCT_MH;
+
 /**
  * <a href="https://shipilev.net/jvm/anatomy-quarks/17-trust-nonstatic-final-fields/">为什么实例中的final不可以信任</a>
  * 参考这个使用static final进行优化
@@ -38,15 +40,12 @@ public class NativeCallGenerator {
 
     private final NativeLookup nativeLibLookup;
 
-    private static final MethodHandle TRANSFORM_OBJECT_TO_STRUCT_MH;
-
     private final ClassFile classFile = ClassFile.of();
 
     static {
         try {
-            TRANSFORM_OBJECT_TO_STRUCT_MH = MethodHandles.lookup().findStatic(NativeCallGenerator.class, "transToStruct", MethodType.methodType(MemorySegment.class, Object.class));
             DLSYM_MH = MethodHandles.lookup().findVirtual(NativeCallGenerator.class, "dlsym", MethodType.methodType(MemorySegment.class, String.class));
-            INDY_BOOTSTRAP_METHOD = NativeCallGenerator.class.getMethod("indyFactory", MethodHandles.Lookup.class, String.class, MethodType.class, Object[].class);
+            INDY_BOOTSTRAP_METHOD = InvokeDynamicFactory.class.getMethod("nativeCallIndyFactory", MethodHandles.Lookup.class, String.class, MethodType.class, Object[].class);
             GENERATE_IN_GENERATOR_CONTEXT = NativeCallGenerator.class.getMethod("generateInGeneratorContext", Class.class, String.class, MethodType.class);
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -54,7 +53,7 @@ public class NativeCallGenerator {
     }
 
 
-    private static final String GENERATOR_FIELD_NAME = "_generator";
+    static final String GENERATOR_FIELD_NAME = "_generator";
 
     private static final Method GENERATE_IN_GENERATOR_CONTEXT;
 
@@ -76,7 +75,6 @@ public class NativeCallGenerator {
     }
 
     public static CallSite indyFactory(MethodHandles.Lookup lookup, String methodName, MethodType methodType, Object... args) throws Throwable {
-        System.out.println("indyFactory invoke!");
         //这里的lookup是当前的代理类
         Class<?> lookupClass = lookup.lookupClass();
         NativeCallGenerator generator = (NativeCallGenerator) lookupClass.getField(GENERATOR_FIELD_NAME).get(null);
@@ -223,7 +221,7 @@ public class NativeCallGenerator {
      * @return The MethodHandle object for the native method call.
      * @throws IllegalArgumentException if the return type of the method is not a primitive type or marked as returnIsPointer.
      */
-    private MethodHandle nativeMethodHandle(Method method,boolean lazy) {
+    MethodHandle nativeMethodHandle(Method method,boolean lazy) {
         DowncallContext downcallContext = parseDowncallContext(method);
 
         String functionName = downcallContext.functionName();
@@ -449,7 +447,7 @@ public class NativeCallGenerator {
             it.invokeDynamicInstruction(
                     DynamicCallSiteDesc.of(
                             MethodHandleDesc.ofMethod(
-                                    DirectMethodHandleDesc.Kind.STATIC, ClassFileHelper.toDesc(NativeCallGenerator.class), "indyFactory",
+                                    DirectMethodHandleDesc.Kind.STATIC, ClassFileHelper.toDesc(InvokeDynamicFactory.class), "nativeCallIndyFactory",
                                     ClassFileHelper.toMethodDescriptor(INDY_BOOTSTRAP_METHOD)
                             ),
                             method.getName(),

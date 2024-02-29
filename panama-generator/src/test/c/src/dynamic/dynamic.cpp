@@ -113,7 +113,7 @@ int current_error(int dummy, long dummy2) {
 }
 
 long set_error_no(int error, long returnValue) {
-    int* errno_location = __errno_location();
+   int* errno_location = &errno;
     *errno_location = error;
     return returnValue;
 }

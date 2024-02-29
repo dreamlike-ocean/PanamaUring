@@ -38,11 +38,11 @@ import java.util.function.Function;
 import static top.dreamlike.panama.generator.proxy.NativeLookup.primitiveMapToMemoryLayout;
 
 public class StructProxyGenerator {
-    private static final String MEMORY_FIELD = "_realMemory";
+    static final String MEMORY_FIELD = "_realMemory";
 
-    private static final String GENERATOR_FIELD = "_generator";
+    static final String GENERATOR_FIELD = "_generator";
 
-    private static final String LAYOUT_FIELD = "_layout";
+    static final String LAYOUT_FIELD = "_layout";
     BiConsumer<String, byte[]> classDataPeek;
 
     private static final Method REALMEMORY_METHOD;

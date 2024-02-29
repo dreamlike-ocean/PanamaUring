@@ -33,14 +33,6 @@ public class IndyGeneratorTest {
     }
 
     @Test
-    public void tmp() {
-        MemoryLayout layout = structProxyGenerator.extract(TestContainer.class);
-        MemorySegment allocated = Arena.global().allocate(layout);
-        TestContainer testContainer = structProxyGenerator.enhance(allocated);
-        testContainer.getPersonArray();
-    }
-
-    @Test
     public void testSimpleFunction() {
         int add = libPerson.add(1, 2);
         Assert.assertEquals(3, add);
