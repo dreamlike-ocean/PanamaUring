@@ -20,7 +20,7 @@
 
     <profiles>
         <profile>
-            <id>debug</id>
+            <id>generator-build-debug</id>
             <properties>
                 <debug>true</debug>
             </properties>
@@ -81,9 +81,11 @@
                             <executable>java</executable>
                             <workingDirectory>${project.basedir}</workingDirectory>
                             <arguments>
+                                <argument>--enable-preview</argument>
+                                <argument>--source ${java.version}</argument>
                                 <argument>BuildScript.java</argument>
                                 <argument>${project.basedir}</argument>
-                                <argument></argument>
+                                <argument>${debug}</argument>
                             </arguments>
                         </configuration>
                     </execution>

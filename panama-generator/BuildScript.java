@@ -8,7 +8,7 @@ public class BuildScript {
 
     private static final String conditionFilePath = "/src/main/java/top/dreamlike/panama/generator/marco/Condition.java";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Throwable {
         String buildPath = args[0];
         String debug = args[1];
         System.out.println(STR."Build path: \{buildPath} debug: \{debug}");

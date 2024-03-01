@@ -2,6 +2,7 @@
 package top.dreamlike.panama.generator.helper;
 
 import top.dreamlike.panama.generator.exception.StructException;
+import top.dreamlike.panama.generator.marco.Condition;
 import top.dreamlike.panama.generator.proxy.NativeArray;
 import top.dreamlike.panama.generator.proxy.NativeCallGenerator;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
@@ -150,8 +151,9 @@ public class NativeGeneratorHelper {
             size = Math.addExact(size, padding);
             layouts.add(paddingLayout(padding));
         }
-
-        System.out.println(STR."支持对齐的序列为\{layouts}, sizeof(layouts): \{size}, align: \{align}");
+        if (Condition.DEBUG){
+            System.out.println(STR."支持对齐的序列为\{layouts}, sizeof(layouts): \{size}, align: \{align}");
+        }
         return MemoryLayout.structLayout(layouts.toArray(MemoryLayout[]::new));
     }
 
