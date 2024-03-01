@@ -14,6 +14,7 @@ extern "C" {
     struct TestContainer {
         int size;
         Person single;
+        Person* ptr;
         union {
             int union_a;
             long union_b;

@@ -15,7 +15,17 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jmh.version>1.36</jmh.version>
+        <debug>false</debug>
     </properties>
+
+    <profiles>
+        <profile>
+            <id>debug</id>
+            <properties>
+                <debug>true</debug>
+            </properties>
+        </profile>
+    </profiles>
 
     <dependencies>
         <!-- https://mvnrepository.com/artifact/org.graalvm.sdk/nativeimage -->
@@ -61,6 +71,23 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
                 <executions>
+                    <execution>
+                        <id>exec-buildScript</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <arguments>
+                                <argument>BuildScript.java</argument>
+                                <argument>${project.basedir}</argument>
+                                <argument></argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
                     <execution>
                         <id>prepare-test-libPerson</id>
                         <phase>generate-test-sources</phase>

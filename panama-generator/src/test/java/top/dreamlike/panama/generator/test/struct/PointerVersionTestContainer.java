@@ -1,12 +1,16 @@
 package top.dreamlike.panama.generator.test.struct;
 
 import top.dreamlike.panama.generator.annotation.NativeArrayMark;
+import top.dreamlike.panama.generator.annotation.Pointer;
 
 import java.lang.foreign.MemorySegment;
 
 public class PointerVersionTestContainer {
     int size;
     Person single;
+
+    @Pointer
+    Person ptr;
 
     TestContainer.UnionStruct unionStruct;
 

@@ -30,6 +30,7 @@ TestContainer* initContainer(int size, Person* person, long unionValue) {
     p->size = size;
     p->single = *person;
     p->union_b = unionValue;
+    p->ptr = person;
     for(auto & i : p->personArray) {
         i = *person;
     }

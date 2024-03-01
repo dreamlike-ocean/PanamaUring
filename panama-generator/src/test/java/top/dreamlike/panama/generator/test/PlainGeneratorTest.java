@@ -103,6 +103,20 @@ public class PlainGeneratorTest {
             Assert.assertEquals(targetPersonN, n);
         }
 
+        int newA = 1;
+
+        //_______________写入一整块测试___________________________
+        MemorySegment newChunk = Arena.global().allocate(personSizeof, 3);
+        NativeArray<Person> newChunkPersonArray = new NativeArray<>(structProxyGenerator, newChunk, Person.class);
+        newChunkPersonArray.forEach(p -> p.setA(newA));
+        initContainer.setPersonArray(newChunkPersonArray);
+        NativeArray<Person> chunkPersonArrayInStruct = initContainer.getPersonArray();
+        MemorySegment chunkPersonArrayInStructMemorySegment = chunkPersonArrayInStruct.realMemory();
+        Assert.assertEquals(personArray.realMemory().address(), chunkPersonArrayInStructMemorySegment.address());
+        for (Person p : chunkPersonArrayInStruct) {
+            Assert.assertEquals(p.getA(), newA);
+        }
+
         personArray = initContainer.getArrayButPointer();
         Assert.assertEquals(5, personArray.size());
         for (Person p : personArray) {
@@ -110,6 +124,22 @@ public class PlainGeneratorTest {
             Assert.assertEquals(targetPersonA, a);
             long n = p.getN();
             Assert.assertEquals(targetPersonN, n);
+        }
+        //_______________写入ptr测试___________________________
+        MemorySegment oldPtr = personArray.realMemory();
+        MemorySegment newPtr = Arena.global().allocate(personSizeof, 5);
+        NativeArray<Person> newPersonArray = new NativeArray<>(structProxyGenerator, newPtr, Person.class);
+        initContainer.setArrayButPointer(newPersonArray);
+        NativeArray<Person> afterReplace = initContainer.getArrayButPointer();
+        Assert.assertEquals(newPtr.address(), afterReplace.realMemory().address());
+
+        for (Person newPerson : afterReplace) {
+            newPerson.setA(newA);
+        }
+
+        for (Person newPerson : afterReplace) {
+            int a = newPerson.getA();
+            Assert.assertEquals(a, newA);
         }
     }
 
@@ -183,6 +213,39 @@ public class PlainGeneratorTest {
             long n = p.getN();
             Assert.assertEquals(targetPersonN, n);
         }
+    }
+
+    @Test
+    public void testPtrField() {
+        MemoryLayout layout = structProxyGenerator.extract(PointerVersionTestContainer.class);
+        Assert.assertEquals(libPerson.testContainerSize(), layout.byteSize());
+
+        MemoryLayout testContainerLayout = structProxyGenerator.extract(TestContainer.class);
+        Assert.assertEquals(libPerson.testContainerSize(), testContainerLayout.byteSize());
+
+        MemoryLayout personSizeof = structProxyGenerator.extract(Person.class);
+        MemorySegment personInMemory = Arena.global().allocate(personSizeof);
+        Person person = structProxyGenerator.enhance(Person.class, personInMemory);
+        long targetPersonN = 1L;
+        int targetPersonA = 1000;
+        person.setN(targetPersonN);
+        person.setA(targetPersonA);
+
+        int testContainerSize = 5;
+        int testContainerUnionValue = 20;
+        TestContainer initContainer = libPerson.initContainer(testContainerSize, person, testContainerUnionValue);
+
+        Person ptr = initContainer.getPtr();
+        Assert.assertEquals(StructProxyGenerator.findMemorySegment(person).address(), StructProxyGenerator.findMemorySegment(ptr).address());
+        Assert.assertEquals(targetPersonA, ptr.getA());
+
+
+        MemorySegment newPersonInMemory = Arena.global().allocate(personSizeof);
+        Person newPerson = structProxyGenerator.enhance(Person.class, newPersonInMemory);
+        newPerson.setA(123);
+        initContainer.setPtr(newPerson);
+        Assert.assertEquals(123, initContainer.getPtr().getA());
+
     }
 
 

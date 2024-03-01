@@ -1,3 +1,4 @@
+
 package top.dreamlike.panama.generator.helper;
 
 import top.dreamlike.panama.generator.exception.StructException;
@@ -8,6 +9,7 @@ import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.*;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -52,6 +54,10 @@ public class NativeGeneratorHelper {
 
     public static final MethodHandle NATIVE_ARRAY_CTOR;
 
+    public static final Method SET_PTR;
+
+    public static final Method OVER_WRITE_SUB_ELEMENT;
+
     static {
         try {
             FETCH_CURRENT_NATIVE_CALL_GENERATOR = NativeGeneratorHelper.class.getMethod("currentNativeCallGenerator");
@@ -62,7 +68,7 @@ public class NativeGeneratorHelper {
             FETCH_CURRENT_STRUCT_GENERATOR_GENERATOR = NativeGeneratorHelper.class.getMethod("currentStructGenerator");
             LOAD_SO = NativeCallGenerator.class.getMethod("loadSo", Class.class);
             FETCH_STRUCT_PROXY_GENERATOR = NativeStructEnhanceMark.class.getMethod("fetchStructProxyGenerator");
-            REAL_MEMORY =  NativeStructEnhanceMark.class.getMethod("realMemory");
+            REAL_MEMORY = NativeStructEnhanceMark.class.getMethod("realMemory");
             REBIND_MEMORY = NativeStructEnhanceMark.class.getMethod("rebind", MemorySegment.class);
             GET_ADDRESS_FROM_MEMORY_SEGMENT = MemorySegment.class.getMethod("get", AddressLayout.class, long.class);
             REINTERPRET = MemorySegment.class.getMethod("reinterpret", long.class);
@@ -70,6 +76,8 @@ public class NativeGeneratorHelper {
             ENHANCE = StructProxyGenerator.class.getMethod("enhance", Class.class, MemorySegment.class);
             TRANSFORM_OBJECT_TO_STRUCT_MH = MethodHandles.lookup().findStatic(NativeGeneratorHelper.class, "transToStruct", MethodType.methodType(MemorySegment.class, Object.class));
             NATIVE_ARRAY_CTOR = MethodHandles.lookup().findConstructor(NativeArray.class, MethodType.methodType(void.class, StructProxyGenerator.class, MemorySegment.class, Class.class));
+            SET_PTR = NativeGeneratorHelper.class.getMethod("setPtr", Object.class, long.class, Object.class);
+            OVER_WRITE_SUB_ELEMENT = NativeGeneratorHelper.class.getMethod("overwriteSubElement", Object.class, long.class, long.class, Object.class);
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -143,9 +151,10 @@ public class NativeGeneratorHelper {
             layouts.add(paddingLayout(padding));
         }
 
-        System.out.println(STR. "支持对齐的序列为\{ layouts }, sizeof(layouts): \{ size }, align: \{ align }" );
+        System.out.println(STR."支持对齐的序列为\{layouts}, sizeof(layouts): \{size}, align: \{align}");
         return MemoryLayout.structLayout(layouts.toArray(MemoryLayout[]::new));
     }
+
     public static Function<MemorySegment, Object> memoryBinder(MethodHandle methodHandle, MemoryLayout memoryLayout) throws Throwable {
         CallSite callSite = LambdaMetafactory.metafactory(
                 MethodHandles.lookup(),
@@ -179,4 +188,24 @@ public class NativeGeneratorHelper {
         );
         return (Supplier<Object>) callSite.getTarget().invoke();
     }
+
+    public static void setPtr(Object proxyStruct, long offset, Object newStructPtr) {
+        MemorySegment newPtr = transToStruct(newStructPtr);
+        MemorySegment struct = transToStruct(proxyStruct);
+        struct.set(ValueLayout.ADDRESS, offset, newPtr);
+    }
+
+    public static void overwriteSubElement(Object proxyStruct, long offset, long size, Object newStruct) {
+        MemorySegment newStructMemory = transToStruct(newStruct);
+        if (newStructMemory.byteSize() != size) {
+            throw new StructException("newStruct size must greater than old!");
+        }
+        MemorySegment struct = transToStruct(proxyStruct);
+        MemorySegment.copy(
+                newStructMemory, ValueLayout.JAVA_BYTE, 0,
+                struct, ValueLayout.JAVA_BYTE, offset,
+                size
+        );
+    }
 }
+
