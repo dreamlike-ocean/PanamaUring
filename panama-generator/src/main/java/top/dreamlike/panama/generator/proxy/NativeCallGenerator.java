@@ -520,7 +520,6 @@ public class NativeCallGenerator {
     }
 
     public static void loadSo(Class<?> interfaceClass) throws IOException {
-        System.out.println(interfaceClass);
         ClassLoader classLoader = interfaceClass.getClassLoader();
         CLib annotation = interfaceClass.getAnnotation(CLib.class);
         if (annotation == null || annotation.value().isBlank()) return;

@@ -143,7 +143,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                     nativeCallInterfaceNames.add(new NativeProxyPair(runtimeClass.getName(), nativeCallGenerator.generateProxyClassName(runtimeClass)));
                 } else {
                     structProxyGenerator.enhance(runtimeClass);
-                    structProxyNames.add(new NativeProxyPair(runtimeClass.getName(), structProxyGenerator.generatorProxyClassName(runtimeClass)));
+                    structProxyNames.add(new NativeProxyPair(runtimeClass.getName(), structProxyGenerator.generateProxyClassName(runtimeClass)));
                 }
             }
             if (roundEnv.processingOver() && enableGraalFeature) {

@@ -1,9 +1,9 @@
 package top.dreamlike.panama.generator.proxy;
 
-import com.sun.tools.javac.Main;
 import top.dreamlike.panama.generator.annotation.NativeArrayMark;
 import top.dreamlike.panama.generator.annotation.Pointer;
 import top.dreamlike.panama.generator.helper.NativeGeneratorHelper;
+import top.dreamlike.panama.generator.marco.Condition;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
@@ -14,6 +14,9 @@ import java.lang.reflect.Method;
 
 public class InvokeDynamicFactory {
     public static CallSite nativeCallIndyFactory(MethodHandles.Lookup lookup, String methodName, MethodType methodType, Object... args) throws Throwable {
+        if (Condition.DEBUG) {
+            System.out.println(STR."call nativeCallIndyFactory lookup: \{lookup} methodName: \{methodName} methodType: \{methodType}");
+        }
         //这里的lookup是当前的代理类
         Class<?> lookupClass = lookup.lookupClass();
         NativeCallGenerator generator = ((NativeCallGenerator) lookup.findStaticVarHandle(lookupClass, NativeCallGenerator.GENERATOR_FIELD_NAME, NativeCallGenerator.class).get());

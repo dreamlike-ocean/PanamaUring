@@ -14,6 +14,7 @@ import top.dreamlike.panama.generator.test.struct.TestContainer;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.invoke.VarHandle;
 
 public class PlainGeneratorTest {
 
@@ -216,7 +217,7 @@ public class PlainGeneratorTest {
     }
 
     @Test
-    public void testPtrField() {
+    public void testPtrField() throws NoSuchFieldException {
         MemoryLayout layout = structProxyGenerator.extract(PointerVersionTestContainer.class);
         Assert.assertEquals(libPerson.testContainerSize(), layout.byteSize());
 
@@ -246,6 +247,27 @@ public class PlainGeneratorTest {
         initContainer.setPtr(newPerson);
         Assert.assertEquals(123, initContainer.getPtr().getA());
 
+        VarHandle varHandle = structProxyGenerator.findFieldVarHandle(PointerVersionTestContainer.class.getDeclaredField("ptr"));
+        MemorySegment ptrInStruct = (MemorySegment) varHandle.get(StructProxyGenerator.findMemorySegment(initContainer));
+        Assert.assertEquals(ptrInStruct.address(), newPersonInMemory.address());
+
+        varHandle.set(StructProxyGenerator.findMemorySegment(initContainer), StructProxyGenerator.findMemorySegment(ptr));
+        Assert.assertEquals(targetPersonA,initContainer.getPtr().getA());
+
+    }
+
+    @Test
+    public void testVarHandle() throws NoSuchFieldException {
+        MemoryLayout layout = structProxyGenerator.extract(Person.class);
+        MemorySegment personCStruct = Arena.global().allocate(layout);
+        Person p = structProxyGenerator.enhance(personCStruct);
+        p.setA(123);
+        VarHandle varHandle = structProxyGenerator.findFieldVarHandle(Person.class.getDeclaredField("a"));
+        int i = (int) varHandle.get(personCStruct);
+        Assert.assertEquals(123,i);
+        varHandle.set(personCStruct, 456);
+        Assert.assertEquals(456, p.getA());
+        varHandle.toMethodHandle(VarHandle.AccessMode.GET);
     }
 
 

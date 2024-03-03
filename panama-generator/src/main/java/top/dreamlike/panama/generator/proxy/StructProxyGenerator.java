@@ -28,6 +28,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -85,7 +86,7 @@ public class StructProxyGenerator {
         if (o instanceof NativeStructEnhanceMark mark) {
             return mark.realMemory();
         }
-        return MemorySegment.NULL;
+        throw new StructException("before findMemorySegment, you should enhance it");
     }
 
     @SuppressWarnings("unchecked")
@@ -220,7 +221,7 @@ public class StructProxyGenerator {
         try {
             MemoryLayout structMemoryLayout = extract(targetClass);
             NativeGeneratorHelper.STRUCT_CONTEXT.set(new StructProxyContext(this, structMemoryLayout));
-            String className = generatorProxyClassName(targetClass);
+            String className = generateProxyClassName(targetClass);
             MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(targetClass, MethodHandles.lookup());
             Class<?> aClass = null;
             try {
@@ -296,8 +297,28 @@ public class StructProxyGenerator {
         this.use_lmf = use_lmf;
     }
 
-    String generatorProxyClassName(Class targetClass) {
+    public VarHandle findFieldVarHandle(Field field) {
+        Class<?> declaringClass = field.getDeclaringClass();
+        MemoryLayout layout = layoutCaches.get(declaringClass);
+        if (layout == null) {
+            throw new StructException(STR."you should enhance \{declaringClass} first");
+        }
+        Class<?> type = field.getType();
+        if (type.isPrimitive()
+                || field.getAnnotation(Pointer.class) != null
+                || Optional.ofNullable( field.getAnnotation(NativeArrayMark.class)).map(NativeArrayMark::asPointer).orElse(false)
+        ) {
+            return MethodHandles.insertCoordinates(layout.varHandle(MemoryLayout.PathElement.groupElement(field.getName())), 1, 0);
+        }
+        throw new StructException(STR."only support primitive type or pointer type");
+    }
+
+    static String generateProxyClassName(Class targetClass) {
         return STR."\{targetClass.getName()}_native_struct_proxy";
+    }
+
+    static String generateVarHandleName(Field field) {
+        return STR."\{field.getName()}_native_struct_vh";
     }
 
     private Consumer<CodeBuilder> implementStructMarkInterface(ClassBuilder cb, ClassDesc thisClass) {
@@ -352,7 +373,7 @@ public class StructProxyGenerator {
     }
 
     private Consumer<CodeBuilder> initVarHandleBlock(ClassBuilder cb, ClassDesc thisClass, Field field) {
-        String varHandleFieldName = STR."\{field.getName()}_native_struct_vh";
+        String varHandleFieldName = generateVarHandleName(field);
         cb.withField(varHandleFieldName, ClassFileHelper.toDesc(VarHandle.class), AccessFlags.ofField(AccessFlag.FINAL, AccessFlag.STATIC, AccessFlag.PUBLIC).flagsMask());
         return (it) -> {
             it.getstatic(thisClass, LAYOUT_FIELD, ClassFileHelper.toDesc(MemoryLayout.class));
