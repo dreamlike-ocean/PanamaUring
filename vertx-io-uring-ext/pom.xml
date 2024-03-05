@@ -39,7 +39,7 @@
         </dependency>
         <dependency>
             <groupId>io.github.dreamlike-ocean</groupId>
-            <artifactId>panama-uring-linux-x86_64</artifactId>
+            <artifactId>panama-uring</artifactId>
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>

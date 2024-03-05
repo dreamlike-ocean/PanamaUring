@@ -23,7 +23,7 @@ public class UringSignalPipe implements AutoCloseable {
     MemorySegment signalBuffer;
 
     UringSignalPipe(IOUring uring) {
-        MemorySegment pipes = uring.allocator.allocateArray(ValueLayout.JAVA_INT, 2);
+        MemorySegment pipes = uring.allocator.allocate(ValueLayout.JAVA_INT, 2);
         int i = pipe(pipes);
         if (i == -1) {
             System.out.println("error");

@@ -38,7 +38,7 @@ class constants$5 {
     static final MethodHandle ntohs$MH = RuntimeHelper.downcallHandle(
         "ntohs",
             constants$5.ntohs$FUNC,
-            Linker.Option.isTrivial()
+            Linker.Option.critical(false)
     );
     static final FunctionDescriptor htonl$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
         CType.C_INT$LAYOUT
@@ -46,7 +46,7 @@ class constants$5 {
     static final MethodHandle htonl$MH = RuntimeHelper.downcallHandle(
         "htonl",
             constants$5.htonl$FUNC,
-            Linker.Option.isTrivial()
+            Linker.Option.critical(false)
     );
     static final FunctionDescriptor htons$FUNC = FunctionDescriptor.of(CType.C_SHORT$LAYOUT,
         CType.C_SHORT$LAYOUT

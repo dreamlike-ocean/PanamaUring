@@ -78,7 +78,7 @@ public class WatchService {
 
     public int register(String absolutePath, int mask) {
         try (Arena session = Arena.ofConfined()) {
-            MemorySegment file = session.allocateUtf8String(absolutePath);
+            MemorySegment file = session.allocateFrom(absolutePath);
             int res = inotify_add_watch(ifd, file, mask);
             if (res <= 0) {
                 throw new NativeCallException(NativeHelper.getNowError());

@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>panama-uring-linux-x86_64</artifactId>
+    <artifactId>panama-uring</artifactId>
     <version>${panama.version}</version>
 
     <properties>
@@ -18,6 +18,10 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>io.github.dreamlike-ocean</groupId>
+            <artifactId>panama-generator</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.smallrye.reactive</groupId>
             <artifactId>mutiny</artifactId>

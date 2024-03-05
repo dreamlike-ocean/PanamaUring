@@ -39,7 +39,7 @@ public class AsyncFile extends PlainAsyncFd {
     public AsyncFile(String path, IOUringEventLoop eventLoop, int ops) {
         super(eventLoop);
         try (Arena allocator = Arena.ofConfined()) {
-            MemorySegment filePath = allocator.allocateUtf8String(path);
+            MemorySegment filePath = allocator.allocateFrom(path);
             fd = open(filePath, ops);
             if (fd < 0) {
                 throw new IllegalStateException("res open error:" + NativeHelper.getNowError());

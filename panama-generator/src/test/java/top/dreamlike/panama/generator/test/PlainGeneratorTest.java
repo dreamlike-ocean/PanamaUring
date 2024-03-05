@@ -15,6 +15,8 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class PlainGeneratorTest {
 

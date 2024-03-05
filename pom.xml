@@ -14,7 +14,7 @@
     <properties>
         <java.version>22</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <panama.version>3.0.2</panama.version>
+        <panama.version>0.0.1</panama.version>
         <vertx.version>4.3.7</vertx.version>
         <vertx-async.version>3.0.0</vertx-async.version>
         <native-lib>3.0.0</native-lib>
@@ -147,7 +147,7 @@
             </dependency>
             <dependency>
                 <groupId>io.github.dreamlike-ocean</groupId>
-                <artifactId>panama-uring-linux-x86_64</artifactId>
+                <artifactId>panama-uring</artifactId>
                 <version>${panama.version}</version>
             </dependency>
 

@@ -111,7 +111,7 @@ public class NativeHelper {
             MemorySegment serverAddr = sockaddr_in.allocate(session);
             bzero(serverAddr, sockaddr_in.sizeof());
             sockaddr_in.sin_family$set(serverAddr, (short) AF_INET());
-            inet_pton(AF_INET(), session.allocateUtf8String(host), sockaddr_in.sin_addr$slice(serverAddr));
+            inet_pton(AF_INET(), session.allocateFrom(host), sockaddr_in.sin_addr$slice(serverAddr));
             sockaddr_in.sin_port$set(serverAddr, htons((short) port));
             int bind = bind(socketFd, serverAddr, (int) sockaddr_in.sizeof());
             if (bind == -1) {
@@ -143,7 +143,7 @@ public class NativeHelper {
         bzero(sockaddrSegement, sockaddr_in6.sizeof());
         sockaddr_in6.sin6_family$set(sockaddrSegement, (short) AF_INET6());
         sockaddr_in6.sin6_port$set(sockaddrSegement, htons((short) port));
-        int res = inet_pton(AF_INET6(), session.allocateUtf8String(ipv6), sockaddr_in6.sin6_addr$slice(sockaddrSegement));
+        int res = inet_pton(AF_INET6(), session.allocateFrom(ipv6), sockaddr_in6.sin6_addr$slice(sockaddrSegement));
         if (res < 0) {
             throw new IllegalStateException("inet_pton fail!,err:" + getNowError());
         }
@@ -155,7 +155,7 @@ public class NativeHelper {
         bzero(sockaddrSegement, sockaddr_in.sizeof());
         sockaddr_in.sin_family$set(sockaddrSegement, (short) AF_INET());
         sockaddr_in.sin_port$set(sockaddrSegement, htons((short) port));
-        int res = inet_pton(AF_INET(), session.allocateUtf8String(ipv4), sockaddr_in.sin_addr$slice(sockaddrSegement));
+        int res = inet_pton(AF_INET(), session.allocateFrom(ipv4), sockaddr_in.sin_addr$slice(sockaddrSegement));
         if (res < 0) {
             throw new IllegalStateException("inet_pton fail!,err:" + getNowError());
         }

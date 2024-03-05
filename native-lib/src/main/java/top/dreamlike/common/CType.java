@@ -23,6 +23,6 @@ public class CType {
 
     public static final OfLong C_SIZE_t$LAYOUT = C_SSIZE_t$LAYOUT;
 
-    public static final AddressLayout POINTER = ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE));
+    public static final AddressLayout POINTER = ValueLayout.ADDRESS;
 
 }

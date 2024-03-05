@@ -59,7 +59,7 @@ class constants$27 {
     static final MethodHandle io_uring_cqe_seen$MH = RuntimeHelper.downcallHandle(
         "io_uring_cqe_seen",
             constants$27.io_uring_cqe_seen$FUNC,
-            Linker.Option.isTrivial()
+            Linker.Option.critical(true)
     );
 }
 

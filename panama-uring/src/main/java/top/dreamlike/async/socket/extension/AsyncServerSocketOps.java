@@ -1,6 +1,6 @@
 package top.dreamlike.async.socket.extension;
 
-import top.dreamlike.async.socket.AsyncSocket;
+import top.dreamlike.async.AsyncSocket;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;

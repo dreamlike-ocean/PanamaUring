@@ -23,7 +23,7 @@ public class Epoll implements AutoCloseable{
 
     public Epoll() {
         allocator = Arena.ofShared();
-        events = allocator.allocateArray(epoll_event.$LAYOUT(), 1024);
+        events = allocator.allocate(epoll_event.$LAYOUT(), 1024);
         epollFd = epoll_create1(0);
         if (epollFd == -1) {
             throw new IllegalStateException("epoll create fail");
@@ -36,7 +36,7 @@ public class Epoll implements AutoCloseable{
             throw new IllegalStateException("epoll create fail");
         }
         allocator = Arena.ofShared();
-        events = allocator.allocateArray(epoll_event.$LAYOUT(), 1024);
+        events = allocator.allocate(epoll_event.$LAYOUT(), 1024);
         epollFd = epollFd;
     }
 

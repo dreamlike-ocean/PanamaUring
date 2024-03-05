@@ -1,4 +1,4 @@
-package top.dreamlike.async.socket;
+package top.dreamlike.async;
 
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -185,7 +185,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
         checkStateBeforeSingleRecv();
         CompletableFuture<Integer> completableFuture = new CompletableFuture<>();
         Arena malloc = Arena.ofShared();
-        MemorySegment buf = malloc.allocateArray(JAVA_BYTE, buffer.length);
+        MemorySegment buf = malloc.allocate(JAVA_BYTE, buffer.length);
         eventLoop.runOnEventLoop(() -> {
             boolean res = ring.prep_recv(fd, buf, completableFuture::complete);
             if (!res) {
@@ -212,7 +212,7 @@ public non-sealed class AsyncSocket extends AsyncFd {
         return Uni.createFrom()
                 .emitter(ue -> eventLoop.runOnEventLoop(() -> {
                     Arena malloc = Arena.ofShared();
-                    MemorySegment buf = malloc.allocateArray(JAVA_BYTE, buffer.length);
+                    MemorySegment buf = malloc.allocate(JAVA_BYTE, buffer.length);
                     AtomicBoolean end = new AtomicBoolean(false);
                     long userData = ring.prep_recv_and_get_user_data(fd, buf, i -> {
                         if (!end.compareAndSet(false, true)) {

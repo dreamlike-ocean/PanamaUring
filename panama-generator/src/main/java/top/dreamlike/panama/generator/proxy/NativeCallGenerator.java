@@ -112,7 +112,7 @@ public class NativeCallGenerator {
 
     private static boolean needTransToPointer(Parameter parameter) {
         Class<?> typeClass = parameter.getType();
-        return typeClass.isAssignableFrom(MemorySegment.class)
+        return MemorySegment.class.isAssignableFrom(typeClass)
                 || NativeAddressable.class.isAssignableFrom(typeClass)
                 || (!typeClass.isPrimitive() && parameter.getAnnotation(Pointer.class) != null);
     }

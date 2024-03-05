@@ -2,7 +2,7 @@ package top.dreamlike.epoll.async;
 
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import top.dreamlike.async.socket.AsyncSocket;
+import top.dreamlike.async.AsyncSocket;
 import top.dreamlike.eventloop.EpollEventLoop;
 import top.dreamlike.eventloop.EpollUringEventLoop;
 import top.dreamlike.eventloop.IOUringEventLoop;

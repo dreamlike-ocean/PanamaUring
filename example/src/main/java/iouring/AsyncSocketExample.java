@@ -2,7 +2,7 @@ package iouring;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.net.SocketAddress;
-import top.dreamlike.async.socket.AsyncSocket;
+import top.dreamlike.async.AsyncSocket;
 import top.dreamlike.eventloop.IOUringEventLoop;
 
 import java.util.concurrent.CountDownLatch;

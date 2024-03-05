@@ -27,7 +27,7 @@ class constants$36 {
     static final MethodHandle io_uring_peek_cqe$MH = RuntimeHelper.downcallHandle(
         "io_uring_peek_cqe",
             constants$36.io_uring_peek_cqe$FUNC,
-            Linker.Option.isTrivial()
+            Linker.Option.critical(false)
     );
     static final FunctionDescriptor io_uring_wait_cqe$FUNC = FunctionDescriptor.of(CType.C_INT$LAYOUT,
             CType.C_POINTER$LAYOUT,
