@@ -549,6 +549,13 @@ public class IoUringSqe {
             this.optval = optval;
         }
 
+        public MemorySegment getCmd() {
+            return cmd;
+        }
+
+        public void setCmd(MemorySegment cmd) {
+            this.cmd = cmd;
+        }
 
 
         public static class Addr3 {
