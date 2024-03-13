@@ -17,7 +17,7 @@ public class PipeExample {
             AsyncPipe pipe = new AsyncPipe(eventLoop);
             //offset 没有意义
             byte[] array = "hello world".getBytes();
-            MemorySegment allocate = session.allocateArray(JAVA_BYTE, array.length);
+            MemorySegment allocate = session.allocate(JAVA_BYTE, array.length);
             pipe.readUnsafe(2115616, allocate)
                     .thenAccept(i -> {
                         if (i < 0) {

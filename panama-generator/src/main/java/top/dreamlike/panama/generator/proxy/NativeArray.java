@@ -12,7 +12,7 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-public class NativeArray<T> implements NativeStructEnhanceMark, List<T> {
+public final class NativeArray<T> implements NativeStructEnhanceMark, List<T> {
 
     private MemorySegment segment;
 

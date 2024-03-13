@@ -1,19 +1,13 @@
 import org.junit.Assert;
 import org.junit.Test;
-import top.dreamlike.common.CType;
 import top.dreamlike.panama.nativelib.Instance;
 import top.dreamlike.panama.nativelib.Libc;
 import top.dreamlike.panama.nativelib.helper.DebugHelper;
-import top.dreamlike.panama.nativelib.struct.SocketAddrIn;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.foreign.Arena;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.UUID;
 
 public class LibcTest {
@@ -43,13 +37,6 @@ public class LibcTest {
             String readbuf = DebugHelper.bufToString(readBuf, string.length());
             Assert.assertEquals(string, readbuf);
         }
-    }
-
-    @Test
-    public void test() {
-        MemoryLayout layout = Instance.STRUCT_PROXY_GENERATOR.extract(SocketAddrIn.class);
-        System.out.println(layout.byteSize());
-        System.out.println(layout);
     }
 
 }

@@ -104,13 +104,13 @@ public class NativeGeneratorHelper {
     }
 
     public static MemorySegment transToStruct(Object o) {
-        if (o instanceof NativeAddressable nativeAddressable) {
-            return nativeAddressable.realMemory();
-        }
-        if (o instanceof MemorySegment memorySegment) {
-            return memorySegment;
-        }
-        throw new StructException(STR."\{o.getClass()} is not struct,pleace call StructProxyGenerator::enhance before calling native function");
+        return switch (o) {
+            case null -> MemorySegment.NULL;
+            case NativeAddressable nativeAddressable -> nativeAddressable.realMemory();
+            case MemorySegment memorySegment -> memorySegment;
+            default ->
+                    throw new StructException(STR."\{o.getClass()} is not struct,pleace call StructProxyGenerator::enhance before calling native function");
+        };
     }
 
 

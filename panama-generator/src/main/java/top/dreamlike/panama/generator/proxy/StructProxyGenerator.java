@@ -183,7 +183,7 @@ public class StructProxyGenerator {
                 list.add(layout);
                 continue;
             }
-            if (field.getAnnotation(Pointer.class) != null) {
+            if (field.getAnnotation(Pointer.class) != null || field.getType() == NativeArrayPointer.class) {
                 list.add(ValueLayout.ADDRESS.withName(field.getName()));
                 continue;
             }

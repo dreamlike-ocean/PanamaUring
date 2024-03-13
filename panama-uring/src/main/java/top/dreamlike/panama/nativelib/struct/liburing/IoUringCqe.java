@@ -1,4 +1,4 @@
-package top.dreamlike.panama.nativelib.struct;
+package top.dreamlike.panama.nativelib.struct.liburing;
 
 import top.dreamlike.panama.generator.annotation.NativeArrayMark;
 
