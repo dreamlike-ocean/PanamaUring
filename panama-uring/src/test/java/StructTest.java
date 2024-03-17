@@ -1,13 +1,18 @@
 import org.junit.Assert;
 import org.junit.Test;
+import top.dreamlike.common.CType;
 import top.dreamlike.panama.nativelib.Instance;
 import top.dreamlike.panama.nativelib.struct.sigset.SigsetType;
+import top.dreamlike.panama.nativelib.struct.socket.MsgHdr;
 import top.dreamlike.panama.nativelib.struct.time.KernelTime64Type;
 
+import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.StructLayout;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.*;
 
 public class StructTest {
 
@@ -30,5 +35,26 @@ public class StructTest {
 
         Assert.assertEquals(__kernel_timespec_layout, time64TypeLayout);
         Assert.assertEquals(__kernel_timespec_layout.byteSize(), time64TypeLayout.byteSize());
+    }
+
+    @Test
+    public void testMsgHdr() {
+        MemoryLayout layout = Instance.STRUCT_PROXY_GENERATOR.extract(MsgHdr.class);
+        final GroupLayout generatedLayout = MemoryLayout.structLayout(
+                ValueLayout.ADDRESS.withName("msg_name"),
+                JAVA_INT.withName("msg_namelen"),
+                MemoryLayout.paddingLayout(4),
+
+                ADDRESS.withName("msg_iov"),
+                JAVA_LONG.withName("msg_iovlen"),
+
+                ADDRESS.withName("msg_control"),
+                JAVA_LONG.withName("msg_controllen"),
+
+                JAVA_INT.withName("msg_flags"),
+                MemoryLayout.paddingLayout(4)
+        );
+        Assert.assertEquals(generatedLayout, layout);
+        Assert.assertEquals(generatedLayout.byteSize(), layout.byteSize());
     }
 }

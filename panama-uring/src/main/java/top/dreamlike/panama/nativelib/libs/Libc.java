@@ -1,4 +1,4 @@
-package top.dreamlike.panama.nativelib;
+package top.dreamlike.panama.nativelib.libs;
 
 import java.lang.foreign.MemorySegment;
 
@@ -12,8 +12,6 @@ public interface Libc {
     int close(int fd);
 
     int socket(int domain, int type, int protocol);
-
-
 
 
     interface Fcntl {
@@ -32,6 +30,11 @@ public interface Libc {
         static final int O_NOFOLLOW = 131072;
         static final int O_CLOEXEC = 524288;
         static final int O_PATH = 2097152;
+
+        static final int SPLICE_F_MOVE = 1;
+        static final int SPLICE_F_NONBLOCK = 2;
+        static final int SPLICE_F_MORE = 4;
+        static final int SPLICE_F_GIFT = 8;
     }
 
     interface Socket {

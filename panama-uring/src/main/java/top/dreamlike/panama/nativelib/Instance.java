@@ -1,6 +1,8 @@
 package top.dreamlike.panama.nativelib;
 import top.dreamlike.panama.generator.proxy.NativeCallGenerator;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
+import top.dreamlike.panama.nativelib.libs.Libc;
+
 public class Instance {
 
     public static final StructProxyGenerator STRUCT_PROXY_GENERATOR = new StructProxyGenerator();

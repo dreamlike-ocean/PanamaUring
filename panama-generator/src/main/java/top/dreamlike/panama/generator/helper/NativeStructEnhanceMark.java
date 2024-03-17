@@ -6,9 +6,11 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.reflect.Method;
 
-public interface NativeStructEnhanceMark extends NativeAddressable {
+public interface NativeStructEnhanceMark {
 
     public StructProxyGenerator fetchStructProxyGenerator();
+
+    MemorySegment realMemory();
 
     public default long sizeof() {
         return layout().byteSize();

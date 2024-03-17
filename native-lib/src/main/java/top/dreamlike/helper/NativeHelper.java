@@ -295,26 +295,29 @@ public class NativeHelper {
 
 
     public static void loadSo(String fileName) {
-        try {
-
-            if (!NativeHelper.isLinux() || !NativeHelper.isX86_64()) {
-                throw new NativeCallException("please check os version(need linux >= 5.10) and CPU Arch(need X86_64)");
-            }
-
-            InputStream is = NativeHelper.class.getResourceAsStream(STR."/\{fileName}");
-            File file = File.createTempFile(fileName, ".so");
-            OutputStream os = new FileOutputStream(file);
-            byte[] buffer = new byte[1024];
-            int length;
-            while ((length = is.read(buffer)) != -1) {
-                os.write(buffer, 0, length);
-            }
-            is.close();
-            os.close();
-            System.load(file.getAbsolutePath());
-            file.deleteOnExit();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        //todo 移除
+        return;
+//        try {
+//
+//            if (!NativeHelper.isLinux()) {
+//                throw new NativeCallException("please check os version(need linux >= 5.10) and CPU Arch(need X86_64)");
+//            }
+//
+//
+//            InputStream is = NativeHelper.class.getResourceAsStream(STR."/\{fileName}");
+//            File file = File.createTempFile(fileName, ".so");
+//            OutputStream os = new FileOutputStream(file);
+//            byte[] buffer = new byte[1024];
+//            int length;
+//            while ((length = is.read(buffer)) != -1) {
+//                os.write(buffer, 0, length);
+//            }
+//            is.close();
+//            os.close();
+//            System.load(file.getAbsolutePath());
+//            file.deleteOnExit();
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
     }
 }

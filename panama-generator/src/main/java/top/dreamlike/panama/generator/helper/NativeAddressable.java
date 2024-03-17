@@ -8,5 +8,5 @@ public interface NativeAddressable {
         return () -> segment;
     }
 
-    MemorySegment realMemory();
+    MemorySegment address();
 }

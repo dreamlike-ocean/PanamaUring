@@ -15,7 +15,6 @@ import java.lang.invoke.*;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -96,6 +95,9 @@ public class NativeGeneratorHelper {
     }
 
     public static MemorySegment deReferencePointer(MemorySegment pointer, long sizeof) {
+        if (pointer.address() == MemorySegment.NULL.address()){
+            return pointer;
+        }
         return pointer.reinterpret(sizeof);
     }
 
@@ -106,7 +108,8 @@ public class NativeGeneratorHelper {
     public static MemorySegment transToStruct(Object o) {
         return switch (o) {
             case null -> MemorySegment.NULL;
-            case NativeAddressable nativeAddressable -> nativeAddressable.realMemory();
+            case NativeAddressable nativeAddressable -> nativeAddressable.address();
+            case NativeStructEnhanceMark structEnhanceMark -> structEnhanceMark.realMemory();
             case MemorySegment memorySegment -> memorySegment;
             default ->
                     throw new StructException(STR."\{o.getClass()} is not struct,pleace call StructProxyGenerator::enhance before calling native function");

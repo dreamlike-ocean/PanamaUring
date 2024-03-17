@@ -57,7 +57,7 @@ public class StructProxyGenerator {
     static {
         try {
             ENHANCE_MH = MethodHandles.lookup().findVirtual(StructProxyGenerator.class, "enhance", MethodType.methodType(Object.class, Class.class, MemorySegment.class));
-            REALMEMORY_METHOD = NativeAddressable.class.getMethod("realMemory");
+            REALMEMORY_METHOD = NativeStructEnhanceMark.class.getMethod("realMemory");
             GENERATOR_VARHANDLE = StructProxyGenerator.class.getMethod("generateVarHandle", MemoryLayout.class, String.class);
 //            NativeGeneratorHelper.fetchCurrentNativeStructGenerator = STRUCT_CONTEXT::get;
         } catch (NoSuchMethodException | IllegalAccessException e) {
@@ -101,7 +101,7 @@ public class StructProxyGenerator {
     }
 
     public static boolean isNativeStruct(Object o) {
-        return o instanceof NativeStructEnhanceMark;
+        return o instanceof NativeStructEnhanceMark || o instanceof NativeAddressable;
     }
 
     public static void rebind(Object proxyObject, MemorySegment memorySegment) {
@@ -118,6 +118,11 @@ public class StructProxyGenerator {
         if (t.isPrimitive()) {
             throw new IllegalArgumentException("only support not primitive type!");
         }
+
+        if (binder.address() == MemorySegment.NULL.address()) {
+            return null;
+        }
+
         try {
             return (T) ctorCaches.computeIfAbsent(t, this::enhance)
                     .apply(binder);

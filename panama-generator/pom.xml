@@ -81,8 +81,8 @@
                             <executable>java</executable>
                             <workingDirectory>${project.basedir}</workingDirectory>
                             <arguments>
-<!--                                <argument>&#45;&#45;enable-preview</argument>-->
-<!--                                <argument>&#45;&#45;source ${java.version}</argument>-->
+                                <argument>--enable-preview</argument>
+                                <argument>--source ${java.version}</argument>
                                 <argument>BuildScript.java</argument>
                                 <argument>${project.basedir}</argument>
                                 <argument>${debug}</argument>

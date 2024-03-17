@@ -3,8 +3,11 @@ package top.dreamlike.panama.nativelib.struct.liburing;
 import top.dreamlike.panama.generator.annotation.Alignment;
 import top.dreamlike.panama.generator.annotation.NativeArrayMark;
 import top.dreamlike.panama.generator.annotation.Union;
+import top.dreamlike.panama.generator.helper.NativeStructEnhanceMark;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.VarHandle;
 
 public class IoUringSqe {
     private byte opcode;
@@ -128,6 +131,125 @@ public class IoUringSqe {
     public void setAddr3Union(Addr3Union addr3Union) {
         this.addr3Union = addr3Union;
     }
+
+    public void setOffset(long offset) {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IOURING_SQE_OFFSET_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        varHandle.set(memory, 0, offset);
+    }
+
+    public long getOffset() {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IOURING_SQE_OFFSET_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        return (long) varHandle.get(memory, 0);
+    }
+
+    public void setAddr(long addr) {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_ADDR_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        varHandle.set(memory, 0, addr);
+    }
+
+    public long getAddr() {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_ADDR_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        return (long) varHandle.get(memory, 0);
+    }
+
+    public void setRwFlags(int rwFlags)  {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_RW_FLAGS_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        varHandle.set(memory, 0, rwFlags);
+    }
+
+    public int getRwFlags() {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_RW_FLAGS_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        return (int) varHandle.get(memory, 0);
+    }
+
+    public short getBufIndex() {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_BUF_INDEX_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        return (short) varHandle.get(memory, 0);
+    }
+
+    public void setBufIndex(short bufIndex) {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_BUF_INDEX_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        varHandle.set(memory, 0, bufIndex);
+    }
+
+    public int getFileIndex() {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_FILE_INDEX_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        return (int) varHandle.get(memory, 0);
+    }
+
+    public void setFileIndex(int fileIndex) {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_FILE_INDEX_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        varHandle.set(memory, 0, fileIndex);
+    }
+
+    public void setAddr3(long addr3) {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_ADDR3_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        varHandle.set(memory, 0, addr3);
+    }
+
+    public long getAddr3() {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_ADDR3_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        return (long) varHandle.get(memory, 0);
+    }
+
+    public void setPad2(long pad2) {
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        memory.set(ValueLayout.JAVA_LONG, IoUringConstant.AccessShortcuts.IO_URING_SQE__PAD2_OFFSET, pad2);
+    }
+
+    public long getPad2() {
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        return memory.get(ValueLayout.JAVA_LONG, IoUringConstant.AccessShortcuts.IO_URING_SQE__PAD2_OFFSET);
+    }
+
+    public long getSpliceOffIn() {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SPLICE_OFF_IN_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        return (long) varHandle.get(memory, 0);
+    }
+
+    public void setSpliceOffIn(long spliceOffIn) {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SPLICE_OFF_IN_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        varHandle.set(memory, 0, spliceOffIn);
+    }
+
+    public int getSpliceFdIn() {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SPLICE_FD_IN_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        return (int) varHandle.get(memory, 0);
+    }
+
+    public void setSpliceFdIn(int spliceFdIn) {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SPLICE_FD_IN_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        varHandle.set(memory, 0, spliceFdIn);
+    }
+
+    public int getSpliceFlags() {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SPLICE_FD_OUT_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        return (int) varHandle.get(memory, 0);
+    }
+
+    public void setSpliceFlags(int spliceFlags) {
+        VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SPLICE_FD_OUT_VARHANDLE;
+        MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
+        varHandle.set(memory, 0, spliceFlags);
+    }
+
 
 
 

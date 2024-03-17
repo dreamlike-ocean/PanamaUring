@@ -8,6 +8,7 @@ import top.dreamlike.panama.nativelib.struct.liburing.*;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 
 public class LiburingTest {
@@ -19,9 +20,12 @@ public class LiburingTest {
         Assert.assertEquals(io_uring_sqe_struct.layout.byteSize(), sqeLayout.byteSize());
         Assert.assertEquals(io_uring_sqe_struct.layout, sqeLayout);
 
+
         MemoryLayout cqeLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringCqe.class).withName("io_uring_cqe");
         Assert.assertEquals(io_uring_cqe_struct.layout.byteSize(), cqeLayout.byteSize());
         Assert.assertEquals(io_uring_cqe_struct.layout, cqeLayout);
+
+
         VarHandle handle = sqeLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("flagsUnion"),
                 MemoryLayout.PathElement.groupElement("rw_flags")
@@ -32,6 +36,23 @@ public class LiburingTest {
         IoUringSqe sqe = Instance.STRUCT_PROXY_GENERATOR.enhance(memorySegment);
         int rwFlags = sqe.getFlagsUnion().getRw_flags();
         Assert.assertEquals(flag, rwFlags);
+        sqe.setOffset(1024L);
+        Assert.assertEquals(1024L, sqe.getOffset());
+        Assert.assertEquals(1024L, sqe.getOffsetUnion().getOff());
+        sqe.setAddr(2048);
+        Assert.assertEquals(2048, sqe.getAddr());
+        Assert.assertEquals(2048, sqe.getBufferUnion().getAddr());
+        sqe.setRwFlags(4);
+        Assert.assertEquals(4, sqe.getRwFlags());
+        Assert.assertEquals(4, sqe.getFlagsUnion().getAccept_flags());
+        Assert.assertEquals(4, sqe.getFlagsUnion().getRw_flags());
+        sqe.setAddr3(5);
+        Assert.assertEquals(5, sqe.getAddr3());
+        Assert.assertEquals(5, sqe.getAddr3Union().getAddr3().getAddr3());
+        sqe.setPad2(6);
+        Assert.assertEquals(6, sqe.getPad2());
+        Assert.assertEquals(6, sqe.getAddr3Union().getAddr3().get__pad2().getAtIndex(ValueLayout.JAVA_LONG, 0));
+
 
         MemoryLayout ioUringParamsLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringParams.class).withName("io_uring_params");
 

@@ -11,14 +11,14 @@ public class SpliceExample {
 
     public static void main(String[] args) throws Throwable {
         try (StackValue stackValue = StackValue.currentStack()) {
-            MemorySegment path = stackValue.allocateUtf8String("README.md");
+            MemorySegment path = stackValue.allocateFrom("README.md");
             int fd = fcntl_h.open(path, fcntl_h.O_RDONLY());
             stackValue.reset();
 
-            path = stackValue.allocateUtf8String("demo.txt");
+            path = stackValue.allocateFrom("demo.txt");
             int targetFd = fcntl_h.open(path, fcntl_h.O_WRONLY());
 
-            MemorySegment pipeFds = stackValue.allocateArray(ValueLayout.JAVA_INT, 0, 0);
+            MemorySegment pipeFds = stackValue.allocateFrom(ValueLayout.JAVA_INT, 0, 0);
             int syscallRes = unistd_h.pipe(pipeFds);
             int pipeReadFd = pipeFds.getAtIndex(ValueLayout.JAVA_INT, 0);
             int pipeWriteFd = pipeFds.getAtIndex(ValueLayout.JAVA_INT, 1);

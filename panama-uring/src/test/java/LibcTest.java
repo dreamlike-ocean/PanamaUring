@@ -1,7 +1,7 @@
 import org.junit.Assert;
 import org.junit.Test;
 import top.dreamlike.panama.nativelib.Instance;
-import top.dreamlike.panama.nativelib.Libc;
+import top.dreamlike.panama.nativelib.libs.Libc;
 import top.dreamlike.panama.nativelib.helper.DebugHelper;
 
 import java.io.File;

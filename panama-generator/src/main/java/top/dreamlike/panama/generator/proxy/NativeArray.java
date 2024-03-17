@@ -1,5 +1,6 @@
 package top.dreamlike.panama.generator.proxy;
 
+import top.dreamlike.panama.generator.helper.NativeAddressable;
 import top.dreamlike.panama.generator.helper.NativeGeneratorHelper;
 import top.dreamlike.panama.generator.helper.NativeStructEnhanceMark;
 
@@ -12,7 +13,7 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-public final class NativeArray<T> implements NativeStructEnhanceMark, List<T> {
+public final class NativeArray<T> implements NativeStructEnhanceMark, List<T>, NativeAddressable {
 
     private MemorySegment segment;
 
@@ -50,6 +51,11 @@ public final class NativeArray<T> implements NativeStructEnhanceMark, List<T> {
 
     @Override
     public MemorySegment realMemory() {
+        return segment;
+    }
+
+    @Override
+    public MemorySegment address() {
         return segment;
     }
 

@@ -15,8 +15,6 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public class PlainGeneratorTest {
 
@@ -114,8 +112,8 @@ public class PlainGeneratorTest {
         newChunkPersonArray.forEach(p -> p.setA(newA));
         initContainer.setPersonArray(newChunkPersonArray);
         NativeArray<Person> chunkPersonArrayInStruct = initContainer.getPersonArray();
-        MemorySegment chunkPersonArrayInStructMemorySegment = chunkPersonArrayInStruct.realMemory();
-        Assert.assertEquals(personArray.realMemory().address(), chunkPersonArrayInStructMemorySegment.address());
+        MemorySegment chunkPersonArrayInStructMemorySegment = chunkPersonArrayInStruct.address();
+        Assert.assertEquals(personArray.address().address(), chunkPersonArrayInStructMemorySegment.address());
         for (Person p : chunkPersonArrayInStruct) {
             Assert.assertEquals(p.getA(), newA);
         }
@@ -129,12 +127,12 @@ public class PlainGeneratorTest {
             Assert.assertEquals(targetPersonN, n);
         }
         //_______________写入ptr测试___________________________
-        MemorySegment oldPtr = personArray.realMemory();
+        MemorySegment oldPtr = personArray.address();
         MemorySegment newPtr = Arena.global().allocate(personSizeof, 5);
         NativeArray<Person> newPersonArray = new NativeArray<>(structProxyGenerator, newPtr, Person.class);
         initContainer.setArrayButPointer(newPersonArray);
         NativeArray<Person> afterReplace = initContainer.getArrayButPointer();
-        Assert.assertEquals(newPtr.address(), afterReplace.realMemory().address());
+        Assert.assertEquals(newPtr.address(), afterReplace.address().address());
 
         for (Person newPerson : afterReplace) {
             newPerson.setA(newA);
@@ -255,6 +253,28 @@ public class PlainGeneratorTest {
 
         varHandle.set(StructProxyGenerator.findMemorySegment(initContainer), StructProxyGenerator.findMemorySegment(ptr));
         Assert.assertEquals(targetPersonA,initContainer.getPtr().getA());
+
+    }
+
+    @Test
+    public void testSetPtr() {
+        MemoryLayout personSizeof = structProxyGenerator.extract(Person.class);
+        MemorySegment personInMemory = Arena.global().allocate(personSizeof);
+        Person person = structProxyGenerator.enhance(Person.class, personInMemory);
+        long targetPersonN = 1L;
+        int targetPersonA = 1000;
+        person.setN(targetPersonN);
+        person.setA(targetPersonA);
+        int testContainerSize = 5;
+        int testContainerUnionValue = 20;
+        TestContainer initContainer = libPerson.initContainer(testContainerSize, person, testContainerUnionValue);
+        MemorySegment segment = StructProxyGenerator.findMemorySegment(initContainer);
+        //等大的内存块
+        PointerVersionTestContainer p = structProxyGenerator.enhance(segment);
+
+        MemorySegment otherPerson = Arena.global().allocate(personSizeof, 5);
+        p.setArrayButPointer(otherPerson);
+        Assert.assertEquals(otherPerson.address(), p.getArrayButPointer().address());
 
     }
 

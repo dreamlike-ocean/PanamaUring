@@ -1,5 +1,6 @@
 package top.dreamlike.panama.generator.proxy;
 
+import top.dreamlike.panama.generator.helper.NativeAddressable;
 import top.dreamlike.panama.generator.helper.NativeStructEnhanceMark;
 
 import java.lang.foreign.MemoryLayout;
@@ -7,7 +8,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.Objects;
 
-public final class NativeArrayPointer<T> implements NativeStructEnhanceMark {
+public final class NativeArrayPointer<T> implements NativeStructEnhanceMark, NativeAddressable {
     private MemorySegment pointer;
 
     private final MemoryLayout elementLayout;
@@ -38,6 +39,11 @@ public final class NativeArrayPointer<T> implements NativeStructEnhanceMark {
     }
 
     @Override
+    public MemorySegment realMemory() {
+        return pointer;
+    }
+
+    @Override
     public MemoryLayout layout() {
         return ValueLayout.ADDRESS;
     }
@@ -49,7 +55,7 @@ public final class NativeArrayPointer<T> implements NativeStructEnhanceMark {
     }
 
     @Override
-    public MemorySegment realMemory() {
+    public MemorySegment address() {
         return pointer;
     }
 }
