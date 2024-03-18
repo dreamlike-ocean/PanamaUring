@@ -42,7 +42,7 @@ public class LiburingTest {
         sqe.setAddr(2048);
         Assert.assertEquals(2048, sqe.getAddr());
         Assert.assertEquals(2048, sqe.getBufferUnion().getAddr());
-        sqe.setRwFlags(4);
+        sqe.setFlagsInFlagsUnion(4);
         Assert.assertEquals(4, sqe.getRwFlags());
         Assert.assertEquals(4, sqe.getFlagsUnion().getAccept_flags());
         Assert.assertEquals(4, sqe.getFlagsUnion().getRw_flags());
