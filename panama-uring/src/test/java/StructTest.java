@@ -2,14 +2,13 @@ import org.junit.Assert;
 import org.junit.Test;
 import top.dreamlike.common.CType;
 import top.dreamlike.panama.nativelib.Instance;
+import top.dreamlike.panama.nativelib.struct.epoll.EpollData;
+import top.dreamlike.panama.nativelib.struct.epoll.EpollEvent;
 import top.dreamlike.panama.nativelib.struct.sigset.SigsetType;
 import top.dreamlike.panama.nativelib.struct.socket.MsgHdr;
 import top.dreamlike.panama.nativelib.struct.time.KernelTime64Type;
 
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.StructLayout;
-import java.lang.foreign.ValueLayout;
+import java.lang.foreign.*;
 import java.nio.ByteOrder;
 
 import static java.lang.foreign.ValueLayout.*;
@@ -56,5 +55,14 @@ public class StructTest {
         );
         Assert.assertEquals(generatedLayout, layout);
         Assert.assertEquals(generatedLayout.byteSize(), layout.byteSize());
+    }
+
+    @Test
+    public void testEpoll() {
+        MemoryLayout eventLayout = Instance.STRUCT_PROXY_GENERATOR.extract(EpollEvent.class);
+        MemorySegment epollEventMemory = Arena.global().allocate(eventLayout);
+        EpollEvent epollEvent = Instance.STRUCT_PROXY_GENERATOR.enhance(epollEventMemory);
+        epollEvent.setU64(1024);
+        Assert.assertEquals(1024, epollEvent.getData().getU64());
     }
 }

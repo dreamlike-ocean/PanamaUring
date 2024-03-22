@@ -288,10 +288,19 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 classBuilder.withField(field.getSimpleName().toString(), ClassFileHelper.toDesc(toRuntiumeClass(field.asType())), it -> {
                     it.withFlags(calModifier(field.getModifiers()));
                     ArrayList<java.lang.classfile.Annotation> annotations = new ArrayList<>();
-                    if (field.getAnnotation(Pointer.class) != null) {
+                    Pointer pointer = field.getAnnotation(Pointer.class);
+                    if (pointer != null) {
+                        Class layout;
+                        try {
+                            layout = pointer.targetLayout();
+                        } catch (MirroredTypeException exception) {
+                            TypeMirror typeMirror = exception.getTypeMirror();
+                            layout = toRuntiumeClass(typeMirror);
+                        }
                         annotations.add(
                                 java.lang.classfile.Annotation.of(
-                                        ClassFileHelper.toDesc(Pointer.class)
+                                        ClassFileHelper.toDesc(Pointer.class),
+                                        AnnotationElement.of("targetLayout", AnnotationValue.ofClass(ClassFileHelper.toDesc(layout)))
                                 )
                         );
                     }
@@ -313,6 +322,8 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                                 )
                         );
                     }
+
+
 
                     it.with(RuntimeVisibleAnnotationsAttribute.of(annotations));
                 });

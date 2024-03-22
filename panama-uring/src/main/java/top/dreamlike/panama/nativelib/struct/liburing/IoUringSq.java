@@ -7,9 +7,9 @@ import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
 import java.lang.foreign.MemorySegment;
 
 public class IoUringSq {
-    @Pointer
+    @Pointer(targetLayout = int.class)
     private MemorySegment khead;
-    @Pointer
+    @Pointer(targetLayout = int.class)
     private MemorySegment ktail;
     @Pointer
     private MemorySegment kring_mask;

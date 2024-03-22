@@ -189,7 +189,15 @@ public class StructProxyGenerator {
                 continue;
             }
             if (field.getAnnotation(Pointer.class) != null || field.getType() == NativeArrayPointer.class) {
-                list.add(ValueLayout.ADDRESS.withName(field.getName()));
+                AddressLayout addressLayout = Optional.ofNullable(field.getAnnotation(Pointer.class))
+                        .map(Pointer::targetLayout)
+                        .filter(c -> !c.equals(void.class))
+                        .or(() -> Optional.of(field.getType()))
+                        .map(this::extract)
+                        .map(targetLayout -> ValueLayout.ADDRESS.withName(field.getName()).withTargetLayout(targetLayout))
+                        .orElse(ValueLayout.ADDRESS.withName(field.getName()));
+
+                list.add(addressLayout);
                 continue;
             }
             //类型为数组or指针
@@ -311,7 +319,7 @@ public class StructProxyGenerator {
         Class<?> type = field.getType();
         if (type.isPrimitive()
                 || field.getAnnotation(Pointer.class) != null
-                || Optional.ofNullable( field.getAnnotation(NativeArrayMark.class)).map(NativeArrayMark::asPointer).orElse(false)
+                || Optional.ofNullable(field.getAnnotation(NativeArrayMark.class)).map(NativeArrayMark::asPointer).orElse(false)
         ) {
             return MethodHandles.insertCoordinates(layout.varHandle(MemoryLayout.PathElement.groupElement(field.getName())), 1, 0);
         }
@@ -403,7 +411,7 @@ public class StructProxyGenerator {
             it.getstatic(thisClass, varHandleFieldName, ClassFileHelper.toDesc(VarHandle.class));
             it.aload(0);
             ClassFileHelper.invoke(it, REALMEMORY_METHOD, true);
-            it.loadInstruction(ClassFileHelper.calType(field.getType()),1);
+            it.loadInstruction(ClassFileHelper.calType(field.getType()), 1);
             it.invokevirtual(ClassFileHelper.toDesc(VarHandle.class), "set", MethodTypeDesc.ofDescriptor(STR."(\{ClassFileHelper.toSignature(MemorySegment.class)}\{ClassFileHelper.toSignature(field.getType())})V"));
             it.return_();
         });
@@ -453,7 +461,7 @@ public class StructProxyGenerator {
         cb.withMethodBody(STR."set\{upperFirstChar(field.getName())}", MethodTypeDesc.ofDescriptor(STR."(\{ClassFileHelper.toSignature(NativeArray.class)})V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             if (asPointer) {
                 generateSetPtr(it, offset);
-            } else  {
+            } else {
                 generateSetSubElement(it, offset, newSize);
             }
             it.return_();
@@ -462,7 +470,7 @@ public class StructProxyGenerator {
         cb.withMethodBody(STR."set\{upperFirstChar(field.getName())}", MethodTypeDesc.ofDescriptor(STR."(\{ClassFileHelper.toSignature(MemorySegment.class)})V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             if (asPointer) {
                 generateSetPtr(it, offset);
-            } else  {
+            } else {
                 generateSetSubElement(it, offset, newSize);
             }
             it.return_();
@@ -527,7 +535,7 @@ public class StructProxyGenerator {
         cb.withMethodBody(STR."set\{upperFirstChar(field.getName())}", MethodTypeDesc.ofDescriptor(STR."(\{ClassFileHelper.toSignature(MemorySegment.class)})V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             if (pointer || pointerMarked) {
                 generateSetPtr(it, offset);
-            } else  {
+            } else {
                 MemoryLayout realSize = extract(arrayMark.size());
                 generateSetSubElement(it, offset, realSize.byteSize() * arrayMark.length());
             }
@@ -574,7 +582,7 @@ public class StructProxyGenerator {
         cb.withMethodBody(STR."set\{upperFirstChar(field.getName())}", MethodTypeDesc.ofDescriptor(STR."(\{ClassFileHelper.toSignature(field.getType())})V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             if (isPointer) {
                 generateSetPtr(it, offset);
-            } else  {
+            } else {
                 generateSetSubElement(it, offset, subStructLayoutSize);
             }
             it.return_();
@@ -583,13 +591,14 @@ public class StructProxyGenerator {
         cb.withMethodBody(STR."set\{upperFirstChar(field.getName())}", MethodTypeDesc.ofDescriptor(STR."(\{ClassFileHelper.toSignature(MemorySegment.class)})V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             if (isPointer) {
                 generateSetPtr(it, offset);
-            } else  {
+            } else {
                 generateSetSubElement(it, offset, subStructLayoutSize);
             }
             it.return_();
         });
 
-        return it -> {};
+        return it -> {
+        };
     }
 }
 

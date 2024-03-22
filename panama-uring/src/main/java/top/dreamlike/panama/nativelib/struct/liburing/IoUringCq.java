@@ -7,17 +7,17 @@ import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
 import java.lang.foreign.MemorySegment;
 
 public class IoUringCq {
-    @Pointer
+    @Pointer(targetLayout = int.class)
     private MemorySegment khead;
 
-    @Pointer
+    @Pointer(targetLayout = int.class)
     private MemorySegment ktail;
 
     @Pointer
     private MemorySegment kring_mask;
     @Pointer
     private MemorySegment kring_entries;
-    @Pointer
+    @Pointer(targetLayout = int.class)
     private MemorySegment kflags;
     @Pointer
     private MemorySegment koverflow;

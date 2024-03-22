@@ -1,5 +1,6 @@
 package top.dreamlike.panama.nativelib.struct.liburing;
 
+import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.panama.nativelib.Instance;
 
 import java.lang.foreign.MemoryLayout;
@@ -132,7 +133,61 @@ public class IoUringConstant {
                 MemoryLayout.PathElement.groupElement("flagsUnion"),
                 MemoryLayout.PathElement.groupElement("splice_flags")
         );
+        public static final MemoryLayout IoUringLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUring.class);
+        public static final VarHandle IO_URING_SQ_KHEAD_DEFERENCE_VARHANDLE = IoUringLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("sq"),
+                MemoryLayout.PathElement.groupElement("khead"),
+                MemoryLayout.PathElement.dereferenceElement()
+        );
+        public static final VarHandle IO_URING_SQ_KTAIL_DEFERENCE_VARHANDLE = IoUringLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("sq"),
+                MemoryLayout.PathElement.groupElement("ktail"),
+                MemoryLayout.PathElement.dereferenceElement()
+        );
+        public static final VarHandle IO_URING_SQ_SQE_TAIL_VARHANDLE = IoUringLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("sq"),
+                MemoryLayout.PathElement.groupElement("sqe_tail")
+        );
+        public static final VarHandle IO_URING_SQ_RING_MASK_VARHANDLE = IoUringLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("sq"),
+                MemoryLayout.PathElement.groupElement("ring_mask")
+        );
+        public static final VarHandle IO_URING_SQ_RING_ENTRIES_VARHANDLE = IoUringLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("sq"),
+                MemoryLayout.PathElement.groupElement("ring_entries")
+        );
+        public static final VarHandle IO_URING_SQ_SQES_VARHANDLE = IoUringLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("sq"),
+                MemoryLayout.PathElement.groupElement("sqes")
+        );
+
+
+
+        public static final VarHandle IO_URING_CQ_KHEAD_DEFERENCE_VARHANDLE = IoUringLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("cq"),
+                MemoryLayout.PathElement.groupElement("khead"),
+                MemoryLayout.PathElement.dereferenceElement()
+        );
+        public static final VarHandle IO_URING_CQ_KTAIL_DEFERENCE_VARHANDLE = IoUringLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("cq"),
+                MemoryLayout.PathElement.groupElement("ktail"),
+                MemoryLayout.PathElement.dereferenceElement()
+        );
+        public static final VarHandle IO_URING_CQ_KFLAGS_DEFERENCE_VARHANDLE = IoUringLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("cq"),
+                MemoryLayout.PathElement.groupElement("kflags"),
+                MemoryLayout.PathElement.dereferenceElement()
+        );
     }
+
+    /*
+     * If COOP_TASKRUN is set, get notified if task work is available for
+     * running and a kernel transition would be needed to run it. This sets
+     * IORING_SQ_TASKRUN in the sq ring flags. Not valid with COOP_TASKRUN.
+     */
+    public static final int IORING_SETUP_TASKRUN_FLAG = 1 << 9;
+    public static final int IORING_SETUP_SQE128 = 1 << 10; /* SQEs are 128 byte */
+    public static final int IORING_SETUP_CQE32 = 1 << 11; /* CQEs are 32 byte */
 
     /**
      * send/sendmsg and recv/recvmsg flags (sqe->ioprio)
@@ -153,10 +208,20 @@ public class IoUringConstant {
      * IORING_NOTIF_USAGE_ZC_COPIED if data was copied
      * (at least partially).
      */
-    public static short IORING_RECVSEND_POLL_FIRST = 1 << 0;
-    public static short IORING_RECV_MULTISHOT = 1 << 1;
-    public static short IORING_RECVSEND_FIXED_BUF = 1 << 2;
-    public static short IORING_SEND_ZC_REPORT_USAGE = 1 << 3;
+    public static final short IORING_RECVSEND_POLL_FIRST = 1 << 0;
+    public static final short IORING_RECV_MULTISHOT = 1 << 1;
+    public static final short IORING_RECVSEND_FIXED_BUF = 1 << 2;
+    public static final short IORING_SEND_ZC_REPORT_USAGE = 1 << 3;
+
+    /* Pass through the flags from sqe->file_index to cqe->flags */
+    public static final int IORING_MSG_RING_FLAGS_PASS = 1 << 1;
+
+
+    /*
+     * IORING_OP_MSG_RING command types, stored in sqe->addr
+     */
+    public static final int IORING_MSG_DATA = 0;    /* pass sqe->len as 'res' and off as user_data */
+    public static final int IORING_MSG_SEND_FD = 1;    /* send a registered fd to another ring */
 
     /**
      * POLL_ADD flags. Note that since sqe->poll_events is the flag space, the
@@ -255,5 +320,25 @@ public class IoUringConstant {
     public static final int IOSQE_BUFFER_SELECT = 1 << IOSQE_BUFFER_SELECT_BIT;
     /* don't post CQE if request succeeded */
     public static final int IOSQE_CQE_SKIP_SUCCESS = 1 << IOSQE_CQE_SKIP_SUCCESS_BIT;
+
+
+    /*
+     * io_uring_setup() flags
+     */
+    public static final int IORING_SETUP_IOPOLL = 1 << 0;    /* io_context is polled */
+    public static final int IORING_SETUP_SQPOLL = 1 << 1;    /* SQ poll thread */
+    public static final int IORING_SETUP_SQ_AFF = 1 << 2;    /* sq_thread_cpu is valid */
+    public static final int IORING_SETUP_CQSIZE = 1 << 3;    /* app defines CQ size */
+    public static final int IORING_SETUP_CLAMP = 1 << 4;    /* clamp SQ/CQ ring sizes */
+    public static final int IORING_SETUP_ATTACH_WQ = 1 << 5;    /* attach to existing wq */
+    public static final int IORING_SETUP_R_DISABLED = 1 << 6;    /* start with ring disabled */
+    public static final int IORING_SETUP_SUBMIT_ALL = 1 << 7;    /* continue submit on error */
+
+    /*
+     * sq_ring->flags
+     */
+    public static final int IORING_SQ_NEED_WAKEUP = 1 << 0; /* needs io_uring_enter wakeup */
+    public static final int IORING_SQ_CQ_OVERFLOW = 1 << 1; /* CQ ring is overflown */
+    public static final int IORING_SQ_TASKRUN = 1 << 2; /* task should enter the kernel */
 
 }

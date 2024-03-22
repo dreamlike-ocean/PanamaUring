@@ -6,6 +6,9 @@ import top.dreamlike.panama.generator.annotation.Pointer;
 import top.dreamlike.panama.generator.exception.StructException;
 import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
+import top.dreamlike.panama.nativelib.Instance;
+import top.dreamlike.panama.nativelib.struct.epoll.EpollEvent;
+import top.dreamlike.panama.nativelib.struct.futex.FutexWaitV;
 import top.dreamlike.panama.nativelib.struct.iovec.Iovec;
 import top.dreamlike.panama.nativelib.struct.liburing.IoUring;
 import top.dreamlike.panama.nativelib.struct.liburing.IoUringConstant;
@@ -48,29 +51,62 @@ public interface LibUring {
     void io_uring_cq_advance(@Pointer IoUring ring, int nr);
 
     int io_uring_register_buffers(@Pointer IoUring ring, @Pointer NativeArrayPointer<Iovec> iovecs, int nr_iovecs);
+
     int io_uring_unregister_buffers(@Pointer IoUring ring);
 
     int io_uring_register_files(@Pointer IoUring ring,/*const int * */ @Pointer MemorySegment files, int nr_files);
+
     int io_uring_unregister_files(@Pointer IoUring ring);
 
     int io_uring_register_eventfd(@Pointer IoUring ring, int fd);
+
     int io_uring_register_eventfd_async(@Pointer IoUring ring, int fd);
+
     int io_uring_unregister_eventfd(@Pointer IoUring ring);
 
     int io_uring_register_ring_fd(@Pointer IoUring ring);
+
     int io_uring_unregister_ring_fd(@Pointer IoUring ring);
 
     int io_uring_close_ring_fd(@Pointer IoUring ring);
 
     int io_uring_register_buf_ring(@Pointer IoUring ring, @Pointer MemorySegment br, int br_flags);
+
     int io_uring_unregister_buf_ring(@Pointer IoUring ring, int bgid);
+
     int io_uring_buf_ring_head(@Pointer IoUring ring, int buf_group, /* unsigned * head*/ @Pointer MemorySegment head);
+
     int io_uring_submit_and_get_events(@Pointer IoUring ring);
+
     int io_uring_get_events(@Pointer IoUring ring);
 
     //sqe相关的操作
     @NativeFunction(fast = true, returnIsPointer = true)
-    IoUringSqe io_uring_get_sqe(@Pointer IoUring ring);
+    default IoUringSqe io_uring_get_sqe(@Pointer IoUring ring) {
+        MemorySegment realMemory = StructProxyGenerator.findMemorySegment(ring);
+        int head;
+        int next = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_SQE_TAIL_VARHANDLE.get(realMemory, 0) + 1;
+        int shift = 0;
+        if ((ring.getFlags() & IoUringConstant.IORING_SETUP_SQE128) != 0) {
+            shift = 1;
+        }
+        if ((ring.getFlags() & IoUringConstant.IORING_SETUP_SQPOLL) != 0) {
+            head = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_KHEAD_DEFERENCE_VARHANDLE.getAcquire(realMemory, 0);
+        } else {
+            head = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_KHEAD_DEFERENCE_VARHANDLE.get(realMemory, 0);
+        }
+        int ring_entries = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_RING_ENTRIES_VARHANDLE.get(realMemory, 0);
+        if (next - head > ring_entries) {
+            return null;
+        }
+        MemorySegment sqesBases = (MemorySegment) IoUringConstant.AccessShortcuts.IO_URING_SQ_SQES_VARHANDLE.get(realMemory, 0);
+        int index = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_SQE_TAIL_VARHANDLE.get(realMemory, 0) & (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_RING_MASK_VARHANDLE.get(realMemory, 0);
+        index = index << shift;
+        IoUringSqe sqe = new NativeArrayPointer<IoUringSqe>(Instance.STRUCT_PROXY_GENERATOR, sqesBases, IoUringSqe.class)
+                .getAtIndex(index);
+        IoUringConstant.AccessShortcuts.IO_URING_SQ_SQE_TAIL_VARHANDLE.set(realMemory, 0, next);
+        return sqe;
+    }
 
     default void io_uring_prep_rw(int opcode, @Pointer IoUringSqe sqe, int fd, MemorySegment addr, int len, long offset) {
         if (!StructProxyGenerator.isNativeStruct(sqe)) {
@@ -377,7 +413,135 @@ public interface LibUring {
         sqe.setIoprio((short) (sqe.getIoprio() | IoUringConstant.IORING_RECV_MULTISHOT));
     }
 
+    default void io_uring_prep_epoll_ctl(@Pointer IoUringSqe sqe, int epfd, int fd, int op, @Pointer EpollEvent event) {
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_EPOLL_CTL, sqe, epfd, StructProxyGenerator.findMemorySegment(event), op, fd);
+    }
 
+    default void io_uring_prep_provide_buffers(@Pointer IoUringSqe sqe, @Pointer MemorySegment addr, int len, int nr, int bgid, int bid) {
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_PROVIDE_BUFFERS, sqe, nr, addr, len, bid);
+        sqe.setBufGroup((short) bgid);
+    }
+
+    default void io_uring_prep_remove_buffers(@Pointer IoUringSqe sqe, int nr, int bgid) {
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_REMOVE_BUFFERS, sqe, nr, MemorySegment.NULL, 0, 0);
+        sqe.setBufGroup((short) bgid);
+    }
+
+    default void io_uring_prep_sync_file_range(@Pointer IoUringSqe sqe, int fd, int len, long offset, int flags) {
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_SYNC_FILE_RANGE, sqe, fd, MemorySegment.NULL, len, offset);
+        sqe.setFlagsInFlagsUnion(flags);
+    }
+
+    default void io_uring_prep_msg_ring(@Pointer IoUringSqe sqe, int fd, int len, long data, int flags) {
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_MSG_RING, sqe, fd, MemorySegment.NULL, len, data);
+        sqe.setFlagsInFlagsUnion(flags);
+    }
+
+    default void io_uring_prep_msg_ring_cqe_flags(@Pointer IoUringSqe sqe, int fd, int len, long data, int flags, int cqe_flags) {
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_MSG_RING, sqe, fd, MemorySegment.NULL, len, data);
+        sqe.setFlagsInFlagsUnion(flags | IoUringConstant.IORING_MSG_RING_FLAGS_PASS);
+        sqe.setFileIndex(cqe_flags);
+    }
+
+    default void io_uring_prep_msg_ring_fd(@Pointer IoUringSqe sqe, int fd, int sourceFd, int targetFd, long data, int flags) {
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_MSG_RING, sqe, fd, MemorySegment.ofAddress(IoUringConstant.IORING_MSG_SEND_FD), 0, data);
+        sqe.setAddr3(sourceFd);
+        if (targetFd == IoUringConstant.IORING_FILE_INDEX_ALLOC) {
+            targetFd--;
+        }
+        sqe.setFileIndex(targetFd + 1);
+        sqe.setFlagsInFlagsUnion(flags);
+    }
+
+    default void io_uring_prep_msg_ring_fd_alloc(@Pointer IoUringSqe sqe, int fd, int sourceFd, long data, int flags) {
+        io_uring_prep_msg_ring_fd(sqe, fd, sourceFd, IoUringConstant.IORING_FILE_INDEX_ALLOC, data, flags);
+    }
+
+    default void io_uring_prep_socket(@Pointer IoUringSqe sqe, int domain, int type, int protocol, int flags) {
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_SOCKET, sqe, domain, MemorySegment.NULL, protocol, type);
+        sqe.setFlagsInFlagsUnion(flags);
+    }
+
+    default void io_uring_prep_socket_direct(@Pointer IoUringSqe sqe, int domain, int type, int protocol, int fileIndex, int flags) {
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_SOCKET, sqe, domain, MemorySegment.NULL, protocol, type);
+        if (fileIndex == IoUringConstant.IORING_FILE_INDEX_ALLOC) {
+            fileIndex--;
+        }
+        sqe.setFileIndex(fileIndex + 1);
+        sqe.setFlagsInFlagsUnion(flags);
+    }
+
+    default void io_uring_prep_socket_direct_alloc(@Pointer IoUringSqe sqe, int domain, int type, int protocol, int flags) {
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_SOCKET, sqe, domain, MemorySegment.NULL, protocol, type);
+        sqe.setFlagsInFlagsUnion(flags);
+        sqe.setFileIndex(IoUringConstant.IORING_FILE_INDEX_ALLOC);
+    }
+
+    default void io_uring_prep_waitid(@Pointer IoUringSqe sqe, int idtype, int id,/* siginfo_t *infop */ @Pointer MemorySegment infop, int options, int flags) {
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_WAITID, sqe, id, MemorySegment.NULL, idtype, 0);
+        sqe.setFlagsInFlagsUnion(flags);
+        sqe.setFileIndex(options);
+        sqe.setAddr2(infop.address());
+    }
+
+    default void io_uring_prep_futex_wake(@Pointer IoUringSqe sqe, @Pointer MemorySegment futex, long val, long mask, int futex_flags, int flags) {
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_FUTEX_WAKE, sqe, futex_flags, futex, 0, val);
+        sqe.setFlagsInFlagsUnion(flags);
+        sqe.setAddr3(mask);
+    }
+
+    default void io_uring_prep_futex_wait(@Pointer IoUringSqe sqe, @Pointer MemorySegment futex, long val, long mask, int futex_flags, int flags) {
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_FUTEX_WAIT, sqe, futex_flags, futex, 0, val);
+        sqe.setFlagsInFlagsUnion(flags);
+        sqe.setAddr3(mask);
+    }
+
+    default void io_uring_prep_futex_waitv(@Pointer IoUringSqe sqe, @Pointer FutexWaitV futex, int nr_futex, int flags) {
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_FUTEX_WAITV, sqe, 0, StructProxyGenerator.findMemorySegment(futex), nr_futex, 0);
+        sqe.setFlagsInFlagsUnion(flags);
+    }
+
+    default void io_uring_prep_fixed_fd_install(@Pointer IoUringSqe sqe, int fd, int flags) {
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_FIXED_FD_INSTALL, sqe, fd, MemorySegment.NULL, 0, 0);
+        sqe.setFlags((byte) IoUringConstant.IOSQE_FIXED_FILE);
+        sqe.setFlagsInFlagsUnion(flags);
+    }
+
+    default void io_uring_prep_ftruncate(@Pointer IoUringSqe sqe, int fd, long size) {
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_FTRUNCATE, sqe, fd, MemorySegment.NULL, 0, size);
+    }
+
+    default int io_uring_sq_ready(@Pointer IoUring ring) {
+        MemorySegment realMemory = StructProxyGenerator.findMemorySegment(ring);
+        int khead = (int) IoUringConstant.AccessShortcuts
+                .IO_URING_SQ_KHEAD_DEFERENCE_VARHANDLE
+                .get(realMemory, 0);
+        if ((ring.getFlags() & IoUringConstant.IORING_SETUP_SQPOLL) != 0) {
+            khead = (int) IoUringConstant.AccessShortcuts
+                    .IO_URING_SQ_KHEAD_DEFERENCE_VARHANDLE
+                    .getAcquire(realMemory, 1);
+        }
+        return (int) IoUringConstant.AccessShortcuts
+                .IO_URING_SQ_SQE_TAIL_VARHANDLE
+                .get(realMemory, 0) - khead;
+    }
+
+    default int io_uring_sq_space_left(@Pointer IoUring ring) {
+        MemorySegment realMemory = StructProxyGenerator.findMemorySegment(ring);
+        return (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_RING_ENTRIES_VARHANDLE.get(realMemory, 0) - io_uring_sq_ready(ring);
+    }
+
+    default int io_uring_cq_ready(@Pointer IoUring ring) {
+        MemorySegment realMemory = StructProxyGenerator.findMemorySegment(ring);
+        return (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KHEAD_DEFERENCE_VARHANDLE.get(realMemory, 0)
+                - (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KTAIL_DEFERENCE_VARHANDLE.get(realMemory, 0);
+    }
+
+    default boolean io_uring_cq_has_overflow(@Pointer IoUring ring) {
+        MemorySegment realMemory = StructProxyGenerator.findMemorySegment(ring);
+        int cqKFlags = (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KFLAGS_DEFERENCE_VARHANDLE.get(realMemory, 0);
+        return (cqKFlags & IoUringConstant.IORING_SQ_CQ_OVERFLOW) != 0;
+    }
 
 
     private int io_uring_prep_poll_mask(int poll_mask) {

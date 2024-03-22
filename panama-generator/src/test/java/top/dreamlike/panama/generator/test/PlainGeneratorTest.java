@@ -3,6 +3,7 @@ package top.dreamlike.panama.generator.test;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import top.dreamlike.panama.generator.annotation.Pointer;
 import top.dreamlike.panama.generator.proxy.NativeArray;
 import top.dreamlike.panama.generator.proxy.NativeCallGenerator;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
@@ -14,6 +15,7 @@ import top.dreamlike.panama.generator.test.struct.TestContainer;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 
 public class PlainGeneratorTest {
@@ -290,6 +292,56 @@ public class PlainGeneratorTest {
         varHandle.set(personCStruct, 456);
         Assert.assertEquals(456, p.getA());
         varHandle.toMethodHandle(VarHandle.AccessMode.GET);
+    }
+
+    @Test
+    public void testDeferenceVarHandle() {
+        MemoryLayout personSizeof = structProxyGenerator.extract(Person.class);
+
+        MemoryLayout testContainerLayout = structProxyGenerator.extract(TestContainer.class);
+        VarHandle nVarHandle = testContainerLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("ptr"),
+                MemoryLayout.PathElement.dereferenceElement(),
+                MemoryLayout.PathElement.groupElement("n")
+        );
+
+        MemorySegment personInMemory = Arena.global().allocate(personSizeof);
+        Person person = structProxyGenerator.enhance(Person.class, personInMemory);
+        long targetPersonN = 1L;
+        int targetPersonA = 1000;
+        person.setN(targetPersonN);
+        person.setA(targetPersonA);
+        int testContainerSize = 5;
+        int testContainerUnionValue = 20;
+        TestContainer initContainer = libPerson.initContainer(testContainerSize, person, testContainerUnionValue);
+        MemorySegment segment = StructProxyGenerator.findMemorySegment(initContainer);
+
+        Assert.assertEquals(targetPersonN, (long) nVarHandle.get(segment, 0));
+
+        nVarHandle.set(segment, 0, 214);
+        Assert.assertEquals(214, initContainer.getPtr().getN());
+
+        MemoryLayout intPtrLayout = structProxyGenerator.extract(IntPtr.class);
+        VarHandle intVarhandle = intPtrLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("ptr"),
+                MemoryLayout.PathElement.dereferenceElement()
+        );
+
+        MemorySegment intPtrMemory = Arena.global().allocate(intPtrLayout);
+        MemorySegment intMemory = Arena.global().allocate(ValueLayout.JAVA_INT);
+        intMemory.set(ValueLayout.JAVA_INT,0, 329);
+        intPtrMemory.set(ValueLayout.ADDRESS, 0, intMemory);
+
+        int i = (int) intVarhandle.get(intPtrMemory, 0);
+        Assert.assertEquals(329, i);
+        intVarhandle.set(intPtrMemory, 0, 129);
+        Assert.assertEquals(129, intMemory.get(ValueLayout.JAVA_INT, 0));
+    }
+
+
+    public static class IntPtr {
+        @Pointer(targetLayout = int.class)
+        private MemorySegment ptr;
     }
 
 
