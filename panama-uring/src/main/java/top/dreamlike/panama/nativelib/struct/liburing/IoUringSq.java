@@ -15,7 +15,7 @@ public class IoUringSq {
     private MemorySegment kring_mask;
     @Pointer
     private MemorySegment kring_entries;
-    @Pointer
+    @Pointer(targetLayout = int.class)
     private MemorySegment kflags;
     @Pointer
     private MemorySegment kdropped;

@@ -1,5 +1,6 @@
 package top.dreamlike.panama.nativelib.libs;
 
+import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.panama.generator.annotation.CLib;
 import top.dreamlike.panama.generator.annotation.NativeFunction;
 import top.dreamlike.panama.generator.annotation.Pointer;
@@ -19,6 +20,8 @@ import top.dreamlike.panama.nativelib.struct.socket.MsgHdr;
 import top.dreamlike.panama.nativelib.struct.time.KernelTime64Type;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 
 @CLib("liburing-ffi.so")
@@ -32,9 +35,47 @@ public interface LibUring {
 
     //cqe相关的操作
     @NativeFunction(fast = true)
-    int io_uring_peek_batch_cqe(@Pointer IoUring ring, @Pointer MemorySegment cqes, int count);
+    default int io_uring_peek_batch_cqe(@Pointer IoUring ring, @Pointer MemorySegment cqes, int count) {
+        int ready;
+        boolean overflow_checked = false;
+        int shift = 0;
+        if ((ring.getFlags() & IoUringConstant.IORING_SETUP_CQE32) != 0) {
+            shift = 1;
+        }
+        MemorySegment ringStruct = StructProxyGenerator.findMemorySegment(ring);
+        while (true) {
+            ready = io_uring_cq_ready(ring);
+            if (ready != 0) {
+                int head = (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KHEAD_DEFERENCE_VARHANDLE.get(ringStruct, 0);
+                int mask = (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_RING_MASK_VARHANDLE.get(ringStruct, 0);
+                int last;
+                int i = 0;
+                count = Math.min(count, ready);
+                last = head + count;
+                MemorySegment cqesBase = (MemorySegment) IoUringConstant.AccessShortcuts.IO_URING_CQ_CQES_VARHANDLE.get(ringStruct, 0);
+                long step = IoUringConstant.AccessShortcuts.IoUringCqeLayout.byteSize();
+                for (; head != last; head++, i++) {
+                    int index = (head & mask) << shift;
+                    cqes.set(ValueLayout.ADDRESS, i, MemorySegment.ofAddress(cqesBase.address() + index * step));
+                }
+                return count;
+            }
+            if (overflow_checked) {
+                return 0;
+            }
+            if (cq_ring_needs_flush(ringStruct)) {
+                io_uring_get_events(ring);
+                overflow_checked = true;
+            }
+        }
+//        return 0;
+    }
 
-    @NativeFunction(fast = true)
+    private boolean cq_ring_needs_flush(MemorySegment ioUring) {
+        int sqFlags = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_KFLAGS_DEFERENCE_VARHANDLE.get(ioUring, 0);
+        return (sqFlags & (IoUringConstant.IORING_SQ_CQ_OVERFLOW | IoUringConstant.IORING_SQ_TASKRUN)) != 0;
+    }
+
     int io_uring_peek_cqe(@Pointer IoUring ring, @Pointer MemorySegment cqe_ptr);
 
     int io_uring_wait_cqes(@Pointer IoUring ring, @Pointer MemorySegment cqe_ptr, int wait_nr, @Pointer KernelTime64Type ts, @Pointer SigsetType sigmask);
@@ -48,7 +89,15 @@ public interface LibUring {
     int io_uring_submit_and_wait_io_uring_wait_cqes(@Pointer IoUring ring, @Pointer MemorySegment cqe_ptr, int wait_nr, @Pointer KernelTime64Type ts, @Pointer SigsetType sigmask);
 
     @NativeFunction(fast = true)
-    void io_uring_cq_advance(@Pointer IoUring ring, int nr);
+    default void io_uring_cq_advance(@Pointer IoUring ring, int nr) {
+        if (nr == 0) {
+            return;
+        }
+        MemorySegment realMemory = StructProxyGenerator.findMemorySegment(ring);
+        VarHandle kheadVH = IoUringConstant.AccessShortcuts.IO_URING_CQ_KHEAD_DEFERENCE_VARHANDLE;
+        int head = (int) kheadVH.get(realMemory, 0);
+        kheadVH.setRelease(realMemory, 0, head + nr);
+    }
 
     int io_uring_register_buffers(@Pointer IoUring ring, @Pointer NativeArrayPointer<Iovec> iovecs, int nr_iovecs);
 
@@ -99,10 +148,10 @@ public interface LibUring {
         if (next - head > ring_entries) {
             return null;
         }
-        MemorySegment sqesBases = (MemorySegment) IoUringConstant.AccessShortcuts.IO_URING_SQ_SQES_VARHANDLE.get(realMemory, 0);
+        MemorySegment sqesBase = (MemorySegment) IoUringConstant.AccessShortcuts.IO_URING_SQ_SQES_VARHANDLE.get(realMemory, 0);
         int index = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_SQE_TAIL_VARHANDLE.get(realMemory, 0) & (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_RING_MASK_VARHANDLE.get(realMemory, 0);
         index = index << shift;
-        IoUringSqe sqe = new NativeArrayPointer<IoUringSqe>(Instance.STRUCT_PROXY_GENERATOR, sqesBases, IoUringSqe.class)
+        IoUringSqe sqe = new NativeArrayPointer<IoUringSqe>(Instance.STRUCT_PROXY_GENERATOR, sqesBase, IoUringSqe.class)
                 .getAtIndex(index);
         IoUringConstant.AccessShortcuts.IO_URING_SQ_SQE_TAIL_VARHANDLE.set(realMemory, 0, next);
         return sqe;
@@ -519,7 +568,7 @@ public interface LibUring {
         if ((ring.getFlags() & IoUringConstant.IORING_SETUP_SQPOLL) != 0) {
             khead = (int) IoUringConstant.AccessShortcuts
                     .IO_URING_SQ_KHEAD_DEFERENCE_VARHANDLE
-                    .getAcquire(realMemory, 1);
+                    .getAcquire(realMemory, 0);
         }
         return (int) IoUringConstant.AccessShortcuts
                 .IO_URING_SQ_SQE_TAIL_VARHANDLE

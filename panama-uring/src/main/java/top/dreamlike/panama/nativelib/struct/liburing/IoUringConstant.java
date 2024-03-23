@@ -69,6 +69,7 @@ public class IoUringConstant {
 
     public static class AccessShortcuts {
         public static final MemoryLayout IoUringSqeLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringSqe.class);
+        public static final MemoryLayout IoUringCqeLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringCqe.class);
         public static final VarHandle IOURING_SQE_OFFSET_VARHANDLE = IoUringSqeLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("offsetUnion"),
                 MemoryLayout.PathElement.groupElement("off")
@@ -161,7 +162,11 @@ public class IoUringConstant {
                 MemoryLayout.PathElement.groupElement("sqes")
         );
 
-
+        public static final VarHandle IO_URING_SQ_KFLAGS_DEFERENCE_VARHANDLE = IoUringLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("sq"),
+                MemoryLayout.PathElement.groupElement("kflags"),
+                MemoryLayout.PathElement.dereferenceElement()
+        );
 
         public static final VarHandle IO_URING_CQ_KHEAD_DEFERENCE_VARHANDLE = IoUringLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("cq"),
@@ -177,6 +182,15 @@ public class IoUringConstant {
                 MemoryLayout.PathElement.groupElement("cq"),
                 MemoryLayout.PathElement.groupElement("kflags"),
                 MemoryLayout.PathElement.dereferenceElement()
+        );
+        public static final VarHandle IO_URING_CQ_RING_MASK_VARHANDLE = IoUringLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("cq"),
+                MemoryLayout.PathElement.groupElement("ring_mask")
+        );
+
+        public static final VarHandle IO_URING_CQ_CQES_VARHANDLE = IoUringLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("sq"),
+                MemoryLayout.PathElement.groupElement("cqes")
         );
     }
 
@@ -341,4 +355,12 @@ public class IoUringConstant {
     public static final int IORING_SQ_CQ_OVERFLOW = 1 << 1; /* CQ ring is overflown */
     public static final int IORING_SQ_TASKRUN = 1 << 2; /* task should enter the kernel */
 
+    /*
+     * io_uring_enter(2) flags
+     */
+    public static final int IORING_ENTER_GETEVENTS = 1 << 0;
+    public static final int IORING_ENTER_SQ_WAKEUP = 1 << 1;
+    public static final int IORING_ENTER_SQ_WAIT = 1 << 2;
+    public static final int IORING_ENTER_EXT_ARG = 1 << 3;
+    public static final int IORING_ENTER_REGISTERED_RING = 1 << 4;
 }
