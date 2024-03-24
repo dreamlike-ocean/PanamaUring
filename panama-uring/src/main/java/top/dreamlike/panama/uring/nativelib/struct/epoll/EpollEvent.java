@@ -1,0 +1,43 @@
+package top.dreamlike.panama.uring.nativelib.struct.epoll;
+
+import top.dreamlike.panama.generator.annotation.Alignment;
+import top.dreamlike.panama.generator.helper.NativeGeneratorHelper;
+import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
+import top.dreamlike.panama.uring.nativelib.Instance;
+
+import java.lang.foreign.MemoryLayout;
+import java.lang.invoke.VarHandle;
+
+
+public class EpollEvent {
+
+    private static final VarHandle U64_VH = Instance.STRUCT_PROXY_GENERATOR.extract(EpollEvent.class).varHandle(MemoryLayout.PathElement.groupElement("data"), MemoryLayout.PathElement.groupElement("u64"));
+
+    private int events;
+    private EpollData data;
+
+    public int getEvents() {
+        return events;
+    }
+
+    public void setEvents(int events) {
+        this.events = events;
+    }
+
+    public EpollData getData() {
+        return data;
+    }
+
+    public void setData(EpollData data) {
+        this.data = data;
+    }
+
+    public long getU64() {
+        return (long) U64_VH.get(StructProxyGenerator.findMemorySegment(this), 0);
+    }
+
+    public void setU64(long u64) {
+        U64_VH.set(StructProxyGenerator.findMemorySegment(this), 0, u64);
+    }
+
+}

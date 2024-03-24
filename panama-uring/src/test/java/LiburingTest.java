@@ -2,14 +2,21 @@ import org.junit.Assert;
 import org.junit.Test;
 import struct.io_uring_cqe_struct;
 import struct.io_uring_sqe_struct;
-import top.dreamlike.panama.nativelib.Instance;
-import top.dreamlike.panama.nativelib.struct.liburing.*;
+import top.dreamlike.panama.uring.nativelib.Instance;
+import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
+import top.dreamlike.panama.uring.nativelib.libs.LibUring;
+import top.dreamlike.panama.uring.nativelib.libs.Libc;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
+import java.util.UUID;
+import java.util.function.Consumer;
 
 public class LiburingTest {
 
@@ -73,5 +80,65 @@ public class LiburingTest {
         Assert.assertEquals(struct.io_uring.layout, ioUringLayout);
     }
 
+    @Test
+    public void testAsyncFile() throws Throwable {
+        LibUring libUring = Instance.LIB_URING;
+
+        Libc libc = Instance.LIBC;
+        File tmpFile = File.createTempFile(UUID.randomUUID().toString(), ".tmp");
+        tmpFile.deleteOnExit();
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment randomMemory = arena.allocate(ValueLayout.JAVA_INT);
+            IoUring ioUring = Instance.STRUCT_PROXY_GENERATOR.allocate(arena, IoUring.class);
+            String absolutePath = tmpFile.getAbsolutePath();
+            MemorySegment pathname = arena.allocateFrom(absolutePath);
+            int fd = libc.open(pathname, Libc.Fcntl_H.O_RDWR);
+            Assert.assertTrue(fd > 0);
+            int initRes = libUring.io_uring_queue_init(4, ioUring, 0);
+
+            Assert.assertEquals(0, initRes);
+            String helloIoUring = "hello io_uring";
+            MemorySegment str = arena.allocateFrom(helloIoUring);
+
+            IoUringCqe cqeStruct = submitTemplate(arena, ioUring, (sqe) -> {
+                libUring.io_uring_prep_write(sqe, fd, str, (int) str.byteSize() - 1, 0);
+                sqe.setUser_data(randomMemory.address());
+            });
+            long userData = cqeStruct.getUser_data();
+            Assert.assertEquals(randomMemory.address(), userData);
+            libUring.io_uring_cq_advance(ioUring, 1);
+            try (FileInputStream stream = new FileInputStream(tmpFile)) {
+                String string = new String(stream.readAllBytes());
+                Assert.assertEquals(helloIoUring, string);
+            }
+
+            MemorySegment cqe = arena.allocate(ValueLayout.ADDRESS);
+            int count = libUring.io_uring_peek_batch_cqe(ioUring, cqe, 1);
+            Assert.assertEquals(0, count);
+
+            MemorySegment readBuffer = arena.allocate(str.byteSize() - 1);
+            cqeStruct = submitTemplate(arena, ioUring, (sqe) -> {
+                libUring.io_uring_prep_read(sqe, fd, readBuffer, (int) readBuffer.byteSize(), 0);
+                sqe.setUser_data(readBuffer.address());
+            });
+            Assert.assertTrue(cqeStruct.getRes() > 0);
+            Assert.assertEquals(readBuffer.address(), cqeStruct.getUser_data());
+            Assert.assertEquals(helloIoUring,DebugHelper.bufToString(readBuffer, cqeStruct.getRes()));
+            libUring.io_uring_queue_exit(ioUring);
+        }
+    }
+
+
+    public static IoUringCqe submitTemplate(Arena arena, IoUring uring, Consumer<IoUringSqe> sqeFunction) {
+        LibUring libUring = Instance.LIB_URING;
+        IoUringSqe sqe = libUring.io_uring_get_sqe(uring);
+        sqeFunction.accept(sqe);
+        int submits = libUring.io_uring_submit_and_wait(uring, 1);
+        Assert.assertTrue(submits > 0);
+        MemorySegment cqe = arena.allocate(ValueLayout.ADDRESS);
+        int count = libUring.io_uring_peek_batch_cqe(uring, cqe, 1);
+        Assert.assertTrue(count > 0);
+        return Instance.STRUCT_PROXY_GENERATOR.enhance(cqe.getAtIndex(ValueLayout.ADDRESS, 0));
+    }
 
 }

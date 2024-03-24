@@ -131,6 +131,10 @@ public class StructProxyGenerator {
         }
     }
 
+    public <T> T allocate(SegmentAllocator allocator ,Class<T> t) {
+        return enhance(t, allocator.allocate(extract(t)));
+    }
+
     public void setProxySavePath(String proxySavePath) {
         this.classDataPeek = (className, classData) -> {
             try {
@@ -192,7 +196,7 @@ public class StructProxyGenerator {
                 AddressLayout addressLayout = Optional.ofNullable(field.getAnnotation(Pointer.class))
                         .map(Pointer::targetLayout)
                         .filter(c -> !c.equals(void.class))
-                        .or(() -> Optional.of(field.getType()))
+                        .or(() -> field.getType() == NativeArrayPointer.class ? Optional.empty() :Optional.of(field.getType()))
                         .map(this::extract)
                         .map(targetLayout -> ValueLayout.ADDRESS.withName(field.getName()).withTargetLayout(targetLayout))
                         .orElse(ValueLayout.ADDRESS.withName(field.getName()));

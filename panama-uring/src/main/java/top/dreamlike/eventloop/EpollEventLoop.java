@@ -10,7 +10,7 @@ import top.dreamlike.helper.Pair;
 import top.dreamlike.helper.Unsafe;
 import top.dreamlike.nativeLib.epoll.epoll_h;
 import top.dreamlike.nativeLib.eventfd.EventFd;
-import top.dreamlike.thirdparty.colletion.IntObjectHashMap;
+import top.dreamlike.panama.uring.thirdparty.colletion.IntObjectHashMap;
 
 import java.util.ArrayDeque;
 import java.util.Queue;

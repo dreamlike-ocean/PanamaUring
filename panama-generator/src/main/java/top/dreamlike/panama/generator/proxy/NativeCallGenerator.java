@@ -18,10 +18,7 @@ import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -319,7 +316,8 @@ public class NativeCallGenerator {
         String functionName = function == null || Objects.requireNonNullElse(function.value(), "").isBlank()
                 ? method.getName()
                 : function.value();
-        boolean returnPointer = !method.getReturnType().isPrimitive() && function != null && function.returnIsPointer();
+        Class<?> returnType = method.getReturnType();
+        boolean returnPointer = !returnType.isPrimitive() && function != null && function.returnIsPointer();
         ArrayList<Linker.Option> options = new ArrayList<>(2);
         boolean allowPassHeap = function != null && function.allowPassHeap();
         if (function != null && function.fast()) {
@@ -331,7 +329,7 @@ public class NativeCallGenerator {
             options.add(Linker.Option.captureCallState("errno"));
         }
 
-        if ((NativeLookup.primitiveMapToMemoryLayout(method.getReturnType()) == null && !returnPointer) && method.getReturnType() != void.class) {
+        if ((NativeLookup.primitiveMapToMemoryLayout(returnType) == null && !returnPointer && !MemorySegment.class.isAssignableFrom(returnType)) && returnType != void.class) {
             throw new IllegalArgumentException(STR."\{method} must return primitive type or is marked returnIsPointer");
         }
         ArrayList<Integer> rawMemoryIndex = new ArrayList<>();
@@ -351,12 +349,12 @@ public class NativeCallGenerator {
         }
 
         MemoryLayout returnLayout;
-        if (MemorySegment.class.isAssignableFrom(method.getReturnType()) || returnPointer) {
+        if (MemorySegment.class.isAssignableFrom(returnType) || returnPointer) {
             returnLayout = ValueLayout.ADDRESS;
         } else {
-            returnLayout = structProxyGenerator.extract(method.getReturnType());
+            returnLayout = structProxyGenerator.extract(returnType);
         }
-        FunctionDescriptor fd = method.getReturnType() == void.class
+        FunctionDescriptor fd = returnType == void.class
                 ? FunctionDescriptor.ofVoid(layouts)
                 : FunctionDescriptor.of(
                 returnLayout,

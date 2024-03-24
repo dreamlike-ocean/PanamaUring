@@ -1,12 +1,12 @@
 import org.junit.Assert;
 import org.junit.Test;
 import top.dreamlike.common.CType;
-import top.dreamlike.panama.nativelib.Instance;
-import top.dreamlike.panama.nativelib.struct.epoll.EpollData;
-import top.dreamlike.panama.nativelib.struct.epoll.EpollEvent;
-import top.dreamlike.panama.nativelib.struct.sigset.SigsetType;
-import top.dreamlike.panama.nativelib.struct.socket.MsgHdr;
-import top.dreamlike.panama.nativelib.struct.time.KernelTime64Type;
+import top.dreamlike.panama.uring.nativelib.Instance;
+import top.dreamlike.panama.uring.nativelib.struct.epoll.EpollData;
+import top.dreamlike.panama.uring.nativelib.struct.epoll.EpollEvent;
+import top.dreamlike.panama.uring.nativelib.struct.sigset.SigsetType;
+import top.dreamlike.panama.uring.nativelib.struct.socket.MsgHdr;
+import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
 
 import java.lang.foreign.*;
 import java.nio.ByteOrder;

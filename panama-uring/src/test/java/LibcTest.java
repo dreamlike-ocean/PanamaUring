@@ -1,13 +1,14 @@
 import org.junit.Assert;
 import org.junit.Test;
-import top.dreamlike.panama.nativelib.Instance;
-import top.dreamlike.panama.nativelib.libs.Libc;
-import top.dreamlike.panama.nativelib.helper.DebugHelper;
+import top.dreamlike.panama.uring.nativelib.Instance;
+import top.dreamlike.panama.uring.nativelib.libs.Libc;
+import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.util.UUID;
 
 public class LibcTest {
@@ -21,7 +22,7 @@ public class LibcTest {
         try (Arena arena = Arena.ofConfined()) {
             String absolutePath = path.getAbsolutePath();
             MemorySegment pathname = arena.allocateFrom(absolutePath);
-            int fd = libc.open(pathname, Libc.Fcntl.O_RDWR);
+            int fd = libc.open(pathname, Libc.Fcntl_H.O_RDWR);
             Assert.assertTrue(fd > 0);
             String string = UUID.randomUUID().toString();
             MemorySegment writeBuf = arena.allocateFrom(string);
@@ -30,7 +31,7 @@ public class LibcTest {
 
             libc.close(fd);
 
-            fd = libc.open(pathname, Libc.Fcntl.O_RDWR);
+            fd = libc.open(pathname, Libc.Fcntl_H.O_RDWR);
             MemorySegment readBuf = arena.allocate(string.length());
             int read = libc.read(fd, readBuf, (int) readBuf.byteSize());
 
