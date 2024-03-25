@@ -1,9 +1,13 @@
 import org.junit.Assert;
 import org.junit.Test;
 import top.dreamlike.common.CType;
+import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.struct.epoll.EpollData;
 import top.dreamlike.panama.uring.nativelib.struct.epoll.EpollEvent;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBuf;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufRing;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
 import top.dreamlike.panama.uring.nativelib.struct.sigset.SigsetType;
 import top.dreamlike.panama.uring.nativelib.struct.socket.MsgHdr;
 import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
@@ -64,5 +68,20 @@ public class StructTest {
         EpollEvent epollEvent = Instance.STRUCT_PROXY_GENERATOR.enhance(epollEventMemory);
         epollEvent.setU64(1024);
         Assert.assertEquals(1024, epollEvent.getData().getU64());
+    }
+
+    @Test
+    public void testIoUringBufRingStruct() {
+
+        IoUringBufRing buf = Instance.STRUCT_PROXY_GENERATOR.allocate(Arena.global(), IoUringBufRing.class);
+        MemorySegment memorySegment = StructProxyGenerator.findMemorySegment(buf);
+        Assert.assertEquals(memorySegment.address(), buf.getBufs().address());
+
+        MemoryLayout memoryLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringBuf.class);
+        MemorySegment segment = Arena.global().allocate(memoryLayout, 2);
+        IoUringConstant.AccessShortcuts.IO_URING_BUF_LEN_VARHANDLE.set(segment, memoryLayout.byteSize(), 123);
+        IoUringBuf atIndex1 = Instance.STRUCT_PROXY_GENERATOR.enhance(segment.asSlice(memoryLayout.byteSize(), memoryLayout.byteSize()));
+        Assert.assertEquals(123, atIndex1.getLen());
+
     }
 }

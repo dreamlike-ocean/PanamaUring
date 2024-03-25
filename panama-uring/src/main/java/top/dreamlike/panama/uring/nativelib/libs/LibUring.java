@@ -1,5 +1,6 @@
 package top.dreamlike.panama.uring.nativelib.libs;
 
+import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.panama.generator.annotation.CLib;
 import top.dreamlike.panama.generator.annotation.NativeFunction;
 import top.dreamlike.panama.generator.annotation.Pointer;
@@ -10,10 +11,7 @@ import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.struct.epoll.EpollEvent;
 import top.dreamlike.panama.uring.nativelib.struct.futex.FutexWaitV;
 import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringParams;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
 import top.dreamlike.panama.uring.nativelib.struct.sigset.SigsetType;
 import top.dreamlike.panama.uring.nativelib.struct.socket.MsgHdr;
 import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
@@ -120,9 +118,41 @@ public interface LibUring {
 
     int io_uring_close_ring_fd(@Pointer IoUring ring);
 
-    int io_uring_register_buf_ring(@Pointer IoUring ring, @Pointer MemorySegment br, int br_flags);
+    int io_uring_register_buf_ring(@Pointer IoUring ring, @Pointer IoUringBufReg br, int br_flags);
 
     int io_uring_unregister_buf_ring(@Pointer IoUring ring, int bgid);
+
+    @NativeFunction(fast = true)
+    default void io_uring_buf_ring_add(@Pointer IoUringBufRing br, @Pointer MemorySegment addr, int len, short bid, int mask, int buf_offset) {
+        MemorySegment realMemory = StructProxyGenerator.findMemorySegment(br);
+        short tail = (short) IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.get(realMemory, 0);
+        int index = (tail + buf_offset) & mask;
+        MemorySegment bufPointer = MemorySegment.ofAddress(realMemory.address() + index * IoUringConstant.AccessShortcuts.IoUringBufLayout.byteSize())
+                .reinterpret(IoUringConstant.AccessShortcuts.IoUringBufLayout.byteSize());
+        IoUringConstant.AccessShortcuts.IO_URING_BUF_ADDR_VARHANDLE.set(bufPointer, 0, addr.address());
+        IoUringConstant.AccessShortcuts.IO_URING_BUF_LEN_VARHANDLE.set(bufPointer, 0, len);
+        IoUringConstant.AccessShortcuts.IO_URING_BUF_BID_VARHANDLE.set(bufPointer, 0, bid);
+    }
+
+    @NativeFunction(fast = true)
+    default void io_uring_buf_ring_advance(@Pointer IoUringBufRing br, int count) {
+        MemorySegment realMemory = StructProxyGenerator.findMemorySegment(br);
+        short newTail = (short) ((short) IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.get(realMemory, 0) + count);
+        IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.setRelease(realMemory, newTail);
+    }
+
+    @NativeFunction(fast = true)
+    default int io_uring_buf_ring_mask(int ringEntries) {
+        return ringEntries -1;
+    }
+
+    @NativeFunction(fast = true)
+    default void io_uring_buf_ring_init(@Pointer IoUringBufRing br) {
+        MemorySegment realMemory = StructProxyGenerator.findMemorySegment(br);
+        IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.set(realMemory, 0, 0);
+    }
+
+    void io_uring_setup_buf_ring(@Pointer IoUring ioUring, int nentries, int bgid, int flags,/*int *ret*/@Pointer MemorySegment ret);
 
     int io_uring_buf_ring_head(@Pointer IoUring ring, int buf_group, /* unsigned * head*/ @Pointer MemorySegment head);
 

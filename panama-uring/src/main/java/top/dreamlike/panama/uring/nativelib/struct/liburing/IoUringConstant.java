@@ -192,6 +192,32 @@ public class IoUringConstant {
                 MemoryLayout.PathElement.groupElement("cq"),
                 MemoryLayout.PathElement.groupElement("cqes")
         );
+
+        public static final MemoryLayout IoUringBufLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringBuf.class);
+
+        public static final VarHandle IO_URING_BUF_ADDR_VARHANDLE = IoUringBufLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("addr")
+        );
+
+        public static final VarHandle IO_URING_BUF_LEN_VARHANDLE = IoUringBufLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("len")
+        );
+
+        public static final VarHandle IO_URING_BUF_BID_VARHANDLE = IoUringBufLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("bid")
+        );
+
+        public static final VarHandle IO_URING_BUF_RESV_VARHANDLE = IoUringBufLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("resv")
+        );
+
+        public static final MemoryLayout IoUringBufRingLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringBufRing.class);
+
+        public static final VarHandle IO_URING_BUF_RING_TAIL_VARHANDLE = IoUringBufRingLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("anonStruct"),
+                MemoryLayout.PathElement.groupElement("tail")
+        );
+
     }
 
     /*

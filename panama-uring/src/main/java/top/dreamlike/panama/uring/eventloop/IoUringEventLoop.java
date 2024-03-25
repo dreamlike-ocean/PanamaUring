@@ -16,7 +16,6 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
-import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -44,11 +43,13 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
 
     private final AtomicLong tokenGenerator;
 
-    private final LongObjectHashMap<Consumer<IoUringCqe>> callBackMap;
+    private final LongObjectHashMap<IoUringCompletionCallBack> callBackMap;
 
     private final PriorityQueue<ScheduledTask> scheduledTasks;
 
     private KernelTime64Type kernelTime64Type;
+
+    private MemorySegment eventReadBuffer;
 
     public IoUringEventLoop(Function<SegmentAllocator, IoUringParams> ioUringParamsFactory) {
         this.wakeUpFd = new EventFd(0, 0);
@@ -71,6 +72,16 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         }
         this.cqes = singleThreadArena.allocate(IoUringConstant.AccessShortcuts.IoUringCqeLayout, cqeSize);
         this.kernelTime64Type = Instance.STRUCT_PROXY_GENERATOR.allocate(singleThreadArena, KernelTime64Type.class);
+        this.eventReadBuffer = singleThreadArena.allocate(ValueLayout.JAVA_LONG);
+        initWakeUpFdMultiShot();
+    }
+
+    private void registerWakeUpFd(IoUringSqe sqe) {
+        libUring.io_uring_prep_read(sqe, wakeUpFd.fd(),  eventReadBuffer, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
+    }
+
+    private void initWakeUpFdMultiShot() {
+        fillTemplate(this::registerWakeUpFd, _ -> initWakeUpFdMultiShot());
     }
 
     @Override
@@ -101,6 +112,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
                     libUring.io_uring_submit_and_wait_io_uring_wait_cqes(internalRing, cqes, cqeSize, kernelTime64Type, null);
                 }
             }
+            processCqes();
         }
         releaseResource();
     }
@@ -111,7 +123,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
             IoUringSqe sqe = ioUringGetSqe();
             sqeFunction.accept(sqe);
             sqe.setUser_data(token);
-            callBackMap.put(token, callback);
+            callBackMap.put(token, new IoUringCompletionCallBack(sqe.getFd(), sqe.getOpcode(), callback));
         };
         if (inEventLoop()) {
             r.run();
@@ -141,15 +153,14 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
 
 
     private void processCqes() {
-        //todo wake fd的事情
         int count = libUring.io_uring_peek_batch_cqe(internalRing, cqes, cqeSize);
         for (int i = 0; i < count; i++) {
             IoUringCqe nativeCqe = Instance.STRUCT_PROXY_GENERATOR.enhance(cqes.getAtIndex(ValueLayout.ADDRESS, i));
             long token = nativeCqe.getUser_data();
             boolean multiShot = (nativeCqe.getFlags() & IORING_CQE_F_MORE) != 0;
-            Consumer<IoUringCqe> callback = multiShot ? callBackMap.get(token) : callBackMap.remove(token);
-            if (callback != null) {
-                callback.accept(nativeCqe);
+            IoUringCompletionCallBack callback = multiShot ? callBackMap.get(token) : callBackMap.remove(token);
+            if (callback.userCallBack != null) {
+                callback.userCallBack.accept(nativeCqe);
             }
         }
         libUring.io_uring_cq_advance(internalRing, count);
@@ -193,4 +204,6 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
             return Long.compare(deadlineNanos, o.deadlineNanos);
         }
     }
+
+    private record IoUringCompletionCallBack(int fd, byte op, Consumer<IoUringCqe> userCallBack){}
 }
