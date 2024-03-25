@@ -27,6 +27,8 @@ public interface Libc {
 
     MemorySegment strerror(int errno);
 
+    int fcntl(int fd, int cmd, int arg);
+
     interface Fcntl_H {
         static final int O_RDONLY = 0;
         static final int O_WRONLY = 1;
@@ -48,6 +50,12 @@ public interface Libc {
         static final int SPLICE_F_NONBLOCK = 2;
         static final int SPLICE_F_MORE = 4;
         static final int SPLICE_F_GIFT = 8;
+
+        static final int F_DUPFD = 0;    /* Duplicate file descriptor.  */
+        static final int F_GETFD = 1;    /* Get file descriptor flags.  */
+        static final int F_SETFD = 2;    /* Set file descriptor flags.  */
+        static final int F_GETFL = 3;    /* Get file status flags.  */
+        static final int F_SETFL = 4;    /* Set file status flags.  */
     }
 
     interface Socket_H {

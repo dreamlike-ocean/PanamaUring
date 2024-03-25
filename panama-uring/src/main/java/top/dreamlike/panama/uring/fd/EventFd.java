@@ -24,6 +24,15 @@ public class EventFd implements NativeFd {
         return Instance.LIBC.eventfd_write(fd, value);
     }
 
+    @Override
+    public int read(MemorySegment buf, int count) {
+        if (buf.byteSize() < ValueLayout.JAVA_LONG.byteSize()) {
+            throw new IllegalArgumentException("MemorySegment size is too small");
+        }
+        int len = 8;
+        return Instance.LIBC.read(fd, buf, len);
+    }
+
     public int eventfdRead(MemorySegment segment) {
         if (segment.byteSize() < ValueLayout.JAVA_LONG.byteSize()) {
             throw new IllegalArgumentException("MemorySegment size is too small");

@@ -2,6 +2,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import struct.io_uring_cqe_struct;
 import struct.io_uring_sqe_struct;
+import top.dreamlike.panama.uring.fd.EventFd;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
@@ -124,6 +125,7 @@ public class LiburingTest {
             Assert.assertTrue(cqeStruct.getRes() > 0);
             Assert.assertEquals(readBuffer.address(), cqeStruct.getUser_data());
             Assert.assertEquals(helloIoUring,DebugHelper.bufToString(readBuffer, cqeStruct.getRes()));
+            libUring.io_uring_cq_advance(ioUring, 1);
             libUring.io_uring_queue_exit(ioUring);
         }
     }
