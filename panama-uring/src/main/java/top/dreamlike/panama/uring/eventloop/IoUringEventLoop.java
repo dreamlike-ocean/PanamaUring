@@ -1,9 +1,8 @@
 package top.dreamlike.panama.uring.eventloop;
 
 import org.jctools.queues.MpscUnboundedArrayQueue;
-import top.dreamlike.async.uring.IOUring;
+import top.dreamlike.panama.uring.async.CancelableFuture;
 import top.dreamlike.panama.uring.async.cancel.CancelToken;
-import top.dreamlike.panama.uring.async.cancel.IoUringCancelToken;
 import top.dreamlike.panama.uring.fd.EventFd;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
@@ -14,16 +13,17 @@ import top.dreamlike.panama.uring.thirdparty.colletion.LongObjectHashMap;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
 import java.util.PriorityQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
+import static top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant.IORING_ASYNC_CANCEL_ALL;
 import static top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant.IORING_CQE_F_MORE;
 
 public class IoUringEventLoop extends Thread implements AutoCloseable, Executor {
@@ -39,7 +39,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
 
     private MpscUnboundedArrayQueue<Runnable> taskQueue;
 
-    private MemorySegment cqes;
+    private MemorySegment cqePtrs;
 
     private final AtomicLong tokenGenerator;
 
@@ -51,7 +51,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
 
     private MemorySegment eventReadBuffer;
 
-    public IoUringEventLoop(Function<SegmentAllocator, IoUringParams> ioUringParamsFactory) {
+    public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory) {
         this.wakeUpFd = new EventFd(0, 0);
         this.inWait = new AtomicBoolean(false);
         this.taskQueue = new MpscUnboundedArrayQueue<>(1024);
@@ -62,15 +62,16 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         this.scheduledTasks = new PriorityQueue<>();
     }
 
-    private void initRing(Function<SegmentAllocator, IoUringParams> ioUringParamsFactory) {
+    private void initRing(Consumer<IoUringParams> ioUringParamsFactory) {
         this.singleThreadArena = Arena.ofConfined();
         this.internalRing = Instance.STRUCT_PROXY_GENERATOR.allocate(singleThreadArena, IoUring.class);
-        IoUringParams ioUringParams = ioUringParamsFactory.apply(singleThreadArena);
+        IoUringParams ioUringParams = Instance.STRUCT_PROXY_GENERATOR.allocate(singleThreadArena, IoUringParams.class);
+        ioUringParamsFactory.accept(ioUringParams);
         int initRes = Instance.LIB_URING.io_uring_queue_init_params(ioUringParams.getSq_entries(), internalRing, ioUringParams);
         if (initRes < 0) {
             throw new IllegalArgumentException(STR."io_uring_queue_init_params error,error Reason: \{DebugHelper.getErrorStr(-initRes)}");
         }
-        this.cqes = singleThreadArena.allocate(IoUringConstant.AccessShortcuts.IoUringCqeLayout, cqeSize);
+        this.cqePtrs = singleThreadArena.allocate(ValueLayout.ADDRESS, cqeSize);
         this.kernelTime64Type = Instance.STRUCT_PROXY_GENERATOR.allocate(singleThreadArena, KernelTime64Type.class);
         this.eventReadBuffer = singleThreadArena.allocate(ValueLayout.JAVA_LONG);
         initWakeUpFdMultiShot();
@@ -86,7 +87,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
 
     @Override
     public void run() {
-        while (hasClosed.get()) {
+        while (!hasClosed.get()) {
             inWait.set(true);
             while (true) {
                 ScheduledTask next = scheduledTasks.peek();
@@ -101,17 +102,17 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
             }
             ScheduledTask nextTask = scheduledTasks.peek();
             //如果没有任务或者下一个任务的时间大于当前时间，那么就直接提交
-            if (nextTask == null || nextTask.deadlineNanos > System.nanoTime()) {
+            if (nextTask == null) {
                 inWait.set(false);
-                if (nextTask == null) {
-                    libUring.io_uring_submit_and_wait(internalRing, 1);
-                } else {
-                    long duration = nextTask.deadlineNanos - System.nanoTime();
-                    kernelTime64Type.setTv_sec(duration / 1000000000);
-                    kernelTime64Type.setTv_nsec(duration % 1000000000);
-                    libUring.io_uring_submit_and_wait_io_uring_wait_cqes(internalRing, cqes, cqeSize, kernelTime64Type, null);
-                }
+                libUring.io_uring_submit_and_wait(internalRing, 1);
+            } else if (nextTask.deadlineNanos >= System.nanoTime()) {
+                inWait.set(false);
+                long duration = nextTask.deadlineNanos - System.nanoTime();
+                kernelTime64Type.setTv_sec(duration / 1000000000);
+                kernelTime64Type.setTv_nsec(duration % 1000000000);
+                libUring.io_uring_submit_and_wait_timeout(internalRing, cqePtrs, cqeSize, kernelTime64Type, null);
             }
+
             processCqes();
         }
         releaseResource();
@@ -130,7 +131,25 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         } else {
             execute(r);
         }
-        return new IoUringCancelToken(this, token);
+        return new IoUringCancelToken(token);
+    }
+
+    public CancelableFuture<Integer> asyncOperation(Consumer<IoUringSqe> sqeFunction) {
+        long token = tokenGenerator.getAndIncrement();
+        IoUringCancelToken cancelToken = new IoUringCancelToken(token);
+        CancelableFuture<Integer> promise = new CancelableFuture<>(cancelToken);
+        Runnable r = () -> {
+            IoUringSqe sqe = ioUringGetSqe();
+            sqeFunction.accept(sqe);
+            sqe.setUser_data(token);
+            callBackMap.put(token, new IoUringCompletionCallBack(sqe.getFd(), sqe.getOpcode(), cqe -> promise.complete(cqe.getRes())));
+        };
+        if (inEventLoop()) {
+            r.run();
+        } else {
+            execute(r);
+        }
+        return promise;
     }
 
     private IoUringSqe ioUringGetSqe() {
@@ -153,13 +172,13 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
 
 
     private void processCqes() {
-        int count = libUring.io_uring_peek_batch_cqe(internalRing, cqes, cqeSize);
+        int count = libUring.io_uring_peek_batch_cqe(internalRing, cqePtrs, cqeSize);
         for (int i = 0; i < count; i++) {
-            IoUringCqe nativeCqe = Instance.STRUCT_PROXY_GENERATOR.enhance(cqes.getAtIndex(ValueLayout.ADDRESS, i));
+            IoUringCqe nativeCqe = Instance.STRUCT_PROXY_GENERATOR.enhance(cqePtrs.getAtIndex(ValueLayout.ADDRESS, i));
             long token = nativeCqe.getUser_data();
             boolean multiShot = (nativeCqe.getFlags() & IORING_CQE_F_MORE) != 0;
             IoUringCompletionCallBack callback = multiShot ? callBackMap.get(token) : callBackMap.remove(token);
-            if (callback.userCallBack != null) {
+            if (callback != null && callback.userCallBack != null) {
                 callback.userCallBack.accept(nativeCqe);
             }
         }
@@ -206,4 +225,37 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
     }
 
     private record IoUringCompletionCallBack(int fd, byte op, Consumer<IoUringCqe> userCallBack){}
+
+    private class IoUringCancelToken implements CancelToken {
+        long token;
+        AtomicReference<CompletableFuture<Integer>> cancelPromise = new AtomicReference();
+
+
+        public IoUringCancelToken(long token) {
+            this.token = token;
+        }
+
+        @Override
+        public CompletableFuture<Integer> cancel() {
+            if (isCancelled()) {
+                return cancelPromise.get();
+            }
+
+            CompletableFuture<Integer> promise = new CompletableFuture<>();
+            boolean hasCancel = cancelPromise.compareAndSet(null, promise);
+            if (!hasCancel) {
+                return cancelPromise.get();
+            }
+            CancelToken cancelToken = fillTemplate(sqe -> {
+                Instance.LIB_URING.io_uring_prep_cancel64(sqe, token, IORING_ASYNC_CANCEL_ALL);
+            }, cqe -> promise.complete(cqe.getRes()));
+            return promise;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return cancelPromise.get() != null;
+        }
+    }
+
 }

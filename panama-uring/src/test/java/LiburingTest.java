@@ -2,12 +2,16 @@ import org.junit.Assert;
 import org.junit.Test;
 import struct.io_uring_cqe_struct;
 import struct.io_uring_sqe_struct;
+import top.dreamlike.panama.uring.async.CancelableFuture;
+import top.dreamlike.panama.uring.async.fd.AsyncEventFd;
+import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.fd.EventFd;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
+import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,7 +20,12 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class LiburingTest {
@@ -130,6 +139,37 @@ public class LiburingTest {
         }
     }
 
+
+    @Test
+    public void testAsyncFd() {
+        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+            params.setSq_entries(4);
+            params.setFlags(0);
+        });
+
+        try (eventLoop;
+             Arena allocator = Arena.ofConfined()) {
+            eventLoop.start();
+            AsyncEventFd eventFd = new AsyncEventFd(eventLoop);
+            eventFd.eventfdWrite(1);
+            OwnershipMemory memory = OwnershipMemory.of(allocator.allocate(ValueLayout.JAVA_LONG));
+            CancelableFuture<Integer> read = eventFd.asyncRead(memory, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
+            Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), (int)read.get());
+            Assert.assertEquals(1, memory.resource().get(ValueLayout.JAVA_LONG,0));
+
+            CancelableFuture<Integer> cancelableReadFuture = eventFd.asyncRead(memory, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
+
+            eventLoop.submitScheduleTask(1, TimeUnit.SECONDS, () -> {
+                cancelableReadFuture.cancel()
+                        .thenAccept(count -> Assert.assertEquals(1L, (long)count));
+            });
+
+            Integer res = cancelableReadFuture.get();
+            Assert.assertEquals(Libc.Error_H.ECANCELED, -res);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public static IoUringCqe submitTemplate(Arena arena, IoUring uring, Consumer<IoUringSqe> sqeFunction) {
         LibUring libUring = Instance.LIB_URING;

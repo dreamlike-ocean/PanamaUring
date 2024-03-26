@@ -1,6 +1,5 @@
 package top.dreamlike.panama.uring.nativelib.libs;
 
-import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.panama.generator.annotation.CLib;
 import top.dreamlike.panama.generator.annotation.NativeFunction;
 import top.dreamlike.panama.generator.annotation.Pointer;
@@ -54,7 +53,7 @@ public interface LibUring {
                 long step = IoUringConstant.AccessShortcuts.IoUringCqeLayout.byteSize();
                 for (; head != last; head++, i++) {
                     int index = (head & mask) << shift;
-                    cqes.set(ValueLayout.ADDRESS, i, MemorySegment.ofAddress(cqesBase.address() + index * step));
+                    cqes.set(ValueLayout.ADDRESS, i * ValueLayout.ADDRESS.byteSize(), MemorySegment.ofAddress(cqesBase.address() + index * step));
                 }
                 return count;
             }
@@ -85,7 +84,7 @@ public interface LibUring {
 
     int io_uring_submit_and_wait(@Pointer IoUring ring, int wait_nr);
 
-    int io_uring_submit_and_wait_io_uring_wait_cqes(@Pointer IoUring ring, @Pointer MemorySegment cqe_ptr, int wait_nr, @Pointer KernelTime64Type ts, @Pointer SigsetType sigmask);
+    int io_uring_submit_and_wait_timeout(@Pointer IoUring ring, @Pointer MemorySegment cqe_ptr, int wait_nr, @Pointer KernelTime64Type ts, @Pointer SigsetType sigmask);
 
     @NativeFunction(fast = true)
     default void io_uring_cq_advance(@Pointer IoUring ring, int nr) {

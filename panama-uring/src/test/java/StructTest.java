@@ -1,9 +1,7 @@
 import org.junit.Assert;
 import org.junit.Test;
-import top.dreamlike.common.CType;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.nativelib.Instance;
-import top.dreamlike.panama.uring.nativelib.struct.epoll.EpollData;
 import top.dreamlike.panama.uring.nativelib.struct.epoll.EpollEvent;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBuf;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufRing;
@@ -13,7 +11,6 @@ import top.dreamlike.panama.uring.nativelib.struct.socket.MsgHdr;
 import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
 
 import java.lang.foreign.*;
-import java.nio.ByteOrder;
 
 import static java.lang.foreign.ValueLayout.*;
 
@@ -82,6 +79,5 @@ public class StructTest {
         IoUringConstant.AccessShortcuts.IO_URING_BUF_LEN_VARHANDLE.set(segment, memoryLayout.byteSize(), 123);
         IoUringBuf atIndex1 = Instance.STRUCT_PROXY_GENERATOR.enhance(segment.asSlice(memoryLayout.byteSize(), memoryLayout.byteSize()));
         Assert.assertEquals(123, atIndex1.getLen());
-
     }
 }

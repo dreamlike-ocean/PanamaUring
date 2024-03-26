@@ -1,5 +1,7 @@
 package top.dreamlike.extension.memory;
 
+import top.dreamlike.panama.uring.trait.OwnershipMemory;
+
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.util.function.Consumer;

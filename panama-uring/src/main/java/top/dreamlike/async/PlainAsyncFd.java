@@ -5,7 +5,7 @@ import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.eventloop.IOUringEventLoop;
 import top.dreamlike.extension.NotEnoughSqeException;
-import top.dreamlike.extension.memory.OwnershipMemory;
+import top.dreamlike.panama.uring.trait.OwnershipMemory;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.helper.Pair;

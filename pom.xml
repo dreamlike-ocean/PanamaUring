@@ -46,7 +46,6 @@
     </developers>
     <modules>
         <module>panama-uring</module>
-        <module>example</module>
         <module>vertx-io-uring-ext</module>
         <module>native-lib</module>
         <module>panama-generator</module>
