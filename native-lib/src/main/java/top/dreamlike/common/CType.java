@@ -16,7 +16,7 @@ public class CType {
     public static final OfLong C_LONG_LONG$LAYOUT = JAVA_LONG.withByteAlignment(8);
     public static final OfFloat C_FLOAT$LAYOUT = JAVA_FLOAT.withByteAlignment(8);
     public static final OfDouble C_DOUBLE$LAYOUT = JAVA_DOUBLE.withByteAlignment(8);
-    public static final AddressLayout C_POINTER$LAYOUT = ADDRESS.withByteAlignment(8);
+    public static final AddressLayout C_POINTER$LAYOUT = ADDRESS;
     public static final MemorySegment NULL = MemorySegment.NULL;
 
     public static final OfLong C_SSIZE_t$LAYOUT = JAVA_LONG.withByteAlignment(8);

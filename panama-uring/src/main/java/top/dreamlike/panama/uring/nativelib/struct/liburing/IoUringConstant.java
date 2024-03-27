@@ -73,40 +73,43 @@ public class IoUringConstant {
         public static final VarHandle IOURING_SQE_OFFSET_VARHANDLE = IoUringSqeLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("offsetUnion"),
                 MemoryLayout.PathElement.groupElement("off")
-        );
+        ).withInvokeExactBehavior();
 
         public static final VarHandle IOURING_SQE_ADDR2_VARHANDLE = IoUringSqeLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("offsetUnion"),
                 MemoryLayout.PathElement.groupElement("addr2")
-        );
+        ).withInvokeExactBehavior();
 
         public static VarHandle IO_URING_SQE_ADDR_VARHANDLE = IoUringSqeLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("bufferUnion"),
                 MemoryLayout.PathElement.groupElement("addr")
-        );
+        ).withInvokeExactBehavior();
+
         public static VarHandle IO_URING_SQE_RW_FLAGS_VARHANDLE = IoUringSqeLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("flagsUnion"),
                 MemoryLayout.PathElement.groupElement("rw_flags")
-        );
+        ).withInvokeExactBehavior();
+
         public static VarHandle IO_URING_SQE_BUF_INDEX_VARHANDLE = IoUringSqeLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("fixeBuffer"),
                 MemoryLayout.PathElement.groupElement("buf_index")
-        );
+        ).withInvokeExactBehavior();
 
         public static VarHandle IO_URING_SQE_BUF_GROUP_VARHANDLE = IoUringSqeLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("fixeBuffer"),
                 MemoryLayout.PathElement.groupElement("buf_group")
-        );
+        ).withInvokeExactBehavior();
 
         public static VarHandle IO_URING_SQE_FILE_INDEX_VARHANDLE = IoUringSqeLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("spliceUnion"),
                 MemoryLayout.PathElement.groupElement("file_index")
-        );
+        ).withInvokeExactBehavior();
+
         public static VarHandle IO_URING_SQE_ADDR3_VARHANDLE = IoUringSqeLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("addr3Union"),
                 MemoryLayout.PathElement.groupElement("addr3"),
                 MemoryLayout.PathElement.groupElement("addr3")
-        );
+        ).withInvokeExactBehavior();
 
         public static long IO_URING_SQE__PAD2_OFFSET = IoUringSqeLayout.byteOffset(
                 MemoryLayout.PathElement.groupElement("addr3Union"),
@@ -117,106 +120,115 @@ public class IoUringConstant {
         public static VarHandle IO_URING_SPLICE_OFF_IN_VARHANDLE = IoUringSqeLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("bufferUnion"),
                 MemoryLayout.PathElement.groupElement("splice_off_in")
-        );
+        ).withInvokeExactBehavior();
 
         public static VarHandle IO_URING_SPLICE_FD_IN_VARHANDLE = IoUringSqeLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("spliceUnion"),
                 MemoryLayout.PathElement.groupElement("splice_fd_in")
-        );
+        ).withInvokeExactBehavior();
 
         public static VarHandle IO_URING_ADDR_LEN_VARHANDLE = IoUringSqeLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("spliceUnion"),
                 MemoryLayout.PathElement.groupElement("len"),
                 MemoryLayout.PathElement.groupElement("addr_len")
-        );
+        ).withInvokeExactBehavior();
 
         public static VarHandle IO_URING_SPLICE_FD_OUT_VARHANDLE = IoUringSqeLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("flagsUnion"),
                 MemoryLayout.PathElement.groupElement("splice_flags")
-        );
+        ).withInvokeExactBehavior();
+
         public static final MemoryLayout IoUringLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUring.class);
         public static final VarHandle IO_URING_SQ_KHEAD_DEFERENCE_VARHANDLE = IoUringLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("sq"),
                 MemoryLayout.PathElement.groupElement("khead"),
                 MemoryLayout.PathElement.dereferenceElement()
-        );
+        ).withInvokeExactBehavior();
+
         public static final VarHandle IO_URING_SQ_KTAIL_DEFERENCE_VARHANDLE = IoUringLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("sq"),
                 MemoryLayout.PathElement.groupElement("ktail"),
                 MemoryLayout.PathElement.dereferenceElement()
-        );
+        ).withInvokeExactBehavior();
+
         public static final VarHandle IO_URING_SQ_SQE_TAIL_VARHANDLE = IoUringLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("sq"),
                 MemoryLayout.PathElement.groupElement("sqe_tail")
-        );
+        ).withInvokeExactBehavior();
+
         public static final VarHandle IO_URING_SQ_RING_MASK_VARHANDLE = IoUringLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("sq"),
                 MemoryLayout.PathElement.groupElement("ring_mask")
-        );
+        ).withInvokeExactBehavior();
+
         public static final VarHandle IO_URING_SQ_RING_ENTRIES_VARHANDLE = IoUringLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("sq"),
                 MemoryLayout.PathElement.groupElement("ring_entries")
-        );
+        ).withInvokeExactBehavior();
+
         public static final VarHandle IO_URING_SQ_SQES_VARHANDLE = IoUringLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("sq"),
                 MemoryLayout.PathElement.groupElement("sqes")
-        );
+        ).withInvokeExactBehavior();
 
         public static final VarHandle IO_URING_SQ_KFLAGS_DEFERENCE_VARHANDLE = IoUringLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("sq"),
                 MemoryLayout.PathElement.groupElement("kflags"),
                 MemoryLayout.PathElement.dereferenceElement()
-        );
+        ).withInvokeExactBehavior();
 
         public static final VarHandle IO_URING_CQ_KHEAD_DEFERENCE_VARHANDLE = IoUringLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("cq"),
                 MemoryLayout.PathElement.groupElement("khead"),
                 MemoryLayout.PathElement.dereferenceElement()
-        );
+        ).withInvokeExactBehavior();
+
         public static final VarHandle IO_URING_CQ_KTAIL_DEFERENCE_VARHANDLE = IoUringLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("cq"),
                 MemoryLayout.PathElement.groupElement("ktail"),
                 MemoryLayout.PathElement.dereferenceElement()
-        );
+        ).withInvokeExactBehavior();
+
         public static final VarHandle IO_URING_CQ_KFLAGS_DEFERENCE_VARHANDLE = IoUringLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("cq"),
                 MemoryLayout.PathElement.groupElement("kflags"),
                 MemoryLayout.PathElement.dereferenceElement()
-        );
+        ).withInvokeExactBehavior();
+
         public static final VarHandle IO_URING_CQ_RING_MASK_VARHANDLE = IoUringLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("cq"),
                 MemoryLayout.PathElement.groupElement("ring_mask")
-        );
+        ).withInvokeExactBehavior();
 
         public static final VarHandle IO_URING_CQ_CQES_VARHANDLE = IoUringLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("cq"),
                 MemoryLayout.PathElement.groupElement("cqes")
-        );
+        ).withInvokeExactBehavior();
 
         public static final MemoryLayout IoUringBufLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringBuf.class);
 
         public static final VarHandle IO_URING_BUF_ADDR_VARHANDLE = IoUringBufLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("addr")
-        );
+        ).withInvokeExactBehavior();
 
         public static final VarHandle IO_URING_BUF_LEN_VARHANDLE = IoUringBufLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("len")
-        );
+        ).withInvokeExactBehavior();
 
         public static final VarHandle IO_URING_BUF_BID_VARHANDLE = IoUringBufLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("bid")
-        );
+        ).withInvokeExactBehavior();
 
         public static final VarHandle IO_URING_BUF_RESV_VARHANDLE = IoUringBufLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("resv")
-        );
+        ).withInvokeExactBehavior();
 
         public static final MemoryLayout IoUringBufRingLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringBufRing.class);
 
         public static final VarHandle IO_URING_BUF_RING_TAIL_VARHANDLE = IoUringBufRingLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("anonStruct"),
                 MemoryLayout.PathElement.groupElement("tail")
-        );
+        ).withInvokeExactBehavior();
 
     }
 

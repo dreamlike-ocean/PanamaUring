@@ -43,13 +43,13 @@ public interface LibUring {
         do {
             ready = io_uring_cq_ready(ring);
             if (ready != 0) {
-                int head = (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KHEAD_DEFERENCE_VARHANDLE.get(ringStruct, 0);
-                int mask = (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_RING_MASK_VARHANDLE.get(ringStruct, 0);
+                int head = (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KHEAD_DEFERENCE_VARHANDLE.get(ringStruct, 0L);
+                int mask = (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_RING_MASK_VARHANDLE.get(ringStruct, 0L);
                 int last;
                 int i = 0;
                 count = Math.min(count, ready);
                 last = head + count;
-                MemorySegment cqesBase = (MemorySegment) IoUringConstant.AccessShortcuts.IO_URING_CQ_CQES_VARHANDLE.get(ringStruct, 0);
+                MemorySegment cqesBase = (MemorySegment) IoUringConstant.AccessShortcuts.IO_URING_CQ_CQES_VARHANDLE.get(ringStruct, 0L);
                 long step = IoUringConstant.AccessShortcuts.IoUringCqeLayout.byteSize();
                 for (; head != last; head++, i++) {
                     int index = (head & mask) << shift;
@@ -70,7 +70,7 @@ public interface LibUring {
 
     //https://lwn.net/Articles/804108/
     private boolean cq_ring_needs_flush(MemorySegment ioUring) {
-        int sqFlags = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_KFLAGS_DEFERENCE_VARHANDLE.get(ioUring, 0);
+        int sqFlags = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_KFLAGS_DEFERENCE_VARHANDLE.get(ioUring, 0L);
         return (sqFlags & (IoUringConstant.IORING_SQ_CQ_OVERFLOW | IoUringConstant.IORING_SQ_TASKRUN)) != 0;
     }
 
@@ -93,8 +93,8 @@ public interface LibUring {
         }
         MemorySegment realMemory = StructProxyGenerator.findMemorySegment(ring);
         VarHandle kheadVH = IoUringConstant.AccessShortcuts.IO_URING_CQ_KHEAD_DEFERENCE_VARHANDLE;
-        int head = (int) kheadVH.get(realMemory, 0);
-        kheadVH.setRelease(realMemory, 0, head + nr);
+        int head = (int) kheadVH.get(realMemory, 0L);
+        kheadVH.setRelease(realMemory, 0L, head + nr);
     }
 
     int io_uring_register_buffers(@Pointer IoUring ring, @Pointer NativeArrayPointer<Iovec> iovecs, int nr_iovecs);
@@ -124,19 +124,19 @@ public interface LibUring {
     @NativeFunction(fast = true)
     default void io_uring_buf_ring_add(@Pointer IoUringBufRing br, @Pointer MemorySegment addr, int len, short bid, int mask, int buf_offset) {
         MemorySegment realMemory = StructProxyGenerator.findMemorySegment(br);
-        short tail = (short) IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.get(realMemory, 0);
+        short tail = (short) IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.get(realMemory, 0L);
         int index = (tail + buf_offset) & mask;
         MemorySegment bufPointer = MemorySegment.ofAddress(realMemory.address() + index * IoUringConstant.AccessShortcuts.IoUringBufLayout.byteSize())
                 .reinterpret(IoUringConstant.AccessShortcuts.IoUringBufLayout.byteSize());
-        IoUringConstant.AccessShortcuts.IO_URING_BUF_ADDR_VARHANDLE.set(bufPointer, 0, addr.address());
-        IoUringConstant.AccessShortcuts.IO_URING_BUF_LEN_VARHANDLE.set(bufPointer, 0, len);
-        IoUringConstant.AccessShortcuts.IO_URING_BUF_BID_VARHANDLE.set(bufPointer, 0, bid);
+        IoUringConstant.AccessShortcuts.IO_URING_BUF_ADDR_VARHANDLE.set(bufPointer, 0L, addr.address());
+        IoUringConstant.AccessShortcuts.IO_URING_BUF_LEN_VARHANDLE.set(bufPointer, 0L, len);
+        IoUringConstant.AccessShortcuts.IO_URING_BUF_BID_VARHANDLE.set(bufPointer, 0L, bid);
     }
 
     @NativeFunction(fast = true)
     default void io_uring_buf_ring_advance(@Pointer IoUringBufRing br, int count) {
         MemorySegment realMemory = StructProxyGenerator.findMemorySegment(br);
-        short newTail = (short) ((short) IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.get(realMemory, 0) + count);
+        short newTail = (short) ((short) IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.get(realMemory, 0L) + count);
         IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.setRelease(realMemory, newTail);
     }
 
@@ -148,7 +148,7 @@ public interface LibUring {
     @NativeFunction(fast = true)
     default void io_uring_buf_ring_init(@Pointer IoUringBufRing br) {
         MemorySegment realMemory = StructProxyGenerator.findMemorySegment(br);
-        IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.set(realMemory, 0, 0);
+        IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.set(realMemory, 0L, 0);
     }
 
     void io_uring_setup_buf_ring(@Pointer IoUring ioUring, int nentries, int bgid, int flags,/*int *ret*/@Pointer MemorySegment ret);
@@ -164,27 +164,27 @@ public interface LibUring {
     default IoUringSqe io_uring_get_sqe(@Pointer IoUring ring) {
         MemorySegment realMemory = StructProxyGenerator.findMemorySegment(ring);
         int head;
-        int next = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_SQE_TAIL_VARHANDLE.get(realMemory, 0) + 1;
+        int next = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_SQE_TAIL_VARHANDLE.get(realMemory, 0L) + 1;
         int shift = 0;
         if ((ring.getFlags() & IoUringConstant.IORING_SETUP_SQE128) != 0) {
             shift = 1;
         }
         if ((ring.getFlags() & IoUringConstant.IORING_SETUP_SQPOLL) != 0) {
-            head = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_KHEAD_DEFERENCE_VARHANDLE.getAcquire(realMemory, 0);
+            head = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_KHEAD_DEFERENCE_VARHANDLE.getAcquire(realMemory, 0L);
         } else {
-            head = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_KHEAD_DEFERENCE_VARHANDLE.get(realMemory, 0);
+            head = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_KHEAD_DEFERENCE_VARHANDLE.get(realMemory, 0L);
         }
-        int ring_entries = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_RING_ENTRIES_VARHANDLE.get(realMemory, 0);
+        int ring_entries = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_RING_ENTRIES_VARHANDLE.get(realMemory, 0L);
         if (next - head > ring_entries) {
             return null;
         }
-        MemorySegment sqesBase = (MemorySegment) IoUringConstant.AccessShortcuts.IO_URING_SQ_SQES_VARHANDLE.get(realMemory, 0);
-        int index = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_SQE_TAIL_VARHANDLE.get(realMemory, 0) & (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_RING_MASK_VARHANDLE.get(realMemory, 0);
+        MemorySegment sqesBase = (MemorySegment) IoUringConstant.AccessShortcuts.IO_URING_SQ_SQES_VARHANDLE.get(realMemory, 0L);
+        int index = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_SQE_TAIL_VARHANDLE.get(realMemory, 0L) & (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_RING_MASK_VARHANDLE.get(realMemory, 0L);
         index = index << shift;
         MemoryLayout sqeLayout = IoUringConstant.AccessShortcuts.IoUringSqeLayout;
         MemorySegment currentSqe = MemorySegment.ofAddress(sqesBase.address() + index * sqeLayout.byteSize())
                 .reinterpret(sqeLayout.byteSize());
-        IoUringConstant.AccessShortcuts.IO_URING_SQ_SQE_TAIL_VARHANDLE.set(realMemory, 0, next);
+        IoUringConstant.AccessShortcuts.IO_URING_SQ_SQE_TAIL_VARHANDLE.set(realMemory, 0L, next);
         return Instance.STRUCT_PROXY_GENERATOR.enhance(currentSqe);
     }
 
@@ -600,31 +600,31 @@ public interface LibUring {
         MemorySegment realMemory = StructProxyGenerator.findMemorySegment(ring);
         int khead = (int) IoUringConstant.AccessShortcuts
                 .IO_URING_SQ_KHEAD_DEFERENCE_VARHANDLE
-                .get(realMemory, 0);
+                .get(realMemory, 0L);
         if ((ring.getFlags() & IoUringConstant.IORING_SETUP_SQPOLL) != 0) {
             khead = (int) IoUringConstant.AccessShortcuts
                     .IO_URING_SQ_KHEAD_DEFERENCE_VARHANDLE
-                    .getAcquire(realMemory, 0);
+                    .getAcquire(realMemory, 0L);
         }
         return (int) IoUringConstant.AccessShortcuts
                 .IO_URING_SQ_SQE_TAIL_VARHANDLE
-                .get(realMemory, 0) - khead;
+                .get(realMemory, 0L) - khead;
     }
 
     default int io_uring_sq_space_left(@Pointer IoUring ring) {
         MemorySegment realMemory = StructProxyGenerator.findMemorySegment(ring);
-        return (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_RING_ENTRIES_VARHANDLE.get(realMemory, 0) - io_uring_sq_ready(ring);
+        return (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_RING_ENTRIES_VARHANDLE.get(realMemory, 0L) - io_uring_sq_ready(ring);
     }
 
     default int io_uring_cq_ready(@Pointer IoUring ring) {
         MemorySegment realMemory = StructProxyGenerator.findMemorySegment(ring);
-        return (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KTAIL_DEFERENCE_VARHANDLE.get(realMemory, 0)
-                - (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KHEAD_DEFERENCE_VARHANDLE.get(realMemory, 0);
+        return (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KTAIL_DEFERENCE_VARHANDLE.get(realMemory, 0L)
+                - (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KHEAD_DEFERENCE_VARHANDLE.get(realMemory, 0L);
     }
 
     default boolean io_uring_cq_has_overflow(@Pointer IoUring ring) {
         MemorySegment realMemory = StructProxyGenerator.findMemorySegment(ring);
-        int cqKFlags = (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KFLAGS_DEFERENCE_VARHANDLE.get(realMemory, 0);
+        int cqKFlags = (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KFLAGS_DEFERENCE_VARHANDLE.get(realMemory, 0L);
         return (cqKFlags & IoUringConstant.IORING_SQ_CQ_OVERFLOW) != 0;
     }
 

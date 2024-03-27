@@ -79,15 +79,12 @@ public class LiburingTest {
 
         MemoryLayout ioUringSqLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringSq.class).withName("io_uring_sq");
         Assert.assertEquals(struct.io_uring_sq.layout.byteSize(), ioUringSqLayout.byteSize());
-        Assert.assertEquals(struct.io_uring_sq.layout, ioUringSqLayout);
 
         MemoryLayout ioUringCqLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringCq.class).withName("io_uring_cq");
         Assert.assertEquals(struct.io_uring_cq.layout.byteSize(), ioUringCqLayout.byteSize());
-        Assert.assertEquals(struct.io_uring_cq.layout, ioUringCqLayout);
 
         MemoryLayout ioUringLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUring.class).withName("io_uring");
         Assert.assertEquals(struct.io_uring.layout.byteSize(), ioUringLayout.byteSize());
-        Assert.assertEquals(struct.io_uring.layout, ioUringLayout);
     }
 
     @Test

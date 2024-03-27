@@ -79,7 +79,7 @@ public class StructProxyGenerator {
     public static VarHandle generateVarHandle(MemoryLayout current, String name) {
         VarHandle handle = current.varHandle(MemoryLayout.PathElement.groupElement(name));
         handle = MethodHandles.insertCoordinates(handle, 1, 0);
-        return handle;
+        return handle.withInvokeExactBehavior();
     }
 
     public static MemorySegment findMemorySegment(Object o) {
@@ -196,7 +196,7 @@ public class StructProxyGenerator {
                 AddressLayout addressLayout = Optional.ofNullable(field.getAnnotation(Pointer.class))
                         .map(Pointer::targetLayout)
                         .filter(c -> !c.equals(void.class))
-                        .or(() -> field.getType() == NativeArrayPointer.class ? Optional.empty() :Optional.of(field.getType()))
+                        .or(() -> field.getType() == NativeArrayPointer.class || MemorySegment.class.isAssignableFrom(field.getType()) ? Optional.empty() :Optional.of(field.getType()))
                         .map(this::extract)
                         .map(targetLayout -> ValueLayout.ADDRESS.withName(field.getName()).withTargetLayout(targetLayout))
                         .orElse(ValueLayout.ADDRESS.withName(field.getName()));

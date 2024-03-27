@@ -45,7 +45,12 @@ public class StructTest {
                 JAVA_INT.withName("msg_namelen"),
                 MemoryLayout.paddingLayout(4),
 
-                ADDRESS.withName("msg_iov"),
+                ADDRESS.withName("msg_iov").withTargetLayout(MemoryLayout.structLayout(
+                        ADDRESS.withName("iov_base"),
+                        JAVA_LONG.withName("iov_len")
+                        )
+                )
+                ,
                 JAVA_LONG.withName("msg_iovlen"),
 
                 ADDRESS.withName("msg_control"),

@@ -67,7 +67,6 @@ public class IoUringSqe {
     }
 
 
-
     public BufferUnion getBufferUnion() {
         return bufferUnion;
     }
@@ -135,97 +134,97 @@ public class IoUringSqe {
     public void setOffset(long offset) {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IOURING_SQE_OFFSET_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        varHandle.set(memory, 0, offset);
+        varHandle.set(memory, 0L, offset);
     }
 
     public long getOffset() {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IOURING_SQE_OFFSET_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        return (long) varHandle.get(memory, 0);
+        return (long) varHandle.get(memory, 0L);
     }
 
     public void setAddr2(long addr2) {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IOURING_SQE_ADDR2_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        varHandle.set(memory, 0, addr2);
+        varHandle.set(memory, 0L, addr2);
     }
 
     public long getAddr2() {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IOURING_SQE_ADDR2_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        return (long) varHandle.get(memory, 0);
+        return (long) varHandle.get(memory, 0L);
     }
 
     public void setAddr(long addr) {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_ADDR_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        varHandle.set(memory, 0, addr);
+        varHandle.set(memory, 0L, addr);
     }
 
     public long getAddr() {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_ADDR_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        return (long) varHandle.get(memory, 0);
+        return (long) varHandle.get(memory, 0L);
     }
 
-    public void setFlagsInFlagsUnion(int rwFlags)  {
+    public void setFlagsInFlagsUnion(int rwFlags) {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_RW_FLAGS_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        varHandle.set(memory, 0, rwFlags);
+        varHandle.set(memory, 0L, rwFlags);
     }
 
     public int getRwFlags() {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_RW_FLAGS_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        return (int) varHandle.get(memory, 0);
+        return (int) varHandle.get(memory, 0L);
     }
 
     public short getBufIndex() {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_BUF_INDEX_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        return (short) varHandle.get(memory, 0);
+        return (short) varHandle.get(memory, 0L);
     }
 
     public void setBufIndex(short bufIndex) {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_BUF_INDEX_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        varHandle.set(memory, 0, bufIndex);
+        varHandle.set(memory, 0L, bufIndex);
     }
 
     public short getBufGroup() {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_BUF_GROUP_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        return (short) varHandle.get(memory, 0);
+        return (short) varHandle.get(memory, 0L);
     }
 
     public void setBufGroup(short bufGroup) {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_BUF_GROUP_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        varHandle.set(memory, 0, bufGroup);
+        varHandle.set(memory, 0L, bufGroup);
     }
 
     public int getFileIndex() {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_FILE_INDEX_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        return (int) varHandle.get(memory, 0);
+        return (int) varHandle.get(memory, 0L);
     }
 
     public void setFileIndex(int fileIndex) {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_FILE_INDEX_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        varHandle.set(memory, 0, fileIndex);
+        varHandle.set(memory, 0L, fileIndex);
     }
 
     public void setAddr3(long addr3) {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_ADDR3_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        varHandle.set(memory, 0, addr3);
+        varHandle.set(memory, 0L, addr3);
     }
 
     public long getAddr3() {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SQE_ADDR3_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        return (long) varHandle.get(memory, 0);
+        return (long) varHandle.get(memory, 0L);
     }
 
     public void setPad2(long pad2) {
@@ -241,52 +240,50 @@ public class IoUringSqe {
     public long getSpliceOffIn() {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SPLICE_OFF_IN_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        return (long) varHandle.get(memory, 0);
+        return (long) varHandle.get(memory, 0L);
     }
 
     public void setSpliceOffIn(long spliceOffIn) {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SPLICE_OFF_IN_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        varHandle.set(memory, 0, spliceOffIn);
+        varHandle.set(memory, 0L, spliceOffIn);
     }
 
     public int getSpliceFdIn() {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SPLICE_FD_IN_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        return (int) varHandle.get(memory, 0);
+        return (int) varHandle.get(memory, 0L);
     }
 
     public void setSpliceFdIn(int spliceFdIn) {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SPLICE_FD_IN_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        varHandle.set(memory, 0, spliceFdIn);
+        varHandle.set(memory, 0L, spliceFdIn);
     }
 
     public int getSpliceFlags() {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SPLICE_FD_OUT_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        return (int) varHandle.get(memory, 0);
+        return (int) varHandle.get(memory, 0L);
     }
 
     public void setSpliceFlags(int spliceFlags) {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_SPLICE_FD_OUT_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        varHandle.set(memory, 0, spliceFlags);
+        varHandle.set(memory, 0L, spliceFlags);
     }
 
     public void setAddrLen(short addrLen) {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_ADDR_LEN_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        varHandle.set(memory, 0, addrLen);
+        varHandle.set(memory, 0L, addrLen);
     }
 
     public short getAddrLen() {
         VarHandle varHandle = IoUringConstant.AccessShortcuts.IO_URING_ADDR_LEN_VARHANDLE;
         MemorySegment memory = ((NativeStructEnhanceMark) this).realMemory();
-        return (short) varHandle.get(memory, 0);
+        return (short) varHandle.get(memory, 0L);
     }
-
-
 
 
     @Union
