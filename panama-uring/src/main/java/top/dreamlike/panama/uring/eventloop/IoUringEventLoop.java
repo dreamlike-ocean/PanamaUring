@@ -1,6 +1,7 @@
 package top.dreamlike.panama.uring.eventloop;
 
 import org.jctools.queues.MpscUnboundedArrayQueue;
+import top.dreamlike.helper.StackValue;
 import top.dreamlike.panama.uring.async.CancelableFuture;
 import top.dreamlike.panama.uring.async.cancel.CancelToken;
 import top.dreamlike.panama.uring.fd.EventFd;
@@ -118,6 +119,29 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         releaseResource();
     }
 
+    /**
+     *
+     * @param entries entries 是缓冲区环中请求的条目数。该参数的大小必须是 2 的幂。
+     * @param bufferGroupId  bgid 是所选的缓冲区组 ID
+     */
+    public IoUringBufRingSetupResult setupBufferRing(int entries, int bufferGroupId) {
+        if (entries <= 0) {
+            throw new IllegalArgumentException("entries must be greater than 0");
+        }
+        int MAXIMUM_CAPACITY = 1<< 30;
+        //该参数的大小必须是 2 的幂。
+        entries = -1 >>> Integer.numberOfLeadingZeros(entries - 1);
+        entries =  (entries < 0) ? 1 : (entries >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : entries + 1;
+        try (StackValue value = StackValue.currentStack()) {
+            MemorySegment resPtr = value.allocate(ValueLayout.JAVA_INT);
+            IoUringBufRing bufRing = libUring.io_uring_setup_buf_ring(internalRing, entries, bufferGroupId, 0, resPtr);
+            return new IoUringBufRingSetupResult(resPtr.get(ValueLayout.JAVA_INT, 0), bufRing);
+        } catch (Exception _) {
+        }
+        //make javac happy
+        return null;
+    }
+
     public CancelToken fillTemplate(Consumer<IoUringSqe> sqeFunction, Consumer<IoUringCqe> callback) {
         long token = tokenGenerator.getAndIncrement();
         Runnable r = () -> {
@@ -134,15 +158,21 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         return new IoUringCancelToken(token);
     }
 
-    public CancelableFuture<Integer> asyncOperation(Consumer<IoUringSqe> sqeFunction) {
+    public CancelableFuture<IoUringCqe> asyncOperation(Consumer<IoUringSqe> sqeFunction) {
         long token = tokenGenerator.getAndIncrement();
         IoUringCancelToken cancelToken = new IoUringCancelToken(token);
-        CancelableFuture<Integer> promise = new CancelableFuture<>(cancelToken);
+        CancelableFuture<IoUringCqe> promise = new CancelableFuture<>(cancelToken);
         Runnable r = () -> {
             IoUringSqe sqe = ioUringGetSqe();
             sqeFunction.accept(sqe);
             sqe.setUser_data(token);
-            callBackMap.put(token, new IoUringCompletionCallBack(sqe.getFd(), sqe.getOpcode(), cqe -> promise.complete(cqe.getRes())));
+            callBackMap.put(token, new IoUringCompletionCallBack(sqe.getFd(), sqe.getOpcode(), cqe ->  {
+                IoUringCqe uringCqe = new IoUringCqe();
+                uringCqe.setFlags(cqe.getFlags());
+                uringCqe.setRes(cqe.getRes());
+                uringCqe.setUser_data(cqe.getUser_data());
+                promise.complete(uringCqe);
+            }));
         };
         if (inEventLoop()) {
             r.run();
@@ -195,6 +225,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         this.wakeUpFd.close();
         Instance.LIB_URING.io_uring_queue_exit(internalRing);
         this.singleThreadArena.close();
+        StackValue.release();
     }
 
     private boolean inEventLoop() {

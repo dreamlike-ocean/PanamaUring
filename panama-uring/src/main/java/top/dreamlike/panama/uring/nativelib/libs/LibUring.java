@@ -151,7 +151,8 @@ public interface LibUring {
         IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.set(realMemory, 0L, 0);
     }
 
-    void io_uring_setup_buf_ring(@Pointer IoUring ioUring, int nentries, int bgid, int flags,/*int *ret*/@Pointer MemorySegment ret);
+    @NativeFunction(returnIsPointer = true)
+    IoUringBufRing io_uring_setup_buf_ring(@Pointer IoUring ioUring, int nentries, int bgid, int flags,/*int *ret*/@Pointer MemorySegment ret);
 
     int io_uring_buf_ring_head(@Pointer IoUring ring, int buf_group, /* unsigned * head*/ @Pointer MemorySegment head);
 

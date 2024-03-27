@@ -358,7 +358,7 @@ public class IoUringConstant {
     /*
      * sqe->flags
      */
-    /*  se fixed fileset */
+    /*  use fixed fileset */
     public static final int IOSQE_FIXED_FILE = 1 << IOSQE_FIXED_FILE_BIT;
     /* issue after inflight IO */
     public static final int IOSQE_IO_DRAIN = 1 << IOSQE_IO_DRAIN_BIT;

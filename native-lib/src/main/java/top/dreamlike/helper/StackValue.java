@@ -55,7 +55,7 @@ public class StackValue implements SegmentAllocator, AutoCloseable {
         var base = stack.address();
         var start = alignUp(base + hasAllocate, byteAlignment) - base;
         MemorySegment res = stack.asSlice(start, byteSize, byteAlignment);
-        hasAllocate += start + byteSize;
+        hasAllocate += (int) (start + byteSize);
         return res;
     }
 

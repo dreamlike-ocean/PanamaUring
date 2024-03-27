@@ -2,6 +2,7 @@ package top.dreamlike.panama.uring.nativelib.struct.liburing;
 
 import top.dreamlike.panama.generator.annotation.NativeArrayMark;
 import top.dreamlike.panama.generator.annotation.Union;
+import top.dreamlike.panama.uring.nativelib.Instance;
 
 import java.lang.foreign.MemorySegment;
 
@@ -67,4 +68,13 @@ public class IoUringBufRing {
         }
     }
 
+
+    public void ioUringBufRingAdd(MemorySegment addr, int len,
+                                         short bid, int mask, int bufOffset) {
+        Instance.LIB_URING.io_uring_buf_ring_add(this, addr, len, bid, mask, bufOffset);
+    }
+
+    public void ioUringBufRingAdvance(int count) {
+        Instance.LIB_URING.io_uring_buf_ring_advance(this, count);
+    }
 }

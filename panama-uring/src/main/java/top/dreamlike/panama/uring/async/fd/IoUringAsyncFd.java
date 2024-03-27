@@ -3,6 +3,8 @@ package top.dreamlike.panama.uring.async.fd;
 import top.dreamlike.panama.uring.async.CancelableFuture;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.trait.NativeFd;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
@@ -14,13 +16,25 @@ public interface IoUringAsyncFd extends NativeFd {
 
     default CancelableFuture<Integer> asyncRead(OwnershipMemory buffer, int len, int offset) {
         return (CancelableFuture<Integer>) owner()
-                        .asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_read(sqe, readFd(), MemorySegment.ofAddress(buffer.resource().address()), len, offset))
-                        .whenComplete((_, _) -> buffer.drop());
+                .asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_read(sqe, readFd(), MemorySegment.ofAddress(buffer.resource().address()), len, offset))
+                .thenApply(IoUringCqe::getRes)
+                .whenComplete((_, _) -> buffer.drop());
+    }
+
+    default CancelableFuture<Integer> asyncSelectedRead(int len, int offset, short bufferGroupId) {
+        return (CancelableFuture<Integer>) owner()
+                .asyncOperation(sqe -> {
+                    Instance.LIB_URING.io_uring_prep_read(sqe, readFd(), MemorySegment.NULL, len, offset);
+                    sqe.setFlags((byte) (sqe.getFlags() | IoUringConstant.IOSQE_BUFFER_SELECT));
+                    sqe.setBufGroup(bufferGroupId);
+                })
+                .thenApply(IoUringCqe::getRes);
     }
 
     default CancelableFuture<Integer> asyncWrite(OwnershipMemory buffer, int len, int offset) {
         return (CancelableFuture<Integer>) owner()
                 .asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_write(sqe, readFd(), MemorySegment.ofAddress(buffer.resource().address()), len, offset))
+                .thenApply(IoUringCqe::getRes)
                 .whenComplete((_, _) -> buffer.drop());
     }
 }
