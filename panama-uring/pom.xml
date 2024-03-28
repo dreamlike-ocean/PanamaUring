@@ -14,6 +14,7 @@
 
     <properties>
         <liburing.so.name>liburing-ffi.so.2.6</liburing.so.name>
+        <jemalloc.so.name>libjemalloc.so.2</jemalloc.so.name>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -118,6 +119,98 @@
                         </configuration>
                     </execution>
 
+
+                    <execution>
+                        <id>autogen-jemalloc</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>sh</executable>
+                            <workingDirectory>${project.basedir}/c/jemalloc</workingDirectory>
+                            <arguments>
+                                <argument>./autogen.sh</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>configure-jemalloc</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>./configure</executable>
+                            <workingDirectory>${project.basedir}/c/jemalloc</workingDirectory>
+                            <arguments>
+                                <argument>--with-jemalloc-prefix=ring_</argument>
+                                <argument>--disable-initial-exec-tls</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>compile-jemalloc</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>make</executable>
+                            <workingDirectory>${project.basedir}/c/jemalloc</workingDirectory>
+                            <arguments>
+                                <argument>-j</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+
+                    <execution>
+                        <id>clean-jemalloc</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>make</executable>
+                            <workingDirectory>${project.basedir}/c/jemalloc</workingDirectory>
+                            <arguments>
+                                <argument>clean</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>rm-jemalloc</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>rm</executable>
+                            <workingDirectory>${project.basedir}/src/main/resources</workingDirectory>
+                            <arguments>
+                                <argument>-rf</argument>
+                                <argument>jemalloc-ffi.so</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>mv-jemalloc</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>mv</executable>
+                            <workingDirectory>${project.basedir}/c/jemalloc/lib</workingDirectory>
+                            <arguments>
+                                <argument>${jemalloc.so.name}</argument>
+                                <argument>../../../src/main/resources/jemalloc-ffi.so</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
 

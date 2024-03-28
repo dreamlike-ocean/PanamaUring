@@ -218,7 +218,9 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
 
     @Override
     public void close() throws Exception {
-        hasClosed.compareAndSet(false, true);
+        if (hasClosed.compareAndSet(false, true)) {
+            wakeup();
+        }
     }
 
     private void releaseResource() {
@@ -238,6 +240,10 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
             throw new IllegalStateException("EventLoop has closed");
         }
         taskQueue.add(command);
+        wakeup();
+    }
+
+    private void wakeup() {
         if (inWait.compareAndSet(false, true)) {
             wakeUpFd.eventfdWrite(1);
         }
@@ -259,7 +265,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
 
     private class IoUringCancelToken implements CancelToken {
         long token;
-        AtomicReference<CompletableFuture<Integer>> cancelPromise = new AtomicReference();
+        AtomicReference<CompletableFuture<Integer>> cancelPromise = new AtomicReference<>();
 
 
         public IoUringCancelToken(long token) {
