@@ -2,6 +2,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import struct.io_uring_cqe_struct;
 import struct.io_uring_sqe_struct;
+import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.async.CancelableFuture;
 import top.dreamlike.panama.uring.async.fd.AsyncEventFd;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
@@ -24,6 +25,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -130,7 +132,7 @@ public class LiburingTest {
             });
             Assert.assertTrue(cqeStruct.getRes() > 0);
             Assert.assertEquals(readBuffer.address(), cqeStruct.getUser_data());
-            Assert.assertEquals(helloIoUring,DebugHelper.bufToString(readBuffer, cqeStruct.getRes()));
+            Assert.assertEquals(helloIoUring, DebugHelper.bufToString(readBuffer, cqeStruct.getRes()));
             libUring.io_uring_cq_advance(ioUring, 1);
             libUring.io_uring_queue_exit(ioUring);
         }
@@ -151,14 +153,14 @@ public class LiburingTest {
             eventFd.eventfdWrite(1);
             OwnershipMemory memory = OwnershipMemory.of(allocator.allocate(ValueLayout.JAVA_LONG));
             CancelableFuture<Integer> read = eventFd.asyncRead(memory, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
-            Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), (int)read.get());
-            Assert.assertEquals(1, memory.resource().get(ValueLayout.JAVA_LONG,0));
+            Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), (int) read.get());
+            Assert.assertEquals(1, memory.resource().get(ValueLayout.JAVA_LONG, 0));
 
             CancelableFuture<Integer> cancelableReadFuture = eventFd.asyncRead(memory, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
 
             eventLoop.submitScheduleTask(1, TimeUnit.SECONDS, () -> {
                 cancelableReadFuture.cancel()
-                        .thenAccept(count -> Assert.assertEquals(1L, (long)count));
+                        .thenAccept(count -> Assert.assertEquals(1L, (long) count));
             });
 
             Integer res = cancelableReadFuture.get();
@@ -166,6 +168,59 @@ public class LiburingTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @Test
+    public void testBuffRing() {
+        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+            params.setSq_entries(4);
+            params.setFlags(0);
+        });
+        try (eventLoop) {
+            eventLoop.start();
+            int NREQS = 64;
+            int BUF_SIZE = 1024;
+            short bufferGroup = 1;
+            int BR_MASK = Instance.LIB_URING.io_uring_buf_ring_mask(NREQS);
+
+            IoUringBufRingSetupResult result = eventLoop.setupBufferRing(NREQS, bufferGroup).get();
+            Assert.assertEquals(0, result.res());
+            IoUringBufRing bufRing = result.bufRing();
+            Assert.assertNotNull(bufRing);
+            Assert.assertEquals(bufRing.getOwner(), eventLoop);
+            Assert.assertNotEquals(MemorySegment.NULL, StructProxyGenerator.findMemorySegment(bufRing));
+            Assert.assertThrows(IllegalStateException.class, () -> {
+                bufRing.ioUringBufRingAdd(MemorySegment.NULL, BUF_SIZE, (short) 0, 0, 0);
+            });
+            int totalLen = NREQS * BUF_SIZE;
+            try (OwnershipMemory bufPtrPtr = Instance.LIB_JEMALLOC.mallocMemory(ValueLayout.ADDRESS.byteSize());
+                 OwnershipMemory bufBase = Instance.LIB_JEMALLOC.posixMemalign(bufPtrPtr.resource(), 4096, totalLen);
+            ) {
+                CompletableFuture.runAsync(() -> {
+                    MemorySegment base = bufBase.resource();
+                    for (int i = 0; i < NREQS; i++) {
+                        bufRing.ioUringBufRingAdd(base, BUF_SIZE, (short) (i + 1), BR_MASK, i);
+                        base = MemorySegment.ofAddress(base.address() + BUF_SIZE);
+                    }
+                    bufRing.ioUringBufRingAdvance(NREQS);
+
+                }, eventLoop).get();
+                AsyncEventFd eventFd = new AsyncEventFd(eventLoop);
+                eventFd.eventfdWrite(214);
+
+                IoUringCqe cqe = eventFd.asyncSelectedRead((int) ValueLayout.JAVA_LONG.byteSize(), 0, bufferGroup).get();
+                Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), cqe.getRes());
+                int bid = cqe.getFlags() >> IoUringConstant.IORING_CQE_BUFFER_SHIFT;
+                MemorySegment base = bufBase.resource();
+                base = MemorySegment.ofAddress(base.address() + (bid - 1) * BUF_SIZE).reinterpret(BUF_SIZE);
+                Assert.assertEquals(214, base.get(ValueLayout.JAVA_INT, 0));
+            } catch (Throwable t) {
+                throw new RuntimeException(t);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     public static IoUringCqe submitTemplate(Arena arena, IoUring uring, Consumer<IoUringSqe> sqeFunction) {

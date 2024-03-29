@@ -3,10 +3,7 @@
 package top.dreamlike.panama.generator.proxy;
 
 
-import top.dreamlike.panama.generator.annotation.Alignment;
-import top.dreamlike.panama.generator.annotation.NativeArrayMark;
-import top.dreamlike.panama.generator.annotation.Pointer;
-import top.dreamlike.panama.generator.annotation.Union;
+import top.dreamlike.panama.generator.annotation.*;
 import top.dreamlike.panama.generator.exception.StructException;
 import top.dreamlike.panama.generator.helper.*;
 
@@ -182,7 +179,7 @@ public class StructProxyGenerator {
         }
         var alignmentByteSize = alignment == null ? -1 : alignment.byteSize();
         for (Field field : structClass.getDeclaredFields()) {
-            if (field.isSynthetic() || Modifier.isStatic(field.getModifiers())) {
+            if (needSkip(field)) {
                 continue;
             }
             //类型为原语
@@ -253,7 +250,7 @@ public class StructProxyGenerator {
                     Consumer<CodeBuilder> interfaceClinit = implementStructMarkInterface(classBuilder, thisClassDesc);
                     clinitBlocks.add(interfaceClinit);
                     for (Field field : targetClass.getDeclaredFields()) {
-                        if (field.isSynthetic() || Modifier.isStatic(field.getModifiers())) {
+                        if (needSkip(field)) {
                             continue;
                         }
                         var clinitBlock = switch (field.getType()) {
@@ -312,6 +309,10 @@ public class StructProxyGenerator {
 
     public void useLmf(boolean use_lmf) {
         this.use_lmf = use_lmf;
+    }
+
+    private boolean needSkip(Field field) {
+        return field.isSynthetic() || Modifier.isStatic(field.getModifiers()) || field.getAnnotation(Skip.class) != null;
     }
 
     public VarHandle findFieldVarHandle(Field field) {

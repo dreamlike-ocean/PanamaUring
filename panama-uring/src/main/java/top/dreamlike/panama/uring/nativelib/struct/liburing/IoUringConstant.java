@@ -4,6 +4,7 @@ import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.panama.uring.nativelib.Instance;
 
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 
 public class IoUringConstant {
@@ -230,6 +231,12 @@ public class IoUringConstant {
                 MemoryLayout.PathElement.groupElement("tail")
         ).withInvokeExactBehavior();
 
+        public static final long IO_URING_BUF_RING_TAIL_OFFSET = IoUringBufRingLayout
+                .byteOffset(
+                        MemoryLayout.PathElement.groupElement("anonStruct"),
+                        MemoryLayout.PathElement.groupElement("tail")
+                );
+
     }
 
     /*
@@ -240,6 +247,8 @@ public class IoUringConstant {
     public static final int IORING_SETUP_TASKRUN_FLAG = 1 << 9;
     public static final int IORING_SETUP_SQE128 = 1 << 10; /* SQEs are 128 byte */
     public static final int IORING_SETUP_CQE32 = 1 << 11; /* CQEs are 32 byte */
+
+    public static final int IORING_CQE_BUFFER_SHIFT = 16;
 
     /**
      * send/sendmsg and recv/recvmsg flags (sqe->ioprio)

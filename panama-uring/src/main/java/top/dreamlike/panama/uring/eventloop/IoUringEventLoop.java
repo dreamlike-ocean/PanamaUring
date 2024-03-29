@@ -15,6 +15,9 @@ import top.dreamlike.panama.uring.thirdparty.colletion.LongObjectHashMap;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.PriorityQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -51,6 +54,8 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
     private KernelTime64Type kernelTime64Type;
 
     private MemorySegment eventReadBuffer;
+
+    private static final VarHandle IO_URING_BUF_RING_HANDLER;
 
     public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory) {
         this.wakeUpFd = new EventFd(0, 0);
@@ -124,22 +129,31 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
      * @param entries entries 是缓冲区环中请求的条目数。该参数的大小必须是 2 的幂。
      * @param bufferGroupId  bgid 是所选的缓冲区组 ID
      */
-    public IoUringBufRingSetupResult setupBufferRing(int entries, int bufferGroupId) {
+    public CompletableFuture<IoUringBufRingSetupResult> setupBufferRing(int entries, int bufferGroupId) {
         if (entries <= 0) {
             throw new IllegalArgumentException("entries must be greater than 0");
         }
-        int MAXIMUM_CAPACITY = 1<< 30;
+        int MAXIMUM_CAPACITY = 1 << 30;
         //该参数的大小必须是 2 的幂。
         entries = -1 >>> Integer.numberOfLeadingZeros(entries - 1);
         entries =  (entries < 0) ? 1 : (entries >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : entries + 1;
-        try (StackValue value = StackValue.currentStack()) {
-            MemorySegment resPtr = value.allocate(ValueLayout.JAVA_INT);
-            IoUringBufRing bufRing = libUring.io_uring_setup_buf_ring(internalRing, entries, bufferGroupId, 0, resPtr);
-            return new IoUringBufRingSetupResult(resPtr.get(ValueLayout.JAVA_INT, 0), bufRing);
-        } catch (Exception _) {
-        }
-        //make javac happy
-        return null;
+        int internalEntries = entries;
+        return CompletableFuture.supplyAsync(() -> {
+            MemorySegment resPtr = null;
+            try {
+                resPtr = Instance.LIB_JEMALLOC.malloc(ValueLayout.JAVA_LONG.byteSize());
+                IoUringBufRing bufRing = libUring.io_uring_setup_buf_ring(internalRing, internalEntries, bufferGroupId, 0, resPtr);
+                if (bufRing != null) {
+                    //回填EventLoop字段
+                    IO_URING_BUF_RING_HANDLER.set(bufRing, this);
+                }
+                return new IoUringBufRingSetupResult(resPtr.get(ValueLayout.JAVA_INT, 0), bufRing);
+            } finally {
+                if (resPtr != null) {
+                    Instance.LIB_JEMALLOC.free(resPtr);
+                }
+            }
+        }, this);
     }
 
     public CancelToken fillTemplate(Consumer<IoUringSqe> sqeFunction, Consumer<IoUringCqe> callback) {
@@ -292,6 +306,15 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         @Override
         public boolean isCancelled() {
             return cancelPromise.get() != null;
+        }
+    }
+
+    static {
+        try {
+            IO_URING_BUF_RING_HANDLER = MethodHandles.privateLookupIn(IoUringBufRing.class, MethodHandles.lookup()).findVarHandle(IoUringBufRing.class, "owner", IoUringEventLoop.class)
+                    .withInvokeExactBehavior();
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 

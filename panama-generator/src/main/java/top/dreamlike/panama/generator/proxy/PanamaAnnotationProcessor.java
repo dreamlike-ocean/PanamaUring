@@ -323,6 +323,14 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                         );
                     }
 
+                    if (field.getAnnotation(Skip.class) != null) {
+                        annotations.add(
+                                java.lang.classfile.Annotation.of(
+                                        ClassFileHelper.toDesc(Skip.class)
+                                )
+                        );
+                    }
+
 
 
                     it.with(RuntimeVisibleAnnotationsAttribute.of(annotations));

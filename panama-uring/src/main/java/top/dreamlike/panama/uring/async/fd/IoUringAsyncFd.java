@@ -21,14 +21,13 @@ public interface IoUringAsyncFd extends NativeFd {
                 .whenComplete((_, _) -> buffer.drop());
     }
 
-    default CancelableFuture<Integer> asyncSelectedRead(int len, int offset, short bufferGroupId) {
-        return (CancelableFuture<Integer>) owner()
+    default CancelableFuture<IoUringCqe> asyncSelectedRead(int len, int offset, short bufferGroupId) {
+        return owner()
                 .asyncOperation(sqe -> {
                     Instance.LIB_URING.io_uring_prep_read(sqe, readFd(), MemorySegment.NULL, len, offset);
                     sqe.setFlags((byte) (sqe.getFlags() | IoUringConstant.IOSQE_BUFFER_SELECT));
                     sqe.setBufGroup(bufferGroupId);
-                })
-                .thenApply(IoUringCqe::getRes);
+                });
     }
 
     default CancelableFuture<Integer> asyncWrite(OwnershipMemory buffer, int len, int offset) {

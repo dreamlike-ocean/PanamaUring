@@ -10,13 +10,12 @@ import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.generator.test.call.LibPerson;
 import top.dreamlike.panama.generator.test.struct.Person;
 import top.dreamlike.panama.generator.test.struct.PointerVersionTestContainer;
+import top.dreamlike.panama.generator.test.struct.SkipStruct;
 import top.dreamlike.panama.generator.test.struct.TestContainer;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
+import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
+import java.util.List;
 
 public class PlainGeneratorTest {
 
@@ -49,6 +48,19 @@ public class PlainGeneratorTest {
         person.setA(2);
         Assert.assertEquals(1, libPerson.getN(person));
         Assert.assertEquals(2, libPerson.getA(person));
+    }
+
+    @Test
+    public void testSkip() {
+        MemoryLayout skipStructLayout = structProxyGenerator.extract(SkipStruct.class);
+        Assert.assertEquals(ValueLayout.JAVA_INT.byteSize(), skipStructLayout.byteSize());
+        Assert.assertTrue(skipStructLayout instanceof StructLayout);
+        if (skipStructLayout instanceof  StructLayout structLayout) {
+            List<MemoryLayout> memoryLayoutList = structLayout.memberLayouts();
+            Assert.assertEquals(1, memoryLayoutList.size());
+            long byteSize = memoryLayoutList.get(0).byteSize();
+            Assert.assertEquals(ValueLayout.JAVA_INT.byteSize(), byteSize);
+        }
     }
 
     @Test

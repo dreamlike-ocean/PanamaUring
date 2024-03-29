@@ -30,6 +30,11 @@ public class Instance {
         public long malloc_usable_size(MemorySegment ptr) {
             return FFI.malloc_usable_size(ptr);
         }
+
+        @Override
+        public int posix_memalign(MemorySegment memptr, long alignment, long size) {
+            return FFI.posix_memalign(memptr, alignment, size);
+        }
     };
 
     static {

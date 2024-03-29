@@ -11,6 +11,7 @@ import top.dreamlike.panama.uring.nativelib.struct.socket.MsgHdr;
 import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
 
 import java.lang.foreign.*;
+import java.lang.invoke.VarHandle;
 
 import static java.lang.foreign.ValueLayout.*;
 
@@ -46,8 +47,8 @@ public class StructTest {
                 MemoryLayout.paddingLayout(4),
 
                 ADDRESS.withName("msg_iov").withTargetLayout(MemoryLayout.structLayout(
-                        ADDRESS.withName("iov_base"),
-                        JAVA_LONG.withName("iov_len")
+                                ADDRESS.withName("iov_base"),
+                                JAVA_LONG.withName("iov_len")
                         )
                 )
                 ,
@@ -74,15 +75,26 @@ public class StructTest {
 
     @Test
     public void testIoUringBufRingStruct() {
-
         IoUringBufRing buf = Instance.STRUCT_PROXY_GENERATOR.allocate(Arena.global(), IoUringBufRing.class);
         MemorySegment memorySegment = StructProxyGenerator.findMemorySegment(buf);
         Assert.assertEquals(memorySegment.address(), buf.getBufs().address());
+        VarHandle tailVarhandle = IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE;
+        JAVA_SHORT.varHandle()
+                .setRelease(memorySegment, IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_OFFSET, (short) 12);
+        short i = (short) tailVarhandle.get(memorySegment, 0L);
+        Assert.assertEquals(12, i);
 
         MemoryLayout memoryLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringBuf.class);
         MemorySegment segment = Arena.global().allocate(memoryLayout, 2);
         IoUringConstant.AccessShortcuts.IO_URING_BUF_LEN_VARHANDLE.set(segment, memoryLayout.byteSize(), 123);
         IoUringBuf atIndex1 = Instance.STRUCT_PROXY_GENERATOR.enhance(segment.asSlice(memoryLayout.byteSize(), memoryLayout.byteSize()));
         Assert.assertEquals(123, atIndex1.getLen());
+
+        StructLayout newLayout = MemoryLayout.structLayout(
+                JAVA_SHORT.withName("a")
+        );
+        VarHandle vh = newLayout.varHandle(PathElement.groupElement("a"));
+        segment = Arena.global().allocate(newLayout);
+        vh.set(segment, 0L, (short) 1);
     }
 }
