@@ -4,6 +4,8 @@ import top.dreamlike.panama.generator.annotation.NativeArrayMark;
 
 import java.lang.foreign.MemorySegment;
 
+import static top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant.IORING_CQE_F_MORE;
+
 public class IoUringCqe {
     public long user_data;
     public int res;
@@ -52,5 +54,9 @@ public class IoUringCqe {
 
     public void setBig_cqe(MemorySegment big_cqe) {
         this.big_cqe = big_cqe;
+    }
+
+    public boolean hasMore() {
+        return (getFlags() & IORING_CQE_F_MORE) != 0;
     }
 }

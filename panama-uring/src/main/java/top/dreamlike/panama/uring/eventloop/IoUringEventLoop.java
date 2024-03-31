@@ -10,6 +10,8 @@ import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
 import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
+import top.dreamlike.panama.uring.thirdparty.colletion.IntObjectHashMap;
+import top.dreamlike.panama.uring.thirdparty.colletion.IntObjectMap;
 import top.dreamlike.panama.uring.thirdparty.colletion.LongObjectHashMap;
 
 import java.lang.foreign.Arena;
@@ -57,6 +59,8 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
 
     private static final VarHandle IO_URING_BUF_RING_HANDLER;
 
+    private final IntObjectMap<IoUringBufRing> bufRingMap = new IntObjectHashMap<>();
+
     public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory) {
         this.wakeUpFd = new EventFd(0, 0);
         this.inWait = new AtomicBoolean(false);
@@ -84,7 +88,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
     }
 
     private void registerWakeUpFd(IoUringSqe sqe) {
-        libUring.io_uring_prep_read(sqe, wakeUpFd.fd(),  eventReadBuffer, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
+        libUring.io_uring_prep_read(sqe, wakeUpFd.fd(), eventReadBuffer, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
     }
 
     private void initWakeUpFdMultiShot() {
@@ -125,9 +129,8 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
     }
 
     /**
-     *
-     * @param entries entries 是缓冲区环中请求的条目数。该参数的大小必须是 2 的幂。
-     * @param bufferGroupId  bgid 是所选的缓冲区组 ID
+     * @param entries       entries 是缓冲区环中请求的条目数。该参数的大小必须是 2 的幂。
+     * @param bufferGroupId bgid 是所选的缓冲区组 ID
      */
     public CompletableFuture<IoUringBufRingSetupResult> setupBufferRing(int entries, int bufferGroupId) {
         if (entries <= 0) {
@@ -136,18 +139,24 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         int MAXIMUM_CAPACITY = 1 << 30;
         //该参数的大小必须是 2 的幂。
         entries = -1 >>> Integer.numberOfLeadingZeros(entries - 1);
-        entries =  (entries < 0) ? 1 : (entries >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : entries + 1;
+        entries = (entries < 0) ? 1 : (entries >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : entries + 1;
         int internalEntries = entries;
         return CompletableFuture.supplyAsync(() -> {
+            IoUringBufRing uringBufRing = bufRingMap.get(bufferGroupId);
+            if (uringBufRing != null) {
+                return new IoUringBufRingSetupResult(0, uringBufRing);
+            }
             MemorySegment resPtr = null;
             try {
                 resPtr = Instance.LIB_JEMALLOC.malloc(ValueLayout.JAVA_LONG.byteSize());
                 IoUringBufRing bufRing = libUring.io_uring_setup_buf_ring(internalRing, internalEntries, bufferGroupId, 0, resPtr);
+                IoUringBufRingSetupResult ringSetupResult = new IoUringBufRingSetupResult(resPtr.get(ValueLayout.JAVA_INT, 0), bufRing);
                 if (bufRing != null) {
                     //回填EventLoop字段
                     IO_URING_BUF_RING_HANDLER.set(bufRing, this);
+                    bufRingMap.put(bufferGroupId, ringSetupResult.bufRing());
                 }
-                return new IoUringBufRingSetupResult(resPtr.get(ValueLayout.JAVA_INT, 0), bufRing);
+                return ringSetupResult;
             } finally {
                 if (resPtr != null) {
                     Instance.LIB_JEMALLOC.free(resPtr);
@@ -180,7 +189,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
             IoUringSqe sqe = ioUringGetSqe();
             sqeFunction.accept(sqe);
             sqe.setUser_data(token);
-            callBackMap.put(token, new IoUringCompletionCallBack(sqe.getFd(), sqe.getOpcode(), cqe ->  {
+            callBackMap.put(token, new IoUringCompletionCallBack(sqe.getFd(), sqe.getOpcode(), cqe -> {
                 IoUringCqe uringCqe = new IoUringCqe();
                 uringCqe.setFlags(cqe.getFlags());
                 uringCqe.setRes(cqe.getRes());
@@ -196,6 +205,29 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         return promise;
     }
 
+    public CancelToken asyncOperation(Consumer<IoUringSqe> sqeFunction, Consumer<IoUringCqe> repeatableCallback) {
+        long token = tokenGenerator.getAndIncrement();
+        IoUringCancelToken cancelToken = new IoUringCancelToken(token);
+        Runnable r = () -> {
+            IoUringSqe sqe = ioUringGetSqe();
+            sqeFunction.accept(sqe);
+            sqe.setUser_data(token);
+            callBackMap.put(token, new IoUringCompletionCallBack(sqe.getFd(), sqe.getOpcode(), cqe -> {
+                IoUringCqe uringCqe = new IoUringCqe();
+                uringCqe.setFlags(cqe.getFlags());
+                uringCqe.setRes(cqe.getRes());
+                uringCqe.setUser_data(cqe.getUser_data());
+                repeatableCallback.accept(uringCqe);
+            }));
+        };
+        if (inEventLoop()) {
+            r.run();
+        } else {
+            execute(r);
+        }
+        return cancelToken;
+    }
+
     private IoUringSqe ioUringGetSqe() {
         IoUringSqe sqe = libUring.io_uring_get_sqe(internalRing);
         //fast_sqe
@@ -206,10 +238,10 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         return libUring.io_uring_get_sqe(internalRing);
     }
 
-    public void flush()  {
+    public void flush() {
         if (inEventLoop()) {
             libUring.io_uring_submit(internalRing);
-        }else {
+        } else {
             execute(this::flush);
         }
     }
@@ -220,7 +252,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         for (int i = 0; i < count; i++) {
             IoUringCqe nativeCqe = Instance.STRUCT_PROXY_GENERATOR.enhance(cqePtrs.getAtIndex(ValueLayout.ADDRESS, i));
             long token = nativeCqe.getUser_data();
-            boolean multiShot = (nativeCqe.getFlags() & IORING_CQE_F_MORE) != 0;
+            boolean multiShot = nativeCqe.hasMore();
             IoUringCompletionCallBack callback = multiShot ? callBackMap.get(token) : callBackMap.remove(token);
             if (callback != null && callback.userCallBack != null) {
                 callback.userCallBack.accept(nativeCqe);
@@ -275,7 +307,8 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         }
     }
 
-    private record IoUringCompletionCallBack(int fd, byte op, Consumer<IoUringCqe> userCallBack){}
+    private record IoUringCompletionCallBack(int fd, byte op, Consumer<IoUringCqe> userCallBack) {
+    }
 
     private class IoUringCancelToken implements CancelToken {
         long token;

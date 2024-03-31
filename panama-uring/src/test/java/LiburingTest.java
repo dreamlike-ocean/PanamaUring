@@ -9,7 +9,6 @@ import top.dreamlike.panama.uring.async.fd.AsyncEventFd;
 import top.dreamlike.panama.uring.async.fd.AsyncTcpServerFd;
 import top.dreamlike.panama.uring.async.fd.AsyncTcpSocket;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
-import top.dreamlike.panama.uring.fd.EventFd;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
@@ -19,24 +18,16 @@ import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 import top.dreamlike.panama.uring.trait.OwnershipResource;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.net.*;
-import java.nio.channels.ServerSocketChannel;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 public class LiburingTest {
@@ -273,24 +264,97 @@ public class LiburingTest {
 
             CancelableFuture<AsyncTcpSocket> waitAccept = serverFd.asyncAccept(0, addr, addrLen);
             ArrayBlockingQueue<Socket> oneshot = new ArrayBlockingQueue<>(1);
-            new Thread(() -> {
+            Thread.startVirtualThread(() -> {
                 try {
                     Socket socket = new Socket();
                     socket.connect(new InetSocketAddress("127.0.0.1", 4399));
                     oneshot.put(socket);
+                    socket.close();
                 } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
                     throw new RuntimeException(e);
                 }
-            }).start();
+            });
             AsyncTcpSocket asyncTcpSocket = waitAccept.get();
-            Socket clientSocket = oneshot.poll();
+            Socket clientSocket = oneshot.take();
             Assert.assertNotNull(clientSocket);
-            Assert.assertEquals(clientSocket.getLocalSocketAddress(), asyncTcpSocket.getRemoteAddress());
+            Assert.assertEquals(clientSocket.getLocalPort(), ((InetSocketAddress) asyncTcpSocket.getRemoteAddress()).getPort());
             Assert.assertTrue(addr.hasDrop());
             Assert.assertTrue(addrLen.hasDrop());
             serverFd.close();
         }
     }
+
+    @Test
+    public void testAsyncSocket() throws Exception {
+        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+            params.setSq_entries(4);
+            params.setFlags(0);
+        });
+
+        int randomPort = 8083;
+        try (eventLoop; Arena allocator = Arena.ofConfined()) {
+            eventLoop.start();
+            ArrayBlockingQueue<Socket> queue = new ArrayBlockingQueue<>(1);
+            InetSocketAddress address = new InetSocketAddress("127.0.0.1", randomPort);
+            Thread.startVirtualThread(() -> {
+                try {
+                    ServerSocket socket = new ServerSocket(address.getPort(), 4, InetAddress.getByName(address.getHostName()));
+                    socket.setOption(StandardSocketOptions.SO_REUSEPORT, true);
+                    Socket accept = socket.accept();
+                    queue.offer(accept);
+                    socket.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw new RuntimeException(e);
+                }
+            });
+
+            AsyncTcpSocket tcpSocket = new AsyncTcpSocket(eventLoop, address);
+            //connect
+            Integer i = tcpSocket.asyncConnect().get();
+            if (i != 0) {
+                System.out.println(DebugHelper.getErrorStr(-i));
+            }
+            Assert.assertEquals(0, (int) i);
+            Socket socket = queue.take();
+            int localPort = ((InetSocketAddress) tcpSocket.getLocalAddress()).getPort();
+            Assert.assertEquals(socket.getPort(), localPort);
+            int port = ((InetSocketAddress) tcpSocket.getRemoteAddress()).getPort();
+            Assert.assertEquals(randomPort, port);
+            //send
+            MemorySegment sendBuffer = allocator.allocateFrom(ValueLayout.JAVA_INT, 214);
+            OwnershipMemoryForTest ownershipMemoryForTest = new OwnershipMemoryForTest(sendBuffer);
+            Integer sendRes = tcpSocket.asyncSend(ownershipMemoryForTest, (int) sendBuffer.byteSize(), 0).get();
+            Assert.assertEquals((int) sendBuffer.byteSize(), (int) sendRes);
+            Assert.assertEquals(214, DebugHelper.ntohl(new DataInputStream(socket.getInputStream()).readInt()));
+            Assert.assertTrue(ownershipMemoryForTest.hasDrop);
+            //recv
+            new DataOutputStream(socket.getOutputStream()).writeInt(329);
+            MemorySegment recvBuffer = allocator.allocate(ValueLayout.JAVA_INT);
+            ownershipMemoryForTest = new OwnershipMemoryForTest(recvBuffer);
+            tcpSocket.asyncRecv(ownershipMemoryForTest, (int) recvBuffer.byteSize(), 0).get();
+            Assert.assertEquals(329, DebugHelper.ntohl(recvBuffer.get(ValueLayout.JAVA_INT, 0)));
+            Assert.assertTrue(ownershipMemoryForTest.hasDrop);
+
+            //sendzc
+
+            ArrayBlockingQueue<Integer> oneshot = new ArrayBlockingQueue<>(1);
+            ownershipMemoryForTest = new OwnershipMemoryForTest(sendBuffer);
+            Thread.startVirtualThread(() -> {
+                try {
+                    int targetValue = DebugHelper.ntohl(new DataInputStream(socket.getInputStream()).readInt());
+                    oneshot.put(targetValue);
+                } catch (Throwable e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            tcpSocket.asyncSendZc(ownershipMemoryForTest, (int) sendBuffer.byteSize(), 0, 0).get();
+            Assert.assertTrue(ownershipMemoryForTest.hasDrop);
+            Assert.assertEquals(Integer.valueOf(214), oneshot.take());
+        }
+    }
+
 
     public static IoUringCqe submitTemplate(Arena arena, IoUring uring, Consumer<IoUringSqe> sqeFunction) {
         LibUring libUring = Instance.LIB_URING;

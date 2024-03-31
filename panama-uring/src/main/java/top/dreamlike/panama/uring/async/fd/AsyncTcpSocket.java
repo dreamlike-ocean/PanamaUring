@@ -1,8 +1,23 @@
 package top.dreamlike.panama.uring.async.fd;
 
+import top.dreamlike.panama.uring.async.CancelableFuture;
+import top.dreamlike.panama.uring.async.cancel.CancelToken;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
+import top.dreamlike.panama.uring.nativelib.Instance;
+import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
+import top.dreamlike.panama.uring.nativelib.libs.Libc;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
+import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn;
+import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn6;
+import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrUn;
+import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
-import java.net.SocketAddress;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.net.*;
+
+import static top.dreamlike.panama.uring.nativelib.Instance.LIBC;
 
 public class AsyncTcpSocket implements IoUringAsyncFd {
     private final IoUringEventLoop ioUringEventLoop;
@@ -13,12 +28,22 @@ public class AsyncTcpSocket implements IoUringAsyncFd {
 
     private SocketAddress remoteAddress;
 
-    public AsyncTcpSocket(IoUringEventLoop ioUringEventLoop, int fd, SocketAddress localAddress, SocketAddress remoteAddress) {
+    private volatile boolean hasConnected;
+
+    AsyncTcpSocket(IoUringEventLoop ioUringEventLoop, int fd, SocketAddress localAddress, SocketAddress remoteAddress) {
         this.ioUringEventLoop = ioUringEventLoop;
         this.fd = fd;
         this.localAddress = localAddress;
         this.remoteAddress = remoteAddress;
+        this.hasConnected = true;
     }
+
+    public AsyncTcpSocket(IoUringEventLoop ioUringEventLoop, SocketAddress remoteAddress) {
+        this.remoteAddress = remoteAddress;
+        this.fd = socketSysCall(remoteAddress);
+        this.ioUringEventLoop = ioUringEventLoop;
+    }
+
 
     public SocketAddress getLocalAddress() {
         return localAddress;
@@ -38,8 +63,220 @@ public class AsyncTcpSocket implements IoUringAsyncFd {
         return fd;
     }
 
+    public CancelableFuture<Integer> asyncConnect() {
+        if (hasConnected) {
+            throw new IllegalStateException("already connected.");
+        }
+        OwnershipMemory addr = mallocAddr(remoteAddress);
+        return ((CancelableFuture<Integer>) (owner()
+                .asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_connect(sqe, fd, addr.resource(), (int) addr.resource().byteSize()))
+                .whenComplete((_, _) -> addr.drop())
+                .thenApply(IoUringCqe::getRes))
+                .whenComplete((res, t) -> {
+                    if (res >= 0 && t == null) {
+                        hasConnected = true;
+                        localAddress = getSocketName();
+                    }
+                })
+        );
+    }
+
+    private SocketAddress getSocketName() {
+        if (remoteAddress instanceof UnixDomainSocketAddress) {
+            return localAddress;
+        }
+        long addrSize = addrSize(remoteAddress);
+        long totalSize = addrSize + ValueLayout.JAVA_INT.byteSize();
+        try (OwnershipMemory sockaddrMemory = Instance.LIB_JEMALLOC.mallocMemory(totalSize)) {
+            MemorySegment resource = sockaddrMemory.resource();
+            MemorySegment sockAddrMemory = resource.asSlice(0, addrSize);
+            MemorySegment sockLenMemory = resource.asSlice(addrSize, ValueLayout.JAVA_INT.byteSize());
+            sockLenMemory.set(ValueLayout.JAVA_INT, 0L, (int) sockAddrMemory.byteSize());
+            int i = LIBC.getsockname(fd, sockAddrMemory, sockLenMemory);
+            if (i < 0) {
+                throw new IllegalArgumentException(STR."getsockname error, reason\{DebugHelper.currentErrorStr()}");
+            }
+            return inferAddress(remoteAddress, sockAddrMemory);
+        } catch (Exception t) {
+            throw new IllegalStateException(t);
+        }
+    }
+
+    static SocketAddress inferAddress(SocketAddress peerAddress, MemorySegment sockaddrMemory) {
+        return switch (peerAddress) {
+            case UnixDomainSocketAddress _ -> peerAddress;
+            case InetSocketAddress inetSocketAddress -> switch (inetSocketAddress.getAddress()) {
+                case Inet4Address _ -> parseV4(sockaddrMemory);
+                case Inet6Address _ -> parseV6(sockaddrMemory);
+                default -> throw new IllegalStateException(STR."Unexpected value: \{inetSocketAddress.getAddress()}");
+            };
+            default -> throw new IllegalStateException(STR."Unexpected value: \{peerAddress}");
+        };
+    }
+
+    static long addrSize(SocketAddress address) {
+        return switch (address) {
+            case UnixDomainSocketAddress _ -> SocketAddrUn.LAYOUT.byteSize();
+            case InetSocketAddress inetSocketAddress -> switch (inetSocketAddress.getAddress()) {
+                case Inet4Address _ -> SocketAddrIn.LAYOUT.byteSize();
+                case Inet6Address _ -> SocketAddrIn6.LAYOUT.byteSize();
+                default -> throw new IllegalStateException(STR."Unexpected value: \{inetSocketAddress.getAddress()}");
+            };
+            default -> throw new IllegalStateException(STR."Unexpected value: \{address}");
+        };
+    }
+
+    static SocketAddress parseV6(MemorySegment sockaddrMemory) {
+        SocketAddrIn6 socketAddrIn6 = Instance.STRUCT_PROXY_GENERATOR.enhance(sockaddrMemory);
+        byte[] address = new byte[16];
+        MemorySegment.copy(MemorySegment.ofArray(address), 0, sockaddrMemory, SocketAddrIn6.SIN6_ADDR_OFFSET, 16);
+        try {
+            return new InetSocketAddress(Inet6Address.getByAddress(address), Short.toUnsignedInt(DebugHelper.ntohs(socketAddrIn6.getSin6_port())));
+        } catch (UnknownHostException unknownHostException) {
+            //不应该在这里抛出异常
+            throw new IllegalArgumentException(unknownHostException);
+        }
+    }
+
+    static SocketAddress parseV4(MemorySegment sockaddrMemory) {
+        SocketAddrIn socketAddrIn = Instance.STRUCT_PROXY_GENERATOR.enhance(sockaddrMemory);
+        byte[] address = new byte[4];
+        int addr = DebugHelper.ntohl(socketAddrIn.getSin_addr());
+        address[0] = (byte) ((addr >> 24) & 0xFF);
+        address[1] = (byte) ((addr >> 16) & 0xFF);
+        address[2] = (byte) ((addr >> 8) & 0xFF);
+        address[3] = (byte) (addr & 0xFF);
+        try {
+            return new InetSocketAddress(Inet4Address.getByAddress(address), Short.toUnsignedInt(DebugHelper.ntohs(socketAddrIn.getSin_port())));
+        } catch (UnknownHostException unknownHostException) {
+            //不应该在这里抛出异常
+            throw new IllegalArgumentException(unknownHostException);
+        }
+    }
+
+    static OwnershipMemory mallocAddr(SocketAddress address) {
+        return switch (address) {
+            case UnixDomainSocketAddress udAddress -> udsAddress(udAddress);
+            case InetSocketAddress inetSocketAddress -> switch (inetSocketAddress.getAddress()) {
+                case Inet4Address v4 -> ipv4Address(v4, inetSocketAddress.getPort());
+                case Inet6Address v6 -> ipv6Address(v6, inetSocketAddress.getPort());
+                default -> throw new IllegalStateException(STR."Unexpected value: \{inetSocketAddress.getAddress()}");
+            };
+            default -> throw new IllegalStateException(STR."Unexpected value: \{address}");
+        };
+    }
+
+    static OwnershipMemory ipv4Address(Inet4Address inet4Address, int port) {
+        MemoryLayout memoryLayout = Instance.STRUCT_PROXY_GENERATOR.extract(SocketAddrIn.class);
+        OwnershipMemory sockaddr_inMemory = Instance.LIB_JEMALLOC.mallocMemory(memoryLayout.byteSize());
+        SocketAddrIn socketAddrIn = Instance.STRUCT_PROXY_GENERATOR.enhance(sockaddr_inMemory.resource());
+        socketAddrIn.setSin_family((short) Libc.Socket_H.Domain.AF_INET);
+        socketAddrIn.setSin_port(DebugHelper.htons((short) port));
+        byte[] addr = inet4Address.getAddress();
+        int address = addr[3] & 0xFF;
+        address |= ((addr[2] << 8) & 0xFF00);
+        address |= ((addr[1] << 16) & 0xFF0000);
+        address |= ((addr[0] << 24) & 0xFF000000);
+        socketAddrIn.setSin_addr(DebugHelper.htonl(address));
+        return sockaddr_inMemory;
+    }
+
+    static OwnershipMemory udsAddress(UnixDomainSocketAddress unixDomainSocketAddress) {
+        String pathName = unixDomainSocketAddress.getPath().toAbsolutePath().toString();
+        if (pathName.length() > 107) {
+            throw new IllegalArgumentException("path length must less than 107");
+        }
+        OwnershipMemory socketAddrUnMemory = Instance.LIB_JEMALLOC.mallocMemory(SocketAddrUn.LAYOUT.byteSize());
+        SocketAddrUn socketAddrUn = Instance.STRUCT_PROXY_GENERATOR.enhance(socketAddrUnMemory.resource());
+        socketAddrUn.setSun_family((short) Libc.Socket_H.Domain.AF_UNIX);
+        socketAddrUnMemory.resource().setString(SocketAddrUn.SUN_PATH_OFFSET, pathName);
+        return socketAddrUnMemory;
+    }
+
+    static OwnershipMemory ipv6Address(Inet6Address inet6Address, int port) {
+        MemoryLayout memoryLayout = Instance.STRUCT_PROXY_GENERATOR.extract(SocketAddrIn6.class);
+        byte[] addressAddress = inet6Address.getAddress();
+        OwnershipMemory sockaddr_in6Memory = Instance.LIB_JEMALLOC.mallocMemory(memoryLayout.byteSize());
+        SocketAddrIn6 socketAddrIn6 = Instance.STRUCT_PROXY_GENERATOR.enhance(sockaddr_in6Memory.resource());
+        socketAddrIn6.setSin6_family((short) Libc.Socket_H.Domain.AF_INET6);
+        socketAddrIn6.setSin6_port(DebugHelper.htons((short) port));
+        socketAddrIn6.setSin_flowinfo(0);
+        MemorySegment.copy(sockaddr_in6Memory.resource(), SocketAddrIn6.SIN6_ADDR_OFFSET, MemorySegment.ofArray(addressAddress), 0, addressAddress.length);
+        return sockaddr_in6Memory;
+    }
+
+    public CancelableFuture<Integer> asyncRecv(OwnershipMemory buffer, int len, int flag) {
+        if (!hasConnected) {
+            throw new IllegalStateException("before recv, must connect first.");
+        }
+        return ((CancelableFuture<Integer>) owner().asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_recv(sqe, fd, buffer.resource(), len, flag))
+                .whenComplete((_, _) -> buffer.drop())
+                .thenApply(IoUringCqe::getRes));
+    }
+
+    public CancelableFuture<Integer> asyncSend(OwnershipMemory buffer, int len, int flag) {
+        if (!hasConnected) {
+            throw new IllegalStateException("before send, must connect first.");
+        }
+        return ((CancelableFuture<Integer>) owner().asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_send(sqe, fd, buffer.resource(), len, flag))
+                .whenComplete((_, _) -> buffer.drop())
+                .thenApply(IoUringCqe::getRes));
+    }
+
+    public CancelableFuture<Integer> asyncSendZc(OwnershipMemory buffer, int len, int flag, int zcFlags) {
+        if (!hasConnected) {
+            throw new IllegalStateException("before send, must connect first.");
+        }
+        ZCContext context = new ZCContext();
+        return (CancelableFuture<Integer>) (new CancelableFuture<Integer>(promise ->
+                owner().asyncOperation(
+                        sqe -> Instance.LIB_URING.io_uring_prep_send_zc(sqe, fd, buffer.resource(), len, flag, zcFlags),
+                        cqe -> {
+                            if (cqe.hasMore()) {
+                                context.stage = ZCContext.Stage.MORE;
+                                context.sendRes = cqe.getRes();
+                            } else {
+                                context.stage = ZCContext.Stage.END;
+                                promise.complete(Integer.valueOf(context.sendRes));
+                            }
+                        }
+                )
+        ).whenComplete((_, _) -> buffer.drop()));
+
+
+    }
+
     @Override
     public String toString() {
         return STR."AsyncTcpSocket{ioUringEventLoop=\{ioUringEventLoop}, fd=\{fd}, localAddress=\{localAddress}, remoteAddress=\{remoteAddress}\{'}'}";
+    }
+
+    static int socketSysCall(SocketAddress address) {
+        int domain = switch (address) {
+            case UnixDomainSocketAddress _ -> Libc.Socket_H.Domain.AF_UNIX;
+            case InetSocketAddress inetSocketAddress -> switch (inetSocketAddress.getAddress()) {
+                case Inet4Address _ -> Libc.Socket_H.Domain.AF_INET;
+                case Inet6Address _ -> Libc.Socket_H.Domain.AF_INET6;
+                default -> throw new IllegalStateException(STR."Unexpected value: \{inetSocketAddress}");
+            };
+            default -> throw new IllegalStateException(STR."Unexpected value: \{address}");
+        };
+        int type = Libc.Socket_H.Type.SOCK_STREAM;
+        int fd = LIBC.socket(domain, type, 0);
+        if (fd < 0) {
+            throw new IllegalArgumentException(STR."socket error, reason\{DebugHelper.currentErrorStr()}");
+        }
+        return fd;
+    }
+
+    private static class ZCContext {
+        Stage stage = Stage.WAIT_MORE;
+        int sendRes;
+
+        private enum Stage {
+            WAIT_MORE,
+            MORE,
+            END;
+        }
     }
 }

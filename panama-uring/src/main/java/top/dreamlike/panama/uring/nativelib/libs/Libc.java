@@ -33,6 +33,8 @@ public interface Libc {
 
     int listen(int socketFd, int backlog);
 
+    int getsockname(int socketFd, @Pointer MemorySegment addr, @Pointer MemorySegment addrlen);
+
     interface Fcntl_H {
         static final int O_RDONLY = 0;
         static final int O_WRONLY = 1;
