@@ -28,6 +28,8 @@ import java.net.*;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 public class LiburingTest {
@@ -297,6 +299,7 @@ public class LiburingTest {
             eventLoop.start();
             ArrayBlockingQueue<Socket> queue = new ArrayBlockingQueue<>(1);
             InetSocketAddress address = new InetSocketAddress("127.0.0.1", randomPort);
+            ReentrantLock lock = new ReentrantLock();
             Thread.startVirtualThread(() -> {
                 try {
                     ServerSocket socket = new ServerSocket(address.getPort(), 4, InetAddress.getByName(address.getHostName()));
@@ -309,7 +312,8 @@ public class LiburingTest {
                     throw new RuntimeException(e);
                 }
             });
-
+            //睡一秒得了 等上面的启动
+            Thread.sleep(1_000);
             AsyncTcpSocket tcpSocket = new AsyncTcpSocket(eventLoop, address);
             //connect
             Integer i = tcpSocket.asyncConnect().get();
