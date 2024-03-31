@@ -3,15 +3,8 @@ package top.dreamlike.panama.uring.trait;
 
 import java.lang.foreign.MemorySegment;
 
-public interface OwnershipMemory extends AutoCloseable {
+public interface OwnershipMemory extends OwnershipResource<MemorySegment> {
     MemorySegment resource();
-    
-    void drop();
-
-    @Override
-    default void close() throws Exception {
-        drop();
-    }
 
     static OwnershipMemory of(MemorySegment segment) {
         return new OwnershipMemory() {

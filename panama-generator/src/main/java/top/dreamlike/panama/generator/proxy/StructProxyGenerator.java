@@ -83,6 +83,11 @@ public class StructProxyGenerator {
         if (o instanceof NativeStructEnhanceMark mark) {
             return mark.realMemory();
         }
+
+        if (o instanceof NativeAddressable addressable) {
+            return addressable.address();
+        }
+
         throw new StructException("before findMemorySegment, you should enhance it");
     }
 

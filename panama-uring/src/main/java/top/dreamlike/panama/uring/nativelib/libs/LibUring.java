@@ -1,5 +1,6 @@
 package top.dreamlike.panama.uring.nativelib.libs;
 
+import top.dreamlike.nativeLib.inet.iovec;
 import top.dreamlike.panama.generator.annotation.CLib;
 import top.dreamlike.panama.generator.annotation.NativeFunction;
 import top.dreamlike.panama.generator.annotation.Pointer;
@@ -251,7 +252,7 @@ public interface LibUring {
         sqe.setSpliceFlags(splice_flags);
     }
 
-    default void io_uring_prep_readv(@Pointer IoUringSqe sqe, int fd, @Pointer Iovec iovec, int count, long offset) {
+    default void io_uring_prep_readv(@Pointer IoUringSqe sqe, int fd, @Pointer NativeArrayPointer<Iovec> iovec, int count, long offset) {
         io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_READV, sqe, fd, StructProxyGenerator.findMemorySegment(iovec), count, offset);
     }
 
@@ -266,11 +267,11 @@ public interface LibUring {
     }
 
 
-    default void io_uring_prep_writev(@Pointer IoUringSqe sqe, int fd, @Pointer Iovec iovec, int count, long offset) {
+    default void io_uring_prep_writev(@Pointer IoUringSqe sqe, int fd, @Pointer NativeArrayPointer<Iovec> iovec, int count, long offset) {
         io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_WRITEV, sqe, fd, StructProxyGenerator.findMemorySegment(iovec), count, offset);
     }
 
-    default void io_uring_prep_writev2(@Pointer IoUringSqe sqe, int fd, @Pointer Iovec iovec, int count, long offset, int flags) {
+    default void io_uring_prep_writev2(@Pointer IoUringSqe sqe, int fd, @Pointer NativeArrayPointer<Iovec> iovec, int count, long offset, int flags) {
         io_uring_prep_writev(sqe, fd, iovec, count, offset);
         sqe.setFlagsInFlagsUnion(flags);
     }
@@ -349,7 +350,7 @@ public interface LibUring {
      * addr给的宽松一点 以支持v4 v6
      */
     default void io_uring_prep_accept(@Pointer IoUringSqe sqe, int fd,/* struct sockaddr * */ @Pointer MemorySegment addr, /* socklen_t*  */@Pointer MemorySegment addrlen, int flags) {
-        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_ACCEPT, sqe, fd, addr, 0, addr.address());
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_ACCEPT, sqe, fd, addr, 0, addrlen.address());
         sqe.setFlagsInFlagsUnion(flags);
     }
 

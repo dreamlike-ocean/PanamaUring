@@ -29,6 +29,10 @@ public interface Libc {
 
     int fcntl(int fd, int cmd, int arg);
 
+    int bind(int fd,@Pointer MemorySegment addr, int addrlen);
+
+    int listen(int socketFd, int backlog);
+
     interface Fcntl_H {
         static final int O_RDONLY = 0;
         static final int O_WRONLY = 1;

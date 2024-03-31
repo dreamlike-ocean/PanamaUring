@@ -1,17 +1,25 @@
 import org.junit.Assert;
 import org.junit.Test;
+import top.dreamlike.panama.generator.annotation.Pointer;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.nativelib.Instance;
+import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.struct.epoll.EpollEvent;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBuf;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufRing;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
 import top.dreamlike.panama.uring.nativelib.struct.sigset.SigsetType;
 import top.dreamlike.panama.uring.nativelib.struct.socket.MsgHdr;
+import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn6;
 import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
 
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
+import java.net.Inet6Address;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
 
 import static java.lang.foreign.ValueLayout.*;
 
@@ -36,6 +44,18 @@ public class StructTest {
 
         Assert.assertEquals(__kernel_timespec_layout, time64TypeLayout);
         Assert.assertEquals(__kernel_timespec_layout.byteSize(), time64TypeLayout.byteSize());
+    }
+
+    @Test
+    public void testOrder() {
+        short a = 329;
+        short current = DebugHelper.htons(a);
+        ByteBuffer buffer = ByteBuffer.allocate(2);
+        buffer = buffer.order(ByteOrder.BIG_ENDIAN);
+        buffer.putShort(0, a);
+        buffer = buffer.order(ByteOrder.LITTLE_ENDIAN);
+        short expected = buffer.getShort(0);
+        Assert.assertEquals(current,expected);
     }
 
     @Test

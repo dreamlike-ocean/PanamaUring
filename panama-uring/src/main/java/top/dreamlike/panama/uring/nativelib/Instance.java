@@ -15,6 +15,7 @@ public class Instance {
     public static final Libc LIBC = NATIVE_CALL_GENERATOR.generate(Libc.class);
     public static final LibUring LIB_URING = NATIVE_CALL_GENERATOR.generate(LibUring.class);
     public static final LibJemalloc LIB_JEMALLOC = new LibJemalloc() {
+
         private static final LibJemalloc FFI = NATIVE_CALL_GENERATOR.generate(LibJemalloc.class);
         @Override
         public MemorySegment malloc(long size) {

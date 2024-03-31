@@ -1,10 +1,14 @@
 package top.dreamlike.panama.uring.nativelib.struct.socket;
 
 import top.dreamlike.panama.generator.annotation.NativeArrayMark;
+import top.dreamlike.panama.uring.nativelib.Instance;
 
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 
 public class SocketAddrIn {
+    public static final MemoryLayout LAYOUT = Instance.STRUCT_PROXY_GENERATOR.extract(SocketAddrIn.class);
+
     private short sin_family;
     private short sin_port;
     private int sin_addr;

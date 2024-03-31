@@ -9,7 +9,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
 @CLib("jemalloc-ffi.so")
-public interface LibJemalloc {
+public interface LibJemalloc{
 
     @NativeFunction(value = "ring_malloc", fast = true)
     MemorySegment malloc(long size);

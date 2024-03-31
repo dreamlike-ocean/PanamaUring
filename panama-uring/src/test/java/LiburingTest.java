@@ -2,29 +2,38 @@ import org.junit.Assert;
 import org.junit.Test;
 import struct.io_uring_cqe_struct;
 import struct.io_uring_sqe_struct;
+import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.async.CancelableFuture;
 import top.dreamlike.panama.uring.async.fd.AsyncEventFd;
+import top.dreamlike.panama.uring.async.fd.AsyncTcpServerFd;
+import top.dreamlike.panama.uring.async.fd.AsyncTcpSocket;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.fd.EventFd;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
+import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
+import top.dreamlike.panama.uring.trait.OwnershipResource;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
+import java.net.*;
+import java.nio.channels.ServerSocketChannel;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -148,6 +157,7 @@ public class LiburingTest {
 
         try (eventLoop;
              Arena allocator = Arena.ofConfined()) {
+            //readTest
             eventLoop.start();
             AsyncEventFd eventFd = new AsyncEventFd(eventLoop);
             eventFd.eventfdWrite(1);
@@ -156,15 +166,37 @@ public class LiburingTest {
             Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), (int) read.get());
             Assert.assertEquals(1, memory.resource().get(ValueLayout.JAVA_LONG, 0));
 
+            //cancel Test:
             CancelableFuture<Integer> cancelableReadFuture = eventFd.asyncRead(memory, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
-
             eventLoop.submitScheduleTask(1, TimeUnit.SECONDS, () -> {
                 cancelableReadFuture.cancel()
                         .thenAccept(count -> Assert.assertEquals(1L, (long) count));
             });
-
             Integer res = cancelableReadFuture.get();
             Assert.assertEquals(Libc.Error_H.ECANCELED, -res);
+
+            eventFd.eventfdWrite(214);
+            //readVTest
+            Iovec iovec = Instance.STRUCT_PROXY_GENERATOR.allocate(allocator, Iovec.class);
+            MemorySegment readBufferVec0 = allocator.allocate(ValueLayout.JAVA_LONG);
+            iovec.setIov_base(readBufferVec0);
+            iovec.setIov_len(ValueLayout.JAVA_LONG.byteSize());
+            NativeArrayPointer<Iovec> pointer = new NativeArrayPointer<>(Instance.STRUCT_PROXY_GENERATOR, StructProxyGenerator.findMemorySegment(iovec), Iovec.class);
+            OwnershipResourceForTest<NativeArrayPointer<Iovec>> resource = new OwnershipResourceForTest<>(pointer);
+            Integer readvRes = eventFd.asyncReadV(resource, 1, 0)
+                    .get();
+            Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), (int) readvRes);
+            Assert.assertEquals(214, readBufferVec0.get(ValueLayout.JAVA_LONG, 0));
+            Assert.assertTrue(resource.hasDrop());
+
+            //writeVTest
+            resource = new OwnershipResourceForTest<>(pointer);
+            readBufferVec0.set(ValueLayout.JAVA_LONG, 0, 329);
+            Integer writeVRes = eventFd.asyncWriteV(resource, 1, 0).get();
+            Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), (int) writeVRes);
+            var assertReadBuffer = allocator.allocate(ValueLayout.JAVA_LONG);
+            eventFd.read(assertReadBuffer, (int) ValueLayout.JAVA_LONG.byteSize());
+            Assert.assertEquals(329, assertReadBuffer.get(ValueLayout.JAVA_LONG, 0));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -223,6 +255,43 @@ public class LiburingTest {
 
     }
 
+    @Test
+    public void testAsyncServer() throws Exception {
+        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+            params.setSq_entries(4);
+            params.setFlags(0);
+        });
+        try (eventLoop) {
+            eventLoop.start();
+            AsyncTcpServerFd serverFd = new AsyncTcpServerFd(eventLoop, new InetSocketAddress("127.0.0.1", 4399), 4399);
+            serverFd.bind();
+            serverFd.listen(16);
+
+            long addrSize = serverFd.addrSize();
+            OwnershipMemoryForTest addr = new OwnershipMemoryForTest(Instance.LIB_JEMALLOC.malloc(addrSize));
+            OwnershipMemoryForTest addrLen = new OwnershipMemoryForTest(Instance.LIB_JEMALLOC.malloc(ValueLayout.JAVA_INT.byteSize()));
+
+            CancelableFuture<AsyncTcpSocket> waitAccept = serverFd.asyncAccept(0, addr, addrLen);
+            ArrayBlockingQueue<Socket> oneshot = new ArrayBlockingQueue<>(1);
+            new Thread(() -> {
+                try {
+                    Socket socket = new Socket();
+                    socket.connect(new InetSocketAddress("127.0.0.1", 4399));
+                    oneshot.put(socket);
+                } catch (IOException | InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }).start();
+            AsyncTcpSocket asyncTcpSocket = waitAccept.get();
+            Socket clientSocket = oneshot.poll();
+            Assert.assertNotNull(clientSocket);
+            Assert.assertEquals(clientSocket.getLocalSocketAddress(), asyncTcpSocket.getRemoteAddress());
+            Assert.assertTrue(addr.hasDrop());
+            Assert.assertTrue(addrLen.hasDrop());
+            serverFd.close();
+        }
+    }
+
     public static IoUringCqe submitTemplate(Arena arena, IoUring uring, Consumer<IoUringSqe> sqeFunction) {
         LibUring libUring = Instance.LIB_URING;
         IoUringSqe sqe = libUring.io_uring_get_sqe(uring);
@@ -233,6 +302,57 @@ public class LiburingTest {
         int count = libUring.io_uring_peek_batch_cqe(uring, cqe, 1);
         Assert.assertTrue(count > 0);
         return Instance.STRUCT_PROXY_GENERATOR.enhance(cqe.getAtIndex(ValueLayout.ADDRESS, 0));
+    }
+
+
+    private static class OwnershipResourceForTest<T> implements OwnershipResource<T> {
+        private final T t;
+
+        private volatile boolean hasDrop = false;
+
+        public OwnershipResourceForTest(T t) {
+            this.t = t;
+        }
+
+        @Override
+        public T resource() {
+            return t;
+        }
+
+        @Override
+        public void drop() {
+            hasDrop = true;
+        }
+
+        public boolean hasDrop() {
+            return hasDrop;
+        }
+    }
+
+    private static class OwnershipMemoryForTest implements OwnershipMemory {
+        private final MemorySegment memorySegment;
+
+        private volatile boolean hasDrop = false;
+
+
+        public OwnershipMemoryForTest(MemorySegment memorySegment) {
+            this.memorySegment = memorySegment;
+        }
+
+        @Override
+        public MemorySegment resource() {
+            return memorySegment;
+        }
+
+        @Override
+        public void drop() {
+            hasDrop = true;
+        }
+
+        public boolean hasDrop() {
+            return hasDrop;
+        }
+
     }
 
 }

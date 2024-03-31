@@ -1,6 +1,7 @@
 package top.dreamlike.panama.uring.trait;
 
 import top.dreamlike.panama.uring.nativelib.Instance;
+import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 
 public interface NativeFd extends ReadableNativeFd, WritableNativeFd {
     int fd();
@@ -16,6 +17,9 @@ public interface NativeFd extends ReadableNativeFd, WritableNativeFd {
     }
 
     default void close() {
-        Instance.LIBC.close(fd());
+        int closed = Instance.LIBC.close(fd());
+        if (closed < 0) {
+            throw new IllegalStateException(STR."close error, reason: \{DebugHelper.currentErrorStr()}");
+        }
     }
 }
