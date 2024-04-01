@@ -94,6 +94,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
         }
 
         this.structProxyGenerator = new StructProxyGenerator();
+        structProxyGenerator.skipInit = false;
         this.structProxyGenerator.classDataPeek = (className, bytecode) -> {
             try (var ouputStream = this.env.getFiler().createClassFile(className).openOutputStream()) {
                 ouputStream.write(bytecode);

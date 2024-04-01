@@ -473,7 +473,9 @@ public class NativeCallGenerator {
                 aClass = generateRuntimeProxyClass(lookup, nativeInterface);
             }
             //强制初始化执行cInit
-            lookup.ensureInitialized(aClass);
+            if (!structProxyGenerator.skipInit) {
+                lookup.ensureInitialized(aClass);
+            }
             MethodHandle methodHandle = MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class));
             if (use_lmf) {
                 return NativeGeneratorHelper.ctorBinder(methodHandle);

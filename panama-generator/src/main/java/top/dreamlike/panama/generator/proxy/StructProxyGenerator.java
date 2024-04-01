@@ -51,6 +51,8 @@ public class StructProxyGenerator {
 
     private ClassFile classFile = ClassFile.of();
 
+    boolean skipInit = false;
+
     static {
         try {
             ENHANCE_MH = MethodHandles.lookup().findVirtual(StructProxyGenerator.class, "enhance", MethodType.methodType(Object.class, Class.class, MemorySegment.class));
@@ -284,8 +286,9 @@ public class StructProxyGenerator {
             }
 
             //强制初始化执行cInit
-            lookup.ensureInitialized(aClass);
-
+            if (!skipInit) {
+                lookup.ensureInitialized(aClass);
+            }
             MethodHandle ctorMh = MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class, MemorySegment.class));
             if (use_lmf) {
                 return NativeGeneratorHelper.memoryBinder(ctorMh, structMemoryLayout);

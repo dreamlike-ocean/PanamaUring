@@ -6,6 +6,7 @@ import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.async.CancelableFuture;
 import top.dreamlike.panama.uring.async.fd.AsyncEventFd;
+import top.dreamlike.panama.uring.async.fd.AsyncFileFd;
 import top.dreamlike.panama.uring.async.fd.AsyncTcpServerFd;
 import top.dreamlike.panama.uring.async.fd.AsyncTcpSocket;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
@@ -93,50 +94,40 @@ public class LiburingTest {
 
     @Test
     public void testAsyncFile() throws Throwable {
-        LibUring libUring = Instance.LIB_URING;
 
-        Libc libc = Instance.LIBC;
+        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+            params.setSq_entries(4);
+            params.setFlags(0);
+        });
         File tmpFile = File.createTempFile(UUID.randomUUID().toString(), ".tmp");
         tmpFile.deleteOnExit();
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment randomMemory = arena.allocate(ValueLayout.JAVA_INT);
-            IoUring ioUring = Instance.STRUCT_PROXY_GENERATOR.allocate(arena, IoUring.class);
+        try (Arena arena = Arena.ofConfined();
+             eventLoop) {
+            eventLoop.start();
             String absolutePath = tmpFile.getAbsolutePath();
             MemorySegment pathname = arena.allocateFrom(absolutePath);
-            int fd = libc.open(pathname, Libc.Fcntl_H.O_RDWR);
-            Assert.assertTrue(fd > 0);
-            int initRes = libUring.io_uring_queue_init(4, ioUring, 0);
-
-            Assert.assertEquals(0, initRes);
+            OwnershipMemoryForTest memory = new OwnershipMemoryForTest(pathname);
+            AsyncFileFd fd = AsyncFileFd.asyncOpen(eventLoop, memory, Libc.Fcntl_H.O_RDWR).get();
+            Assert.assertTrue(memory.hasDrop);
             String helloIoUring = "hello io_uring";
             MemorySegment str = arena.allocateFrom(helloIoUring);
-
-            IoUringCqe cqeStruct = submitTemplate(arena, ioUring, (sqe) -> {
-                libUring.io_uring_prep_write(sqe, fd, str, (int) str.byteSize() - 1, 0);
-                sqe.setUser_data(randomMemory.address());
-            });
-            long userData = cqeStruct.getUser_data();
-            Assert.assertEquals(randomMemory.address(), userData);
-            libUring.io_uring_cq_advance(ioUring, 1);
+            //async write
+            OwnershipMemoryForTest writeBuffer = new OwnershipMemoryForTest(str);
+            Integer writeRes = fd.asyncWrite(writeBuffer, (int) str.byteSize() - 1, 0).get();
+            Assert.assertTrue(writeRes > 0);
             try (FileInputStream stream = new FileInputStream(tmpFile)) {
                 String string = new String(stream.readAllBytes());
                 Assert.assertEquals(helloIoUring, string);
             }
-
-            MemorySegment cqe = arena.allocate(ValueLayout.ADDRESS);
-            int count = libUring.io_uring_peek_batch_cqe(ioUring, cqe, 1);
-            Assert.assertEquals(0, count);
-
-            MemorySegment readBuffer = arena.allocate(str.byteSize() - 1);
-            cqeStruct = submitTemplate(arena, ioUring, (sqe) -> {
-                libUring.io_uring_prep_read(sqe, fd, readBuffer, (int) readBuffer.byteSize(), 0);
-                sqe.setUser_data(readBuffer.address());
-            });
-            Assert.assertTrue(cqeStruct.getRes() > 0);
-            Assert.assertEquals(readBuffer.address(), cqeStruct.getUser_data());
-            Assert.assertEquals(helloIoUring, DebugHelper.bufToString(readBuffer, cqeStruct.getRes()));
-            libUring.io_uring_cq_advance(ioUring, 1);
-            libUring.io_uring_queue_exit(ioUring);
+            Integer fsyncRes = fd.asyncFsync(0).get();
+            Assert.assertTrue(fsyncRes == 0);
+             fsyncRes = fd.asyncFsync(0, 0, (int) (str.byteSize() - 1)).get();
+            Assert.assertTrue(fsyncRes == 0);
+            //async read
+            var readBuffer = new OwnershipMemoryForTest(arena.allocate(str.byteSize() - 1));
+            Integer readRes = fd.asyncRead(readBuffer, (int) str.byteSize() - 1, 0).get();
+            Assert.assertTrue(readRes > 0);
+            Assert.assertEquals(helloIoUring, DebugHelper.bufToString(readBuffer.resource(), readRes));
         }
     }
 
@@ -299,7 +290,6 @@ public class LiburingTest {
             eventLoop.start();
             ArrayBlockingQueue<Socket> queue = new ArrayBlockingQueue<>(1);
             InetSocketAddress address = new InetSocketAddress("127.0.0.1", randomPort);
-            ReentrantLock lock = new ReentrantLock();
             Thread.startVirtualThread(() -> {
                 try {
                     ServerSocket socket = new ServerSocket(address.getPort(), 4, InetAddress.getByName(address.getHostName()));
