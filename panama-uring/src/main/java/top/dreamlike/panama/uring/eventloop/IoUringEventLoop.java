@@ -166,12 +166,19 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
     }
 
     public CancelToken fillTemplate(Consumer<IoUringSqe> sqeFunction, Consumer<IoUringCqe> callback) {
+        return fillTemplate(sqeFunction, callback, false);
+    }
+
+    public CancelToken fillTemplate(Consumer<IoUringSqe> sqeFunction, Consumer<IoUringCqe> callback, boolean needSubmit) {
         long token = tokenGenerator.getAndIncrement();
         Runnable r = () -> {
             IoUringSqe sqe = ioUringGetSqe();
             sqeFunction.accept(sqe);
             sqe.setUser_data(token);
             callBackMap.put(token, new IoUringCompletionCallBack(sqe.getFd(), sqe.getOpcode(), callback));
+            if (needSubmit) {
+                flush();
+            }
         };
         if (inEventLoop()) {
             r.run();
@@ -330,9 +337,9 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
             if (!hasCancel) {
                 return cancelPromise.get();
             }
-            CancelToken cancelToken = fillTemplate(sqe -> {
+            CancelToken _ = fillTemplate(sqe -> {
                 Instance.LIB_URING.io_uring_prep_cancel64(sqe, token, IORING_ASYNC_CANCEL_ALL);
-            }, cqe -> promise.complete(cqe.getRes()));
+            }, cqe -> promise.complete(cqe.getRes()), true);
             return promise;
         }
 
