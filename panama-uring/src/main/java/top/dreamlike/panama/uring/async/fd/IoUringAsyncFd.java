@@ -1,8 +1,10 @@
 package top.dreamlike.panama.uring.async.fd;
 
 import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
+import top.dreamlike.panama.uring.async.BufferResult;
 import top.dreamlike.panama.uring.async.CancelableFuture;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
+import top.dreamlike.panama.uring.helper.LambdaHelper;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
@@ -12,16 +14,17 @@ import top.dreamlike.panama.uring.trait.OwnershipMemory;
 import top.dreamlike.panama.uring.trait.OwnershipResource;
 
 import java.lang.foreign.MemorySegment;
+import java.util.Optional;
 
 public interface IoUringAsyncFd extends NativeFd {
 
     IoUringEventLoop owner();
 
-    default CancelableFuture<Integer> asyncRead(OwnershipMemory buffer, int len, int offset) {
-        return (CancelableFuture<Integer>) owner()
+    default CancelableFuture<BufferResult<OwnershipMemory>> asyncRead(OwnershipMemory buffer, int len, int offset) {
+        return (CancelableFuture<BufferResult<OwnershipMemory>>) owner()
                 .asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_read(sqe, readFd(), MemorySegment.ofAddress(buffer.resource().address()), len, offset))
-                .thenApply(IoUringCqe::getRes)
-                .whenComplete((_, _) -> buffer.drop());
+                .thenApply(cqe -> new BufferResult<>(buffer, cqe.getRes()))
+                .whenComplete(buffer::DropWhenException);
     }
 
     default CancelableFuture<IoUringCqe> asyncSelectedRead(int len, int offset, short bufferGroupId) {
@@ -33,25 +36,25 @@ public interface IoUringAsyncFd extends NativeFd {
                 });
     }
 
-    default CancelableFuture<Integer> asyncReadV(OwnershipResource<NativeArrayPointer<Iovec>> iovec, int nr_vecs, int offset) {
+    default CancelableFuture<BufferResult<OwnershipResource<NativeArrayPointer<Iovec>>>> asyncReadV(OwnershipResource<NativeArrayPointer<Iovec>> iovec, int nr_vecs, int offset) {
         IoUringEventLoop eventLoop = owner();
-        return (CancelableFuture<Integer>) eventLoop.asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_readv(sqe, readFd(), iovec.resource(), nr_vecs, offset))
-                .whenComplete((_, _) -> iovec.drop())
-                .thenApply(IoUringCqe::getRes);
+        return (CancelableFuture<BufferResult<OwnershipResource<NativeArrayPointer<Iovec>>>>) eventLoop.asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_readv(sqe, readFd(), iovec.resource(), nr_vecs, offset))
+                .whenComplete((_, t) -> Optional.ofNullable(t).ifPresent((_) -> iovec.drop()))
+                .thenApply((cqe) -> new BufferResult<>(iovec, cqe.getRes()));
     }
 
-    default CancelableFuture<Integer> asyncWriteV(OwnershipResource<NativeArrayPointer<Iovec>> iovec, int nr_vecs, int offset) {
+    default CancelableFuture<BufferResult<OwnershipResource<NativeArrayPointer<Iovec>>>> asyncWriteV(OwnershipResource<NativeArrayPointer<Iovec>> iovec, int nr_vecs, int offset) {
         IoUringEventLoop eventLoop = owner();
-        return (CancelableFuture<Integer>) eventLoop.asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_writev(sqe, writeFd(), iovec.resource(), nr_vecs, offset))
-                .whenComplete((_, _) -> iovec.drop())
-                .thenApply(IoUringCqe::getRes);
+        return (CancelableFuture<BufferResult<OwnershipResource<NativeArrayPointer<Iovec>>>>) eventLoop.asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_writev(sqe, writeFd(), iovec.resource(), nr_vecs, offset))
+                .whenComplete((_, t) -> Optional.ofNullable(t).ifPresent((_) -> iovec.drop()))
+                .thenApply((cqe) -> new BufferResult<>(iovec, cqe.getRes()));
     }
 
-    default CancelableFuture<Integer> asyncWrite(OwnershipMemory buffer, int len, int offset) {
-        return (CancelableFuture<Integer>) owner()
+    default CancelableFuture<BufferResult<OwnershipMemory>> asyncWrite(OwnershipMemory buffer, int len, int offset) {
+        return (CancelableFuture<BufferResult<OwnershipMemory>>) owner()
                 .asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_write(sqe, readFd(), MemorySegment.ofAddress(buffer.resource().address()), len, offset))
-                .whenComplete((_, _) -> buffer.drop())
-                .thenApply(IoUringCqe::getRes);
+                .thenApply(cqe -> new BufferResult<>(buffer, cqe.getRes()))
+                .whenComplete(buffer::DropWhenException);
 
     }
 }

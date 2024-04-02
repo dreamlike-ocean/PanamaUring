@@ -11,7 +11,6 @@ import java.util.concurrent.CompletableFuture;
 
 public record AsyncFileFd(IoUringEventLoop ioUringEventLoop, int fd) implements IoUringAsyncFd {
 
-
     @Override
     public IoUringEventLoop owner() {
         return ioUringEventLoop;

@@ -26,11 +26,8 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.net.*;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.*;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 public class LiburingTest {
@@ -113,7 +110,7 @@ public class LiburingTest {
             MemorySegment str = arena.allocateFrom(helloIoUring);
             //async write
             OwnershipMemoryForTest writeBuffer = new OwnershipMemoryForTest(str);
-            Integer writeRes = fd.asyncWrite(writeBuffer, (int) str.byteSize() - 1, 0).get();
+            Integer writeRes = fd.asyncWrite(writeBuffer, (int) str.byteSize() - 1, 0).get().syscallRes();
             Assert.assertTrue(writeRes > 0);
             try (FileInputStream stream = new FileInputStream(tmpFile)) {
                 String string = new String(stream.readAllBytes());
@@ -121,11 +118,11 @@ public class LiburingTest {
             }
             Integer fsyncRes = fd.asyncFsync(0).get();
             Assert.assertTrue(fsyncRes == 0);
-             fsyncRes = fd.asyncFsync(0, 0, (int) (str.byteSize() - 1)).get();
+            fsyncRes = fd.asyncFsync(0, 0, (int) (str.byteSize() - 1)).get();
             Assert.assertTrue(fsyncRes == 0);
             //async read
             var readBuffer = new OwnershipMemoryForTest(arena.allocate(str.byteSize() - 1));
-            Integer readRes = fd.asyncRead(readBuffer, (int) str.byteSize() - 1, 0).get();
+            Integer readRes = fd.asyncRead(readBuffer, (int) str.byteSize() - 1, 0).get().syscallRes();
             Assert.assertTrue(readRes > 0);
             Assert.assertEquals(helloIoUring, DebugHelper.bufToString(readBuffer.resource(), readRes));
         }
@@ -146,17 +143,17 @@ public class LiburingTest {
             AsyncEventFd eventFd = new AsyncEventFd(eventLoop);
             eventFd.eventfdWrite(1);
             OwnershipMemory memory = OwnershipMemory.of(allocator.allocate(ValueLayout.JAVA_LONG));
-            CancelableFuture<Integer> read = eventFd.asyncRead(memory, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
-            Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), (int) read.get());
+            var read = eventFd.asyncRead(memory, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
+            Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), (int) read.get().syscallRes());
             Assert.assertEquals(1, memory.resource().get(ValueLayout.JAVA_LONG, 0));
 
             //cancel Test:
-            CancelableFuture<Integer> cancelableReadFuture = eventFd.asyncRead(memory, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
+            var cancelableReadFuture = eventFd.asyncRead(memory, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
             eventLoop.submitScheduleTask(1, TimeUnit.SECONDS, () -> {
                 cancelableReadFuture.cancel()
                         .thenAccept(count -> Assert.assertEquals(1L, (long) count));
             });
-            Integer res = cancelableReadFuture.get();
+            Integer res = cancelableReadFuture.get().syscallRes();
             Assert.assertEquals(Libc.Error_H.ECANCELED, -res);
 
             eventFd.eventfdWrite(214);
@@ -167,16 +164,16 @@ public class LiburingTest {
             iovec.setIov_len(ValueLayout.JAVA_LONG.byteSize());
             NativeArrayPointer<Iovec> pointer = new NativeArrayPointer<>(Instance.STRUCT_PROXY_GENERATOR, StructProxyGenerator.findMemorySegment(iovec), Iovec.class);
             OwnershipResourceForTest<NativeArrayPointer<Iovec>> resource = new OwnershipResourceForTest<>(pointer);
-            Integer readvRes = eventFd.asyncReadV(resource, 1, 0)
+            var readvRes = eventFd.asyncReadV(resource, 1, 0)
                     .get();
-            Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), (int) readvRes);
+            Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), (int) readvRes.syscallRes());
             Assert.assertEquals(214, readBufferVec0.get(ValueLayout.JAVA_LONG, 0));
-            Assert.assertTrue(resource.hasDrop());
+            Assert.assertTrue(resource.dontDrop());
 
             //writeVTest
             resource = new OwnershipResourceForTest<>(pointer);
             readBufferVec0.set(ValueLayout.JAVA_LONG, 0, 329);
-            Integer writeVRes = eventFd.asyncWriteV(resource, 1, 0).get();
+            Integer writeVRes = eventFd.asyncWriteV(resource, 1, 0).get().syscallRes();
             Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), (int) writeVRes);
             var assertReadBuffer = allocator.allocate(ValueLayout.JAVA_LONG);
             eventFd.read(assertReadBuffer, (int) ValueLayout.JAVA_LONG.byteSize());
@@ -272,8 +269,8 @@ public class LiburingTest {
             Socket clientSocket = oneshot.take();
             Assert.assertNotNull(clientSocket);
             Assert.assertEquals(clientSocket.getLocalPort(), ((InetSocketAddress) asyncTcpSocket.getRemoteAddress()).getPort());
-            Assert.assertTrue(addr.hasDrop());
-            Assert.assertTrue(addrLen.hasDrop());
+            Assert.assertFalse(addr.dontDrop());
+            Assert.assertFalse(addrLen.dontDrop());
             serverFd.close();
         }
     }
@@ -306,11 +303,11 @@ public class LiburingTest {
             Thread.sleep(1_000);
             AsyncTcpSocket tcpSocket = new AsyncTcpSocket(eventLoop, address);
             //connect
-            Integer i = tcpSocket.asyncConnect().get();
-            if (i != 0) {
-                System.out.println(DebugHelper.getErrorStr(-i));
+            Integer connectSyscallRes = tcpSocket.asyncConnect().get();
+            if (connectSyscallRes != 0) {
+                System.out.println(DebugHelper.getErrorStr(-connectSyscallRes));
             }
-            Assert.assertEquals(0, (int) i);
+            Assert.assertEquals(0, (int) connectSyscallRes);
             Socket socket = queue.take();
             int localPort = ((InetSocketAddress) tcpSocket.getLocalAddress()).getPort();
             Assert.assertEquals(socket.getPort(), localPort);
@@ -319,20 +316,45 @@ public class LiburingTest {
             //send
             MemorySegment sendBuffer = allocator.allocateFrom(ValueLayout.JAVA_INT, 214);
             OwnershipMemoryForTest ownershipMemoryForTest = new OwnershipMemoryForTest(sendBuffer);
-            Integer sendRes = tcpSocket.asyncSend(ownershipMemoryForTest, (int) sendBuffer.byteSize(), 0).get();
+            Integer sendRes = tcpSocket.asyncSend(ownershipMemoryForTest, (int) sendBuffer.byteSize(), 0).get().syscallRes();
             Assert.assertEquals((int) sendBuffer.byteSize(), (int) sendRes);
             Assert.assertEquals(214, DebugHelper.ntohl(new DataInputStream(socket.getInputStream()).readInt()));
-            Assert.assertTrue(ownershipMemoryForTest.hasDrop);
+            Assert.assertTrue(ownershipMemoryForTest.dontDrop());
             //recv
             new DataOutputStream(socket.getOutputStream()).writeInt(329);
             MemorySegment recvBuffer = allocator.allocate(ValueLayout.JAVA_INT);
             ownershipMemoryForTest = new OwnershipMemoryForTest(recvBuffer);
             tcpSocket.asyncRecv(ownershipMemoryForTest, (int) recvBuffer.byteSize(), 0).get();
             Assert.assertEquals(329, DebugHelper.ntohl(recvBuffer.get(ValueLayout.JAVA_INT, 0)));
-            Assert.assertTrue(ownershipMemoryForTest.hasDrop);
+            Assert.assertTrue(ownershipMemoryForTest.dontDrop());
+            //recv selected
+            int NREQS = 2;
+            int BUF_SIZE = 1024;
+            int totalLen = NREQS * BUF_SIZE;
+            short bufferGroup = 2;
+            int BR_MASK = Instance.LIB_URING.io_uring_buf_ring_mask(NREQS);
+            IoUringBufRingSetupResult result = eventLoop.setupBufferRing(NREQS, bufferGroup).get();
+            Assert.assertEquals(0, result.res());
+
+            new DataOutputStream(socket.getOutputStream()).writeInt(2001);
+            OwnershipMemory bufPtrPtr = Instance.LIB_JEMALLOC.mallocMemory(ValueLayout.ADDRESS.byteSize());
+            OwnershipMemory bufBase = Instance.LIB_JEMALLOC.posixMemalign(bufPtrPtr.resource(), 4096, totalLen);
+            CompletableFuture.runAsync(() -> {
+                MemorySegment base = bufBase.resource();
+                for (int i = 0; i < NREQS; i++) {
+                    result.bufRing().ioUringBufRingAdd(base, BUF_SIZE, (short) (i + 1), BR_MASK, i);
+                    base = MemorySegment.ofAddress(base.address() + BUF_SIZE);
+                }
+                result.bufRing().ioUringBufRingAdvance(NREQS);
+
+            }, eventLoop).get();
+            IoUringCqe cqe = tcpSocket.asyncRecvSelected(((int) recvBuffer.byteSize()), 0, bufferGroup).get();
+            int bid = cqe.getBid();
+            MemorySegment base = bufBase.resource();
+            base = MemorySegment.ofAddress(base.address() + (long) (bid - 1) * BUF_SIZE).reinterpret(BUF_SIZE);
+            Assert.assertEquals(2001, DebugHelper.ntohl(base.get(ValueLayout.JAVA_INT, 0)));
 
             //sendzc
-
             ArrayBlockingQueue<Integer> oneshot = new ArrayBlockingQueue<>(1);
             ownershipMemoryForTest = new OwnershipMemoryForTest(sendBuffer);
             Thread.startVirtualThread(() -> {
@@ -344,7 +366,7 @@ public class LiburingTest {
                 }
             });
             tcpSocket.asyncSendZc(ownershipMemoryForTest, (int) sendBuffer.byteSize(), 0, 0).get();
-            Assert.assertTrue(ownershipMemoryForTest.hasDrop);
+            Assert.assertTrue(ownershipMemoryForTest.dontDrop());
             Assert.assertEquals(Integer.valueOf(214), oneshot.take());
         }
     }
@@ -382,8 +404,8 @@ public class LiburingTest {
             hasDrop = true;
         }
 
-        public boolean hasDrop() {
-            return hasDrop;
+        public boolean dontDrop() {
+            return !hasDrop;
         }
     }
 
@@ -407,8 +429,8 @@ public class LiburingTest {
             hasDrop = true;
         }
 
-        public boolean hasDrop() {
-            return hasDrop;
+        public boolean dontDrop() {
+            return !hasDrop;
         }
 
     }

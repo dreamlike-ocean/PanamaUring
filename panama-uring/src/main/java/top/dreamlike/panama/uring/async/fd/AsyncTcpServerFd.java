@@ -1,6 +1,7 @@
 package top.dreamlike.panama.uring.async.fd;
 
 import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
+import top.dreamlike.panama.uring.async.BufferResult;
 import top.dreamlike.panama.uring.async.CancelableFuture;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
@@ -127,17 +128,17 @@ public class AsyncTcpServerFd implements IoUringAsyncFd {
 
 
     @Override
-    public CancelableFuture<Integer> asyncWrite(OwnershipMemory buffer, int len, int offset) {
-        throw new UnsupportedOperationException();
+    public CancelableFuture<BufferResult<OwnershipResource<NativeArrayPointer<Iovec>>>> asyncWriteV(OwnershipResource<NativeArrayPointer<Iovec>> iovec, int nr_vecs, int offset) {
+        return IoUringAsyncFd.super.asyncWriteV(iovec, nr_vecs, offset);
     }
 
     @Override
-    public CancelableFuture<Integer> asyncWriteV(OwnershipResource<NativeArrayPointer<Iovec>> iovec, int nr_vecs, int offset) {
-        throw new UnsupportedOperationException();
+    public CancelableFuture<BufferResult<OwnershipMemory>> asyncWrite(OwnershipMemory buffer, int len, int offset) {
+        return IoUringAsyncFd.super.asyncWrite(buffer, len, offset);
     }
 
     @Override
-    public CancelableFuture<Integer> asyncReadV(OwnershipResource<NativeArrayPointer<Iovec>> iovec, int nr_vecs, int offset) {
+    public CancelableFuture<BufferResult<OwnershipResource<NativeArrayPointer<Iovec>>>> asyncReadV(OwnershipResource<NativeArrayPointer<Iovec>> iovec, int nr_vecs, int offset) {
         throw new UnsupportedOperationException();
     }
 
@@ -147,7 +148,7 @@ public class AsyncTcpServerFd implements IoUringAsyncFd {
     }
 
     @Override
-    public CancelableFuture<Integer> asyncRead(OwnershipMemory buffer, int len, int offset) {
+    public CancelableFuture<BufferResult<OwnershipMemory>> asyncRead(OwnershipMemory buffer, int len, int offset) {
         throw new UnsupportedOperationException();
     }
 

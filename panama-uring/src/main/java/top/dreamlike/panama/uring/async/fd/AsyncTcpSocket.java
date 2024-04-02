@@ -1,11 +1,13 @@
 package top.dreamlike.panama.uring.async.fd;
 
+import top.dreamlike.panama.uring.async.BufferResult;
 import top.dreamlike.panama.uring.async.CancelableFuture;
 import top.dreamlike.panama.uring.async.cancel.CancelToken;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn;
 import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn6;
@@ -205,30 +207,43 @@ public class AsyncTcpSocket implements IoUringAsyncFd {
         return sockaddr_in6Memory;
     }
 
-    public CancelableFuture<Integer> asyncRecv(OwnershipMemory buffer, int len, int flag) {
+    public CancelableFuture<BufferResult<OwnershipMemory>> asyncRecv(OwnershipMemory buffer, int len, int flag) {
         if (!hasConnected) {
             throw new IllegalStateException("before recv, must connect first.");
         }
-        return ((CancelableFuture<Integer>) owner().asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_recv(sqe, fd, buffer.resource(), len, flag))
-                .whenComplete((_, _) -> buffer.drop())
-                .thenApply(IoUringCqe::getRes));
+        return (CancelableFuture<BufferResult<OwnershipMemory>>)
+                owner().asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_recv(sqe, fd, buffer.resource(), len, flag))
+                        .whenComplete(buffer::DropWhenException)
+                        .thenApply(cqe -> new BufferResult<>(buffer, cqe.getRes()));
     }
 
-    public CancelableFuture<Integer> asyncSend(OwnershipMemory buffer, int len, int flag) {
+    public CancelableFuture<IoUringCqe> asyncRecvSelected(int len, int flag, short bufferGroupId) {
+        if (!hasConnected) {
+            throw new IllegalStateException("before recv, must connect first.");
+        }
+        return owner().asyncOperation(sqe -> {
+                    Instance.LIB_URING.io_uring_prep_recv(sqe, fd, MemorySegment.NULL, len, flag);
+                    sqe.setFlags((byte) (sqe.getFlags() | IoUringConstant.IOSQE_BUFFER_SELECT));
+                    sqe.setBufGroup(bufferGroupId);
+                });
+
+    }
+
+    public CancelableFuture<BufferResult<OwnershipMemory>> asyncSend(OwnershipMemory buffer, int len, int flag) {
         if (!hasConnected) {
             throw new IllegalStateException("before send, must connect first.");
         }
-        return ((CancelableFuture<Integer>) owner().asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_send(sqe, fd, buffer.resource(), len, flag))
-                .whenComplete((_, _) -> buffer.drop())
-                .thenApply(IoUringCqe::getRes));
+        return ((CancelableFuture<BufferResult<OwnershipMemory>>) owner().asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_send(sqe, fd, buffer.resource(), len, flag))
+                .whenComplete(buffer::DropWhenException)
+                .thenApply(cqe -> new BufferResult<>(buffer, cqe.getRes())));
     }
 
-    public CancelableFuture<Integer> asyncSendZc(OwnershipMemory buffer, int len, int flag, int zcFlags) {
+    public CancelableFuture<BufferResult<OwnershipMemory>> asyncSendZc(OwnershipMemory buffer, int len, int flag, int zcFlags) {
         if (!hasConnected) {
             throw new IllegalStateException("before send, must connect first.");
         }
         ZCContext context = new ZCContext();
-        return (CancelableFuture<Integer>) (new CancelableFuture<Integer>(promise ->
+        return (CancelableFuture<BufferResult<OwnershipMemory>>) (new CancelableFuture<BufferResult<OwnershipMemory>>(promise ->
                 owner().asyncOperation(
                         sqe -> Instance.LIB_URING.io_uring_prep_send_zc(sqe, fd, buffer.resource(), len, flag, zcFlags),
                         cqe -> {
@@ -237,11 +252,11 @@ public class AsyncTcpSocket implements IoUringAsyncFd {
                                 context.sendRes = cqe.getRes();
                             } else {
                                 context.stage = ZCContext.Stage.END;
-                                promise.complete(Integer.valueOf(context.sendRes));
+                                promise.complete(new BufferResult<>(buffer, cqe.getRes()));
                             }
                         }
                 )
-        ).whenComplete((_, _) -> buffer.drop()));
+        ).whenComplete(buffer::DropWhenException));
 
 
     }

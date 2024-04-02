@@ -165,11 +165,11 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         }, this);
     }
 
-    public CancelToken fillTemplate(Consumer<IoUringSqe> sqeFunction, Consumer<IoUringCqe> callback) {
+    private CancelToken fillTemplate(Consumer<IoUringSqe> sqeFunction, Consumer<IoUringCqe> callback) {
         return fillTemplate(sqeFunction, callback, false);
     }
 
-    public CancelToken fillTemplate(Consumer<IoUringSqe> sqeFunction, Consumer<IoUringCqe> callback, boolean needSubmit) {
+    private CancelToken fillTemplate(Consumer<IoUringSqe> sqeFunction, Consumer<IoUringCqe> callback, boolean needSubmit) {
         long token = tokenGenerator.getAndIncrement();
         Runnable r = () -> {
             IoUringSqe sqe = ioUringGetSqe();

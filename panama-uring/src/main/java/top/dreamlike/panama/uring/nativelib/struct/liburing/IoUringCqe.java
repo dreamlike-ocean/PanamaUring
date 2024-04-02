@@ -59,4 +59,8 @@ public class IoUringCqe {
     public boolean hasMore() {
         return (getFlags() & IORING_CQE_F_MORE) != 0;
     }
+
+    public int getBid() {
+        return getFlags() >> IoUringConstant.IORING_CQE_BUFFER_SHIFT;
+    }
 }
