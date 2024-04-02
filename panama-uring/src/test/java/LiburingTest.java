@@ -7,8 +7,8 @@ import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.async.CancelableFuture;
 import top.dreamlike.panama.uring.async.fd.AsyncEventFd;
 import top.dreamlike.panama.uring.async.fd.AsyncFileFd;
-import top.dreamlike.panama.uring.async.fd.AsyncTcpServerFd;
-import top.dreamlike.panama.uring.async.fd.AsyncTcpSocket;
+import top.dreamlike.panama.uring.async.fd.AsyncTcpServerSocketFd;
+import top.dreamlike.panama.uring.async.fd.AsyncTcpSocketFd;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
@@ -27,7 +27,9 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.net.*;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class LiburingTest {
@@ -244,7 +246,7 @@ public class LiburingTest {
         });
         try (eventLoop) {
             eventLoop.start();
-            AsyncTcpServerFd serverFd = new AsyncTcpServerFd(eventLoop, new InetSocketAddress("127.0.0.1", 4399), 4399);
+            AsyncTcpServerSocketFd serverFd = new AsyncTcpServerSocketFd(eventLoop, new InetSocketAddress("127.0.0.1", 4399), 4399);
             serverFd.bind();
             serverFd.listen(16);
 
@@ -252,7 +254,7 @@ public class LiburingTest {
             OwnershipMemoryForTest addr = new OwnershipMemoryForTest(Instance.LIB_JEMALLOC.malloc(addrSize));
             OwnershipMemoryForTest addrLen = new OwnershipMemoryForTest(Instance.LIB_JEMALLOC.malloc(ValueLayout.JAVA_INT.byteSize()));
 
-            CancelableFuture<AsyncTcpSocket> waitAccept = serverFd.asyncAccept(0, addr, addrLen);
+            CancelableFuture<AsyncTcpSocketFd> waitAccept = serverFd.asyncAccept(0, addr, addrLen);
             ArrayBlockingQueue<Socket> oneshot = new ArrayBlockingQueue<>(1);
             Thread.startVirtualThread(() -> {
                 try {
@@ -265,10 +267,10 @@ public class LiburingTest {
                     throw new RuntimeException(e);
                 }
             });
-            AsyncTcpSocket asyncTcpSocket = waitAccept.get();
+            AsyncTcpSocketFd asyncTcpSocketFd = waitAccept.get();
             Socket clientSocket = oneshot.take();
             Assert.assertNotNull(clientSocket);
-            Assert.assertEquals(clientSocket.getLocalPort(), ((InetSocketAddress) asyncTcpSocket.getRemoteAddress()).getPort());
+            Assert.assertEquals(clientSocket.getLocalPort(), ((InetSocketAddress) asyncTcpSocketFd.getRemoteAddress()).getPort());
             Assert.assertFalse(addr.dontDrop());
             Assert.assertFalse(addrLen.dontDrop());
             serverFd.close();
@@ -301,7 +303,7 @@ public class LiburingTest {
             });
             //睡一秒得了 等上面的启动
             Thread.sleep(1_000);
-            AsyncTcpSocket tcpSocket = new AsyncTcpSocket(eventLoop, address);
+            AsyncTcpSocketFd tcpSocket = new AsyncTcpSocketFd(eventLoop, address);
             //connect
             Integer connectSyscallRes = tcpSocket.asyncConnect().get();
             if (connectSyscallRes != 0) {

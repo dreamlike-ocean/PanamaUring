@@ -2,7 +2,6 @@ package top.dreamlike.panama.uring.async.fd;
 
 import top.dreamlike.panama.uring.async.BufferResult;
 import top.dreamlike.panama.uring.async.CancelableFuture;
-import top.dreamlike.panama.uring.async.cancel.CancelToken;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
@@ -21,7 +20,7 @@ import java.net.*;
 
 import static top.dreamlike.panama.uring.nativelib.Instance.LIBC;
 
-public class AsyncTcpSocket implements IoUringAsyncFd {
+public class AsyncTcpSocketFd implements IoUringAsyncFd {
     private final IoUringEventLoop ioUringEventLoop;
 
     private final int fd;
@@ -32,7 +31,7 @@ public class AsyncTcpSocket implements IoUringAsyncFd {
 
     private volatile boolean hasConnected;
 
-    AsyncTcpSocket(IoUringEventLoop ioUringEventLoop, int fd, SocketAddress localAddress, SocketAddress remoteAddress) {
+    AsyncTcpSocketFd(IoUringEventLoop ioUringEventLoop, int fd, SocketAddress localAddress, SocketAddress remoteAddress) {
         this.ioUringEventLoop = ioUringEventLoop;
         this.fd = fd;
         this.localAddress = localAddress;
@@ -40,7 +39,7 @@ public class AsyncTcpSocket implements IoUringAsyncFd {
         this.hasConnected = true;
     }
 
-    public AsyncTcpSocket(IoUringEventLoop ioUringEventLoop, SocketAddress remoteAddress) {
+    public AsyncTcpSocketFd(IoUringEventLoop ioUringEventLoop, SocketAddress remoteAddress) {
         this.remoteAddress = remoteAddress;
         this.fd = socketSysCall(remoteAddress);
         this.ioUringEventLoop = ioUringEventLoop;

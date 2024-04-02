@@ -17,7 +17,6 @@ import top.dreamlike.panama.uring.thirdparty.colletion.LongObjectHashMap;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.PriorityQueue;
@@ -30,9 +29,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant.IORING_ASYNC_CANCEL_ALL;
-import static top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant.IORING_CQE_F_MORE;
 
-public class IoUringEventLoop extends Thread implements AutoCloseable, Executor {
+public class IoUringEventLoop extends Thread implements AutoCloseable, Executor{
     private static final LibUring libUring = Instance.LIB_URING;
     private static final int cqeSize = 4;
     private final EventFd wakeUpFd;
@@ -305,6 +303,12 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
     public void submitScheduleTask(long delay, TimeUnit timeUnit, Runnable task) {
         long deadlineNanos = System.nanoTime() + timeUnit.toNanos(delay);
         execute(() -> scheduledTasks.offer(new ScheduledTask(deadlineNanos, task)));
+    }
+
+    public CompletableFuture<Void> timeout(long delay, TimeUnit timeUnit) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        submitScheduleTask(delay, timeUnit, () -> future.complete(null));
+        return future;
     }
 
     private record ScheduledTask(long deadlineNanos, Runnable task) implements Comparable<ScheduledTask> {

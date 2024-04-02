@@ -9,20 +9,16 @@ import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
 import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
-import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn;
-import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn6;
-import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrUn;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 import top.dreamlike.panama.uring.trait.OwnershipResource;
 
-import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
-import java.net.*;
+import java.net.SocketAddress;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public class AsyncTcpServerFd implements IoUringAsyncFd {
+public class AsyncTcpServerSocketFd implements IoUringAsyncFd {
 
     private final static Libc LIBC = Instance.LIBC;
 
@@ -38,16 +34,16 @@ public class AsyncTcpServerFd implements IoUringAsyncFd {
 
     private volatile Supplier<IoUringEventLoop> subSocketEventLoopBinder = () -> owner;
 
-    public AsyncTcpServerFd(IoUringEventLoop owner, SocketAddress address, int port) {
+    public AsyncTcpServerSocketFd(IoUringEventLoop owner, SocketAddress address, int port) {
         this.owner = owner;
         this.address = address;
         this.port = port;
-        this.fd = AsyncTcpSocket.socketSysCall(address);
+        this.fd = AsyncTcpSocketFd.socketSysCall(address);
         this.hasListen = false;
     }
 
     public int bind() {
-        OwnershipMemory addr = AsyncTcpSocket.mallocAddr(address);
+        OwnershipMemory addr = AsyncTcpSocketFd.mallocAddr(address);
         try (addr) {
             int listenRes = LIBC.bind(fd, addr.resource(), (int) addr.resource().byteSize());
             if (listenRes < 0) {
@@ -77,10 +73,10 @@ public class AsyncTcpServerFd implements IoUringAsyncFd {
     }
 
     public long addrSize() {
-        return AsyncTcpSocket.addrSize(address);
+        return AsyncTcpSocketFd.addrSize(address);
     }
 
-    public CancelableFuture<AsyncTcpSocket> asyncAccept(int flag, OwnershipMemory sockaddr, OwnershipMemory sockLen) {
+    public CancelableFuture<AsyncTcpSocketFd> asyncAccept(int flag, OwnershipMemory sockaddr, OwnershipMemory sockLen) {
         if (!hasListen) {
             throw new IllegalStateException("server not listen");
         }
@@ -93,16 +89,16 @@ public class AsyncTcpServerFd implements IoUringAsyncFd {
         }
         sockLenMemory.set(ValueLayout.JAVA_INT, 0L, (int) sockaddrMemory.byteSize());
 
-        return (CancelableFuture<AsyncTcpSocket>) owner.asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_accept(sqe, fd, sockaddrMemory, sockLenMemory, flag))
+        return (CancelableFuture<AsyncTcpSocketFd>) owner.asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_accept(sqe, fd, sockaddrMemory, sockLenMemory, flag))
                 .thenApply(cqe -> {
                     try (sockaddr; sockLen) {
                         int acceptFd = cqe.getRes();
                         if (acceptFd < 0) {
                             throw new IllegalArgumentException(STR."accept fail, reason: \{DebugHelper.getErrorStr(-acceptFd)}");
                         }
-                        SocketAddress remoteAddress = AsyncTcpSocket.inferAddress(address, sockaddrMemory);
+                        SocketAddress remoteAddress = AsyncTcpSocketFd.inferAddress(address, sockaddrMemory);
                         IoUringEventLoop subEventLoop = subSocketEventLoopBinder.get();
-                        return new AsyncTcpSocket(subEventLoop, acceptFd, address, remoteAddress);
+                        return new AsyncTcpSocketFd(subEventLoop, acceptFd, address, remoteAddress);
                     } catch (Exception exception) {
                         //不应该在这里抛出异常 无视就行了
                         throw new IllegalArgumentException(exception);
