@@ -1,14 +1,14 @@
 package top.dreamlike.panama.uring.fd;
 
-import top.dreamlike.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.trait.NativeFd;
+import top.dreamlike.panama.uring.trait.PollableFd;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
-public class EventFd implements NativeFd {
+public class EventFd implements NativeFd, PollableFd {
     private final int fd;
 
 
@@ -18,6 +18,10 @@ public class EventFd implements NativeFd {
             throw new IllegalArgumentException(STR."eventfd create failed, error: \{DebugHelper.currentErrorStr()}");
         }
         this.fd = eventfd;
+    }
+
+    public EventFd() {
+        this(0, 0);
     }
 
     public int eventfdWrite(int value) {

@@ -12,6 +12,7 @@ import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn;
 import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn6;
 import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrUn;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
+import top.dreamlike.panama.uring.trait.PollableFd;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
@@ -20,7 +21,7 @@ import java.net.*;
 
 import static top.dreamlike.panama.uring.nativelib.Instance.LIBC;
 
-public class AsyncTcpSocketFd implements IoUringAsyncFd {
+public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd {
     private final IoUringEventLoop ioUringEventLoop;
 
     private final int fd;

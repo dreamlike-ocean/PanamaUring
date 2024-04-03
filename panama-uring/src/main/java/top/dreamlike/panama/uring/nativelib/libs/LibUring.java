@@ -1,6 +1,5 @@
 package top.dreamlike.panama.uring.nativelib.libs;
 
-import top.dreamlike.nativeLib.inet.iovec;
 import top.dreamlike.panama.generator.annotation.CLib;
 import top.dreamlike.panama.generator.annotation.NativeFunction;
 import top.dreamlike.panama.generator.annotation.Pointer;
@@ -8,7 +7,7 @@ import top.dreamlike.panama.generator.exception.StructException;
 import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.nativelib.Instance;
-import top.dreamlike.panama.uring.nativelib.struct.epoll.EpollEvent;
+import top.dreamlike.panama.uring.nativelib.struct.epoll.NativeEpollEvent;
 import top.dreamlike.panama.uring.nativelib.struct.futex.FutexWaitV;
 import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
@@ -504,7 +503,7 @@ public interface LibUring {
         sqe.setIoprio((short) (sqe.getIoprio() | IoUringConstant.IORING_RECV_MULTISHOT));
     }
 
-    default void io_uring_prep_epoll_ctl(@Pointer IoUringSqe sqe, int epfd, int fd, int op, @Pointer EpollEvent event) {
+    default void io_uring_prep_epoll_ctl(@Pointer IoUringSqe sqe, int epfd, int fd, int op, @Pointer NativeEpollEvent event) {
         io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_EPOLL_CTL, sqe, epfd, StructProxyGenerator.findMemorySegment(event), op, fd);
     }
 

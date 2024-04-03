@@ -1,6 +1,7 @@
 package top.dreamlike.panama.uring.nativelib;
 import top.dreamlike.panama.generator.proxy.NativeCallGenerator;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
+import top.dreamlike.panama.uring.nativelib.libs.LibEpoll;
 import top.dreamlike.panama.uring.nativelib.libs.LibJemalloc;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
@@ -14,6 +15,7 @@ public class Instance {
 
     public static final Libc LIBC = NATIVE_CALL_GENERATOR.generate(Libc.class);
     public static final LibUring LIB_URING = NATIVE_CALL_GENERATOR.generate(LibUring.class);
+    public static final LibEpoll LIB_EPOLL = NATIVE_CALL_GENERATOR.generate(LibEpoll.class);
     public static final LibJemalloc LIB_JEMALLOC = new LibJemalloc() {
 
         private static final LibJemalloc FFI = NATIVE_CALL_GENERATOR.generate(LibJemalloc.class);

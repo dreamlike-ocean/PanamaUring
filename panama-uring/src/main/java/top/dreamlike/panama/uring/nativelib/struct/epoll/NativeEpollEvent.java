@@ -1,7 +1,5 @@
 package top.dreamlike.panama.uring.nativelib.struct.epoll;
 
-import top.dreamlike.panama.generator.annotation.Alignment;
-import top.dreamlike.panama.generator.helper.NativeGeneratorHelper;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.nativelib.Instance;
 
@@ -9,9 +7,12 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.invoke.VarHandle;
 
 
-public class EpollEvent {
+public class NativeEpollEvent {
 
-    private static final VarHandle U64_VH = Instance.STRUCT_PROXY_GENERATOR.extract(EpollEvent.class).varHandle(MemoryLayout.PathElement.groupElement("data"), MemoryLayout.PathElement.groupElement("u64"));
+    public static final MemoryLayout LAYOUT = Instance.STRUCT_PROXY_GENERATOR.extract(NativeEpollEvent.class);
+
+    private static final VarHandle U64_VH = LAYOUT
+            .varHandle(MemoryLayout.PathElement.groupElement("data"), MemoryLayout.PathElement.groupElement("u64"));
 
     private int events;
     private EpollData data;

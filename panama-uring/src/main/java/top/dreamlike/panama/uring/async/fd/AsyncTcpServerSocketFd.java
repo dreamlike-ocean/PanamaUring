@@ -1,16 +1,12 @@
 package top.dreamlike.panama.uring.async.fd;
 
-import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
-import top.dreamlike.panama.uring.async.BufferResult;
 import top.dreamlike.panama.uring.async.CancelableFuture;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
-import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
-import top.dreamlike.panama.uring.trait.OwnershipResource;
+import top.dreamlike.panama.uring.trait.PollableFd;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -18,7 +14,7 @@ import java.net.SocketAddress;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public class AsyncTcpServerSocketFd implements IoUringAsyncFd {
+public class AsyncTcpServerSocketFd implements IoUringAsyncFd, PollableFd {
 
     private final static Libc LIBC = Instance.LIBC;
 
@@ -122,39 +118,13 @@ public class AsyncTcpServerSocketFd implements IoUringAsyncFd {
         return fd;
     }
 
-
     @Override
-    public CancelableFuture<BufferResult<OwnershipResource<NativeArrayPointer<Iovec>>>> asyncWriteV(OwnershipResource<NativeArrayPointer<Iovec>> iovec, int nr_vecs, int offset) {
-        return IoUringAsyncFd.super.asyncWriteV(iovec, nr_vecs, offset);
+    public int readFd() {
+        throw new UnsupportedOperationException("server socket fd is not readable");
     }
 
     @Override
-    public CancelableFuture<BufferResult<OwnershipMemory>> asyncWrite(OwnershipMemory buffer, int len, int offset) {
-        return IoUringAsyncFd.super.asyncWrite(buffer, len, offset);
-    }
-
-    @Override
-    public CancelableFuture<BufferResult<OwnershipResource<NativeArrayPointer<Iovec>>>> asyncReadV(OwnershipResource<NativeArrayPointer<Iovec>> iovec, int nr_vecs, int offset) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public CancelableFuture<IoUringCqe> asyncSelectedRead(int len, int offset, short bufferGroupId) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public CancelableFuture<BufferResult<OwnershipMemory>> asyncRead(OwnershipMemory buffer, int len, int offset) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public int write(MemorySegment buf, int count) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public int read(MemorySegment buf, int count) {
-        throw new UnsupportedOperationException();
+    public int writeFd() {
+        throw new UnsupportedOperationException("server socket fd is not writable");
     }
 }

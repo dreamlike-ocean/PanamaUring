@@ -1,25 +1,20 @@
 import org.junit.Assert;
 import org.junit.Test;
-import top.dreamlike.panama.generator.annotation.Pointer;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
-import top.dreamlike.panama.uring.nativelib.struct.epoll.EpollEvent;
+import top.dreamlike.panama.uring.nativelib.struct.epoll.NativeEpollEvent;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBuf;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufRing;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
 import top.dreamlike.panama.uring.nativelib.struct.sigset.SigsetType;
 import top.dreamlike.panama.uring.nativelib.struct.socket.MsgHdr;
-import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn6;
 import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
 
 import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
-import java.net.Inet6Address;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
 
 import static java.lang.foreign.ValueLayout.*;
 
@@ -86,11 +81,11 @@ public class StructTest {
 
     @Test
     public void testEpoll() {
-        MemoryLayout eventLayout = Instance.STRUCT_PROXY_GENERATOR.extract(EpollEvent.class);
+        MemoryLayout eventLayout = Instance.STRUCT_PROXY_GENERATOR.extract(NativeEpollEvent.class);
         MemorySegment epollEventMemory = Arena.global().allocate(eventLayout);
-        EpollEvent epollEvent = Instance.STRUCT_PROXY_GENERATOR.enhance(epollEventMemory);
-        epollEvent.setU64(1024);
-        Assert.assertEquals(1024, epollEvent.getData().getU64());
+        NativeEpollEvent nativeEpollEvent = Instance.STRUCT_PROXY_GENERATOR.enhance(epollEventMemory);
+        nativeEpollEvent.setU64(1024);
+        Assert.assertEquals(1024, nativeEpollEvent.getData().getU64());
     }
 
     @Test

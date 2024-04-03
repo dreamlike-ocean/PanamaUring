@@ -17,6 +17,10 @@ public final class NativeArrayPointer<T> implements NativeStructEnhanceMark, Nat
 
     private final Class<T> tClass;
 
+    public NativeArrayPointer(StructProxyGenerator generator, MemorySegment memorySegment, T... dummy) {
+        this(generator, memorySegment, (Class<T>) dummy.getClass().getComponentType());
+    }
+
     public NativeArrayPointer(StructProxyGenerator generator, MemorySegment memorySegment, Class<T> component) {
         if (component == Object.class) {
             throw new IllegalArgumentException("please fill generic param");
