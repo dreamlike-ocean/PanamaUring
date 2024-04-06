@@ -11,8 +11,7 @@ public class BuildScript {
     public static void main(String[] args) throws Throwable {
         String buildPath = args[0];
         String debug = args[1];
-        System.out.println(STR."Build path: \{buildPath} debug: \{debug}");
-        Files.write(Path.of(STR."\{buildPath}/\{conditionFilePath}"), template.formatted(debug).getBytes(StandardCharsets.UTF_8), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+        Files.write(Path.of(buildPath + "/" + conditionFilePath), template.formatted(debug).getBytes(StandardCharsets.UTF_8), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
     }
 
     private static String template = """

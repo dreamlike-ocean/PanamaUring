@@ -33,7 +33,7 @@ public record AsyncFileFd(IoUringEventLoop ioUringEventLoop, int fd) implements 
     public static CancelableFuture<AsyncFileFd> asyncOpen(IoUringEventLoop ioUringEventLoop, OwnershipMemory path, int flags) {
         return (CancelableFuture<AsyncFileFd>) ioUringEventLoop.asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_openat(sqe, -1, path.resource(), flags, 0))
                 .whenComplete((_, _) -> path.drop())
-                .thenCompose(cqe -> cqe.getRes() <= 0 ? CompletableFuture.failedFuture(new IllegalArgumentException(STR."open file Fail! reason: \{DebugHelper.getErrorStr(-cqe.getRes())}")) : CompletableFuture.completedFuture(cqe.getRes()))
+                .thenCompose(cqe -> cqe.getRes() <= 0 ? CompletableFuture.failedFuture(new IllegalArgumentException("open file Fail! reason: " + DebugHelper.getErrorStr(-cqe.getRes()))) : CompletableFuture.completedFuture(cqe.getRes()))
                 .thenApply(fd -> new AsyncFileFd(ioUringEventLoop, fd));
     }
 }

@@ -18,7 +18,10 @@ import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -330,7 +333,7 @@ public class NativeCallGenerator {
         }
 
         if ((NativeLookup.primitiveMapToMemoryLayout(returnType) == null && !returnPointer && !MemorySegment.class.isAssignableFrom(returnType)) && returnType != void.class) {
-            throw new IllegalArgumentException(STR."\{method} must return primitive type or is marked returnIsPointer");
+            throw new IllegalArgumentException(method + " must return primitive type or is marked returnIsPointer");
         }
         ArrayList<Integer> rawMemoryIndex = new ArrayList<>();
         MemoryLayout[] layouts = new MemoryLayout[method.getParameterCount()];
@@ -366,7 +369,7 @@ public class NativeCallGenerator {
 
     private Class generateRuntimeProxyClass(MethodHandles.Lookup lookup, Class nativeInterface) throws IllegalAccessException {
         String className = generateProxyClassName(nativeInterface);
-        var thisClassDesc = ClassDesc.ofDescriptor(STR."L\{className.replace(".", "/")};");
+        var thisClassDesc = ClassDesc.ofDescriptor("L" + className.replace(".", "/") + ";");
         var thisClass = classFile.build(thisClassDesc, classBuilder -> {
             classBuilder.withInterfaceSymbols(ClassFileHelper.toDesc(nativeInterface));
             classBuilder.withField(GENERATOR_FIELD_NAME, ClassFileHelper.toDesc(NativeCallGenerator.class), AccessFlags.ofField(AccessFlag.PUBLIC, AccessFlag.STATIC, AccessFlag.FINAL).flagsMask());
@@ -411,8 +414,8 @@ public class NativeCallGenerator {
     }
 
     private Consumer<CodeBuilder> invokeByMh(Method method, ClassBuilder thisClass, String className) {
-        String mhFieldName = STR."\{method.getName()}_native_method_handle";
-        ClassDesc thisClassDesc = ClassDesc.ofDescriptor(STR."L\{className.replace(".", "/")};");
+        String mhFieldName = method.getName() + "_native_method_handle";
+        ClassDesc thisClassDesc = ClassDesc.ofDescriptor("L" + className.replace(".", "/") + ";" );
         thisClass.withMethodBody(method.getName(), ClassFileHelper.toMethodDescriptor(method), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             it.getstatic(thisClassDesc, mhFieldName, ClassFileHelper.toDesc(MethodHandle.class));
             ClassFileHelper.invokeMethodHandleExactWithAllArgs(method, it);
@@ -458,7 +461,7 @@ public class NativeCallGenerator {
     Supplier<Object> bind(Class<?> nativeInterface) {
         try {
             if (!nativeInterface.isInterface()) {
-                throw new IllegalArgumentException(STR."\{nativeInterface} is not interface");
+                throw new IllegalArgumentException(nativeInterface + " is not interface");
             }
             String className = generateProxyClassName(nativeInterface);
             NativeGeneratorHelper.CURRENT_GENERATOR.set(this);
@@ -501,7 +504,7 @@ public class NativeCallGenerator {
     }
 
     String generateProxyClassName(Class nativeInterface) {
-        return STR."\{nativeInterface.getName()}_native_call_enhance";
+        return nativeInterface.getName() + "_native_call_enhance";
     }
 
     private MemorySegment dlsym(String name) {
@@ -519,12 +522,12 @@ public class NativeCallGenerator {
         }
 
         InputStream inputStream = annotation.inClassPath()
-                ? classLoader.getResourceAsStream(STR."\{annotation.value()}")
+                ? classLoader.getResourceAsStream(annotation.value())
                 : new FileInputStream(annotation.value());
         if (inputStream == null) {
-            throw new IllegalArgumentException(STR."cant find clib! classloader: \{classLoader}, path: \{annotation.value()}");
+            throw new IllegalArgumentException("cant find clib! classloader: " + classLoader + ", path: " + annotation.value());
         }
-        String tmpFileName = STR."\{interfaceClass.getSimpleName()}_\{UUID.randomUUID().toString()}_dynamic.so";
+        String tmpFileName = interfaceClass.getSimpleName() + "_" + UUID.randomUUID() + "_dynamic.so";
         File file = File.createTempFile(tmpFileName, ".tmp");
         FileOutputStream fileOutputStream = new FileOutputStream(file);
         file.deleteOnExit();

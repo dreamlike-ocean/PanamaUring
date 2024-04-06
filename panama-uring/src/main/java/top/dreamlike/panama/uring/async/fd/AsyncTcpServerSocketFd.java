@@ -43,7 +43,7 @@ public class AsyncTcpServerSocketFd implements IoUringAsyncFd, PollableFd {
         try (addr) {
             int listenRes = LIBC.bind(fd, addr.resource(), (int) addr.resource().byteSize());
             if (listenRes < 0) {
-                throw new IllegalArgumentException(STR."bind error, reason: \{DebugHelper.currentErrorStr()}");
+                throw new IllegalArgumentException("bind error, reason: " + DebugHelper.currentErrorStr());
             }
             return listenRes;
         } catch (Exception e) {
@@ -61,7 +61,7 @@ public class AsyncTcpServerSocketFd implements IoUringAsyncFd, PollableFd {
             }
             int listenRes = LIBC.listen(fd, backlog);
             if (listenRes < 0) {
-                throw new IllegalArgumentException(STR."listen error, reason\{DebugHelper.currentErrorStr()}");
+                throw new IllegalArgumentException("listen error, reason: " + DebugHelper.currentErrorStr());
             }
             hasListen = true;
         }
@@ -81,7 +81,7 @@ public class AsyncTcpServerSocketFd implements IoUringAsyncFd, PollableFd {
         MemorySegment sockaddrMemory = sockaddr.resource();
         MemorySegment sockLenMemory = sockLen.resource();
         if (sockaddrMemory.byteSize() != addrSize()) {
-            throw new IllegalArgumentException(STR."sockaddr size must be \{addrSize()}");
+            throw new IllegalArgumentException("sockaddr size must be " + addrSize());
         }
         sockLenMemory.set(ValueLayout.JAVA_INT, 0L, (int) sockaddrMemory.byteSize());
 
@@ -90,7 +90,7 @@ public class AsyncTcpServerSocketFd implements IoUringAsyncFd, PollableFd {
                     try (sockaddr; sockLen) {
                         int acceptFd = cqe.getRes();
                         if (acceptFd < 0) {
-                            throw new IllegalArgumentException(STR."accept fail, reason: \{DebugHelper.getErrorStr(-acceptFd)}");
+                            throw new IllegalArgumentException("accept fail, reason: " + DebugHelper.getErrorStr(-acceptFd));
                         }
                         SocketAddress remoteAddress = AsyncTcpSocketFd.inferAddress(address, sockaddrMemory);
                         IoUringEventLoop subEventLoop = subSocketEventLoopBinder.get();

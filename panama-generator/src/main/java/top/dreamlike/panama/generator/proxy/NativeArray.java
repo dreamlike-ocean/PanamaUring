@@ -27,12 +27,12 @@ public final class NativeArray<T> implements NativeStructEnhanceMark, List<T>, N
 
     public NativeArray(StructProxyGenerator generator, MemorySegment memorySegment, Class<T> component) {
         if (component == Object.class) {
-            throw new IllegalArgumentException(STR."please fill generic param");
+            throw new IllegalArgumentException("please fill generic param");
         }
         this.segment = memorySegment;
         this.elementLayout = generator.extract(component);
         if (this.segment.byteSize() % elementLayout.byteSize() != 0L) {
-            throw new IllegalArgumentException(STR. "segment.byteSize() % layout.byteSize() must equals 0!, array size is \{ memorySegment.byteSize() }, single component size is \{ elementLayout.byteSize() }" );
+            throw new IllegalArgumentException("segment.byteSize() % layout.byteSize() must equals 0!, array size is" + memorySegment.byteSize() + ", single component size is" + elementLayout.byteSize());
         }
         this.len = segment.byteSize() / elementLayout.byteSize();
         this.generator = generator;

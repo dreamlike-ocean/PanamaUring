@@ -64,6 +64,6 @@ public class AsyncPipe extends PlainAsyncFd {
 
     @Override
     public String toString() {
-        return STR. "AsyncPipe{ read fd: \{ readFd }, write fd: \{ writeFd } }" ;
+        return "AsyncPipe{ read fd: " + readFd + ", write fd: " + writeFd + " }";
     }
 }

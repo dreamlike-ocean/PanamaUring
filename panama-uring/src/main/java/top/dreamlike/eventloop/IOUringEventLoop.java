@@ -3,13 +3,9 @@ package top.dreamlike.eventloop;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.subscription.UniEmitter;
 import top.dreamlike.access.AccessHelper;
-import top.dreamlike.async.AsyncFd;
-import top.dreamlike.async.IOOpResult;
+import top.dreamlike.async.*;
 import top.dreamlike.async.file.AsyncFile;
 import top.dreamlike.async.file.AsyncPipe;
-import top.dreamlike.async.AsyncWatchService;
-import top.dreamlike.async.AsyncServerSocket;
-import top.dreamlike.async.AsyncSocket;
 import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.helper.NativeCallException;
 import top.dreamlike.helper.NativeHelper;
@@ -146,7 +142,7 @@ public class IOUringEventLoop extends BaseEventLoop implements AutoCloseable {
                             return;
                         }
                         if (ioOpResult.hasError()) {
-                            ue.fail(new NativeCallException(STR. "errorNo: \{ -ioOpResult.res } msg:\{ ioOpResult.errorMsg() }" ));
+                            ue.fail(new NativeCallException("errorNo: " + -ioOpResult.res + " msg:" + ioOpResult.errorMsg()));
                         } else {
                             ue.complete((long) ioOpResult.res);
                         }

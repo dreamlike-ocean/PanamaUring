@@ -96,7 +96,7 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd {
             sockLenMemory.set(ValueLayout.JAVA_INT, 0L, (int) sockAddrMemory.byteSize());
             int i = LIBC.getsockname(fd, sockAddrMemory, sockLenMemory);
             if (i < 0) {
-                throw new IllegalArgumentException(STR."getsockname error, reason\{DebugHelper.currentErrorStr()}");
+                throw new IllegalArgumentException("getsockname error, reason:" + DebugHelper.currentErrorStr());
             }
             return inferAddress(remoteAddress, sockAddrMemory);
         } catch (Exception t) {
@@ -110,9 +110,9 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd {
             case InetSocketAddress inetSocketAddress -> switch (inetSocketAddress.getAddress()) {
                 case Inet4Address _ -> parseV4(sockaddrMemory);
                 case Inet6Address _ -> parseV6(sockaddrMemory);
-                default -> throw new IllegalStateException(STR."Unexpected value: \{inetSocketAddress.getAddress()}");
+                default -> throw new IllegalStateException("Unexpected value: " + inetSocketAddress.getAddress());
             };
-            default -> throw new IllegalStateException(STR."Unexpected value: \{peerAddress}");
+            default -> throw new IllegalStateException("Unexpected value: " + peerAddress);
         };
     }
 
@@ -122,9 +122,9 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd {
             case InetSocketAddress inetSocketAddress -> switch (inetSocketAddress.getAddress()) {
                 case Inet4Address _ -> SocketAddrIn.LAYOUT.byteSize();
                 case Inet6Address _ -> SocketAddrIn6.LAYOUT.byteSize();
-                default -> throw new IllegalStateException(STR."Unexpected value: \{inetSocketAddress.getAddress()}");
+                default -> throw new IllegalStateException("Unexpected value: " + inetSocketAddress.getAddress());
             };
-            default -> throw new IllegalStateException(STR."Unexpected value: \{address}");
+            default -> throw new IllegalStateException("Unexpected value: " + address);
         };
     }
 
@@ -162,9 +162,9 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd {
             case InetSocketAddress inetSocketAddress -> switch (inetSocketAddress.getAddress()) {
                 case Inet4Address v4 -> ipv4Address(v4, inetSocketAddress.getPort());
                 case Inet6Address v6 -> ipv6Address(v6, inetSocketAddress.getPort());
-                default -> throw new IllegalStateException(STR."Unexpected value: \{inetSocketAddress.getAddress()}");
+                default -> throw new IllegalStateException("Unexpected value: " + inetSocketAddress.getAddress());
             };
-            default -> throw new IllegalStateException(STR."Unexpected value: \{address}");
+            default -> throw new IllegalStateException("Unexpected value: " + address);
         };
     }
 
@@ -222,10 +222,10 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd {
             throw new IllegalStateException("before recv, must connect first.");
         }
         return owner().asyncOperation(sqe -> {
-                    Instance.LIB_URING.io_uring_prep_recv(sqe, fd, MemorySegment.NULL, len, flag);
-                    sqe.setFlags((byte) (sqe.getFlags() | IoUringConstant.IOSQE_BUFFER_SELECT));
-                    sqe.setBufGroup(bufferGroupId);
-                });
+            Instance.LIB_URING.io_uring_prep_recv(sqe, fd, MemorySegment.NULL, len, flag);
+            sqe.setFlags((byte) (sqe.getFlags() | IoUringConstant.IOSQE_BUFFER_SELECT));
+            sqe.setBufGroup(bufferGroupId);
+        });
 
     }
 
@@ -263,7 +263,12 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd {
 
     @Override
     public String toString() {
-        return STR."AsyncTcpSocket{ioUringEventLoop=\{ioUringEventLoop}, fd=\{fd}, localAddress=\{localAddress}, remoteAddress=\{remoteAddress}\{'}'}";
+        return "AsyncTcpSocket{" +
+                "ioUringEventLoop=" + ioUringEventLoop +
+                ", fd=" + fd +
+                ", localAddress=" + localAddress +
+                ", remoteAddress=" + remoteAddress +
+                '}';
     }
 
     static int socketSysCall(SocketAddress address) {
@@ -272,14 +277,14 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd {
             case InetSocketAddress inetSocketAddress -> switch (inetSocketAddress.getAddress()) {
                 case Inet4Address _ -> Libc.Socket_H.Domain.AF_INET;
                 case Inet6Address _ -> Libc.Socket_H.Domain.AF_INET6;
-                default -> throw new IllegalStateException(STR."Unexpected value: \{inetSocketAddress}");
+                default -> throw new IllegalStateException("Unexpected value: " + inetSocketAddress);
             };
-            default -> throw new IllegalStateException(STR."Unexpected value: \{address}");
+            default -> throw new IllegalStateException("Unexpected value: " + address);
         };
         int type = Libc.Socket_H.Type.SOCK_STREAM;
         int fd = LIBC.socket(domain, type, 0);
         if (fd < 0) {
-            throw new IllegalArgumentException(STR."socket error, reason\{DebugHelper.currentErrorStr()}");
+            throw new IllegalArgumentException("socket error, reason： " + DebugHelper.currentErrorStr());
         }
         return fd;
     }

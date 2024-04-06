@@ -176,7 +176,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 case FLOAT -> float.class;
                 case DOUBLE -> double.class;
                 case VOID -> void.class;
-                default -> throw new IllegalArgumentException(STR."should not reach here! \{mirror.toString()}");
+                default -> throw new IllegalArgumentException("should not reach here! " + mirror);
             };
         }
         TypeElement currentTypeElement = (TypeElement) env.getTypeUtils().asElement(mirror);
@@ -203,7 +203,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
     public Class toRuntimeClassForNativeCallInterface(TypeElement currentTypeElement) throws Throwable {
         String thisClassName = getRealName(currentTypeElement);
         String thisClassDescStr = thisClassName.replace(".", "/");
-        thisClassDescStr = STR."L\{thisClassDescStr};";
+        thisClassDescStr = "L" + thisClassDescStr + ";";
         ClassDesc thisClassDesc = ClassDesc.ofDescriptor(thisClassDescStr);
         byte[] classByteCode = classFile.build(thisClassDesc, classBuilder -> {
             classBuilder.withFlags(AccessFlag.PUBLIC, AccessFlag.INTERFACE, AccessFlag.ABSTRACT);
@@ -232,7 +232,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                         .map(ClassFileHelper::toSignature)
                         .collect(Collectors.joining());
                 String returnSignature = ClassFileHelper.toSignature(returnClass);
-                MethodTypeDesc methodTypeDesc = MethodTypeDesc.ofDescriptor(STR."(\{parametersSignature})\{returnSignature}");
+                MethodTypeDesc methodTypeDesc = MethodTypeDesc.ofDescriptor("(" + parametersSignature + ")" + returnSignature);
                 classBuilder.withMethod(executableElement.getSimpleName().toString(), methodTypeDesc, AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.ABSTRACT).flagsMask(), it -> {
                     //对参数做处理
                     List<List<java.lang.classfile.Annotation>> parameterAnnotation = parameters.stream()
@@ -264,7 +264,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
     public Class toRuntimeClassForNativeStruct(TypeElement currentTypeElement) throws Throwable {
         String thisClassName = getRealName(currentTypeElement);
         String thisClassDescStr = thisClassName.replace(".", "/");
-        thisClassDescStr = STR."L\{thisClassDescStr};";
+        thisClassDescStr = "L" + thisClassDescStr + ";";
         ClassDesc thisClassDesc = ClassDesc.ofDescriptor(thisClassDescStr);
         byte[] byteCode = classFile.build(thisClassDesc, classBuilder -> {
             classBuilder.withFlags(AccessFlag.PUBLIC);
@@ -333,7 +333,6 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                     }
 
 
-
                     it.with(RuntimeVisibleAnnotationsAttribute.of(annotations));
                 });
             }
@@ -374,48 +373,48 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
     private String generateDuringSetupBlock() {
         ArrayList<NativeProxyPair> callInterfaceNames = this.nativeCallInterfaceNames;
         return callInterfaceNames.stream()
-                .map(nativeProxyPair -> STR."NativeImageHelper.initPanamaFeature(\{nativeProxyPair.origin}.class);")
+                .map(nativeProxyPair -> "NativeImageHelper.initPanamaFeature(" + nativeProxyPair.origin + ".class);")
                 .collect(Collectors.joining("\n"));
     }
 
     private String generateBeforeAnalysisBlock() {
         var nativeCallStream = this.nativeCallInterfaceNames
                 .stream()
-                .map(p -> STR."""
-                        needRegisterClass = Class.forName("\{p.proxy}", false, getClass().getClassLoader());
-                        RuntimeReflection.registerFieldLookup(needRegisterClass, "_generator");
-                        RuntimeReflection.registerConstructorLookup(needRegisterClass);
-                        RuntimeReflection.registerMethodLookup(needRegisterClass,"<init>");
-                        RuntimeReflection.register(needRegisterClass);
-                        RuntimeReflection.registerForReflectiveInstantiation(needRegisterClass);
-                        needRegisterClass = Class.forName("\{p.origin}", false, getClass().getClassLoader());
-                        RuntimeReflection.registerAllMethods(needRegisterClass);
+                .map(p -> String.format("""
+                                needRegisterClass = Class.forName("%s", false, getClass().getClassLoader());
+                                RuntimeReflection.registerFieldLookup(needRegisterClass, "_generator");
+                                RuntimeReflection.registerConstructorLookup(needRegisterClass);
+                                RuntimeReflection.registerMethodLookup(needRegisterClass,"<init>");
+                                RuntimeReflection.register(needRegisterClass);
+                                RuntimeReflection.registerForReflectiveInstantiation(needRegisterClass);
+                                needRegisterClass = Class.forName("%s", false, getClass().getClassLoader());
+                                RuntimeReflection.registerAllMethods(needRegisterClass);
 
-                        RuntimeReflection.registerAllDeclaredClasses(needRegisterClass);
-                      //  RuntimeClassInitialization.initializeAtBuildTime(needRegisterClass);
-                """);
+                                RuntimeReflection.registerAllDeclaredClasses(needRegisterClass);
+                              //  RuntimeClassInitialization.initializeAtBuildTime(needRegisterClass);
+                        """, p.proxy, p.origin));
 
         var structProxyStream = this.structProxyNames
                 .stream()
-                .map(p -> STR."""
-                        needRegisterClass = Class.forName("\{p.origin}", false, getClass().getClassLoader());
-                        RuntimeReflection.registerConstructorLookup(needRegisterClass, MemorySegment.class);
-                        RuntimeReflection.register(needRegisterClass);
-                        RuntimeReflection.registerAllDeclaredFields(needRegisterClass);
-                        needRegisterClass = Class.forName("\{p.proxy}", false, getClass().getClassLoader());
-                        constructor = needRegisterClass.getDeclaredConstructor(MemorySegment.class);
-                        RuntimeReflection.register(constructor);
-                        RuntimeReflection.register(needRegisterClass);
-                        RuntimeReflection.registerAllDeclaredConstructors(needRegisterClass);
-                      //  RuntimeClassInitialization.initializeAtBuildTime(needRegisterClass);
-                """);
+                .map(p -> String.format("""
+                                needRegisterClass = Class.forName("%s", false, getClass().getClassLoader());
+                                RuntimeReflection.registerConstructorLookup(needRegisterClass, MemorySegment.class);
+                                RuntimeReflection.register(needRegisterClass);
+                                RuntimeReflection.registerAllDeclaredFields(needRegisterClass);
+                                needRegisterClass = Class.forName("%s", false, getClass().getClassLoader());
+                                constructor = needRegisterClass.getDeclaredConstructor(MemorySegment.class);
+                                RuntimeReflection.register(constructor);
+                                RuntimeReflection.register(needRegisterClass);
+                                RuntimeReflection.registerAllDeclaredConstructors(needRegisterClass);
+                              //  RuntimeClassInitialization.initializeAtBuildTime(needRegisterClass);
+                        """, p.proxy, p.origin));
 
         var baseStream = Stream.of(NativeStructEnhanceMark.class, NativeGeneratorHelper.class)
                 .map(Class::getName)
-                .map(name -> STR."""
-                        needRegisterClass = Class.forName("\{name}", false, getClass().getClassLoader());
+                .map(name -> String.format("""
+                        needRegisterClass = Class.forName("%s", false, getClass().getClassLoader());
                          RuntimeReflection.registerAllMethods(needRegisterClass);
-                        """);
+                        """, name));
         return Stream.of(baseStream, nativeCallStream, structProxyStream)
                 .flatMap(Function.identity())
                 .collect(Collectors.joining("\n"));
@@ -424,7 +423,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
     private String generateFeature() {
         ArrayList<String> statements = new ArrayList<>();
         if (packageName != null) {
-            statements.add(STR."package \{packageName};");
+            statements.add("package " + packageName + ";");
         }
         statements.add("""
                 import org.graalvm.nativeimage.hosted.Feature;
@@ -434,31 +433,31 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 import org.graalvm.nativeimage.hosted.RuntimeClassInitialization;
                 import java.lang.reflect.Constructor;
                 """);
-        statements.add(STR."""
-            public class \{className} implements Feature {
-                @Override
-                public void duringSetup(DuringSetupAccess access) {
-                   Class needRegisterClass = null;
+        statements.add(String.format("""
+                public class %s implements Feature {
+                    @Override
+                    public void duringSetup(DuringSetupAccess access) {
+                       Class needRegisterClass = null;
 
-                   try {
-                      \{generateDuringSetupBlock()}
-                   } catch(Throwable t) {
-                      t.printStackTrace();
-                   }
-                }
+                       try {
+                         %s
+                       } catch(Throwable t) {
+                          t.printStackTrace();
+                       }
+                    }
 
-                @Override
-                public void beforeAnalysis(BeforeAnalysisAccess access) {
-                    Class needRegisterClass = null;
-                     Constructor constructor;
-                    try {
-                       \{generateBeforeAnalysisBlock()}
-                    } catch(Throwable t) {
-                      t.printStackTrace();
-                   }
+                    @Override
+                    public void beforeAnalysis(BeforeAnalysisAccess access) {
+                        Class needRegisterClass = null;
+                         Constructor constructor;
+                        try {
+                         %s
+                        } catch(Throwable t) {
+                          t.printStackTrace();
+                       }
+                    }
                 }
-            }
-            """);
+                """, className, generateDuringSetupBlock(), generateBeforeAnalysisBlock()));
         return String.join("\n", statements);
     }
 
@@ -491,16 +490,16 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
         if (System.getProperty("panama.generator.debug") == null) {
             return;
         }
-       try {
-           String fileName = STR."\{className}.class";
-           Path path = Path.of("apt-generator");
-           if (!Files.exists(path)) {
-               Files.createDirectory(path);
-           }
-           Files.write(Path.of(path.toFile().getAbsolutePath(), fileName), bytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-       }catch (Throwable r){
-           throw new RuntimeException(r);
-       }
+        try {
+            String fileName = className + ".class";
+            Path path = Path.of("apt-generator");
+            if (!Files.exists(path)) {
+                Files.createDirectory(path);
+            }
+            Files.write(Path.of(path.toFile().getAbsolutePath(), fileName), bytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+        } catch (Throwable r) {
+            throw new RuntimeException(r);
+        }
     }
 
 }

@@ -18,7 +18,10 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
-import java.lang.reflect.*;
+import java.lang.reflect.AccessFlag;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -113,7 +116,7 @@ public class StructProxyGenerator {
             memoryHolder.rebind(memorySegment);
             return;
         }
-        throw new StructException(STR."before rebinding, you should enhance it");
+        throw new StructException("before rebinding, you should enhance it");
     }
 
     @SuppressWarnings("unchecked")
@@ -135,7 +138,7 @@ public class StructProxyGenerator {
         }
     }
 
-    public <T> T allocate(SegmentAllocator allocator ,Class<T> t) {
+    public <T> T allocate(SegmentAllocator allocator, Class<T> t) {
         return enhance(t, allocator.allocate(extract(t)));
     }
 
@@ -146,7 +149,7 @@ public class StructProxyGenerator {
                 if (!Files.exists(dir)) {
                     Files.createDirectory(dir);
                 }
-                Files.write(Path.of(proxySavePath, STR."\{className}.class"), classData, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                Files.write(Path.of(proxySavePath, className + ".class"), classData, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
             } catch (Throwable t) {
                 throw new RuntimeException(t);
             }
@@ -182,7 +185,7 @@ public class StructProxyGenerator {
         ArrayList<MemoryLayout> list = new ArrayList<>();
         Alignment alignment = structClass.getAnnotation(Alignment.class);
         if (alignment != null && alignment.byteSize() <= 0) {
-            throw new StructException(STR."alignment cant be \{alignment.byteSize()}");
+            throw new StructException("alignment cant be " + alignment.byteSize());
         }
         var alignmentByteSize = alignment == null ? -1 : alignment.byteSize();
         for (Field field : structClass.getDeclaredFields()) {
@@ -200,7 +203,7 @@ public class StructProxyGenerator {
                 AddressLayout addressLayout = Optional.ofNullable(field.getAnnotation(Pointer.class))
                         .map(Pointer::targetLayout)
                         .filter(c -> !c.equals(void.class))
-                        .or(() -> field.getType() == NativeArrayPointer.class || MemorySegment.class.isAssignableFrom(field.getType()) ? Optional.empty() :Optional.of(field.getType()))
+                        .or(() -> field.getType() == NativeArrayPointer.class || MemorySegment.class.isAssignableFrom(field.getType()) ? Optional.empty() : Optional.of(field.getType()))
                         .map(this::extract)
                         .map(targetLayout -> ValueLayout.ADDRESS.withName(field.getName()).withTargetLayout(targetLayout))
                         .orElse(ValueLayout.ADDRESS.withName(field.getName()));
@@ -220,7 +223,7 @@ public class StructProxyGenerator {
                     }
                     continue;
                 } else {
-                    throw new StructException(STR."\{field} must be pointer or nativeArray");
+                    throw new StructException(field + " must be pointer or nativeArray");
                 }
             }
             //类型为结构体
@@ -250,7 +253,7 @@ public class StructProxyGenerator {
             } catch (ClassNotFoundException ignore) {
             }
             if (aClass == null) {
-                var thisClassDesc = ClassDesc.ofDescriptor(STR."L\{className.replace(".", "/")};");
+                var thisClassDesc = ClassDesc.ofDescriptor("L" + className.replace(".", "/") + ";");
                 byte[] classByteCode = classFile.build(thisClassDesc, classBuilder -> {
                     generatorCtor(classBuilder, thisClassDesc, targetClass);
                     ArrayList<Consumer<CodeBuilder>> clinitBlocks = new ArrayList<>();
@@ -327,7 +330,7 @@ public class StructProxyGenerator {
         Class<?> declaringClass = field.getDeclaringClass();
         MemoryLayout layout = layoutCaches.get(declaringClass);
         if (layout == null) {
-            throw new StructException(STR."you should enhance \{declaringClass} first");
+            throw new StructException("you should enhance " + declaringClass + " first");
         }
         Class<?> type = field.getType();
         if (type.isPrimitive()
@@ -336,15 +339,15 @@ public class StructProxyGenerator {
         ) {
             return MethodHandles.insertCoordinates(layout.varHandle(MemoryLayout.PathElement.groupElement(field.getName())), 1, 0);
         }
-        throw new StructException(STR."only support primitive type or pointer type");
+        throw new StructException("only support primitive type or pointer type");
     }
 
     static String generateProxyClassName(Class targetClass) {
-        return STR."\{targetClass.getName()}_native_struct_proxy";
+        return targetClass.getName() + "_native_struct_proxy";
     }
 
     static String generateVarHandleName(Field field) {
-        return STR."\{field.getName()}_native_struct_vh";
+        return field.getName() + "_native_struct_vh";
     }
 
     private Consumer<CodeBuilder> implementStructMarkInterface(ClassBuilder cb, ClassDesc thisClass) {
@@ -388,7 +391,7 @@ public class StructProxyGenerator {
 
     private void generatorCtor(ClassBuilder cb, ClassDesc thisClass, Class originClass) {
         cb.withSuperclass(ClassFileHelper.toDesc(originClass));
-        cb.withMethodBody("<init>", MethodTypeDesc.ofDescriptor(STR."(\{ClassFileHelper.toSignature(MemorySegment.class)})V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        cb.withMethodBody("<init>", MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(MemorySegment.class) + ")V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             it.aload(0);
             it.invokespecial(ClassFileHelper.toDesc(originClass), "<init>", MethodTypeDesc.ofDescriptor("()V"));
             it.aload(0);
@@ -411,21 +414,23 @@ public class StructProxyGenerator {
 
     private Consumer<CodeBuilder> generatePrimitiveFieldVarHandle(ClassBuilder cb, ClassDesc thisClass, Field field, MemoryLayout __) {
 
-        String varHandleFieldName = STR."\{field.getName()}_native_struct_vh";
-        cb.withMethodBody(STR."get\{upperFirstChar(field.getName())}", MethodTypeDesc.ofDescriptor(STR."()\{ClassFileHelper.toSignature(field.getType())}"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        String varHandleFieldName = field.getName() + "_native_struct_vh";
+        cb.withMethodBody("get" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("()" + ClassFileHelper.toSignature(field.getType())), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             it.getstatic(thisClass, varHandleFieldName, ClassFileHelper.toDesc(VarHandle.class));
             it.aload(0);
             ClassFileHelper.invoke(it, REALMEMORY_METHOD, true);
-            it.invokevirtual(ClassFileHelper.toDesc(VarHandle.class), "get", MethodTypeDesc.ofDescriptor(STR."(\{ClassFileHelper.toSignature(MemorySegment.class)})\{ClassFileHelper.toSignature(field.getType())}"));
+            MethodTypeDesc methodTypeDesc = MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(MemorySegment.class) + ")" + ClassFileHelper.toSignature(field.getType()));
+            it.invokevirtual(ClassFileHelper.toDesc(VarHandle.class), "get", methodTypeDesc);
             it.returnInstruction(ClassFileHelper.calType(field.getType()));
         });
 
-        cb.withMethodBody(STR."set\{upperFirstChar(field.getName())}", MethodTypeDesc.ofDescriptor(STR."(\{ClassFileHelper.toSignature(field.getType())})V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        cb.withMethodBody("set" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(field.getType()) + ")V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             it.getstatic(thisClass, varHandleFieldName, ClassFileHelper.toDesc(VarHandle.class));
             it.aload(0);
             ClassFileHelper.invoke(it, REALMEMORY_METHOD, true);
             it.loadInstruction(ClassFileHelper.calType(field.getType()), 1);
-            it.invokevirtual(ClassFileHelper.toDesc(VarHandle.class), "set", MethodTypeDesc.ofDescriptor(STR."(\{ClassFileHelper.toSignature(MemorySegment.class)}\{ClassFileHelper.toSignature(field.getType())})V"));
+            MethodTypeDesc methodTypeDesc = MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(MemorySegment.class) + ClassFileHelper.toSignature(field.getType()) + ")V");
+            it.invokevirtual(ClassFileHelper.toDesc(VarHandle.class), "set", methodTypeDesc);
             it.return_();
         });
 
@@ -435,13 +440,13 @@ public class StructProxyGenerator {
     private Consumer<CodeBuilder> generateNativeArray(ClassBuilder cb, ClassDesc thisClass, Field field, MemoryLayout structLayout) {
         NativeArrayMark arrayMark = field.getAnnotation(NativeArrayMark.class);
         if (arrayMark == null) {
-            throw new IllegalArgumentException(STR."\{field} must be marked as NativeArrayMark");
+            throw new IllegalArgumentException(field + " must be marked as NativeArrayMark");
         }
         long offset = structLayout.byteOffset(MemoryLayout.PathElement.groupElement(field.getName()));
         long newSize = extract(arrayMark.size()).byteSize() * arrayMark.length();
         boolean asPointer = field.getAnnotation(Pointer.class) != null || arrayMark.asPointer();
         //不在生成出来的代码里面做分支 减少运行时分支判断
-        cb.withMethodBody(STR."get\{upperFirstChar(field.getName())}", MethodTypeDesc.ofDescriptor(STR."()\{ClassFileHelper.toSignature(NativeArray.class)}"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        cb.withMethodBody("get" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("()" + ClassFileHelper.toSignature(NativeArray.class)), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             it.aload(0);
             //MemorySegment realMemory = this.realMemory();
             ClassFileHelper.invoke(it, REALMEMORY_METHOD, true);
@@ -471,7 +476,7 @@ public class StructProxyGenerator {
             it.areturn();
         });
 
-        cb.withMethodBody(STR."set\{upperFirstChar(field.getName())}", MethodTypeDesc.ofDescriptor(STR."(\{ClassFileHelper.toSignature(NativeArray.class)})V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        cb.withMethodBody("set" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(NativeArray.class) + ")V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             if (asPointer) {
                 generateSetPtr(it, offset);
             } else {
@@ -480,7 +485,7 @@ public class StructProxyGenerator {
             it.return_();
         });
 
-        cb.withMethodBody(STR."set\{upperFirstChar(field.getName())}", MethodTypeDesc.ofDescriptor(STR."(\{ClassFileHelper.toSignature(MemorySegment.class)})V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        cb.withMethodBody("set" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(MemorySegment.class) + ")V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             if (asPointer) {
                 generateSetPtr(it, offset);
             } else {
@@ -514,7 +519,7 @@ public class StructProxyGenerator {
         NativeArrayMark arrayMark = field.getAnnotation(NativeArrayMark.class);
         boolean pointerMarked = field.getAnnotation(Pointer.class) != null;
         boolean pointer = arrayMark != null && arrayMark.asPointer();
-        cb.withMethodBody(STR."get\{upperFirstChar(field.getName())}", MethodTypeDesc.ofDescriptor(STR."()\{ClassFileHelper.toSignature(MemorySegment.class)}"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        cb.withMethodBody("get" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("()" + ClassFileHelper.toSignature(MemorySegment.class)), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             it.aload(0);
             //MemorySegment realMemory = this.realMemory();
             ClassFileHelper.invoke(it, REALMEMORY_METHOD, true);
@@ -545,7 +550,7 @@ public class StructProxyGenerator {
             }
         });
 
-        cb.withMethodBody(STR."set\{upperFirstChar(field.getName())}", MethodTypeDesc.ofDescriptor(STR."(\{ClassFileHelper.toSignature(MemorySegment.class)})V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        cb.withMethodBody("set" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(MemorySegment.class) + ")V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             if (pointer || pointerMarked) {
                 generateSetPtr(it, offset);
             } else {
@@ -562,7 +567,7 @@ public class StructProxyGenerator {
         long subStructLayoutSize = structLayout.select(MemoryLayout.PathElement.groupElement(field.getName())).byteSize();
         long offset = structLayout.byteOffset(MemoryLayout.PathElement.groupElement(field.getName()));
         boolean isPointer = field.getAnnotation(Pointer.class) != null;
-        cb.withMethodBody(STR."get\{upperFirstChar(field.getName())}", MethodTypeDesc.ofDescriptor(STR."()\{ClassFileHelper.toSignature(field.getType())}"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        cb.withMethodBody("get" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("()" + ClassFileHelper.toSignature(field.getType())), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             it.aload(0);
             //MemorySegment realMemory = this.realMemory();
             ClassFileHelper.invoke(it, REALMEMORY_METHOD, true);
@@ -592,7 +597,7 @@ public class StructProxyGenerator {
             it.areturn();
         });
 
-        cb.withMethodBody(STR."set\{upperFirstChar(field.getName())}", MethodTypeDesc.ofDescriptor(STR."(\{ClassFileHelper.toSignature(field.getType())})V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        cb.withMethodBody("set" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(field.getType()) + ")V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             if (isPointer) {
                 generateSetPtr(it, offset);
             } else {
@@ -601,7 +606,7 @@ public class StructProxyGenerator {
             it.return_();
         });
 
-        cb.withMethodBody(STR."set\{upperFirstChar(field.getName())}", MethodTypeDesc.ofDescriptor(STR."(\{ClassFileHelper.toSignature(MemorySegment.class)})V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        cb.withMethodBody("set" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(MemorySegment.class) + ")V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             if (isPointer) {
                 generateSetPtr(it, offset);
             } else {

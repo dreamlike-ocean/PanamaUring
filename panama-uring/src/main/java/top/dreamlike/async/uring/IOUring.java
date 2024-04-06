@@ -123,7 +123,7 @@ public class IOUring implements AutoCloseable {
 
         // fixme CQE溢出问题 当前先不修，因为selectedBuffer api有点复杂
         // 当前先假装不出问题
-        for (int i = 0; i < selectedBuffer.length;) {
+        for (int i = 0; i < selectedBuffer.length; ) {
             if (!provideBuffer(selectedBuffer[i], i, false)) {
                 submit();
                 continue;
@@ -178,6 +178,7 @@ public class IOUring implements AutoCloseable {
     public boolean checkSupport(int op) {
         return io_uring_opcode_supported_ring(ring, op) == 1;
     }
+
     private boolean submitAfterFill = false;
 
     public long prep_splice(int in_fd, int out_fd, long in_offset, long out_offset, int size, int flags, Consumer<IOOpResult> syscallResHandle) {
@@ -196,7 +197,7 @@ public class IOUring implements AutoCloseable {
     }
 
     public long prep_selected_recv_and_get_user_data(int socketFd, int length,
-            CompletableFuture<byte[]> recvBufferPromise) {
+                                                     CompletableFuture<byte[]> recvBufferPromise) {
         return prep_selected_recv_and_get_user_data(socketFd, length, Result.transform(recvBufferPromise));
     }
 
@@ -415,7 +416,7 @@ public class IOUring implements AutoCloseable {
     public long prep_connect_and_get_user_data(SocketInfo info, IntConsumer callback) throws UnknownHostException {
         int fd = info.res();
         if (fd == -1) {
-            throw new NativeCallException(STR. "illegal fd:\{ fd }! " );
+            throw new NativeCallException("illegal fd:" + fd);
         }
         return fillSqeTemplateThrowable(sqe -> {
             Arena session = Arena.ofConfined();
@@ -536,7 +537,6 @@ public class IOUring implements AutoCloseable {
     public void waitComplete() {
         waitComplete(-1);
     }
-
 
 
     public void waitComplete(long waitMs) {

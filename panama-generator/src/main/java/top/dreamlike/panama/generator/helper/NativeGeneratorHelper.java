@@ -90,7 +90,7 @@ public class NativeGeneratorHelper {
 
     public static void assertRebindMemory(MemorySegment segment, MemorySegment origin) {
         if (segment.byteSize() != origin.byteSize()) {
-            throw new IllegalArgumentException(STR."memorySegment size rebind should equal origin memorySegment size");
+            throw new IllegalArgumentException("memorySegment size rebind should equal origin memorySegment size");
         }
     }
 
@@ -112,7 +112,7 @@ public class NativeGeneratorHelper {
             case NativeStructEnhanceMark structEnhanceMark -> structEnhanceMark.realMemory();
             case MemorySegment memorySegment -> memorySegment;
             default ->
-                    throw new StructException(STR."\{o.getClass()} is not struct,pleace call StructProxyGenerator::enhance before calling native function");
+                    throw new StructException(o.getClass() + " is not struct,pleace call StructProxyGenerator::enhance before calling native function");
         };
     }
 
@@ -156,7 +156,7 @@ public class NativeGeneratorHelper {
             layouts.add(paddingLayout(padding));
         }
         if (Condition.DEBUG){
-            System.out.println(STR."支持对齐的序列为\{layouts}, sizeof(layouts): \{size}, align: \{align}");
+            System.out.println("支持对齐的序列为" + layouts + ", sizeof(layouts): " + size + ", align: " + align);
         }
         return MemoryLayout.structLayout(layouts.toArray(MemoryLayout[]::new));
     }

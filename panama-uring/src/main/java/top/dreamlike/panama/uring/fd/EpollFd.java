@@ -28,7 +28,7 @@ public class EpollFd implements NativeFd, PollableFd {
     public EpollFd(int flag, int maxEvent) {
         int epoll_create = Instance.LIB_EPOLL.epoll_create(flag);
         if (epoll_create < 0) {
-            throw new IllegalArgumentException(STR."epoll_create failed, error: \{DebugHelper.currentErrorStr()}");
+            throw new IllegalArgumentException("epoll_create failed, error: " + DebugHelper.currentErrorStr());
         }
         this.epfd = epoll_create;
         this.maxEvent = maxEvent;
@@ -47,8 +47,8 @@ public class EpollFd implements NativeFd, PollableFd {
             e.setEvents(event.events());
             e.setU64(event.data());
             return Instance.LIB_EPOLL.epoll_ctl(epfd, op, targetFd.fd(), e);
-        }catch (Exception t) {
-            throw new IllegalArgumentException(STR."epoll_ctl failed, error: \{DebugHelper.currentErrorStr()}");
+        } catch (Exception t) {
+            throw new IllegalArgumentException("epoll_ctl failed, error: " + DebugHelper.currentErrorStr());
         }
     }
 
@@ -57,7 +57,7 @@ public class EpollFd implements NativeFd, PollableFd {
         int waitResult = Instance.LIB_EPOLL.epoll_wait(epfd, base, maxEvents, (int) unit.toMillis(timeout));
         maxEvents = Math.min(maxEvents, this.maxEvent);
         if (waitResult < 0) {
-            throw new IllegalArgumentException(STR."epoll_wait failed, error: \{DebugHelper.currentErrorStr()}");
+            throw new IllegalArgumentException("epoll_wait failed, error: " + DebugHelper.currentErrorStr());
         }
         if (waitResult == 0) {
             return List.of();

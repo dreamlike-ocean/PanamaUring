@@ -77,7 +77,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor{
         ioUringParamsFactory.accept(ioUringParams);
         int initRes = Instance.LIB_URING.io_uring_queue_init_params(ioUringParams.getSq_entries(), internalRing, ioUringParams);
         if (initRes < 0) {
-            throw new IllegalArgumentException(STR."io_uring_queue_init_params error,error Reason: \{DebugHelper.getErrorStr(-initRes)}");
+            throw new IllegalArgumentException("io_uring_queue_init_params error,error Reason: " + DebugHelper.getErrorStr(-initRes));
         }
         this.cqePtrs = singleThreadArena.allocate(ValueLayout.ADDRESS, cqeSize);
         this.kernelTime64Type = Instance.STRUCT_PROXY_GENERATOR.allocate(singleThreadArena, KernelTime64Type.class);

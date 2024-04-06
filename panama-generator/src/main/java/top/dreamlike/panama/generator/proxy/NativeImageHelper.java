@@ -19,7 +19,7 @@ public class NativeImageHelper {
     public static void initPanamaFeature(Class nativeInterface) {
         Objects.requireNonNull(nativeInterface);
         if (!nativeInterface.isInterface()) {
-            throw new IllegalArgumentException(STR."\{nativeInterface} is not interface");
+            throw new IllegalArgumentException(nativeInterface + " is not interface");
         }
         NativeCallGenerator generator = new NativeCallGenerator();
         for (Method method : nativeInterface.getMethods()) {

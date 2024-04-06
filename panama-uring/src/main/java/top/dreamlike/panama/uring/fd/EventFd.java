@@ -12,10 +12,10 @@ public class EventFd implements NativeFd, PollableFd {
     private final int fd;
 
 
-    public EventFd(int init,int flags) {
+    public EventFd(int init, int flags) {
         int eventfd = Instance.LIBC.eventfd(init, flags);
         if (eventfd < 0) {
-            throw new IllegalArgumentException(STR."eventfd create failed, error: \{DebugHelper.currentErrorStr()}");
+            throw new IllegalArgumentException("eventfd create failed, error: " + DebugHelper.currentErrorStr());
         }
         this.fd = eventfd;
     }
@@ -41,7 +41,7 @@ public class EventFd implements NativeFd, PollableFd {
         if (segment.byteSize() < ValueLayout.JAVA_LONG.byteSize()) {
             throw new IllegalArgumentException("MemorySegment size is too small");
         }
-        return Instance.LIBC.eventfd_read(fd,segment);
+        return Instance.LIBC.eventfd_read(fd, segment);
     }
 
     @Override

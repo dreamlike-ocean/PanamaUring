@@ -12,8 +12,6 @@ public class Main {
     private static final StdLib STD_LIB;
 
     static {
-//        String dumpFolder = System.getProperty(TypeWriter.DUMP_PROPERTY);
-//        System.out.println(dumpFolder);
         StructProxyGenerator proxyGenerator = new StructProxyGenerator();
         NativeCallGenerator generator = new NativeCallGenerator(proxyGenerator);
         STD_LIB = generator.generate(StdLib.class);
@@ -23,22 +21,16 @@ public class Main {
 
     static {
         System.load("/usr/lib/x86_64-linux-gnu/libc.so.6");
-//        MemorySegment address = SymbolLookup.loaderLookup()
-//                .find("getpid").get();
-//        getpid$Mh = Linker.nativeLinker()
-//                .downcallHandle(address, FunctionDescriptor.of(ValueLayout.JAVA_INT), Linker.Option.isTrivial());
     }
 
     public static void main(String[] args) throws Throwable {
-        System.out.println(STR."in native?: \{System.getProperty("org.graalvm.nativeimage.kind")}");
+        System.out.println("in native?: " + System.getProperty("org.graalvm.nativeimage.kind"));
         int pid = STD_LIB.getpid();
-        System.out.println(STR."pid: \{pid}");
+        System.out.println("pid: " + pid);
         int add = STD_LIB.add(10, 10);
-        System.out.println(STR."add :\{add}");
+        System.out.println("add :" + add);
         Person person = STD_LIB.fillPerson(1, 100L);
         System.out.println(person);
-
-
     }
 
 }

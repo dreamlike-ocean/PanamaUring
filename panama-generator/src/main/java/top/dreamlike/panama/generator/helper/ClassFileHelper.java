@@ -1,6 +1,5 @@
 package top.dreamlike.panama.generator.helper;
 
-import java.beans.MethodDescriptor;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.TypeKind;
 import java.lang.constant.ClassDesc;
@@ -13,10 +12,10 @@ import java.util.stream.Collectors;
 public class ClassFileHelper {
     public static String toSignature(Class c) {
         if(c.isArray()) {
-            return STR."[\{toSignature(c.getComponentType())}";
+            return "[" + toSignature(c.getComponentType());
         }
         TypeKind typeKind = calType(c);
-        return c.isPrimitive() ? typeKind.descriptor() : STR."L\{c.getName().replace(".", "/")};";
+        return c.isPrimitive() ? typeKind.descriptor() : "L"+ c.getName().replace(".", "/") + ";";
     }
 
     public static ClassDesc toDesc(Class c) {
@@ -32,7 +31,7 @@ public class ClassFileHelper {
             case Method m -> toSignature(m.getReturnType());
             case Constructor _ -> toSignature(void.class);
         };
-        return STR."(\{paramSignature})\{returnType}";
+        return "(" + paramSignature + ")" + returnType;
     }
     
     public static void invokeMethodHandleExactWithAllArgs(Method method, CodeBuilder it) {

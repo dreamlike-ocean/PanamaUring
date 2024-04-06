@@ -4,7 +4,6 @@ import top.dreamlike.nativeLib.errno.errno_h;
 import top.dreamlike.nativeLib.inet.sockaddr_in;
 import top.dreamlike.nativeLib.inet.sockaddr_in6;
 
-import java.io.*;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -295,29 +294,5 @@ public class NativeHelper {
 
 
     public static void loadSo(String fileName) {
-        //todo 移除
-        return;
-//        try {
-//
-//            if (!NativeHelper.isLinux()) {
-//                throw new NativeCallException("please check os version(need linux >= 5.10) and CPU Arch(need X86_64)");
-//            }
-//
-//
-//            InputStream is = NativeHelper.class.getResourceAsStream(STR."/\{fileName}");
-//            File file = File.createTempFile(fileName, ".so");
-//            OutputStream os = new FileOutputStream(file);
-//            byte[] buffer = new byte[1024];
-//            int length;
-//            while ((length = is.read(buffer)) != -1) {
-//                os.write(buffer, 0, length);
-//            }
-//            is.close();
-//            os.close();
-//            System.load(file.getAbsolutePath());
-//            file.deleteOnExit();
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
     }
 }

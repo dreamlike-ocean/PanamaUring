@@ -15,7 +15,7 @@ import java.lang.reflect.Method;
 public class InvokeDynamicFactory {
     public static CallSite nativeCallIndyFactory(MethodHandles.Lookup lookup, String methodName, MethodType methodType, Object... args) throws Throwable {
         if (Condition.DEBUG) {
-            System.out.println(STR."call nativeCallIndyFactory lookup: \{lookup} methodName: \{methodName} methodType: \{methodType}");
+            System.out.println("call nativeCallIndyFactory lookup:" + lookup + " methodName:" + methodName + " methodType:" + methodType);
         }
         //这里的lookup是当前的代理类
         Class<?> lookupClass = lookup.lookupClass();
@@ -68,7 +68,7 @@ public class InvokeDynamicFactory {
     private static MethodHandle nativeStructNativeArrayGetterIndyFactory(MethodHandles.Lookup lookup, StructProxyGenerator proxyGenerator, MemoryLayout currentLayout, Field field, String fieldName) throws Throwable {
         NativeArrayMark arrayMark = field.getAnnotation(NativeArrayMark.class);
         if (arrayMark == null) {
-            throw new IllegalArgumentException(STR."\{field} must be marked as NativeArrayMark");
+            throw new IllegalArgumentException(field + " must be marked as NativeArrayMark");
         }
         long offset = currentLayout.byteOffset(MemoryLayout.PathElement.groupElement(field.getName()));
         long newSize = proxyGenerator.extract(arrayMark.size()).byteSize() * arrayMark.length();

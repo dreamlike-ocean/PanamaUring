@@ -19,7 +19,7 @@ public interface NativeFd extends ReadableNativeFd, WritableNativeFd {
     default void close() {
         int closed = Instance.LIBC.close(fd());
         if (closed < 0) {
-            throw new IllegalStateException(STR."close error, reason: \{DebugHelper.currentErrorStr()}");
+            throw new IllegalStateException("close error, reason: " + DebugHelper.currentErrorStr());
         }
     }
 }
