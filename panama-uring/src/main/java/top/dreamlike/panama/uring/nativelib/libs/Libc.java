@@ -35,6 +35,8 @@ public interface Libc {
 
     int getsockname(int socketFd, @Pointer MemorySegment addr, @Pointer MemorySegment addrlen);
 
+    int pipe(@Pointer MemorySegment pipeFd);
+
     interface Fcntl_H {
         static final int O_RDONLY = 0;
         static final int O_WRONLY = 1;

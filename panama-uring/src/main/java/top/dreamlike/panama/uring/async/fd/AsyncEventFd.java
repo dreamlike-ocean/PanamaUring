@@ -1,7 +1,7 @@
 package top.dreamlike.panama.uring.async.fd;
 
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
-import top.dreamlike.panama.uring.fd.EventFd;
+import top.dreamlike.panama.uring.sync.fd.EventFd;
 
 public class AsyncEventFd extends EventFd implements IoUringAsyncFd {
     private IoUringEventLoop owner;

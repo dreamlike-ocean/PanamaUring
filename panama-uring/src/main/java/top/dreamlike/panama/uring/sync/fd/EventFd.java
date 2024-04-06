@@ -1,9 +1,9 @@
-package top.dreamlike.panama.uring.fd;
+package top.dreamlike.panama.uring.sync.fd;
 
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
-import top.dreamlike.panama.uring.trait.NativeFd;
-import top.dreamlike.panama.uring.trait.PollableFd;
+import top.dreamlike.panama.uring.sync.trait.NativeFd;
+import top.dreamlike.panama.uring.sync.trait.PollableFd;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;

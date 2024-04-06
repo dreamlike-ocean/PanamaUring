@@ -2,14 +2,14 @@ package top.dreamlike.panama.uring.eventloop;
 
 import org.jctools.queues.MpscUnboundedArrayQueue;
 import top.dreamlike.helper.StackValue;
-import top.dreamlike.panama.uring.async.CancelableFuture;
 import top.dreamlike.panama.uring.async.cancel.CancelToken;
-import top.dreamlike.panama.uring.fd.EventFd;
+import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
 import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
+import top.dreamlike.panama.uring.sync.fd.EventFd;
 import top.dreamlike.panama.uring.thirdparty.colletion.IntObjectHashMap;
 import top.dreamlike.panama.uring.thirdparty.colletion.IntObjectMap;
 import top.dreamlike.panama.uring.thirdparty.colletion.LongObjectHashMap;

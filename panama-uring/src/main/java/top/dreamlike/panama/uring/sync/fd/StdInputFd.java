@@ -1,7 +1,7 @@
-package top.dreamlike.panama.uring.fd;
+package top.dreamlike.panama.uring.sync.fd;
 
-import top.dreamlike.panama.uring.trait.NativeFd;
-import top.dreamlike.panama.uring.trait.PollableFd;
+import top.dreamlike.panama.uring.sync.trait.NativeFd;
+import top.dreamlike.panama.uring.sync.trait.PollableFd;
 
 public class StdInputFd implements NativeFd, PollableFd {
     @Override

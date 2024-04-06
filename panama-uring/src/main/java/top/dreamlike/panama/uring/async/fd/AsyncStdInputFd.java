@@ -1,7 +1,7 @@
 package top.dreamlike.panama.uring.async.fd;
 
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
-import top.dreamlike.panama.uring.fd.StdInputFd;
+import top.dreamlike.panama.uring.sync.fd.StdInputFd;
 
 public class AsyncStdInputFd extends StdInputFd implements IoUringAsyncFd {
     private final IoUringEventLoop owner;

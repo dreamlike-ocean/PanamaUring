@@ -1,12 +1,12 @@
 package top.dreamlike.panama.uring.async.fd;
 
-import top.dreamlike.panama.uring.async.CancelableFuture;
+import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
+import top.dreamlike.panama.uring.sync.trait.PollableFd;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
-import top.dreamlike.panama.uring.trait.PollableFd;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;

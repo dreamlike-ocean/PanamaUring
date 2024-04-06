@@ -1,6 +1,6 @@
 package top.dreamlike.panama.uring.async.fd;
 
-import top.dreamlike.panama.uring.async.CancelableFuture;
+import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;

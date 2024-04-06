@@ -10,6 +10,14 @@ public interface OwnershipResource<T> extends AutoCloseable {
         drop();
     }
 
+
+    default <T> void DropWhenException(T t, Throwable ex) {
+        if (ex != null) {
+            drop();
+        }
+    }
+
+
     static <T> OwnershipResource<T> wrap(T t) {
         return new OwnershipResource<T>() {
             @Override

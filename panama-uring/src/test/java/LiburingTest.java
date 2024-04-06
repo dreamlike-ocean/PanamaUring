@@ -4,18 +4,19 @@ import struct.io_uring_cqe_struct;
 import struct.io_uring_sqe_struct;
 import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
-import top.dreamlike.panama.uring.async.CancelableFuture;
-import top.dreamlike.panama.uring.async.fd.AsyncEventFd;
-import top.dreamlike.panama.uring.async.fd.AsyncFileFd;
-import top.dreamlike.panama.uring.async.fd.AsyncTcpServerSocketFd;
-import top.dreamlike.panama.uring.async.fd.AsyncTcpSocketFd;
+import top.dreamlike.panama.uring.async.AsyncPoller;
+import top.dreamlike.panama.uring.async.BufferResult;
+import top.dreamlike.panama.uring.async.IoUringSyscallResult;
+import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
+import top.dreamlike.panama.uring.async.fd.*;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
-import top.dreamlike.panama.uring.nativelib.libs.LibUring;
+import top.dreamlike.panama.uring.nativelib.libs.LibPoll;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
 import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
+import top.dreamlike.panama.uring.sync.fd.PipeFd;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 import top.dreamlike.panama.uring.trait.OwnershipResource;
 
@@ -30,7 +31,6 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 public class LiburingTest {
 
@@ -373,19 +373,107 @@ public class LiburingTest {
         }
     }
 
+    @Test
+    public void testAsyncPoller() {
+        try (IoUringEventLoop ioUringEventLoop = new IoUringEventLoop(params -> {
+            params.setSq_entries(4);
+            params.setFlags(0);
+        })) {
+            ioUringEventLoop.start();
 
-    public static IoUringCqe submitTemplate(Arena arena, IoUring uring, Consumer<IoUringSqe> sqeFunction) {
-        LibUring libUring = Instance.LIB_URING;
-        IoUringSqe sqe = libUring.io_uring_get_sqe(uring);
-        sqeFunction.accept(sqe);
-        int submits = libUring.io_uring_submit_and_wait(uring, 1);
-        Assert.assertTrue(submits > 0);
-        MemorySegment cqe = arena.allocate(ValueLayout.ADDRESS);
-        int count = libUring.io_uring_peek_batch_cqe(uring, cqe, 1);
-        Assert.assertTrue(count > 0);
-        return Instance.STRUCT_PROXY_GENERATOR.enhance(cqe.getAtIndex(ValueLayout.ADDRESS, 0));
+            AsyncPipeFd pipeFd = new AsyncPipeFd(ioUringEventLoop);
+            String demoStr = "hello async pipe";
+            OwnershipMemory writeBuffer = Instance.LIB_JEMALLOC.mallocMemory(demoStr.length());
+            MemorySegment.copy(demoStr.getBytes(), 0, writeBuffer.resource(), ValueLayout.JAVA_BYTE, 0, demoStr.length());
+            BufferResult<OwnershipMemory> _ = pipeFd.asyncWrite(writeBuffer, demoStr.length(), 0).get();
+
+            OwnershipMemory readBuffer = Instance.LIB_JEMALLOC.mallocMemory(demoStr.length());
+            BufferResult<OwnershipMemory> readRes = pipeFd.asyncRead(readBuffer, demoStr.length(), 0).get();
+            Assert.assertEquals(demoStr.length(), readRes.syscallRes());
+            Assert.assertEquals(demoStr, DebugHelper.bufToString(readBuffer.resource(), demoStr.length()));
+
+            AsyncPoller poller = new AsyncPoller(ioUringEventLoop);
+            int syscallRes = Instance.LIBC.fcntl(pipeFd.readFd(), Libc.Fcntl_H.F_SETFL, Libc.Fcntl_H.O_NONBLOCK);
+            Assert.assertTrue(syscallRes >= 0);
+            int readCount = pipeFd.read(readBuffer.resource(), 0);
+            Assert.assertEquals(0, readCount);
+
+            CancelableFuture<Integer> pollInRes = poller.register(pipeFd, LibPoll.POLLIN);
+            ioUringEventLoop.submitScheduleTask(200, TimeUnit.MILLISECONDS, () -> {
+                try (OwnershipMemory writeBuffer1 = Instance.LIB_JEMALLOC.mallocMemory(demoStr.length())) {
+                    MemorySegment.copy(demoStr.getBytes(), 0, writeBuffer1.resource(), ValueLayout.JAVA_BYTE, 0, demoStr.length());
+                    pipeFd.asyncWrite(writeBuffer1, demoStr.length(), 0);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            Integer pollRes = pollInRes.get();
+            Assert.assertTrue((pollRes & LibPoll.POLLIN) != 0);
+
+            MemorySegment syncReadBuffer = Instance.LIB_JEMALLOC.malloc(demoStr.length());
+            int read = pipeFd.read(syncReadBuffer, demoStr.length());
+            Assert.assertEquals(demoStr.length(), read);
+            Assert.assertEquals(demoStr, DebugHelper.bufToString(syncReadBuffer, demoStr.length()));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
+
+    @Test
+    public void testAsyncSplicer() {
+        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+            params.setSq_entries(4);
+            params.setFlags(0);
+        });
+        Arena arena = Arena.ofConfined();
+        try (eventLoop; arena) {
+            eventLoop.start();
+            String sampleString = "helllo splicer!";
+            AsyncSplicer splicer = new AsyncSplicer(eventLoop);
+            PipeFd pipeFd = new PipeFd();
+
+            File readFile = File.createTempFile(UUID.randomUUID().toString(), ".tmp");
+            readFile.deleteOnExit();
+            File writeFile = File.createTempFile(UUID.randomUUID().toString(), ".tmp");
+            writeFile.deleteOnExit();
+            new FileOutputStream(readFile).write(sampleString.getBytes());
+
+            AsyncFileFd readFd = AsyncFileFd.asyncOpen(eventLoop, OwnershipMemory.of(arena.allocateFrom(readFile.getAbsolutePath())), Libc.Fcntl_H.O_RDWR).get();
+            AsyncFileFd writeFd = AsyncFileFd.asyncOpen(eventLoop, OwnershipMemory.of(arena.allocateFrom(writeFile.getAbsolutePath())), Libc.Fcntl_H.O_RDWR).get();
+
+            IoUringSyscallResult<PipeFd> readResult = splicer.asyncWritePipe(OwnershipResource.wrap(pipeFd), readFd, 0, sampleString.length(), 0).get();
+            Assert.assertEquals(sampleString.length(), readResult.result());
+
+            IoUringSyscallResult<PipeFd> writeResult = splicer.asyncReadPipe(OwnershipResource.wrap(pipeFd), writeFd, 0, sampleString.length(), 0).get();
+            Assert.assertEquals(sampleString.length(), readResult.result());
+
+            byte[] read = new FileInputStream(readFile).readAllBytes();
+            Assert.assertEquals(sampleString, new String(read));
+
+
+            readFile = File.createTempFile(UUID.randomUUID().toString(), ".tmp");
+            readFile.deleteOnExit();
+            writeFile = File.createTempFile(UUID.randomUUID().toString(), ".tmp");
+            writeFile.deleteOnExit();
+            new FileOutputStream(readFile).write(sampleString.getBytes());
+
+            readFd = AsyncFileFd.asyncOpen(eventLoop, OwnershipMemory.of(arena.allocateFrom(readFile.getAbsolutePath())), Libc.Fcntl_H.O_RDWR).get();
+            writeFd = AsyncFileFd.asyncOpen(eventLoop, OwnershipMemory.of(arena.allocateFrom(writeFile.getAbsolutePath())), Libc.Fcntl_H.O_RDWR).get();
+
+            var sendFilePipeFd = new OwnershipResourceForTest<>(new PipeFd());
+            IoUringSyscallResult<PipeFd> sendResult = splicer.asyncSendFile(
+                    sendFilePipeFd, readFd, 0, writeFd, 0, sampleString.length(), Libc.Fcntl_H.SPLICE_F_MOVE
+            ).get();
+
+            Assert.assertEquals(sampleString.length(), sendResult.result());
+            read = new FileInputStream(writeFile).readAllBytes();
+            Assert.assertEquals(sampleString, new String(read));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     private static class OwnershipResourceForTest<T> implements OwnershipResource<T> {
         private final T t;

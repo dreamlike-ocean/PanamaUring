@@ -1,4 +1,4 @@
-package top.dreamlike.panama.uring.trait;
+package top.dreamlike.panama.uring.sync.trait;
 
 import top.dreamlike.panama.uring.nativelib.Instance;
 

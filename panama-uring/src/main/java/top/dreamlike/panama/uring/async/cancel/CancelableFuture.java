@@ -1,13 +1,10 @@
-package top.dreamlike.panama.uring.async;
-
-import top.dreamlike.panama.uring.async.cancel.CancelToken;
+package top.dreamlike.panama.uring.async.cancel;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public class CancelableFuture<T> extends CompletableFuture<T> implements CancelToken {
-    private CancelToken token;
+    protected CancelToken token;
 
     public CancelableFuture(CancelToken token) {
         this.token = token;
@@ -37,5 +34,9 @@ public class CancelableFuture<T> extends CompletableFuture<T> implements CancelT
     @Override
     public <U> CancelableFuture<U> newIncompleteFuture() {
         return new CancelableFuture<>(token);
+    }
+
+    public CancelToken token() {
+        return token;
     }
 }

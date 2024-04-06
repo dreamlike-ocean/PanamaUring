@@ -1,7 +1,7 @@
 package top.dreamlike.panama.uring.async.fd;
 
 import top.dreamlike.panama.uring.async.BufferResult;
-import top.dreamlike.panama.uring.async.CancelableFuture;
+import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
@@ -11,8 +11,8 @@ import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn;
 import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn6;
 import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrUn;
+import top.dreamlike.panama.uring.sync.trait.PollableFd;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
-import top.dreamlike.panama.uring.trait.PollableFd;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;

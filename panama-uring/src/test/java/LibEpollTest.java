@@ -1,10 +1,10 @@
 import org.junit.Assert;
 import org.junit.Test;
-import top.dreamlike.panama.uring.fd.EpollFd;
-import top.dreamlike.panama.uring.fd.EventFd;
 import top.dreamlike.panama.uring.helper.EpollEvent;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.libs.LibEpoll;
+import top.dreamlike.panama.uring.sync.fd.EpollFd;
+import top.dreamlike.panama.uring.sync.fd.EventFd;
 
 import java.util.concurrent.TimeUnit;
 

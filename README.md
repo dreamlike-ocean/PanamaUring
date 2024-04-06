@@ -2,9 +2,9 @@
 
 这是一个探索性质的项目，使用Java的[新ffi](https://openjdk.org/jeps/424)为Java引入io_uring。
 
-主要目的在于提供一个与基础read/write原语签名类似的 **Linux异步文件I/O** API，以补齐虚拟线程读写文件会导致pin住载体线程的短板。
+主要目的在于提供一个与基础read/write原语签名类似的 **Linux异步文件I/O** API，以补齐虚拟线程读写文件会导致pin住载体线程的短板，同时也提供了异步socket api。
 
-这个项目并非与netty的io_uring一样会从系统调用开始处理，而是直接修改[liburing](https://github.com/axboe/liburing)
+这个项目并非与netty的io_uring一样会从系统调用开始处理，而是直接使用[liburing](https://github.com/axboe/liburing)
 源码，在此基础上封装调用，即它最底层只是一层对liburing的封装。
 
 maven坐标为
@@ -17,10 +17,7 @@ maven坐标为
 </dependency>
 ```
 
-**目前阶段参考价值大于实用价值，<del>在jdk21之后我会做进一步的API适配</del>,(垃圾java毁我人生，这东西jdk21稳定不了)，Panama
-API仍在变动之中**
-
-由于依赖了liburing的代码所以需要一并clone liburing仓库
+由于依赖了liburing和jemalloc的代码所以需要一并clone 对应仓库
 
 ```shell
 git clone --recurse-submodules https://github.com/dreamlike-ocean/PanamaUring.git
@@ -36,13 +33,12 @@ git clone --recurse-submodules https://github.com/dreamlike-ocean/PanamaUring.gi
 - [x] 异步写入
 - [x] IOSQE_BUFFER_SELECT模式的异步读取
 - [x] 异步fsync
-- [x] 通过flock和定时任务实现的文件锁
 
 #### AsyncSocket
 
-- [x] 异步connect （ipv4，ipv6）
+- [x] 异步connect （ipv4，ipv6，uds）
 - [x] IOSQE_BUFFER_SELECT模式的异步recv
-- [x] 异步write
+- [x] 异步write/send
 - [x] mutlishot异步recv
 
 #### AsyncServerSocket
@@ -60,7 +56,6 @@ git clone --recurse-submodules https://github.com/dreamlike-ocean/PanamaUring.gi
 - [x] 异步的文件监听 inotify
 - [x] 异步的eventfd读写
 - [x] 异步的pipefd
-- [x] 基于Epoll的Async socket read,Async socket write,Async socket connect,Async socket accept
 
 #### 其他Native封装
 
@@ -70,7 +65,6 @@ git clone --recurse-submodules https://github.com/dreamlike-ocean/PanamaUring.gi
 
 #### 其余小玩意
 
-- [x] 基于EventFd将IO Uring与Epoll连接在一起,socket api走Epoll驱动,收割cqe也由Epoll驱动,等价于Epoll监听IO Uring
 - [x] Panama FFI的声明式运行时绑定 [点我看文档](./panama-generator/README.md)
 
 ### 构建/运行指南
@@ -79,10 +73,8 @@ git clone --recurse-submodules https://github.com/dreamlike-ocean/PanamaUring.gi
 
 下面本人使用的构建工具以及运行环境：
 
-> 注意 jdk版本不能升级也不能降级，Panama api可能不一致
-
 - Maven 3.8.4
-- OpenJDK 21
+- OpenJDK 22
 - Linux >= 5.10
 - makefile GNU Make 4.3
 
@@ -105,14 +97,23 @@ mvn clean package -DskipTests
 举个例子
 
 ```java
-public CompletableFuture<byte[]> readSelected(int offset, int length) {
-    CompletableFuture<byte[]> future = new CompletableFuture<>();
-    eventLoop.runOnEventLoop(() -> {
-        if (!uring.prep_selected_read(fd, offset, length, future)) {
-            future.completeExceptionally(new Exception("没有空闲的sqe"));
+    private CancelToken fillTemplate(Consumer<IoUringSqe> sqeFunction, Consumer<IoUringCqe> callback, boolean needSubmit) {
+    long token = tokenGenerator.getAndIncrement();
+    Runnable r = () -> {
+        IoUringSqe sqe = ioUringGetSqe();
+        sqeFunction.accept(sqe);
+        sqe.setUser_data(token);
+        callBackMap.put(token, new IoUringCompletionCallBack(sqe.getFd(), sqe.getOpcode(), callback));
+        if (needSubmit) {
+            flush();
         }
-    });
-    return future;
+    };
+    if (inEventLoop()) {
+        r.run();
+    } else {
+        execute(r);
+    }
+    return new IoUringCancelToken(token);
 }
 ```
 
@@ -182,12 +183,3 @@ private boolean checkCaptureContainAsyncFd(Object ops) {
         return true;
         }
 ```
-
-#### Epoll
-
-为什么这里面会有Epoll？
-
-因为最早的实现是，网络IO走epoll不变，文件IO走io_uring，epoll监听io_uring cqe完成事件的eventfd，当epoll轮询到这个eventfd时再去收割cqe。
-
-但是目前我完整实现了这个EventLoop请看[EpollUringEventLoop](panama-uring/src/main/java/top/dreamlike/eventloop/EpollUringEventLoop.java)
-,同时提供了基于Epoll的socket基础操作
