@@ -398,7 +398,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 .stream()
                 .map(p -> String.format("""
                                 needRegisterClass = Class.forName("%s", false, getClass().getClassLoader());
-                                RuntimeReflection.registerConstructorLookup(needRegisterClass, MemorySegment.class);
+                              //  RuntimeReflection.registerConstructorLookup(needRegisterClass, MemorySegment.class);
                                 RuntimeReflection.register(needRegisterClass);
                                 RuntimeReflection.registerAllDeclaredFields(needRegisterClass);
                                 needRegisterClass = Class.forName("%s", false, getClass().getClassLoader());
@@ -407,7 +407,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                                 RuntimeReflection.register(needRegisterClass);
                                 RuntimeReflection.registerAllDeclaredConstructors(needRegisterClass);
                               //  RuntimeClassInitialization.initializeAtBuildTime(needRegisterClass);
-                        """, p.proxy, p.origin));
+                        """, p.origin, p.proxy));
 
         var baseStream = Stream.of(NativeStructEnhanceMark.class, NativeGeneratorHelper.class)
                 .map(Class::getName)

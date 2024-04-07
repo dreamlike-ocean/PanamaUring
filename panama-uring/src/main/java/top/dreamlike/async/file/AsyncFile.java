@@ -1,8 +1,6 @@
 package top.dreamlike.async.file;
 
 import io.smallrye.mutiny.Uni;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.dreamlike.access.AccessHelper;
 import top.dreamlike.async.PlainAsyncFd;
 import top.dreamlike.async.uring.IOUring;
@@ -28,7 +26,6 @@ import static top.dreamlike.nativeLib.fcntl.fcntl_h.*;
 import static top.dreamlike.nativeLib.flock.file_h.flock;
 
 public class AsyncFile extends PlainAsyncFd {
-    private static final Logger log = LoggerFactory.getLogger(AsyncFile.class);
 
     private final IOUring uring;
     private final int fd;

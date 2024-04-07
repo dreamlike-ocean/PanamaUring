@@ -1,5 +1,7 @@
 package top.dreamlike.panama.uring.eventloop;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jctools.queues.MpscUnboundedArrayQueue;
 import top.dreamlike.helper.StackValue;
 import top.dreamlike.panama.uring.async.cancel.CancelToken;
@@ -19,6 +21,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -30,7 +33,10 @@ import java.util.function.Consumer;
 
 import static top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant.IORING_ASYNC_CANCEL_ALL;
 
-public class IoUringEventLoop extends Thread implements AutoCloseable, Executor{
+public class IoUringEventLoop extends Thread implements AutoCloseable, Executor {
+
+    private static final Logger log = LogManager.getLogger(IoUringEventLoop.class);
+
     private static final LibUring libUring = Instance.LIB_URING;
     private static final int cqeSize = 4;
     private final EventFd wakeUpFd;
@@ -58,6 +64,10 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor{
     private static final VarHandle IO_URING_BUF_RING_HANDLER;
 
     private final IntObjectMap<IoUringBufRing> bufRingMap = new IntObjectHashMap<>();
+
+    private Consumer<Throwable> exceptionHandler = (t) -> {
+        log.error("Uncaught exception in event loop", t);
+    };
 
     public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory) {
         this.wakeUpFd = new EventFd(0, 0);
@@ -106,7 +116,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor{
                 }
             }
             while (!taskQueue.isEmpty()) {
-                taskQueue.poll().run();
+                runWithCatchException(taskQueue.poll());
             }
             ScheduledTask nextTask = scheduledTasks.peek();
             //如果没有任务或者下一个任务的时间大于当前时间，那么就直接提交
@@ -124,6 +134,19 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor{
             processCqes();
         }
         releaseResource();
+    }
+
+    private void runWithCatchException(Runnable r) {
+        try {
+            r.run();
+        } catch (Throwable t) {
+            exceptionHandler.accept(t);
+        }
+    }
+
+    public void setExceptionHandler(Consumer<Throwable> handler) {
+        Objects.requireNonNull(handler);
+        this.exceptionHandler = handler;
     }
 
     /**
@@ -179,7 +202,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor{
             }
         };
         if (inEventLoop()) {
-            r.run();
+            runWithCatchException(r);
         } else {
             execute(r);
         }
@@ -203,7 +226,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor{
             }));
         };
         if (inEventLoop()) {
-            r.run();
+            runWithCatchException(r);
         } else {
             execute(r);
         }
@@ -226,7 +249,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor{
             }));
         };
         if (inEventLoop()) {
-            r.run();
+            runWithCatchException(r);
         } else {
             execute(r);
         }
@@ -254,13 +277,16 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor{
 
     private void processCqes() {
         int count = libUring.io_uring_peek_batch_cqe(internalRing, cqePtrs, cqeSize);
+        if (log.isDebugEnabled()) {
+            log.info("processCqes count:{}", count);
+        }
         for (int i = 0; i < count; i++) {
             IoUringCqe nativeCqe = Instance.STRUCT_PROXY_GENERATOR.enhance(cqePtrs.getAtIndex(ValueLayout.ADDRESS, i));
             long token = nativeCqe.getUser_data();
             boolean multiShot = nativeCqe.hasMore();
             IoUringCompletionCallBack callback = multiShot ? callBackMap.get(token) : callBackMap.remove(token);
             if (callback != null && callback.userCallBack != null) {
-                callback.userCallBack.accept(nativeCqe);
+                runWithCatchException(() -> callback.userCallBack.accept(nativeCqe));
             }
         }
         libUring.io_uring_cq_advance(internalRing, count);

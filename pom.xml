@@ -20,6 +20,7 @@
         <native-lib>3.0.0</native-lib>
         <mutiny.version>2.5.0</mutiny.version>
         <panama-generator>1.2</panama-generator>
+        <log.version>2.23.1</log.version>
     </properties>
 
     <licenses>
@@ -132,7 +133,19 @@
         </profile>
     </profiles>
     <dependencyManagement>
-        <dependencies>
+
+        <dependencies> <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log.version}</version>
+        </dependency>
+
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>io.smallrye.reactive</groupId>
                 <artifactId>mutiny</artifactId>

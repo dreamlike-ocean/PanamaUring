@@ -1,6 +1,7 @@
 package top.dreamlike.panama.uring.nativelib;
 import top.dreamlike.panama.generator.proxy.NativeCallGenerator;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
+import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.libs.LibEpoll;
 import top.dreamlike.panama.uring.nativelib.libs.LibJemalloc;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
@@ -14,7 +15,7 @@ public class Instance {
     public static final NativeCallGenerator NATIVE_CALL_GENERATOR = new NativeCallGenerator(STRUCT_PROXY_GENERATOR);
 
     public static final Libc LIBC = NATIVE_CALL_GENERATOR.generate(Libc.class);
-    public static final LibUring LIB_URING = NATIVE_CALL_GENERATOR.generate(LibUring.class);
+    public static final LibUring LIB_URING;
     public static final LibEpoll LIB_EPOLL = NATIVE_CALL_GENERATOR.generate(LibEpoll.class);
     public static final LibJemalloc LIB_JEMALLOC = new LibJemalloc() {
 
@@ -42,6 +43,12 @@ public class Instance {
 
     static {
         NATIVE_CALL_GENERATOR.indyMode();
+        LibUring generate = NATIVE_CALL_GENERATOR.generate(LibUring.class);
+        if (Boolean.parseBoolean(System.getProperty("enable-detect-os-version", "false"))) {
+            LIB_URING = DebugHelper.enhanceCheck(generate, LibUring.class);
+        } else {
+            LIB_URING = generate;
+        }
     }
 
 
