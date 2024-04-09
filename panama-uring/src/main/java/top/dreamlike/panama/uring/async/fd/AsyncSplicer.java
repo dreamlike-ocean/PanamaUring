@@ -1,6 +1,6 @@
 package top.dreamlike.panama.uring.async.fd;
 
-import top.dreamlike.panama.uring.async.IoUringSyscallResult;
+import top.dreamlike.panama.uring.async.IoUringSyscallOwnershipResult;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.async.trait.IoUringOperator;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
@@ -19,30 +19,30 @@ public class AsyncSplicer implements IoUringOperator {
     }
 
 
-    public CancelableFuture<IoUringSyscallResult<PipeFd>> asyncReadPipe(
+    public CancelableFuture<IoUringSyscallOwnershipResult<PipeFd>> asyncReadPipe(
             OwnershipResource<PipeFd> pipeFd,
             NativeFd outFd, long outOffset,
             int nbytes, int spliceFlags
     ) {
-        return (CancelableFuture<IoUringSyscallResult<PipeFd>>) asyncSplice(
+        return (CancelableFuture<IoUringSyscallOwnershipResult<PipeFd>>) asyncSplice(
                 pipeFd.resource().readFd(), -1,
                 outFd.writeFd(), outOffset,
                 nbytes, spliceFlags)
                 .whenComplete(pipeFd::DropWhenException)
-                .thenApply(res -> new IoUringSyscallResult<>(pipeFd, res));
+                .thenApply(res -> new IoUringSyscallOwnershipResult<>(pipeFd, res));
     }
 
-    public CancelableFuture<IoUringSyscallResult<PipeFd>> asyncWritePipe(
+    public CancelableFuture<IoUringSyscallOwnershipResult<PipeFd>> asyncWritePipe(
             OwnershipResource<PipeFd> pipeFd,
             NativeFd inFd, long inOffset,
             int nbytes, int spliceFlags
     ) {
-        return (CancelableFuture<IoUringSyscallResult<PipeFd>>) asyncSplice(
+        return (CancelableFuture<IoUringSyscallOwnershipResult<PipeFd>>) asyncSplice(
                 inFd.writeFd(), inOffset,
                 pipeFd.resource().writeFd(), -1,
                 nbytes, spliceFlags)
                 .whenComplete(pipeFd::DropWhenException)
-                .thenApply(res -> new IoUringSyscallResult<>(pipeFd, res));
+                .thenApply(res -> new IoUringSyscallOwnershipResult<>(pipeFd, res));
     }
 
 
@@ -62,14 +62,14 @@ public class AsyncSplicer implements IoUringOperator {
                 .thenApply(IoUringCqe::getRes);
     }
 
-    public CancelableFuture<IoUringSyscallResult<PipeFd>> asyncSendFile(
+    public CancelableFuture<IoUringSyscallOwnershipResult<PipeFd>> asyncSendFile(
             OwnershipResource<PipeFd> midPipe,
             NativeFd outFd, long outOffset,
             NativeFd inFd, long inOffset,
             int nbytes, int spliceFlags
     ) {
-        CancelableFuture<IoUringSyscallResult<PipeFd>> writeAsyncOp = asyncWritePipe(midPipe, outFd, outOffset, nbytes, spliceFlags);
-        RedirectCancelableFuture<IoUringSyscallResult<PipeFd>> returnValue = new RedirectCancelableFuture<>(writeAsyncOp);
+        CancelableFuture<IoUringSyscallOwnershipResult<PipeFd>> writeAsyncOp = asyncWritePipe(midPipe, outFd, outOffset, nbytes, spliceFlags);
+        RedirectCancelableFuture<IoUringSyscallOwnershipResult<PipeFd>> returnValue = new RedirectCancelableFuture<>(writeAsyncOp);
         writeAsyncOp
                 .whenComplete((res, t) -> {
                     int writeLen = res.result();
@@ -78,7 +78,7 @@ public class AsyncSplicer implements IoUringOperator {
                         returnValue.completeExceptionally(t);
                         return;
                     }
-                    CancelableFuture<IoUringSyscallResult<PipeFd>> writeToFdStage = asyncReadPipe(midPipe, inFd, inOffset, writeLen, spliceFlags);
+                    CancelableFuture<IoUringSyscallOwnershipResult<PipeFd>> writeToFdStage = asyncReadPipe(midPipe, inFd, inOffset, writeLen, spliceFlags);
                     returnValue.redirect(writeToFdStage);
                     writeToFdStage.whenComplete((res2, t2) -> {
                                 if (t2 != null) {

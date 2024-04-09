@@ -1,3 +1,5 @@
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import struct.io_uring_cqe_struct;
@@ -6,7 +8,9 @@ import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.async.AsyncPoller;
 import top.dreamlike.panama.uring.async.BufferResult;
+import top.dreamlike.panama.uring.async.IoUringSyscallOwnershipResult;
 import top.dreamlike.panama.uring.async.IoUringSyscallResult;
+import top.dreamlike.panama.uring.async.cancel.CancelToken;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.async.fd.*;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
@@ -27,13 +31,22 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.net.*;
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class LiburingTest {
 
+
+    private static final Logger log = LogManager.getLogger(LiburingTest.class);
 
     @Test
     public void testLayout() {
@@ -442,10 +455,10 @@ public class LiburingTest {
             AsyncFileFd readFd = AsyncFileFd.asyncOpen(eventLoop, OwnershipMemory.of(arena.allocateFrom(readFile.getAbsolutePath())), Libc.Fcntl_H.O_RDWR).get();
             AsyncFileFd writeFd = AsyncFileFd.asyncOpen(eventLoop, OwnershipMemory.of(arena.allocateFrom(writeFile.getAbsolutePath())), Libc.Fcntl_H.O_RDWR).get();
 
-            IoUringSyscallResult<PipeFd> readResult = splicer.asyncWritePipe(OwnershipResource.wrap(pipeFd), readFd, 0, sampleString.length(), 0).get();
+            IoUringSyscallOwnershipResult<PipeFd> readResult = splicer.asyncWritePipe(OwnershipResource.wrap(pipeFd), readFd, 0, sampleString.length(), 0).get();
             Assert.assertEquals(sampleString.length(), readResult.result());
 
-            IoUringSyscallResult<PipeFd> writeResult = splicer.asyncReadPipe(OwnershipResource.wrap(pipeFd), writeFd, 0, sampleString.length(), 0).get();
+            IoUringSyscallOwnershipResult<PipeFd> writeResult = splicer.asyncReadPipe(OwnershipResource.wrap(pipeFd), writeFd, 0, sampleString.length(), 0).get();
             Assert.assertEquals(sampleString.length(), readResult.result());
 
             byte[] read = new FileInputStream(readFile).readAllBytes();
@@ -462,7 +475,7 @@ public class LiburingTest {
             writeFd = AsyncFileFd.asyncOpen(eventLoop, OwnershipMemory.of(arena.allocateFrom(writeFile.getAbsolutePath())), Libc.Fcntl_H.O_RDWR).get();
 
             var sendFilePipeFd = new OwnershipResourceForTest<>(new PipeFd());
-            IoUringSyscallResult<PipeFd> sendResult = splicer.asyncSendFile(
+            IoUringSyscallOwnershipResult<PipeFd> sendResult = splicer.asyncSendFile(
                     sendFilePipeFd, readFd, 0, writeFd, 0, sampleString.length(), Libc.Fcntl_H.SPLICE_F_MOVE
             ).get();
 
@@ -472,6 +485,72 @@ public class LiburingTest {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void multiShotAcceptTest() {
+        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+            params.setSq_entries(4);
+            params.setFlags(0);
+        });
+        try (eventLoop) {
+            eventLoop.start();
+            InetSocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
+            AsyncTcpServerSocketFd serverFd = new AsyncTcpServerSocketFd(eventLoop, serverAddress, 5000);
+            serverFd.bind();
+            serverFd.listen(16);
+
+            long addrSize = serverFd.addrSize();
+            OwnershipMemoryForTest addr = new OwnershipMemoryForTest(Instance.LIB_JEMALLOC.malloc(addrSize));
+            OwnershipMemoryForTest addrLen = new OwnershipMemoryForTest(Instance.LIB_JEMALLOC.malloc(ValueLayout.JAVA_INT.byteSize()));
+            ArrayBlockingQueue<Socket> sockets = new ArrayBlockingQueue<>(2);
+            IntStream.range(0, 2)
+                    .mapToObj(_ -> Thread.ofVirtual().unstarted(() -> {
+                        try {
+                            Socket socket = new Socket();
+                            socket.connect(serverAddress);
+                            sockets.offer(socket);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }))
+                    .forEach(Thread::start);
+            AsyncMultiShotTcpServerSocketFd serverSocketFd = new AsyncMultiShotTcpServerSocketFd(serverFd);
+
+            AtomicBoolean cqeHasCancel = new AtomicBoolean(false);
+
+            ArrayList<IoUringSyscallResult<AsyncTcpSocketFd>> syscallResults = new ArrayList<>();
+            CountDownLatch acceptCondition = new CountDownLatch(1);
+            CountDownLatch cancelCondition = new CountDownLatch(1);
+            CancelToken cancelToken = serverSocketFd.asyncMultiAccept(0, addr, addrLen, r -> {
+                syscallResults.add(r);
+                if (syscallResults.size() == 2) {
+                    acceptCondition.countDown();
+                }
+                if (r.canceled()) {
+                    cancelCondition.countDown();
+                    cqeHasCancel.set(true);
+                }
+            });
+            acceptCondition.await();
+
+            Map<Integer, Socket> portToSocket = sockets.stream()
+                    .collect(Collectors.toMap(Socket::getLocalPort, Function.identity()));
+            for (var result : syscallResults) {
+                Assert.assertNotNull(result.value());
+                Assert.assertEquals(result.value().fd(), result.res());
+                var fd = result.value();
+                InetSocketAddress remoteAddress = (InetSocketAddress) fd.getRemoteAddress();
+                log.info("from async multi mode server socket accept:{}", fd);
+                Socket remoteSocket = portToSocket.get(remoteAddress.getPort());
+                Assert.assertNotNull(remoteSocket);
+            }
+            Assert.assertEquals(Integer.valueOf(1), cancelToken.cancel().get());
+            cancelCondition.await();
+            Assert.assertTrue(cqeHasCancel.get());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

@@ -204,6 +204,7 @@ public class NativeCallGenerator {
     private MethodHandle nativeMethodHandle(Method method) {
         return nativeMethodHandle(method, false);
     }
+
     /**
      * This private method handles the native method call based on the given Method.
      *
@@ -211,7 +212,7 @@ public class NativeCallGenerator {
      * @return The MethodHandle object for the native method call.
      * @throws IllegalArgumentException if the return type of the method is not a primitive type or marked as returnIsPointer.
      */
-    MethodHandle nativeMethodHandle(Method method,boolean lazy) {
+    MethodHandle nativeMethodHandle(Method method, boolean lazy) {
         DowncallContext downcallContext = parseDowncallContext(method);
 
         String functionName = downcallContext.functionName();
@@ -386,7 +387,7 @@ public class NativeCallGenerator {
             });
             classBuilder.withMethodBody("<init>", MethodTypeDesc.ofDescriptor("()V"), Modifier.PUBLIC, it -> {
                         it.aload(0);
-                        it.invokespecial(ClassFileHelper.toDesc(Object.class),"<init>", MethodTypeDesc.ofDescriptor("()V"));
+                        it.invokespecial(ClassFileHelper.toDesc(Object.class), "<init>", MethodTypeDesc.ofDescriptor("()V"));
                         it.return_();
                     }
             );
@@ -415,7 +416,7 @@ public class NativeCallGenerator {
 
     private Consumer<CodeBuilder> invokeByMh(Method method, ClassBuilder thisClass, String className) {
         String mhFieldName = method.getName() + "_native_method_handle";
-        ClassDesc thisClassDesc = ClassDesc.ofDescriptor("L" + className.replace(".", "/") + ";" );
+        ClassDesc thisClassDesc = ClassDesc.ofDescriptor("L" + className.replace(".", "/") + ";");
         thisClass.withMethodBody(method.getName(), ClassFileHelper.toMethodDescriptor(method), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             it.getstatic(thisClassDesc, mhFieldName, ClassFileHelper.toDesc(MethodHandle.class));
             ClassFileHelper.invokeMethodHandleExactWithAllArgs(method, it);
@@ -504,7 +505,11 @@ public class NativeCallGenerator {
     }
 
     String generateProxyClassName(Class nativeInterface) {
-        return nativeInterface.getName() + "_native_call_enhance";
+        String proxyName = nativeInterface.getName() + "_native_call_enhance";
+        if (use_indy) {
+            proxyName = proxyName + "_indy";
+        }
+        return proxyName;
     }
 
     private MemorySegment dlsym(String name) {

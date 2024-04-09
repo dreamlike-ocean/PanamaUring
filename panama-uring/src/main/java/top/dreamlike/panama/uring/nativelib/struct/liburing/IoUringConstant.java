@@ -1,10 +1,8 @@
 package top.dreamlike.panama.uring.nativelib.struct.liburing;
 
-import top.dreamlike.async.uring.IOUring;
 import top.dreamlike.panama.uring.nativelib.Instance;
 
 import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 
 public class IoUringConstant {
@@ -254,7 +252,7 @@ public class IoUringConstant {
      * send/sendmsg and recv/recvmsg flags (sqe->ioprio)
      * IORING_RECVSEND_POLL_FIRST	If set, instead of first attempting to send
      * or receive and arm poll if that yields an
-     * -EAGAIN result, arm poll upfront and skip
+     * -EAGAIN value, arm poll upfront and skip
      * the initial transfer attempt.
      * IORING_RECV_MULTISHOT	Multishot recv. Sets IORING_CQE_F_MORE if
      * the handler will continue to report

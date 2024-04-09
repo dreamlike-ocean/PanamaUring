@@ -25,17 +25,23 @@ public interface Libc {
     @NativeFunction(value = "__errno_location")
     MemorySegment errorNo();
 
+    int dup(int fd);
+
     MemorySegment strerror(int errno);
 
     int fcntl(int fd, int cmd, int arg);
 
-    int bind(int fd,@Pointer MemorySegment addr, int addrlen);
+    int bind(int fd, @Pointer MemorySegment addr, int addrlen);
 
     int listen(int socketFd, int backlog);
 
     int getsockname(int socketFd, @Pointer MemorySegment addr, @Pointer MemorySegment addrlen);
 
+    int getpeername(int socketFd, @Pointer MemorySegment addr, @Pointer MemorySegment addrlen);
+
     int pipe(@Pointer MemorySegment pipeFd);
+
+    int setsockopt(int sockfd, int level, int optname, @Pointer MemorySegment optval, int optlen);
 
     interface Fcntl_H {
         static final int O_RDONLY = 0;
@@ -117,6 +123,38 @@ public interface Libc {
             static final int SOCK_CLOEXEC = 02000000;
             static final int SOCK_NONBLOCK = 04000;
         }
+
+        interface SetSockOpt {
+            static final int SOL_SOCKET = 1;
+        }
+
+        interface OptName {
+            //       /* For setsockopt(2) */
+            int SOL_SOCKET = 1;
+            int SO_DEBUG = 1;
+            int SO_REUSEADDR = 2;
+            int SO_TYPE = 3;
+            int SO_ERROR = 4;
+            int SO_DONTROUTE = 5;
+            int SO_BROADCAST = 6;
+            int SO_SNDBUF = 7;
+            int SO_RCVBUF = 8;
+            int SO_SNDBUFFORCE = 32;
+            int SO_RCVBUFFORCE = 33;
+            int SO_KEEPALIVE = 9;
+            int SO_OOBINLINE = 10;
+            int SO_NO_CHECK = 11;
+            int SO_PRIORITY = 12;
+            int SO_LINGER = 13;
+            int SO_BSDCOMPAT = 14;
+            int SO_REUSEPORT = 15;
+            int SO_PASSCRED = 16;
+            int SO_PEERCRED = 17;
+            int SO_RCVLOWAT = 18;
+            int SO_SNDLOWAT = 19;
+            int SO_RCVTIMEO_OLD = 20;
+            int SO_SNDTIMEO_OLD = 21;
+        }
     }
 
     interface EventFd_H {
@@ -159,7 +197,7 @@ public interface Libc {
         public static final int EMLINK = 31;    /* Too many links */
         public static final int EPIPE = 32;    /* Broken pipe */
         public static final int EDOM = 33;    /* Math argument out of domain of func */
-        public static final int ERANGE = 34;    /* Math result not representable */
+        public static final int ERANGE = 34;    /* Math value not representable */
 
         public static final int EDEADLK = 35;    /* Resource deadlock would occur */
         public static final int ENAMETOOLONG = 36;    /* File name too long */

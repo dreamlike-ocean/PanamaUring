@@ -487,7 +487,7 @@ public class IOUring implements AutoCloseable {
                 boolean isMultiOp = (flag & IORING_CQE_F_MORE()) != 0;
                 IOOpResult result = isMultiOp ? context.get(opsCount) : context.remove(opsCount);
                 if (result == null) {
-                    System.err.println("result is null,ops:" + opsCount);
+                    System.err.println("value is null,ops:" + opsCount);
                     io_uring_cqe_seen(ring, cqe);
                     continue;
                 }

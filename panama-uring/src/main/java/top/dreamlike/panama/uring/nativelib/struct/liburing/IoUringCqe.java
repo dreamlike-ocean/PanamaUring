@@ -10,11 +10,11 @@ public class IoUringCqe {
     public long user_data;
     public int res;
     /**
-     *  is possible for a single submission to result in multiple completions (e.g. io_uring_prep_multishot_accept(3));
+     *  is possible for a single submission to value in multiple completions (e.g. io_uring_prep_multishot_accept(3));
      *  this is known as multishot. Errors on a multishot SQE will typically terminate the work request;
      *  a multishot SQE will set IORING_CQE_F_MORE high in generated CQEs so long as it remains active.
      *  A CQE without this flag indicates that the multishot is no longer operational, and must be reposted if further events are desired.
-     *  Overflow of the completion queue will usually result in a drop of any firing multishot.
+     *  Overflow of the completion queue will usually value in a drop of any firing multishot.
      */
     public int flags;
     @NativeArrayMark(size = long.class, length = 0)

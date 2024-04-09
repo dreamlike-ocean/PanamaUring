@@ -1,6 +1,11 @@
 package top.dreamlike.panama.uring.async;
 
-import top.dreamlike.panama.uring.trait.OwnershipResource;
+import static top.dreamlike.panama.uring.nativelib.libs.Libc.Error_H.ECANCELED;
 
-public record IoUringSyscallResult<T>(OwnershipResource<T> resource, int result) {
+public record IoUringSyscallResult<T>(int res, T value) {
+
+
+    public boolean canceled() {
+        return res == -ECANCELED;
+    }
 }

@@ -20,6 +20,8 @@ import java.lang.foreign.ValueLayout;
 import java.net.*;
 
 import static top.dreamlike.panama.uring.nativelib.Instance.LIBC;
+import static top.dreamlike.panama.uring.nativelib.libs.Libc.Socket_H.OptName.SO_REUSEADDR;
+import static top.dreamlike.panama.uring.nativelib.libs.Libc.Socket_H.SetSockOpt.SOL_SOCKET;
 
 public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd {
     private final IoUringEventLoop ioUringEventLoop;
@@ -285,6 +287,11 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd {
         int fd = LIBC.socket(domain, type, 0);
         if (fd < 0) {
             throw new IllegalArgumentException("socket error, reason： " + DebugHelper.currentErrorStr());
+        }
+        try (OwnershipMemory ownershipMemory = Instance.LIB_JEMALLOC.mallocMemory(ValueLayout.JAVA_INT.byteSize())) {
+            ownershipMemory.resource().set(ValueLayout.JAVA_INT, 0, 1);
+            LIBC.setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, ownershipMemory.resource(), (int) ValueLayout.JAVA_INT.byteSize());
+        } catch (Exception _) {
         }
         return fd;
     }

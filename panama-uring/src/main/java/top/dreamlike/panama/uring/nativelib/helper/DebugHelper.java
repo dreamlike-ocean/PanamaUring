@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.ErrorKernelVersionException;
+import top.dreamlike.panama.uring.trait.OwnershipResource;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -11,6 +12,7 @@ import java.lang.invoke.VarHandle;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.ByteOrder;
+import java.util.List;
 import java.util.Optional;
 
 public class DebugHelper {
@@ -81,6 +83,18 @@ public class DebugHelper {
         }
         return Short.reverseBytes(socket);
     }
+
+
+    public static  <T> void dropBatch(List<OwnershipResource<T>> memories) {
+        for (OwnershipResource<T> resource : memories) {
+            try (resource) {
+                resource.drop();
+            } catch (Throwable throwable) {
+                logger.error("Drop memory failed", throwable);
+            }
+        }
+    }
+
 
     public static <T> T enhanceCheck(T afterProxy, Class<T> nativeInterface) {
         return (T) Proxy.newProxyInstance(nativeInterface.getClassLoader(), new Class[]{nativeInterface}, (Object proxy, Method method, Object[] args) -> {

@@ -18,15 +18,15 @@ public class AsyncTcpServerSocketFd implements IoUringAsyncFd, PollableFd {
 
     private final static Libc LIBC = Instance.LIBC;
 
-    private IoUringEventLoop owner;
+    IoUringEventLoop owner;
 
-    private final int fd;
+    final int fd;
 
-    private final SocketAddress address;
+    final SocketAddress address;
 
-    private final int port;
+    final int port;
 
-    private volatile boolean hasListen;
+    volatile boolean hasListen;
 
     private volatile Supplier<IoUringEventLoop> subSocketEventLoopBinder = () -> owner;
 
