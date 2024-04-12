@@ -5,8 +5,8 @@ import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.struct.epoll.NativeEpollEvent;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBuf;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufRing;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.NativeIoUringBufRing;
 import top.dreamlike.panama.uring.nativelib.struct.sigset.SigsetType;
 import top.dreamlike.panama.uring.nativelib.struct.socket.MsgHdr;
 import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
@@ -90,7 +90,7 @@ public class StructTest {
 
     @Test
     public void testIoUringBufRingStruct() {
-        IoUringBufRing buf = Instance.STRUCT_PROXY_GENERATOR.allocate(Arena.global(), IoUringBufRing.class);
+        NativeIoUringBufRing buf = Instance.STRUCT_PROXY_GENERATOR.allocate(Arena.global(), NativeIoUringBufRing.class);
         MemorySegment memorySegment = StructProxyGenerator.findMemorySegment(buf);
         Assert.assertEquals(memorySegment.address(), buf.getBufs().address());
         VarHandle tailVarhandle = IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE;

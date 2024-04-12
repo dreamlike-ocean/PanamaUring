@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -198,58 +197,6 @@ public class LiburingTest {
         }
     }
 
-    @Test
-    public void testBuffRing() {
-        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
-            params.setSq_entries(4);
-            params.setFlags(0);
-        });
-        try (eventLoop) {
-            eventLoop.start();
-            int NREQS = 64;
-            int BUF_SIZE = 1024;
-            short bufferGroup = 1;
-            int BR_MASK = Instance.LIB_URING.io_uring_buf_ring_mask(NREQS);
-
-            IoUringBufRingSetupResult result = eventLoop.setupBufferRing(NREQS, bufferGroup).get();
-            Assert.assertEquals(0, result.res());
-            IoUringBufRing bufRing = result.bufRing();
-            Assert.assertNotNull(bufRing);
-            Assert.assertEquals(bufRing.getOwner(), eventLoop);
-            Assert.assertNotEquals(MemorySegment.NULL, StructProxyGenerator.findMemorySegment(bufRing));
-            Assert.assertThrows(IllegalStateException.class, () -> {
-                bufRing.ioUringBufRingAdd(MemorySegment.NULL, BUF_SIZE, (short) 0, 0, 0);
-            });
-            int totalLen = NREQS * BUF_SIZE;
-            try (OwnershipMemory bufPtrPtr = Instance.LIB_JEMALLOC.mallocMemory(ValueLayout.ADDRESS.byteSize());
-                 OwnershipMemory bufBase = Instance.LIB_JEMALLOC.posixMemalign(bufPtrPtr.resource(), 4096, totalLen);
-            ) {
-                CompletableFuture.runAsync(() -> {
-                    MemorySegment base = bufBase.resource();
-                    for (int i = 0; i < NREQS; i++) {
-                        bufRing.ioUringBufRingAdd(base, BUF_SIZE, (short) (i + 1), BR_MASK, i);
-                        base = MemorySegment.ofAddress(base.address() + BUF_SIZE);
-                    }
-                    bufRing.ioUringBufRingAdvance(NREQS);
-
-                }, eventLoop).get();
-                AsyncEventFd eventFd = new AsyncEventFd(eventLoop);
-                eventFd.eventfdWrite(214);
-
-                IoUringCqe cqe = eventFd.asyncSelectedRead((int) ValueLayout.JAVA_LONG.byteSize(), 0, bufferGroup).get();
-                Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), cqe.getRes());
-                int bid = cqe.getFlags() >> IoUringConstant.IORING_CQE_BUFFER_SHIFT;
-                MemorySegment base = bufBase.resource();
-                base = MemorySegment.ofAddress(base.address() + (bid - 1) * BUF_SIZE).reinterpret(BUF_SIZE);
-                Assert.assertEquals(214, base.get(ValueLayout.JAVA_INT, 0));
-            } catch (Throwable t) {
-                throw new RuntimeException(t);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
 
     @Test
     public void testAsyncServer() throws Exception {
@@ -342,32 +289,6 @@ public class LiburingTest {
             tcpSocket.asyncRecv(ownershipMemoryForTest, (int) recvBuffer.byteSize(), 0).get();
             Assert.assertEquals(329, DebugHelper.ntohl(recvBuffer.get(ValueLayout.JAVA_INT, 0)));
             Assert.assertTrue(ownershipMemoryForTest.dontDrop());
-            //recv selected
-            int NREQS = 2;
-            int BUF_SIZE = 1024;
-            int totalLen = NREQS * BUF_SIZE;
-            short bufferGroup = 2;
-            int BR_MASK = Instance.LIB_URING.io_uring_buf_ring_mask(NREQS);
-            IoUringBufRingSetupResult result = eventLoop.setupBufferRing(NREQS, bufferGroup).get();
-            Assert.assertEquals(0, result.res());
-
-            new DataOutputStream(socket.getOutputStream()).writeInt(2001);
-            OwnershipMemory bufPtrPtr = Instance.LIB_JEMALLOC.mallocMemory(ValueLayout.ADDRESS.byteSize());
-            OwnershipMemory bufBase = Instance.LIB_JEMALLOC.posixMemalign(bufPtrPtr.resource(), 4096, totalLen);
-            CompletableFuture.runAsync(() -> {
-                MemorySegment base = bufBase.resource();
-                for (int i = 0; i < NREQS; i++) {
-                    result.bufRing().ioUringBufRingAdd(base, BUF_SIZE, (short) (i + 1), BR_MASK, i);
-                    base = MemorySegment.ofAddress(base.address() + BUF_SIZE);
-                }
-                result.bufRing().ioUringBufRingAdvance(NREQS);
-
-            }, eventLoop).get();
-            IoUringCqe cqe = tcpSocket.asyncRecvSelected(((int) recvBuffer.byteSize()), 0, bufferGroup).get();
-            int bid = cqe.getBid();
-            MemorySegment base = bufBase.resource();
-            base = MemorySegment.ofAddress(base.address() + (long) (bid - 1) * BUF_SIZE).reinterpret(BUF_SIZE);
-            Assert.assertEquals(2001, DebugHelper.ntohl(base.get(ValueLayout.JAVA_INT, 0)));
 
             //sendzc
             ArrayBlockingQueue<Integer> oneshot = new ArrayBlockingQueue<>(1);
@@ -529,8 +450,8 @@ public class LiburingTest {
                     acceptCondition.countDown();
                 }
                 if (r.canceled()) {
-                    cancelCondition.countDown();
                     cqeHasCancel.set(true);
+                    cancelCondition.countDown();
                 }
             });
             acceptCondition.await();

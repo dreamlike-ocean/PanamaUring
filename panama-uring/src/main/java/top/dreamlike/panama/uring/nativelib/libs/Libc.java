@@ -43,6 +43,8 @@ public interface Libc {
 
     int setsockopt(int sockfd, int level, int optname, @Pointer MemorySegment optval, int optlen);
 
+    int getpagesize();
+
     interface Fcntl_H {
         static final int O_RDONLY = 0;
         static final int O_WRONLY = 1;

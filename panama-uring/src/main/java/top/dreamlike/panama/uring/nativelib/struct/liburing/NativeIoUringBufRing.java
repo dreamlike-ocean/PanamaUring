@@ -1,17 +1,12 @@
 package top.dreamlike.panama.uring.nativelib.struct.liburing;
 
 import top.dreamlike.panama.generator.annotation.NativeArrayMark;
-import top.dreamlike.panama.generator.annotation.Skip;
 import top.dreamlike.panama.generator.annotation.Union;
-import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
-import top.dreamlike.panama.uring.nativelib.Instance;
 
 import java.lang.foreign.MemorySegment;
 
 @Union
-public class IoUringBufRing {
-    @Skip
-    private IoUringEventLoop owner;
+public class NativeIoUringBufRing {
 
     private AnonStruct anonStruct;
 
@@ -73,23 +68,4 @@ public class IoUringBufRing {
         }
     }
 
-
-    public void ioUringBufRingAdd(MemorySegment addr, int len,
-                                         short bid, int mask, int bufOffset) {
-        if (Thread.currentThread() != owner) {
-            throw new IllegalStateException("Only owner thread can call this method");
-        }
-        Instance.LIB_URING.io_uring_buf_ring_add(this, addr, len, bid, mask, bufOffset);
-    }
-
-    public void ioUringBufRingAdvance(int count) {
-        if (Thread.currentThread() != owner) {
-            throw new IllegalStateException("Only owner thread can call this method");
-        }
-        Instance.LIB_URING.io_uring_buf_ring_advance(this, count);
-    }
-
-    public IoUringEventLoop getOwner() {
-        return owner;
-    }
 }

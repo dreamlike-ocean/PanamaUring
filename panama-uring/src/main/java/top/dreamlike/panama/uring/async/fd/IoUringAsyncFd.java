@@ -7,8 +7,6 @@ import top.dreamlike.panama.uring.async.trait.IoUringOperator;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.sync.trait.NativeFd;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 import top.dreamlike.panama.uring.trait.OwnershipResource;
@@ -25,15 +23,6 @@ public interface IoUringAsyncFd extends NativeFd, IoUringOperator {
                 .asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_read(sqe, readFd(), MemorySegment.ofAddress(buffer.resource().address()), len, offset))
                 .thenApply(cqe -> new BufferResult<>(buffer, cqe.getRes()))
                 .whenComplete(buffer::DropWhenException);
-    }
-
-    default CancelableFuture<IoUringCqe> asyncSelectedRead(int len, int offset, short bufferGroupId) {
-        return owner()
-                .asyncOperation(sqe -> {
-                    Instance.LIB_URING.io_uring_prep_read(sqe, readFd(), MemorySegment.NULL, len, offset);
-                    sqe.setFlags((byte) (sqe.getFlags() | IoUringConstant.IOSQE_BUFFER_SELECT));
-                    sqe.setBufGroup(bufferGroupId);
-                });
     }
 
     default CancelableFuture<BufferResult<OwnershipResource<NativeArrayPointer<Iovec>>>> asyncReadV(OwnershipResource<NativeArrayPointer<Iovec>> iovec, int nr_vecs, int offset) {

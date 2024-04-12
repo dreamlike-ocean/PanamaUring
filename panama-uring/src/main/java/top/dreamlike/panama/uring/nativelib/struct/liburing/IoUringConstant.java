@@ -222,7 +222,7 @@ public class IoUringConstant {
                 MemoryLayout.PathElement.groupElement("resv")
         ).withInvokeExactBehavior();
 
-        public static final MemoryLayout IoUringBufRingLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringBufRing.class);
+        public static final MemoryLayout IoUringBufRingLayout = Instance.STRUCT_PROXY_GENERATOR.extract(NativeIoUringBufRing.class);
 
         public static final VarHandle IO_URING_BUF_RING_TAIL_VARHANDLE = IoUringBufRingLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("anonStruct"),

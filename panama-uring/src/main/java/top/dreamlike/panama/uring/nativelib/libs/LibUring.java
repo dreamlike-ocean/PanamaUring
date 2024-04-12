@@ -133,7 +133,7 @@ public interface LibUring {
 
     @NativeFunction(fast = true)
     @KernelVersionLimit(major = 5, minor = 19)
-    default void io_uring_buf_ring_add(@Pointer IoUringBufRing br, @Pointer MemorySegment addr, int len, short bid, int mask, int buf_offset) {
+    default void io_uring_buf_ring_add(@Pointer NativeIoUringBufRing br, @Pointer MemorySegment addr, int len, short bid, int mask, int buf_offset) {
         MemorySegment realMemory = StructProxyGenerator.findMemorySegment(br);
         short tail = (short) IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.get(realMemory, 0L);
         int index = (tail + buf_offset) & mask;
@@ -146,7 +146,7 @@ public interface LibUring {
 
     @NativeFunction(fast = true)
     @KernelVersionLimit(major = 5, minor = 19)
-    default void io_uring_buf_ring_advance(@Pointer IoUringBufRing br, int count) {
+    default void io_uring_buf_ring_advance(@Pointer NativeIoUringBufRing br, int count) {
         MemorySegment realMemory = StructProxyGenerator.findMemorySegment(br);
         short newTail = (short) ((short) IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.get(realMemory, 0L) + count);
         //由于MemoryLayout直接获取的varHandle只支持int 、 long 、 float 、 double 和 MemorySegment 的原子更新访问
@@ -160,14 +160,14 @@ public interface LibUring {
     }
 
     @NativeFunction(fast = true)
-    default void io_uring_buf_ring_init(@Pointer IoUringBufRing br) {
+    default void io_uring_buf_ring_init(@Pointer NativeIoUringBufRing br) {
         MemorySegment realMemory = StructProxyGenerator.findMemorySegment(br);
         IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.set(realMemory, 0L, 0);
     }
 
     @NativeFunction(returnIsPointer = true)
     @KernelVersionLimit(major = 5, minor = 19)
-    IoUringBufRing io_uring_setup_buf_ring(@Pointer IoUring ioUring, int nentries, int bgid, int flags,/*int *ret*/@Pointer MemorySegment ret);
+    NativeIoUringBufRing io_uring_setup_buf_ring(@Pointer IoUring ioUring, int nentries, int bgid, int flags,/*int *ret*/@Pointer MemorySegment ret);
 
     int io_uring_buf_ring_head(@Pointer IoUring ring, int buf_group, /* unsigned * head*/ @Pointer MemorySegment head);
 
