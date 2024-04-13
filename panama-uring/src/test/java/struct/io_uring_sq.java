@@ -1,10 +1,8 @@
 package struct;
 
-import top.dreamlike.common.CType;
 
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.ValueLayout;
 
 public class io_uring_sq {
     public static final GroupLayout layout = MemoryLayout.structLayout(

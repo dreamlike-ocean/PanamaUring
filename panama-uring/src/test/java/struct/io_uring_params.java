@@ -1,6 +1,5 @@
 package struct;
 
-import top.dreamlike.common.CType;
 
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;

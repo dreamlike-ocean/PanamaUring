@@ -7,7 +7,7 @@ import top.dreamlike.panama.uring.async.trait.IoUringOperator;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
-import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
+import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
 import top.dreamlike.panama.uring.sync.trait.PollableFd;
@@ -45,7 +45,7 @@ public class AsyncMultiShotTcpServerSocketFd implements IoUringOperator, Pollabl
         this.port = fd.port;
         int dupCallResult = Instance.LIBC.dup(fd.fd);
         if (dupCallResult < 0) {
-            throw new NativeCallException(DebugHelper.currentErrorStr());
+            throw new NativeCallException(NativeHelper.currentErrorStr());
         }
         this.fd = dupCallResult;
         this.hasListen = true;

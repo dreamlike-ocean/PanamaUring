@@ -4,7 +4,7 @@ import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
-import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
+import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
 import top.dreamlike.panama.uring.sync.trait.PollableFd;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
@@ -44,7 +44,7 @@ public class AsyncTcpServerSocketFd implements IoUringAsyncFd, PollableFd {
         try (addr) {
             int listenRes = LIBC.bind(fd, addr.resource(), (int) addr.resource().byteSize());
             if (listenRes < 0) {
-                throw new IllegalArgumentException("bind error, reason: " + DebugHelper.currentErrorStr());
+                throw new IllegalArgumentException("bind error, reason: " + NativeHelper.currentErrorStr());
             }
             return listenRes;
         } catch (Exception e) {
@@ -62,7 +62,7 @@ public class AsyncTcpServerSocketFd implements IoUringAsyncFd, PollableFd {
             }
             int listenRes = LIBC.listen(fd, backlog);
             if (listenRes < 0) {
-                throw new IllegalArgumentException("listen error, reason: " + DebugHelper.currentErrorStr());
+                throw new IllegalArgumentException("listen error, reason: " + NativeHelper.currentErrorStr());
             }
             hasListen = true;
         }

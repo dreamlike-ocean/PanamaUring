@@ -1,14 +1,13 @@
 import org.junit.Assert;
 import org.junit.Test;
 import top.dreamlike.panama.uring.nativelib.Instance;
+import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
-import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.util.UUID;
 
 public class LibcTest {
@@ -35,7 +34,7 @@ public class LibcTest {
             MemorySegment readBuf = arena.allocate(string.length());
             int read = libc.read(fd, readBuf, (int) readBuf.byteSize());
 
-            String readbuf = DebugHelper.bufToString(readBuf, string.length());
+            String readbuf = NativeHelper.bufToString(readBuf, string.length());
             Assert.assertEquals(string, readbuf);
         }
     }

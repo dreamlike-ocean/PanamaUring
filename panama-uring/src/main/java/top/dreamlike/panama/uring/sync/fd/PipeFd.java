@@ -1,7 +1,7 @@
 package top.dreamlike.panama.uring.sync.fd;
 
 import top.dreamlike.panama.uring.nativelib.Instance;
-import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
+import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.sync.trait.NativeFd;
 import top.dreamlike.panama.uring.sync.trait.PollableFd;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
@@ -21,7 +21,7 @@ public class PipeFd implements PollableFd, NativeFd {
         try (OwnershipMemory memory = Instance.LIB_JEMALLOC.mallocMemory(ValueLayout.JAVA_INT.byteSize() * 2)) {
             int syscallRes = Instance.LIBC.pipe(memory.resource());
             if (syscallRes != 0) {
-                throw new IllegalArgumentException("pipe failure!, reason "+ DebugHelper.currentErrorStr());
+                throw new IllegalArgumentException("pipe failure!, reason "+ NativeHelper.currentErrorStr());
             }
             readSide = memory.resource().getAtIndex(ValueLayout.JAVA_INT, 0);
             writeSide = memory.resource().getAtIndex(ValueLayout.JAVA_INT, 1);

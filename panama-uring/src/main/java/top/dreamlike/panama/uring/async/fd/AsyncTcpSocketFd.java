@@ -6,7 +6,7 @@ import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
-import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
+import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingElement;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
@@ -110,7 +110,7 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSele
             sockLenMemory.set(ValueLayout.JAVA_INT, 0L, (int) sockAddrMemory.byteSize());
             int i = LIBC.getsockname(fd, sockAddrMemory, sockLenMemory);
             if (i < 0) {
-                throw new IllegalArgumentException("getsockname error, reason:" + DebugHelper.currentErrorStr());
+                throw new IllegalArgumentException("getsockname error, reason:" + NativeHelper.currentErrorStr());
             }
             return inferAddress(remoteAddress, sockAddrMemory);
         } catch (Exception t) {
@@ -147,7 +147,7 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSele
         byte[] address = new byte[16];
         MemorySegment.copy(MemorySegment.ofArray(address), 0, sockaddrMemory, SocketAddrIn6.SIN6_ADDR_OFFSET, 16);
         try {
-            return new InetSocketAddress(Inet6Address.getByAddress(address), Short.toUnsignedInt(DebugHelper.ntohs(socketAddrIn6.getSin6_port())));
+            return new InetSocketAddress(Inet6Address.getByAddress(address), Short.toUnsignedInt(NativeHelper.ntohs(socketAddrIn6.getSin6_port())));
         } catch (UnknownHostException unknownHostException) {
             //不应该在这里抛出异常
             throw new IllegalArgumentException(unknownHostException);
@@ -157,13 +157,13 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSele
     static SocketAddress parseV4(MemorySegment sockaddrMemory) {
         SocketAddrIn socketAddrIn = Instance.STRUCT_PROXY_GENERATOR.enhance(sockaddrMemory);
         byte[] address = new byte[4];
-        int addr = DebugHelper.ntohl(socketAddrIn.getSin_addr());
+        int addr = NativeHelper.ntohl(socketAddrIn.getSin_addr());
         address[0] = (byte) ((addr >> 24) & 0xFF);
         address[1] = (byte) ((addr >> 16) & 0xFF);
         address[2] = (byte) ((addr >> 8) & 0xFF);
         address[3] = (byte) (addr & 0xFF);
         try {
-            return new InetSocketAddress(Inet4Address.getByAddress(address), Short.toUnsignedInt(DebugHelper.ntohs(socketAddrIn.getSin_port())));
+            return new InetSocketAddress(Inet4Address.getByAddress(address), Short.toUnsignedInt(NativeHelper.ntohs(socketAddrIn.getSin_port())));
         } catch (UnknownHostException unknownHostException) {
             //不应该在这里抛出异常
             throw new IllegalArgumentException(unknownHostException);
@@ -187,13 +187,13 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSele
         OwnershipMemory sockaddr_inMemory = Instance.LIB_JEMALLOC.mallocMemory(memoryLayout.byteSize());
         SocketAddrIn socketAddrIn = Instance.STRUCT_PROXY_GENERATOR.enhance(sockaddr_inMemory.resource());
         socketAddrIn.setSin_family((short) Libc.Socket_H.Domain.AF_INET);
-        socketAddrIn.setSin_port(DebugHelper.htons((short) port));
+        socketAddrIn.setSin_port(NativeHelper.htons((short) port));
         byte[] addr = inet4Address.getAddress();
         int address = addr[3] & 0xFF;
         address |= ((addr[2] << 8) & 0xFF00);
         address |= ((addr[1] << 16) & 0xFF0000);
         address |= ((addr[0] << 24) & 0xFF000000);
-        socketAddrIn.setSin_addr(DebugHelper.htonl(address));
+        socketAddrIn.setSin_addr(NativeHelper.htonl(address));
         return sockaddr_inMemory;
     }
 
@@ -215,7 +215,7 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSele
         OwnershipMemory sockaddr_in6Memory = Instance.LIB_JEMALLOC.mallocMemory(memoryLayout.byteSize());
         SocketAddrIn6 socketAddrIn6 = Instance.STRUCT_PROXY_GENERATOR.enhance(sockaddr_in6Memory.resource());
         socketAddrIn6.setSin6_family((short) Libc.Socket_H.Domain.AF_INET6);
-        socketAddrIn6.setSin6_port(DebugHelper.htons((short) port));
+        socketAddrIn6.setSin6_port(NativeHelper.htons((short) port));
         socketAddrIn6.setSin_flowinfo(0);
         MemorySegment.copy(sockaddr_in6Memory.resource(), SocketAddrIn6.SIN6_ADDR_OFFSET, MemorySegment.ofArray(addressAddress), 0, addressAddress.length);
         return sockaddr_in6Memory;
@@ -312,7 +312,7 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSele
         int type = Libc.Socket_H.Type.SOCK_STREAM;
         int fd = LIBC.socket(domain, type, 0);
         if (fd < 0) {
-            throw new IllegalArgumentException("socket error, reason： " + DebugHelper.currentErrorStr());
+            throw new IllegalArgumentException("socket error, reason： " + NativeHelper.currentErrorStr());
         }
         try (OwnershipMemory ownershipMemory = Instance.LIB_JEMALLOC.mallocMemory(ValueLayout.JAVA_INT.byteSize())) {
             ownershipMemory.resource().set(ValueLayout.JAVA_INT, 0, 1);

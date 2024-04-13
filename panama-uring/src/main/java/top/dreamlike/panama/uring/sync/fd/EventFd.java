@@ -1,7 +1,7 @@
 package top.dreamlike.panama.uring.sync.fd;
 
 import top.dreamlike.panama.uring.nativelib.Instance;
-import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
+import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.sync.trait.NativeFd;
 import top.dreamlike.panama.uring.sync.trait.PollableFd;
 
@@ -15,7 +15,7 @@ public class EventFd implements NativeFd, PollableFd {
     public EventFd(int init, int flags) {
         int eventfd = Instance.LIBC.eventfd(init, flags);
         if (eventfd < 0) {
-            throw new IllegalArgumentException("eventfd create failed, error: " + DebugHelper.currentErrorStr());
+            throw new IllegalArgumentException("eventfd create failed, error: " + NativeHelper.currentErrorStr());
         }
         this.fd = eventfd;
     }

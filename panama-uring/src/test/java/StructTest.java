@@ -2,7 +2,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.nativelib.Instance;
-import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
+import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.struct.epoll.NativeEpollEvent;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBuf;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
@@ -44,7 +44,7 @@ public class StructTest {
     @Test
     public void testOrder() {
         short a = 329;
-        short current = DebugHelper.htons(a);
+        short current = NativeHelper.htons(a);
         ByteBuffer buffer = ByteBuffer.allocate(2);
         buffer = buffer.order(ByteOrder.BIG_ENDIAN);
         buffer.putShort(0, a);

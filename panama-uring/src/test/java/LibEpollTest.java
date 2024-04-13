@@ -1,7 +1,7 @@
 import org.junit.Assert;
 import org.junit.Test;
 import top.dreamlike.panama.uring.helper.EpollEvent;
-import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
+import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.LibEpoll;
 import top.dreamlike.panama.uring.sync.fd.EpollFd;
 import top.dreamlike.panama.uring.sync.fd.EventFd;
@@ -17,7 +17,7 @@ public class LibEpollTest {
 
         EpollEvent event = new EpollEvent(LibEpoll.EPOLLIN, 214);
         int ctlRes = epollFd.epollCtl(eventFd, LibEpoll.EPOLL_CTL_ADD, event);
-        Assert.assertEquals(DebugHelper.currentErrorStr(), 0, ctlRes);
+        Assert.assertEquals(NativeHelper.currentErrorStr(), 0, ctlRes);
         eventFd.eventfdWrite(1);
         var events = epollFd.epollWait(2, 1, TimeUnit.SECONDS);
         Assert.assertEquals(1, events.size());

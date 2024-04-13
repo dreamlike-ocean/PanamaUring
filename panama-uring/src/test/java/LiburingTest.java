@@ -15,7 +15,7 @@ import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.async.fd.*;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
-import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
+import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.LibPoll;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
 import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
@@ -138,7 +138,7 @@ public class LiburingTest {
             var readBuffer = new OwnershipMemoryForTest(arena.allocate(str.byteSize() - 1));
             Integer readRes = fd.asyncRead(readBuffer, (int) str.byteSize() - 1, 0).get().syscallRes();
             Assert.assertTrue(readRes > 0);
-            Assert.assertEquals(helloIoUring, DebugHelper.bufToString(readBuffer.resource(), readRes));
+            Assert.assertEquals(helloIoUring, NativeHelper.bufToString(readBuffer.resource(), readRes));
         }
     }
 
@@ -267,7 +267,7 @@ public class LiburingTest {
             //connect
             Integer connectSyscallRes = tcpSocket.asyncConnect().get();
             if (connectSyscallRes != 0) {
-                System.out.println(DebugHelper.getErrorStr(-connectSyscallRes));
+                System.out.println(NativeHelper.getErrorStr(-connectSyscallRes));
             }
             Assert.assertEquals(0, (int) connectSyscallRes);
             Socket socket = queue.take();
@@ -280,14 +280,14 @@ public class LiburingTest {
             OwnershipMemoryForTest ownershipMemoryForTest = new OwnershipMemoryForTest(sendBuffer);
             Integer sendRes = tcpSocket.asyncSend(ownershipMemoryForTest, (int) sendBuffer.byteSize(), 0).get().syscallRes();
             Assert.assertEquals((int) sendBuffer.byteSize(), (int) sendRes);
-            Assert.assertEquals(214, DebugHelper.ntohl(new DataInputStream(socket.getInputStream()).readInt()));
+            Assert.assertEquals(214, NativeHelper.ntohl(new DataInputStream(socket.getInputStream()).readInt()));
             Assert.assertTrue(ownershipMemoryForTest.dontDrop());
             //recv
             new DataOutputStream(socket.getOutputStream()).writeInt(329);
             MemorySegment recvBuffer = allocator.allocate(ValueLayout.JAVA_INT);
             ownershipMemoryForTest = new OwnershipMemoryForTest(recvBuffer);
             tcpSocket.asyncRecv(ownershipMemoryForTest, (int) recvBuffer.byteSize(), 0).get();
-            Assert.assertEquals(329, DebugHelper.ntohl(recvBuffer.get(ValueLayout.JAVA_INT, 0)));
+            Assert.assertEquals(329, NativeHelper.ntohl(recvBuffer.get(ValueLayout.JAVA_INT, 0)));
             Assert.assertTrue(ownershipMemoryForTest.dontDrop());
 
             //sendzc
@@ -295,7 +295,7 @@ public class LiburingTest {
             ownershipMemoryForTest = new OwnershipMemoryForTest(sendBuffer);
             Thread.startVirtualThread(() -> {
                 try {
-                    int targetValue = DebugHelper.ntohl(new DataInputStream(socket.getInputStream()).readInt());
+                    int targetValue = NativeHelper.ntohl(new DataInputStream(socket.getInputStream()).readInt());
                     oneshot.put(targetValue);
                 } catch (Throwable e) {
                     throw new RuntimeException(e);
@@ -324,7 +324,7 @@ public class LiburingTest {
             OwnershipMemory readBuffer = Instance.LIB_JEMALLOC.mallocMemory(demoStr.length());
             BufferResult<OwnershipMemory> readRes = pipeFd.asyncRead(readBuffer, demoStr.length(), 0).get();
             Assert.assertEquals(demoStr.length(), readRes.syscallRes());
-            Assert.assertEquals(demoStr, DebugHelper.bufToString(readBuffer.resource(), demoStr.length()));
+            Assert.assertEquals(demoStr, NativeHelper.bufToString(readBuffer.resource(), demoStr.length()));
 
             AsyncPoller poller = new AsyncPoller(ioUringEventLoop);
             int syscallRes = Instance.LIBC.fcntl(pipeFd.readFd(), Libc.Fcntl_H.F_SETFL, Libc.Fcntl_H.O_NONBLOCK);
@@ -347,7 +347,7 @@ public class LiburingTest {
             MemorySegment syncReadBuffer = Instance.LIB_JEMALLOC.malloc(demoStr.length());
             int read = pipeFd.read(syncReadBuffer, demoStr.length());
             Assert.assertEquals(demoStr.length(), read);
-            Assert.assertEquals(demoStr, DebugHelper.bufToString(syncReadBuffer, demoStr.length()));
+            Assert.assertEquals(demoStr, NativeHelper.bufToString(syncReadBuffer, demoStr.length()));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

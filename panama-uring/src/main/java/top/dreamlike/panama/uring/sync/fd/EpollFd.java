@@ -4,7 +4,7 @@ import top.dreamlike.helper.Unsafe;
 import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
 import top.dreamlike.panama.uring.helper.EpollEvent;
 import top.dreamlike.panama.uring.nativelib.Instance;
-import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
+import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.struct.epoll.NativeEpollEvent;
 import top.dreamlike.panama.uring.sync.trait.NativeFd;
 import top.dreamlike.panama.uring.sync.trait.PollableFd;
@@ -28,7 +28,7 @@ public class EpollFd implements NativeFd, PollableFd {
     public EpollFd(int flag, int maxEvent) {
         int epoll_create = Instance.LIB_EPOLL.epoll_create(flag);
         if (epoll_create < 0) {
-            throw new IllegalArgumentException("epoll_create failed, error: " + DebugHelper.currentErrorStr());
+            throw new IllegalArgumentException("epoll_create failed, error: " + NativeHelper.currentErrorStr());
         }
         this.epfd = epoll_create;
         this.maxEvent = maxEvent;
@@ -48,7 +48,7 @@ public class EpollFd implements NativeFd, PollableFd {
             e.setU64(event.data());
             return Instance.LIB_EPOLL.epoll_ctl(epfd, op, targetFd.fd(), e);
         } catch (Exception t) {
-            throw new IllegalArgumentException("epoll_ctl failed, error: " + DebugHelper.currentErrorStr());
+            throw new IllegalArgumentException("epoll_ctl failed, error: " + NativeHelper.currentErrorStr());
         }
     }
 
@@ -57,7 +57,7 @@ public class EpollFd implements NativeFd, PollableFd {
         int waitResult = Instance.LIB_EPOLL.epoll_wait(epfd, base, maxEvents, (int) unit.toMillis(timeout));
         maxEvents = Math.min(maxEvents, this.maxEvent);
         if (waitResult < 0) {
-            throw new IllegalArgumentException("epoll_wait failed, error: " + DebugHelper.currentErrorStr());
+            throw new IllegalArgumentException("epoll_wait failed, error: " + NativeHelper.currentErrorStr());
         }
         if (waitResult == 0) {
             return List.of();

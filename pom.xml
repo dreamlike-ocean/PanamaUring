@@ -47,7 +47,6 @@
     </developers>
     <modules>
         <module>panama-uring</module>
-        <module>native-lib</module>
         <module>panama-generator</module>
         <module>graal-native-example</module>
     </modules>

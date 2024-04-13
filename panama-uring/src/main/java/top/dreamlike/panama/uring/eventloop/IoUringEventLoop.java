@@ -3,7 +3,6 @@ package top.dreamlike.panama.uring.eventloop;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jctools.queues.MpscUnboundedArrayQueue;
-import top.dreamlike.helper.StackValue;
 import top.dreamlike.panama.uring.async.cancel.CancelToken;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
@@ -302,7 +301,6 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         this.wakeUpFd.close();
         Instance.LIB_URING.io_uring_queue_exit(internalRing);
         this.singleThreadArena.close();
-        StackValue.release();
     }
 
     private boolean inEventLoop() {

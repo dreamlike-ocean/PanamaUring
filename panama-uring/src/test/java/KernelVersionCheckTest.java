@@ -2,15 +2,15 @@ import org.junit.Assert;
 import org.junit.Test;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.ErrorKernelVersionException;
-import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.helper.KernelVersionLimit;
+import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 
 public class KernelVersionCheckTest {
 
     @Test
     public void test() {
         SomeFunctionalInterface generated = Instance.NATIVE_CALL_GENERATOR.generate(SomeFunctionalInterface.class);
-        SomeFunctionalInterface checked = DebugHelper.enhanceCheck(generated, SomeFunctionalInterface.class);
+        SomeFunctionalInterface checked = NativeHelper.enhanceCheck(generated, SomeFunctionalInterface.class);
         Assert.assertThrows(ErrorKernelVersionException.class, checked::mustThrow);
         Assert.assertTrue(checked.getpagesize() > 0);
 

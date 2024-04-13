@@ -69,8 +69,6 @@ git clone --recurse-submodules https://github.com/dreamlike-ocean/PanamaUring.gi
 
 ### 构建/运行指南
 
-初衷就是最小依赖，所以只依赖于jctools和slfj4，前者用于EventLoop的task queue，后者则是日志门面。jctools可以替换为juc的BlockingQueue的任意实现。
-
 下面本人使用的构建工具以及运行环境：
 
 - Maven 3.8.4
