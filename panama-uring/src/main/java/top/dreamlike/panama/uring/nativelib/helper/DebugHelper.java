@@ -17,6 +17,8 @@ import java.util.Optional;
 
 public class DebugHelper {
 
+    public static String JAVA_IO_TMPDIR = System.getProperty("java.io.tmpdir");
+
     private static final Logger logger = LogManager.getLogger(DebugHelper.class);
 
     private static final String[] errStr = new String[257];

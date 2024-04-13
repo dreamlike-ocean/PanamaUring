@@ -2,10 +2,13 @@ package top.dreamlike.panama.uring.async.fd;
 
 import top.dreamlike.panama.uring.async.BufferResult;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
+import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
+import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingElement;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn;
@@ -17,13 +20,20 @@ import top.dreamlike.panama.uring.trait.OwnershipMemory;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.net.*;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 import static top.dreamlike.panama.uring.nativelib.Instance.LIBC;
 import static top.dreamlike.panama.uring.nativelib.libs.Libc.Socket_H.OptName.SO_REUSEADDR;
 import static top.dreamlike.panama.uring.nativelib.libs.Libc.Socket_H.SetSockOpt.SOL_SOCKET;
 
-public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd {
+public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSelectedReadableFd {
+
+    private static final VarHandle BUFFER_RING_VH;
+
     private final IoUringEventLoop ioUringEventLoop;
 
     private final int fd;
@@ -33,6 +43,8 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd {
     private SocketAddress remoteAddress;
 
     private volatile boolean hasConnected;
+
+    private IoUringBufferRing bufferRing;
 
     AsyncTcpSocketFd(IoUringEventLoop ioUringEventLoop, int fd, SocketAddress localAddress, SocketAddress remoteAddress) {
         this.ioUringEventLoop = ioUringEventLoop;
@@ -219,14 +231,24 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd {
                         .thenApply(cqe -> new BufferResult<>(buffer, cqe.getRes()));
     }
 
-    public CancelableFuture<IoUringCqe> asyncRecvSelected(int len, int flag, short bufferGroupId) {
+    public CancelableFuture<OwnershipMemory> asyncRecvSelected(int len, int flag) {
         if (!hasConnected) {
             throw new IllegalStateException("before recv, must connect first.");
         }
-        return owner().asyncOperation(sqe -> {
+        IoUringBufferRing bufferRing = Objects.requireNonNull(bufferRing());
+        return (CancelableFuture<OwnershipMemory>) owner().asyncOperation(sqe -> {
             Instance.LIB_URING.io_uring_prep_recv(sqe, fd, MemorySegment.NULL, len, flag);
             sqe.setFlags((byte) (sqe.getFlags() | IoUringConstant.IOSQE_BUFFER_SELECT));
-            sqe.setBufGroup(bufferGroupId);
+            sqe.setBufGroup(bufferRing.getBufferGroupId());
+        }).thenCompose(cqe -> {
+            int syscallResult = cqe.getRes();
+            if (syscallResult < 0) {
+                return CompletableFuture.failedFuture(new SyscallException(syscallResult));
+            } else {
+                int bid = cqe.getBid();
+                IoUringBufferRingElement ringElement = bufferRing.removeBuffer(bid).resultNow();
+                return CompletableFuture.completedFuture(IoUringSelectedReadableFd.borrowUringBufferRingElement(ringElement, syscallResult));
+            }
         });
 
     }
@@ -263,6 +285,10 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd {
 
     }
 
+    public boolean bindBufferRing(IoUringBufferRing bufferRing) {
+        return BUFFER_RING_VH.compareAndSet(this, null, bufferRing);
+    }
+
     @Override
     public String toString() {
         return "AsyncTcpSocket{" +
@@ -296,6 +322,11 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd {
         return fd;
     }
 
+    @Override
+    public IoUringBufferRing bufferRing() {
+        return bufferRing;
+    }
+
     private static class ZCContext {
         Stage stage = Stage.WAIT_MORE;
         int sendRes;
@@ -304,6 +335,16 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd {
             WAIT_MORE,
             MORE,
             END;
+        }
+    }
+
+    static {
+        try {
+            BUFFER_RING_VH = MethodHandles.lookup().findVarHandle(AsyncTcpSocketFd.class, "bufferRing", IoUringBufferRing.class);
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 }

@@ -9,7 +9,7 @@ import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
-import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
+import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
 import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
@@ -84,7 +84,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         ioUringParamsFactory.accept(ioUringParams);
         int initRes = Instance.LIB_URING.io_uring_queue_init_params(ioUringParams.getSq_entries(), internalRing, ioUringParams);
         if (initRes < 0) {
-            throw new IllegalArgumentException("io_uring_queue_init_params error,error Reason: " + DebugHelper.getErrorStr(-initRes));
+            throw new SyscallException(initRes);
         }
         this.cqePtrs = singleThreadArena.allocate(ValueLayout.ADDRESS, cqeSize);
         this.kernelTime64Type = Instance.STRUCT_PROXY_GENERATOR.allocate(singleThreadArena, KernelTime64Type.class);
@@ -442,11 +442,16 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
                 if (!occupySet.get(bid - 1)) {
                     throw new IllegalArgumentException("The element has been released");
                 }
-                occupySet.clear(bid - 1);
                 Instance.LIB_URING.io_uring_buf_ring_add(internal, element.element(), blockSize, (short) bid, mask, 0);
-                Instance.LIB_URING.io_uring_buf_ring_advance(internal, 0);
+                Instance.LIB_URING.io_uring_buf_ring_advance(internal, 1);
+                occupySet.clear(bid - 1);
                 return null;
             });
+        }
+
+        @Override
+        public IoUringEventLoop owner() {
+            return IoUringEventLoop.this;
         }
 
         private void assertClose() {

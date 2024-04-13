@@ -5,7 +5,7 @@ import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.helper.JemallocAllocator;
 import top.dreamlike.panama.uring.nativelib.Instance;
-import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
+import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
@@ -39,7 +39,7 @@ public class AsyncFileFd implements IoUringAsyncFd, IoUringSelectedReadableFd {
         try {
             int open = Instance.LIBC.open(pathname, Libc.Fcntl_H.O_RDWR);
             if (open < 0) {
-                throw new IllegalArgumentException("open file Fail! reason: " + DebugHelper.getErrorStr(-open));
+                throw new SyscallException(open);
             }
             this.ioUringEventLoop = ioUringEventLoop;
             this.fd = open;
@@ -71,7 +71,7 @@ public class AsyncFileFd implements IoUringAsyncFd, IoUringSelectedReadableFd {
     public static CancelableFuture<AsyncFileFd> asyncOpen(IoUringEventLoop ioUringEventLoop, OwnershipMemory path, int flags) {
         return (CancelableFuture<AsyncFileFd>) ioUringEventLoop.asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_openat(sqe, -1, path.resource(), flags, 0))
                 .whenComplete((_, _) -> path.drop())
-                .thenCompose(cqe -> cqe.getRes() <= 0 ? CompletableFuture.failedFuture(new IllegalArgumentException("open file Fail! reason: " + DebugHelper.getErrorStr(-cqe.getRes()))) : CompletableFuture.completedFuture(cqe.getRes()))
+                .thenCompose(cqe -> cqe.getRes() <= 0 ? CompletableFuture.failedFuture(new SyscallException(cqe.getRes())) : CompletableFuture.completedFuture(cqe.getRes()))
                 .thenApply(fd -> new AsyncFileFd(ioUringEventLoop, fd));
     }
 

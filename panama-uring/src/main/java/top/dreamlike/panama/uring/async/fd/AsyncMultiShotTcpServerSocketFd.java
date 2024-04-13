@@ -6,6 +6,7 @@ import top.dreamlike.panama.uring.async.cancel.CancelToken;
 import top.dreamlike.panama.uring.async.trait.IoUringOperator;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
+import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
@@ -84,7 +85,7 @@ public class AsyncMultiShotTcpServerSocketFd implements IoUringOperator, Pollabl
         int acceptedFd = cqe.getRes();
         int syscallRes = Instance.LIBC.getpeername(acceptedFd, sockaddr, socklen);
         if (syscallRes < 0) {
-            throw new NativeCallException(DebugHelper.getErrorStr(-syscallRes));
+            throw new SyscallException(syscallRes);
         }
         SocketAddress remoteAddress = AsyncTcpSocketFd.inferAddress(address, sockaddr);
         IoUringEventLoop subEventLoop = subSocketEventLoopBinder.get();

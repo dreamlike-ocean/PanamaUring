@@ -6,7 +6,7 @@ import top.dreamlike.panama.uring.async.trait.IoUringOperator;
 import top.dreamlike.panama.uring.helper.LambdaHelper;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
-import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
+import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingElement;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
 import top.dreamlike.panama.uring.sync.trait.NativeFd;
@@ -30,16 +30,20 @@ public interface IoUringSelectedReadableFd extends IoUringOperator, NativeFd {
                     sqe.setBufGroup(bufferRing.getBufferGroupId());
                 })
                 .thenCompose(cqe -> {
-                    if (cqe.getRes() < 0) {
-                        return CompletableFuture.failedFuture(new IllegalArgumentException("read fail! reason: " + DebugHelper.getErrorStr(-cqe.getRes())));
+                    int syscallResult = cqe.getRes();
+                    if (syscallResult < 0) {
+                        return CompletableFuture.failedFuture(new SyscallException(syscallResult));
                     } else {
-                        int readLen = cqe.getRes();
+                        int readLen = syscallResult;
                         int bid = cqe.getBid();
                         IoUringBufferRingElement ringElement = bufferRing.removeBuffer(bid).resultNow();
-                        OwnershipMemory ownershipBufferRingElement = new OwnershipBufferRingElement(ringElement, readLen);
-                        return CompletableFuture.completedFuture(ownershipBufferRingElement);
+                        return CompletableFuture.completedFuture(borrowUringBufferRingElement(ringElement, readLen));
                     }
                 });
+    }
+
+    static OwnershipMemory borrowUringBufferRingElement(IoUringBufferRingElement ringElement, int len) {
+        return new OwnershipBufferRingElement(ringElement, len);
     }
 }
 
@@ -51,7 +55,7 @@ class OwnershipBufferRingElement implements OwnershipMemory {
 
     private final int len;
 
-    public OwnershipBufferRingElement(IoUringBufferRingElement element, int len) {
+    OwnershipBufferRingElement(IoUringBufferRingElement element, int len) {
         this.element = element;
         this.len = len;
     }
@@ -75,7 +79,7 @@ class OwnershipBufferRingElement implements OwnershipMemory {
             return;
         }
         CompletableFuture<Void> buffer = waitToRelease.ring().releaseBuffer(waitToRelease);
-        if (Thread.currentThread().isVirtual()) {
+        if (Thread.currentThread() != waitToRelease.ring().owner()) {
             LambdaHelper.runWithThrowable(buffer::get);
         }
     }

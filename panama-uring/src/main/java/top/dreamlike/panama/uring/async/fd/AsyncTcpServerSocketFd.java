@@ -3,6 +3,7 @@ package top.dreamlike.panama.uring.async.fd;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
+import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.helper.DebugHelper;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
 import top.dreamlike.panama.uring.sync.trait.PollableFd;
@@ -90,7 +91,7 @@ public class AsyncTcpServerSocketFd implements IoUringAsyncFd, PollableFd {
                     try (sockaddr; sockLen) {
                         int acceptFd = cqe.getRes();
                         if (acceptFd < 0) {
-                            throw new IllegalArgumentException("accept fail, reason: " + DebugHelper.getErrorStr(-acceptFd));
+                            throw new SyscallException(acceptFd);
                         }
                         SocketAddress remoteAddress = AsyncTcpSocketFd.inferAddress(address, sockaddrMemory);
                         IoUringEventLoop subEventLoop = subSocketEventLoopBinder.get();
