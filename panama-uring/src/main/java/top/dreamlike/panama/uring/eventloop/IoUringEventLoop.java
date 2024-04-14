@@ -27,6 +27,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -36,6 +37,7 @@ import static top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConsta
 
 public class IoUringEventLoop extends Thread implements AutoCloseable, Executor {
 
+    private static final AtomicInteger count = new AtomicInteger(0);
     private static final Logger log = LogManager.getLogger(IoUringEventLoop.class);
 
     private static final LibUring libUring = Instance.LIB_URING;
@@ -77,6 +79,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         this.callBackMap = new LongObjectHashMap<>();
         this.taskQueue.add(() -> initRing(ioUringParamsFactory));
         this.scheduledTasks = new PriorityQueue<>();
+        setName("IoUringEventLoop-" + count.getAndIncrement());
     }
 
     private void initRing(Consumer<IoUringParams> ioUringParamsFactory) {

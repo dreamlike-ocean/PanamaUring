@@ -10,10 +10,12 @@
 maven坐标为
 
 ```xml
- <dependency>
+<dependency>
     <groupId>io.github.dreamlike-ocean</groupId>
-    <artifactId>panama-uring-linux-x86_64</artifactId>
-    <version>3.0.2</version>
+    <artifactId>panama-uring</artifactId>
+    <version>4.0</version>
+    <classifier>linux-x86_64</classifier>
+</dependency>
 </dependency>
 ```
 
@@ -149,35 +151,69 @@ private void multiShotReadEventfd() {
 - 原子化——EventLoop机制保证
 - 保证范围内的fd都属于同一个io_uring实现
 
-比如说 asyncFile1和asyncFile2都必须是同一个io_uring
 
 ```java
-eventLoop.submitLinkedOpSafe(() -> {
-            asyncFile1.read();
-            asyncFile2.write();
+    public void testLinked() throws Exception {
+    IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+        params.setSq_entries(4);
+        params.setFlags(0);
+    });
+    ArrayBlockingQueue<Integer> queue = new ArrayBlockingQueue<>(3);
+    try (eventLoop) {
+        IoUringNoOp ioUringNoOp = new IoUringNoOp(eventLoop);
+        eventLoop.start();
+        eventLoop.linkedScope(() -> {
+            var tmp = ioUringNoOp;
+            AtomicReference<IoUringSqe> t = new AtomicReference<>();
+            eventLoop.asyncOperation(sqe -> {
+                Instance.LIB_URING.io_uring_prep_nop(sqe);
+                t.set(sqe);
+            }).thenAccept(cqe -> queue.add(cqe.getRes()));
+            Assert.assertTrue(t.get().isLinked());
+
+            eventLoop.asyncOperation(sqe -> {
+                Instance.LIB_URING.io_uring_prep_nop(sqe);
+                t.set(sqe);
+            }).thenAccept(cqe -> queue.add(cqe.getRes()));
+            Assert.assertTrue(t.get().isLinked());
+        }, () -> {
+            AtomicReference<IoUringSqe> t = new AtomicReference<>();
+            eventLoop.asyncOperation(sqe -> {
+                Instance.LIB_URING.io_uring_prep_nop(sqe);
+                t.set(sqe);
+            }).thenAccept(cqe -> queue.add(cqe.getRes()));
+            Assert.assertFalse(t.get().isLinked());
         });
+    }
+    eventLoop.join();
+    Assert.assertEquals(3, queue.size());
+    for (Integer i : queue) {
+        Assert.assertEquals(Integer.valueOf(0), i);
+    }
+}
 ```
 
-还要支持捕获任意数量的`AsyncFile`/`AsyncSocket`/`AsyncServerSocket`
+还要支持捕获任意数量的IoUringOperator实现类
 
 这里使用了一个针对于lambda实现的小技巧
 
 ```java
-private boolean checkCaptureContainAsyncFd(Object ops) {
-    try {
-        for (Field field : ops.getClass().getDeclaredFields()) {
-            if (!AsyncFd.class.isAssignableFrom(field.getType())) {
-                continue;
-            }
-            field.setAccessible(true);
-            IOUringEventLoop eventLoop = ((AsyncFd) field.get(ops)).fetchEventLoop();
-            if (eventLoop != this) {
-                return false;
-            }
-        }
-    } catch (Throwable t) {
-        throw new AssertionError("should not reach here", t);
-    }
+    public static boolean inSameEventLoop(IoUringEventLoop eventLoop, Object o) {
+    if (isSkipSameEventLoopCheck) {
         return true;
+    }
+
+    Class<?> aClass = o.getClass();
+    for (Field field : aClass.getDeclaredFields()) {
+        if (!IoUringOperator.class.isAssignableFrom(field.getType())) {
+            continue;
         }
+        field.setAccessible(true);
+        var loop = ((IoUringOperator) LambdaHelper.runWithThrowable(() -> field.get(o))).owner();
+        if (loop != eventLoop) {
+            return false;
+        }
+    }
+    return true;
+}
 ```

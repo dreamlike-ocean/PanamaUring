@@ -4,6 +4,7 @@ import top.dreamlike.panama.uring.async.BufferResult;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
+import top.dreamlike.panama.uring.helper.LambdaHelper;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
@@ -246,7 +247,7 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSele
                 return CompletableFuture.failedFuture(new SyscallException(syscallResult));
             } else {
                 int bid = cqe.getBid();
-                IoUringBufferRingElement ringElement = bufferRing.removeBuffer(bid).resultNow();
+                IoUringBufferRingElement ringElement = LambdaHelper.runWithThrowable(() -> bufferRing.removeBuffer(bid).get());
                 return CompletableFuture.completedFuture(IoUringSelectedReadableFd.borrowUringBufferRingElement(ringElement, syscallResult));
             }
         });

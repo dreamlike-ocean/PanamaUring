@@ -133,11 +133,12 @@
     </profiles>
     <dependencyManagement>
 
-        <dependencies> <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>${log.version}</version>
-        </dependency>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>

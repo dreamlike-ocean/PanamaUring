@@ -11,11 +11,13 @@
 
     <artifactId>panama-uring</artifactId>
     <version>${panama.version}</version>
+    <packaging>jar</packaging>
 
     <properties>
         <liburing.so.name>liburing-ffi.so.2.6</liburing.so.name>
         <jemalloc.so.name>libjemalloc.so.2</jemalloc.so.name>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <arch.classifier>${os.detected.classifier}</arch.classifier>
     </properties>
 
     <dependencies>
@@ -63,7 +65,7 @@
             <extension>
                 <groupId>kr.motd.maven</groupId>
                 <artifactId>os-maven-plugin</artifactId>
-                <version>1.7.0</version>
+                <version>1.7.1</version>
             </extension>
         </extensions>
         <plugins>
@@ -229,11 +231,29 @@
 
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <classifier>${os.detected.classifier}</classifier>
-                </configuration>
-                <version>3.3.0</version>
+
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>${arch.classifier}</classifier>
+                        </configuration>
+                    </execution>
+                </executions>
+                <version>3.2.0</version>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <classifier>${arch.classifier}</classifier>
+                </configuration>
+                <version>2.5</version>
+            </plugin>
+
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

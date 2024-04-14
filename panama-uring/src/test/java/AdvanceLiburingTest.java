@@ -293,6 +293,7 @@ public class AdvanceLiburingTest {
                 }).thenAccept(cqe -> queue.add(cqe.getRes()));
                 Assert.assertFalse(t.get().isLinked());
             });
+            Thread.sleep(500);
         }
         eventLoop.join();
         Assert.assertEquals(3, queue.size());
