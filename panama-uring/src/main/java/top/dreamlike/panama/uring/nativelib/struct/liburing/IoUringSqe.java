@@ -26,6 +26,10 @@ public class IoUringSqe {
 
     private Addr3Union addr3Union;
 
+    public boolean isLinked() {
+        return (getFlags() & IoUringConstant.IOSQE_IO_LINK) != 0;
+    }
+
     public OffsetUnion getOffsetUnion() {
         return offsetUnion;
     }

@@ -26,9 +26,7 @@ public class CancelableFuture<T> extends CompletableFuture<T> implements CancelT
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        boolean res = super.cancel(mayInterruptIfRunning);
-        this.cancel();
-        return res;
+       throw new UnsupportedOperationException("CancelableFuture does not support this operation, please call CancelableFuture::cancel()");
     }
 
     @Override

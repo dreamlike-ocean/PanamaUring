@@ -1,8 +1,8 @@
 package top.dreamlike.panama.uring.sync.fd;
 
-import top.dreamlike.helper.Unsafe;
 import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
 import top.dreamlike.panama.uring.helper.EpollEvent;
+import top.dreamlike.panama.uring.helper.Unsafe;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.struct.epoll.NativeEpollEvent;

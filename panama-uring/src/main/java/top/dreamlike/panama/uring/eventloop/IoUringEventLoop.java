@@ -9,6 +9,7 @@ import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
+import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
 import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
@@ -64,6 +65,8 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
     private Consumer<Throwable> exceptionHandler = (t) -> {
         log.error("Uncaught exception in event loop", t);
     };
+
+    private boolean enableLink;
 
     public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory) {
         this.wakeUpFd = new EventFd(0, 0);
@@ -145,14 +148,24 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         this.exceptionHandler = handler;
     }
 
+    public void enableLink() {
+        runOnEventLoop(() -> this.enableLink = true);
+    }
+
+    private void disableLink() {
+        runOnEventLoop(() -> this.enableLink = false);
+    }
+
     public <V> CompletableFuture<V> runOnEventLoop(Supplier<V> callable) {
-        return CompletableFuture.supplyAsync(callable, r -> {
-            if (Thread.currentThread() == this) {
-                runWithCatchException(r);
-            } else {
-                execute(r);
-            }
-        });
+        return CompletableFuture.supplyAsync(callable, this::runOnEventLoop);
+    }
+
+    private void runOnEventLoop(Runnable runnable) {
+        if (Thread.currentThread() == this) {
+            runWithCatchException(runnable);
+        } else {
+            execute(runnable);
+        }
     }
 
     /**
@@ -207,27 +220,22 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
     }
 
     public CancelableFuture<IoUringCqe> asyncOperation(Consumer<IoUringSqe> sqeFunction) {
-        long token = tokenGenerator.getAndIncrement();
-        IoUringCancelToken cancelToken = new IoUringCancelToken(token);
+        IoUringCancelToken cancelToken = new IoUringCancelToken(0);
         CancelableFuture<IoUringCqe> promise = new CancelableFuture<>(cancelToken);
-        Runnable r = () -> {
-            IoUringSqe sqe = ioUringGetSqe();
-            sqeFunction.accept(sqe);
-            sqe.setUser_data(token);
-            callBackMap.put(token, new IoUringCompletionCallBack(sqe.getFd(), sqe.getOpcode(), cqe -> {
-                IoUringCqe uringCqe = new IoUringCqe();
-                uringCqe.setFlags(cqe.getFlags());
-                uringCqe.setRes(cqe.getRes());
-                uringCqe.setUser_data(cqe.getUser_data());
-                promise.complete(uringCqe);
-            }));
-        };
-        if (inEventLoop()) {
-            runWithCatchException(r);
-        } else {
-            execute(r);
-        }
+        CancelToken realToken = asyncOperation(sqeFunction, promise::complete);
+        cancelToken.token = ((IoUringCancelToken) realToken).token;
         return promise;
+    }
+
+    public void linkedScope(Runnable linkedScopeFunction, Runnable lastFunction) {
+        NativeHelper.inSameEventLoop(this, linkedScopeFunction);
+        NativeHelper.inSameEventLoop(this, lastFunction);
+        runOnEventLoop(() -> {
+            enableLink();
+            linkedScopeFunction.run();
+            disableLink();
+            lastFunction.run();
+        });
     }
 
     public CancelToken asyncOperation(Consumer<IoUringSqe> sqeFunction, Consumer<IoUringCqe> repeatableCallback) {
@@ -237,6 +245,9 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
             IoUringSqe sqe = ioUringGetSqe();
             sqeFunction.accept(sqe);
             sqe.setUser_data(token);
+            if (enableLink) {
+                sqe.setFlags((byte) (sqe.getFlags() | IoUringConstant.IOSQE_IO_LINK));
+            }
             callBackMap.put(token, new IoUringCompletionCallBack(sqe.getFd(), sqe.getOpcode(), cqe -> {
                 IoUringCqe uringCqe = new IoUringCqe();
                 uringCqe.setFlags(cqe.getFlags());

@@ -34,17 +34,17 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSele
 
     private static final VarHandle BUFFER_RING_VH;
 
-    private final IoUringEventLoop ioUringEventLoop;
+    final IoUringEventLoop ioUringEventLoop;
 
-    private final int fd;
+    final int fd;
 
-    private SocketAddress localAddress;
+    SocketAddress localAddress;
 
-    private SocketAddress remoteAddress;
+    SocketAddress remoteAddress;
 
-    private volatile boolean hasConnected;
+    volatile boolean hasConnected;
 
-    private IoUringBufferRing bufferRing;
+    IoUringBufferRing bufferRing;
 
     AsyncTcpSocketFd(IoUringEventLoop ioUringEventLoop, int fd, SocketAddress localAddress, SocketAddress remoteAddress) {
         this.ioUringEventLoop = ioUringEventLoop;

@@ -1,9 +1,12 @@
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Timeout;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.async.fd.AsyncFileFd;
 import top.dreamlike.panama.uring.async.fd.AsyncInotifyFd;
+import top.dreamlike.panama.uring.async.fd.AsyncMultiShotTcpSocketFd;
 import top.dreamlike.panama.uring.async.fd.AsyncTcpSocketFd;
+import top.dreamlike.panama.uring.async.operator.IoUringNoOp;
 import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.helper.Pair;
@@ -14,6 +17,7 @@ import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufRingSetupResult;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingElement;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
 import java.io.File;
@@ -26,10 +30,12 @@ import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 public class AdvanceLiburingTest {
 
@@ -183,6 +189,115 @@ public class AdvanceLiburingTest {
             Files.delete(path);
         } catch (Throwable t) {
             t.printStackTrace();
+        }
+    }
+
+    @Test
+    @Timeout(value = 2, unit = TimeUnit.SECONDS)
+    public void testMultiRecv() throws Exception {
+        Path udsPath = Path.of(NativeHelper.JAVA_IO_TMPDIR).resolve(UUID.randomUUID().toString() + ".sock");
+        UnixDomainSocketAddress address = UnixDomainSocketAddress.of(udsPath);
+        ServerSocketChannel serverChannel = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
+        serverChannel.bind(address);
+        ExecutorService threadPool = Executors.newVirtualThreadPerTaskExecutor();
+        Future<SocketChannel> getTestSocket = threadPool.submit(serverChannel::accept);
+
+        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+            params.setSq_entries(4);
+            params.setFlags(0);
+        });
+
+        try (eventLoop) {
+            eventLoop.start();
+            AsyncTcpSocketFd socketFd = new AsyncTcpSocketFd(eventLoop, address);
+            Integer connectRes = socketFd.asyncConnect().get();
+            Assert.assertTrue(connectRes >= 0);
+
+            IoUringBufRingSetupResult result = eventLoop.setupBufferRing(4, 1024, (short) 1).get();
+            Assert.assertNotNull(result.bufRing());
+            Assert.assertTrue(result.res() >= 0);
+
+            socketFd.bindBufferRing(result.bufRing());
+
+            AsyncMultiShotTcpSocketFd targetFd = new AsyncMultiShotTcpSocketFd(socketFd);
+
+            SocketChannel writeSide = getTestSocket.get();
+
+            String hello1 = "hello multi recv1";
+            String hello2 = "hello multi recv2";
+            writeSide.write(ByteBuffer.wrap(hello1.getBytes()));
+            ArrayBlockingQueue<Pair<String, OwnershipMemory>> strings = new ArrayBlockingQueue<>(2);
+
+            AtomicBoolean cancel = new AtomicBoolean(false);
+            Set<String> checkMsgSet = Set.of(hello1, hello2);
+            CountDownLatch cancelCondition = new CountDownLatch(1);
+            var token = targetFd.asyncRecvMulti(event -> {
+                if (cancel.get()) {
+                    cancelCondition.countDown();
+                    return;
+                }
+                OwnershipMemory memory = event.value();
+                String hello = NativeHelper.bufToString(memory.resource(), (int) memory.resource().byteSize());
+                strings.offer(new Pair<>(hello, memory));
+            });
+            Consumer<Pair<String, OwnershipMemory>> checker = (p) -> {
+                String msg = p.t1();
+                OwnershipMemory element = p.t2();
+                Assert.assertTrue(checkMsgSet.contains(msg));
+                IoUringBufferRingElement ringElement = PanamaUringSecret.lookupOwnershipBufferRingElement.apply(element);
+                Assert.assertTrue(ringElement.hasOccupy());
+                element.drop();
+                Assert.assertFalse(ringElement.ring().getMemoryByBid(ringElement.bid()).hasOccupy());
+            };
+            checker.accept(strings.take());
+            writeSide.write(ByteBuffer.wrap(hello2.getBytes()));
+            checker.accept(strings.take());
+
+            cancel.set(true);
+            token.cancel();
+            cancelCondition.await();
+
+        }
+
+    }
+
+    @Test
+    public void testLinked() throws Exception {
+        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+            params.setSq_entries(4);
+            params.setFlags(0);
+        });
+        ArrayBlockingQueue<Integer> queue = new ArrayBlockingQueue<>(3);
+        try (eventLoop) {
+            IoUringNoOp ioUringNoOp = new IoUringNoOp(eventLoop);
+            eventLoop.start();
+            eventLoop.linkedScope(() -> {
+                var tmp = ioUringNoOp;
+                AtomicReference<IoUringSqe> t = new AtomicReference<>();
+                eventLoop.asyncOperation(sqe -> {
+                    Instance.LIB_URING.io_uring_prep_nop(sqe);
+                    t.set(sqe);
+                }).thenAccept(cqe -> queue.add(cqe.getRes()));
+                Assert.assertTrue(t.get().isLinked());
+
+                eventLoop.asyncOperation(sqe -> {
+                    Instance.LIB_URING.io_uring_prep_nop(sqe);
+                    t.set(sqe);
+                }).thenAccept(cqe -> queue.add(cqe.getRes()));
+                Assert.assertTrue(t.get().isLinked());
+            }, () -> {
+                AtomicReference<IoUringSqe> t = new AtomicReference<>();
+                eventLoop.asyncOperation(sqe -> {
+                    Instance.LIB_URING.io_uring_prep_nop(sqe);
+                    t.set(sqe);
+                }).thenAccept(cqe -> queue.add(cqe.getRes()));
+                Assert.assertFalse(t.get().isLinked());
+            });
+        }
+        eventLoop.join();
+        Assert.assertEquals(3, queue.size());
+        for (Integer i : queue) {
+            Assert.assertEquals(Integer.valueOf(0), i);
         }
     }
 }

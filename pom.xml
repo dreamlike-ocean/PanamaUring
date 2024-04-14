@@ -14,7 +14,7 @@
     <properties>
         <java.version>22</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <panama.version>0.0.1</panama.version>
+        <panama.version>4.0</panama.version>
         <vertx.version>4.3.7</vertx.version>
         <vertx-async.version>3.0.0</vertx-async.version>
         <native-lib>3.0.0</native-lib>
@@ -144,17 +144,6 @@
                 <artifactId>log4j-api</artifactId>
                 <version>${log.version}</version>
             </dependency>
-
-            <dependency>
-                <groupId>io.smallrye.reactive</groupId>
-                <artifactId>mutiny</artifactId>
-                <version>${mutiny.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.github.dreamlike-ocean</groupId>
-                <artifactId>native-lib</artifactId>
-                <version>${native-lib}</version>
-            </dependency>
             <dependency>
                 <groupId>io.github.dreamlike-ocean</groupId>
                 <artifactId>panama-uring</artifactId>
@@ -163,13 +152,15 @@
 
             <dependency>
                 <groupId>io.github.dreamlike-ocean</groupId>
-                <artifactId>vertx-io-uring-ext</artifactId>
-                <version>${vertx-async.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.github.dreamlike-ocean</groupId>
                 <artifactId>panama-generator</artifactId>
                 <version>${panama-generator}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>5.10.2</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -178,9 +169,18 @@
     <dependencies>
         <!-- https://mvnrepository.com/artifact/junit/junit -->
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
 

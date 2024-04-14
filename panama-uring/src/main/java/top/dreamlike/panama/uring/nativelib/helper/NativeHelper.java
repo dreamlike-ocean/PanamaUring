@@ -2,6 +2,9 @@ package top.dreamlike.panama.uring.nativelib.helper;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import top.dreamlike.panama.uring.async.trait.IoUringOperator;
+import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
+import top.dreamlike.panama.uring.helper.LambdaHelper;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.ErrorKernelVersionException;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
@@ -10,6 +13,7 @@ import top.dreamlike.panama.uring.trait.OwnershipResource;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.ByteOrder;
@@ -39,6 +43,7 @@ public class NativeHelper {
 
     private static final boolean osLinux;
 
+    private static final boolean isSkipSameEventLoopCheck = System.getProperty("top.dreamlike.panama.uring.skipSameEventLoopCheck", "false").equalsIgnoreCase("true");
 
     public static String bufToString(MemorySegment nativeMemory, int length) {
         byte[] bytes = new byte[length];
@@ -101,7 +106,7 @@ public class NativeHelper {
     }
 
 
-    public static  <T> void dropBatch(List<OwnershipResource<T>> memories) {
+    public static <T> void dropBatch(List<OwnershipResource<T>> memories) {
         for (OwnershipResource<T> resource : memories) {
             try (resource) {
                 resource.drop();
@@ -128,6 +133,25 @@ public class NativeHelper {
             }
             return method.invoke(afterProxy, args);
         });
+    }
+
+    public static boolean inSameEventLoop(IoUringEventLoop eventLoop, Object o) {
+        if (isSkipSameEventLoopCheck) {
+            return true;
+        }
+
+        Class<?> aClass = o.getClass();
+        for (Field field : aClass.getDeclaredFields()) {
+            if (!IoUringOperator.class.isAssignableFrom(field.getType())) {
+                continue;
+            }
+            field.setAccessible(true);
+            var loop = ((IoUringOperator) LambdaHelper.runWithThrowable(() -> field.get(o))).owner();
+            if (loop != eventLoop) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static boolean isLinux() {
