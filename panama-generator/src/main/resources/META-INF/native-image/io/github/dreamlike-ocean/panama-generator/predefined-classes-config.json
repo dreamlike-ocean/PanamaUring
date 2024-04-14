@@ -1,12 +1,3 @@
 [
-  {
-    "type": "agent-extracted",
-    "classes": [
-      {
-        "nameInfo": "net/bytebuddy/utility/Invoker$Dispatcher",
-        "hash": "b4371c0b5187b914976c7db687153600bcd974e028cbe432ed804c9b9f84776a"
-      }
-    ]
-  }
 ]
 

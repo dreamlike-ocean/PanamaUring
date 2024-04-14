@@ -7,7 +7,7 @@
 <dependency>
     <groupId>io.github.dreamlike-ocean</groupId>
     <artifactId>panama-generator</artifactId>
-    <version>1.0</version>
+    <version>1.2</version>
 </dependency>
 ```
 
@@ -87,7 +87,6 @@ setA(2);
 
 那么对应的java类应该怎么写呢？
 
-tips: 非原始类型的setter是不支持的，未来可能会做
 
 ```java
 public class TestContainer {

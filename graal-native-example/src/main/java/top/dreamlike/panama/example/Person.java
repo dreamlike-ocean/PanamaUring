@@ -25,6 +25,6 @@ public class Person {
 
     @Override
     public String toString() {
-        return STR."a: \{getA()}, n: \{getN()}";
+        return "a: " + getA() + ", n: " + getN();
     }
 }

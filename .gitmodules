@@ -1,3 +1,6 @@
 [submodule "panama-uring/c/liburing"]
 	path = panama-uring/c/liburing
 	url = https://github.com/axboe/liburing.git
+[submodule "panama-uring/c/jemalloc"]
+	path = panama-uring/c/jemalloc
+	url = https://github.com/jemalloc/jemalloc.git

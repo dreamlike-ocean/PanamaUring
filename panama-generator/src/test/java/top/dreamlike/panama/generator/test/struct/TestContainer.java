@@ -1,12 +1,16 @@
 package top.dreamlike.panama.generator.test.struct;
 
 import top.dreamlike.panama.generator.annotation.NativeArrayMark;
+import top.dreamlike.panama.generator.annotation.Pointer;
 import top.dreamlike.panama.generator.annotation.Union;
 import top.dreamlike.panama.generator.proxy.NativeArray;
 
 public class TestContainer {
     int size;
     Person single;
+
+    @Pointer
+    Person ptr;
 
     UnionStruct unionStruct;
 
@@ -42,6 +46,14 @@ public class TestContainer {
 
     public NativeArray<Person> getPersonArray() {
         return personArray;
+    }
+
+    public Person getPtr() {
+        return ptr;
+    }
+
+    public void setPtr(Person ptr) {
+        this.ptr = ptr;
     }
 
     public void setPersonArray(NativeArray<Person> personArray) {

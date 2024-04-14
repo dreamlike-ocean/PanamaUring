@@ -1,19 +1,5 @@
 package top.dreamlike.panama.generator.proxy;
 
-import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.ClassFileVersion;
-import net.bytebuddy.description.method.MethodDescription;
-import net.bytebuddy.dynamic.DynamicType;
-import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
-import net.bytebuddy.implementation.Implementation;
-import net.bytebuddy.implementation.InvokeDynamic;
-import net.bytebuddy.implementation.MethodCall;
-import net.bytebuddy.implementation.bytecode.StackManipulation;
-import net.bytebuddy.implementation.bytecode.member.HandleInvocation;
-import net.bytebuddy.implementation.bytecode.member.MethodReturn;
-import net.bytebuddy.jar.asm.MethodVisitor;
-import net.bytebuddy.jar.asm.Opcodes;
-import net.bytebuddy.utility.JavaConstant;
 import top.dreamlike.panama.generator.annotation.CLib;
 import top.dreamlike.panama.generator.annotation.NativeFunction;
 import top.dreamlike.panama.generator.annotation.Pointer;
@@ -21,8 +7,14 @@ import top.dreamlike.panama.generator.exception.StructException;
 import top.dreamlike.panama.generator.helper.*;
 
 import java.io.*;
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.constant.*;
 import java.lang.foreign.*;
 import java.lang.invoke.*;
+import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
@@ -31,9 +23,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static net.bytebuddy.matcher.ElementMatchers.named;
+import static top.dreamlike.panama.generator.helper.NativeGeneratorHelper.TRANSFORM_OBJECT_TO_STRUCT_MH;
 
 /**
  * <a href="https://shipilev.net/jvm/anatomy-quarks/17-trust-nonstatic-final-fields/">为什么实例中的final不可以信任</a>
@@ -47,17 +40,12 @@ public class NativeCallGenerator {
 
     private final NativeLookup nativeLibLookup;
 
-    private static final MethodHandle TRANSFORM_OBJECT_TO_STRUCT_MH;
-
-    //一点辅助的技巧。。。
-    private static final ThreadLocal<NativeCallGenerator> currentGenerator = new ThreadLocal<>();
+    private final ClassFile classFile = ClassFile.of();
 
     static {
         try {
-            TRANSFORM_OBJECT_TO_STRUCT_MH = MethodHandles.lookup().findStatic(NativeCallGenerator.class, "transToStruct", MethodType.methodType(MemorySegment.class, Object.class));
             DLSYM_MH = MethodHandles.lookup().findVirtual(NativeCallGenerator.class, "dlsym", MethodType.methodType(MemorySegment.class, String.class));
-            NativeGeneratorHelper.fetchCurrentNativeCallGenerator = () -> currentGenerator.get();
-            INDY_BOOTSTRAP_METHOD = NativeCallGenerator.class.getMethod("indyFactory", MethodHandles.Lookup.class, String.class, MethodType.class, Object[].class);
+            INDY_BOOTSTRAP_METHOD = InvokeDynamicFactory.class.getMethod("nativeCallIndyFactory", MethodHandles.Lookup.class, String.class, MethodType.class, Object[].class);
             GENERATE_IN_GENERATOR_CONTEXT = NativeCallGenerator.class.getMethod("generateInGeneratorContext", Class.class, String.class, MethodType.class);
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -65,15 +53,12 @@ public class NativeCallGenerator {
     }
 
 
-    private static final String GENERATOR_FIELD_NAME = "_generator";
-
-    private static final int CURRENT_JAVA_MAJOR_VERSION = Runtime.version().feature();
+    static final String GENERATOR_FIELD_NAME = "_generator";
 
     private static final Method GENERATE_IN_GENERATOR_CONTEXT;
 
     public volatile boolean use_lmf = !NativeImageHelper.inExecutable();
     private Map<String, MemorySegment> foreignFunctionAddressCache = new ConcurrentHashMap<>();
-    private ByteBuddy byteBuddy;
     private volatile boolean use_indy = !NativeImageHelper.inExecutable();
 
     final Map<Class<?>, Supplier<Object>> ctorCaches = new ConcurrentHashMap<>();
@@ -81,19 +66,12 @@ public class NativeCallGenerator {
 
     public NativeCallGenerator() {
         this.structProxyGenerator = new StructProxyGenerator();
-        this.byteBuddy = structProxyGenerator.byteBuddy;
         this.nativeLibLookup = new NativeLookup();
     }
 
     public NativeCallGenerator(StructProxyGenerator structProxyGenerator) {
         this.structProxyGenerator = structProxyGenerator;
-        this.byteBuddy = new ByteBuddy(ClassFileVersion.JAVA_V21);
         this.nativeLibLookup = new NativeLookup();
-    }
-
-    NativeCallGenerator(Object nullUnsafe) {
-        this.nativeLibLookup = new NativeLookup();
-        this.structProxyGenerator = new StructProxyGenerator(nullUnsafe);
     }
 
     public static CallSite indyFactory(MethodHandles.Lookup lookup, String methodName, MethodType methodType, Object... args) throws Throwable {
@@ -102,22 +80,13 @@ public class NativeCallGenerator {
         NativeCallGenerator generator = (NativeCallGenerator) lookupClass.getField(GENERATOR_FIELD_NAME).get(null);
         Class<?> targetInterface = lookupClass.getInterfaces()[0];
         Method method = targetInterface.getMethod(methodName, methodType.parameterArray());
-        MethodHandle nativeCallMH = generator.nativeMethodHandle(method);
+        //本来就是lazy的所以这里直接寻找对应符号地址然后绑定就行了
+        MethodHandle nativeCallMH = generator.nativeMethodHandle(method, false);
         return new ConstantCallSite(nativeCallMH);
     }
 
     public void indyMode() {
         use_indy = true;
-    }
-
-    private static MemorySegment transToStruct(Object o) {
-        if (o instanceof NativeAddressable nativeAddressable) {
-            return nativeAddressable.realMemory();
-        }
-        if (o instanceof MemorySegment memorySegment) {
-            return memorySegment;
-        }
-        throw new StructException(STR."\{o.getClass()} is not struct,pleace call StructProxyGenerator::enhance before calling native function");
     }
 
     @SuppressWarnings("unchecked")
@@ -133,19 +102,9 @@ public class NativeCallGenerator {
 
     private static boolean needTransToPointer(Parameter parameter) {
         Class<?> typeClass = parameter.getType();
-        return typeClass.isAssignableFrom(MemorySegment.class)
+        return MemorySegment.class.isAssignableFrom(typeClass)
                 || NativeAddressable.class.isAssignableFrom(typeClass)
                 || (!typeClass.isPrimitive() && parameter.getAnnotation(Pointer.class) != null);
-    }
-
-    static MethodReturn calMethodReturn(Class c) {
-        if (c == int.class) return MethodReturn.INTEGER;
-        if (c == double.class) return MethodReturn.DOUBLE;
-        if (c == float.class) return MethodReturn.FLOAT;
-        if (c == long.class) return MethodReturn.LONG;
-        if (c == void.class) return MethodReturn.VOID;
-        if (c.isPrimitive()) return MethodReturn.INTEGER;
-        return MethodReturn.REFERENCE;
     }
 
     public MethodHandle generateInGeneratorContext(Class interfaceClass, String methodName, MethodType methodType) throws NoSuchMethodException {
@@ -241,6 +200,11 @@ public class NativeCallGenerator {
         use_indy = false;
     }
 
+
+    private MethodHandle nativeMethodHandle(Method method) {
+        return nativeMethodHandle(method, false);
+    }
+
     /**
      * This private method handles the native method call based on the given Method.
      *
@@ -248,7 +212,7 @@ public class NativeCallGenerator {
      * @return The MethodHandle object for the native method call.
      * @throws IllegalArgumentException if the return type of the method is not a primitive type or marked as returnIsPointer.
      */
-    private MethodHandle nativeMethodHandle(Method method) {
+    MethodHandle nativeMethodHandle(Method method, boolean lazy) {
         DowncallContext downcallContext = parseDowncallContext(method);
 
         String functionName = downcallContext.functionName();
@@ -257,19 +221,25 @@ public class NativeCallGenerator {
         boolean returnPointer = downcallContext.returnPointer();
         boolean needCaptureStatue = downcallContext.needCaptureStatue();
         ArrayList<Integer> rawMemoryIndex = downcallContext.rawMemoryIndex();
+        if (needCaptureStatue && downcallContext.fast()) {
+            throw new IllegalArgumentException("fast mode cant capture errno");
+        }
 
 //        MethodHandle methodHandle = nativeLibLookup.downcallHandle(functionName, fd, options);
-        //延迟到第一次调用时去找符号
         MethodHandle methodHandle = Linker.nativeLinker().downcallHandle(fd, options);
-        MethodHandle dlsymMH = DLSYM_MH
-                .bindTo(this)
-                .bindTo(functionName);
-        methodHandle = MethodHandles.collectArguments(
-                methodHandle,
-                0,
-                dlsymMH
-        );
-        //todo 加载so
+        if (lazy) {
+            //延迟到第一次调用时去找符号
+            MethodHandle dlsymMH = DLSYM_MH
+                    .bindTo(this)
+                    .bindTo(functionName);
+            methodHandle = MethodHandles.collectArguments(
+                    methodHandle,
+                    0,
+                    dlsymMH
+            );
+        } else {
+            methodHandle = methodHandle.bindTo(dlsym(functionName));
+        }
 
         if (needCaptureStatue) {
             /*
@@ -350,10 +320,12 @@ public class NativeCallGenerator {
         String functionName = function == null || Objects.requireNonNullElse(function.value(), "").isBlank()
                 ? method.getName()
                 : function.value();
-        boolean returnPointer = function != null && function.returnIsPointer();
+        Class<?> returnType = method.getReturnType();
+        boolean returnPointer = !returnType.isPrimitive() && function != null && function.returnIsPointer();
         ArrayList<Linker.Option> options = new ArrayList<>(2);
+        boolean allowPassHeap = function != null && function.allowPassHeap();
         if (function != null && function.fast()) {
-            options.add(Linker.Option.isTrivial());
+            options.add(Linker.Option.critical(allowPassHeap));
         }
 
         boolean needCaptureStatue = function != null && function.needErrorNo();
@@ -361,12 +333,9 @@ public class NativeCallGenerator {
             options.add(Linker.Option.captureCallState("errno"));
         }
 
-        if ((NativeLookup.primitiveMapToMemoryLayout(method.getReturnType()) == null && !returnPointer) && method.getReturnType() != void.class) {
-            throw new IllegalArgumentException(STR."\{method} must return primitive type or is marked returnIsPointer");
+        if ((NativeLookup.primitiveMapToMemoryLayout(returnType) == null && !returnPointer && !MemorySegment.class.isAssignableFrom(returnType)) && returnType != void.class) {
+            throw new IllegalArgumentException(method + " must return primitive type or is marked returnIsPointer");
         }
-
-        boolean allowPassHeap = function != null && function.allowPassHeap();
-
         ArrayList<Integer> rawMemoryIndex = new ArrayList<>();
         MemoryLayout[] layouts = new MemoryLayout[method.getParameterCount()];
         Parameter[] parameters = method.getParameters();
@@ -384,12 +353,12 @@ public class NativeCallGenerator {
         }
 
         MemoryLayout returnLayout;
-        if (MemorySegment.class.isAssignableFrom(method.getReturnType()) || returnPointer) {
+        if (MemorySegment.class.isAssignableFrom(returnType) || returnPointer) {
             returnLayout = ValueLayout.ADDRESS;
         } else {
-            returnLayout = structProxyGenerator.extract(method.getReturnType());
+            returnLayout = structProxyGenerator.extract(returnType);
         }
-        FunctionDescriptor fd = method.getReturnType() == void.class
+        FunctionDescriptor fd = returnType == void.class
                 ? FunctionDescriptor.ofVoid(layouts)
                 : FunctionDescriptor.of(
                 returnLayout,
@@ -399,48 +368,86 @@ public class NativeCallGenerator {
     }
 
 
-    private Class generateRuntimeProxyClass(MethodHandles.Lookup lookup, Class nativeInterface) {
+    private Class generateRuntimeProxyClass(MethodHandles.Lookup lookup, Class nativeInterface) throws IllegalAccessException {
         String className = generateProxyClassName(nativeInterface);
-        var definition = byteBuddy.subclass(Object.class)
-                .implement(nativeInterface)
-                .defineField(GENERATOR_FIELD_NAME, NativeCallGenerator.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
-                .name(className);
-        Implementation.Composable cInitBlock = MethodCall.invoke(NativeGeneratorHelper.FETCH_CURRENT_NATIVE_CALL_GENERATOR).setsField(named(GENERATOR_FIELD_NAME))
-                .andThen(MethodCall.invoke(NativeGeneratorHelper.LOAD_SO).onField(GENERATOR_FIELD_NAME).with(nativeInterface));
-        for (Method method : nativeInterface.getMethods()) {
-            if (method.isBridge() || method.isDefault() || method.isSynthetic()) {
-                continue;
+        var thisClassDesc = ClassDesc.ofDescriptor("L" + className.replace(".", "/") + ";");
+        var thisClass = classFile.build(thisClassDesc, classBuilder -> {
+            classBuilder.withInterfaceSymbols(ClassFileHelper.toDesc(nativeInterface));
+            classBuilder.withField(GENERATOR_FIELD_NAME, ClassFileHelper.toDesc(NativeCallGenerator.class), AccessFlags.ofField(AccessFlag.PUBLIC, AccessFlag.STATIC, AccessFlag.FINAL).flagsMask());
+            ArrayList<Consumer<CodeBuilder>> clinits = new ArrayList<>();
+            //初始化内部的genertor字段
+            clinits.add(it -> {
+                ClassFileHelper.invoke(it, NativeGeneratorHelper.FETCH_CURRENT_NATIVE_CALL_GENERATOR);
+                it.putstatic(thisClassDesc, GENERATOR_FIELD_NAME, ClassFileHelper.toDesc(NativeCallGenerator.class));
+            });
+            //加载动态库
+            clinits.add(it -> {
+                it.ldc(ClassFileHelper.toDesc(nativeInterface));
+                ClassFileHelper.invoke(it, NativeGeneratorHelper.LOAD_SO);
+            });
+            classBuilder.withMethodBody("<init>", MethodTypeDesc.ofDescriptor("()V"), Modifier.PUBLIC, it -> {
+                        it.aload(0);
+                        it.invokespecial(ClassFileHelper.toDesc(Object.class), "<init>", MethodTypeDesc.ofDescriptor("()V"));
+                        it.return_();
+                    }
+            );
+
+            for (Method method : nativeInterface.getMethods()) {
+                if (method.isBridge() || method.isDefault() || method.isSynthetic()) {
+                    continue;
+                }
+                if (!use_indy) {
+                    Consumer<CodeBuilder> needInitInClint = invokeByMh(method, classBuilder, className);
+                    clinits.add(needInitInClint);
+                    continue;
+                }
+                invokeByIndy(method, classBuilder, className);
             }
-            if (!use_indy) {
-                String mhFieldName = STR."\{method.getName()}_native_method_handle";
-                //使用传统的static final的方案
-                //cInit 类初始化的时候赋值下静态字段
-                cInitBlock = cInitBlock
-                        .andThen(MethodCall.invoke(GENERATE_IN_GENERATOR_CONTEXT)
-                                .onField(GENERATOR_FIELD_NAME).with(nativeInterface, method.getName()).with(JavaConstant.MethodType.of(method)).setsField(named(mhFieldName)));
-                definition = definition
-                        .defineField(mhFieldName, MethodHandle.class, Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)
-                        .defineMethod(method.getName(), method.getReturnType(), Modifier.PUBLIC)
-                        .withParameters(method.getParameterTypes())
-                        .intercept(new Implementation.Simple(new ConstFieldInvokerStackManipulation(className, mhFieldName, method)));
-                continue;
-            }
-            InvokeDynamic nativeCallIndy = InvokeDynamic.bootstrap(INDY_BOOTSTRAP_METHOD).withMethodArguments();
-            definition = definition.defineMethod(method.getName(), method.getReturnType(), Modifier.PUBLIC)
-                    .withParameters(method.getParameterTypes())
-                    .intercept(nativeCallIndy);
-
+            classBuilder.withMethodBody("<clinit>", MethodTypeDesc.ofDescriptor("()V"), (AccessFlag.STATIC.mask()), it -> {
+                clinits.forEach(init -> init.accept(it));
+                it.return_();
+            });
+        });
+        if (structProxyGenerator.classDataPeek != null) {
+            structProxyGenerator.classDataPeek.accept(className, thisClass);
         }
+        return lookup.defineClass(thisClass);
+    }
 
-        definition = definition.invokable(MethodDescription::isTypeInitializer)
-                .intercept(cInitBlock);
-        DynamicType.Unloaded<Object> unloaded = definition.make();
-        if (structProxyGenerator.beforeGenerateCallBack != null) {
-            structProxyGenerator.beforeGenerateCallBack.accept(unloaded);
-        }
+    private Consumer<CodeBuilder> invokeByMh(Method method, ClassBuilder thisClass, String className) {
+        String mhFieldName = method.getName() + "_native_method_handle";
+        ClassDesc thisClassDesc = ClassDesc.ofDescriptor("L" + className.replace(".", "/") + ";");
+        thisClass.withMethodBody(method.getName(), ClassFileHelper.toMethodDescriptor(method), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+            it.getstatic(thisClassDesc, mhFieldName, ClassFileHelper.toDesc(MethodHandle.class));
+            ClassFileHelper.invokeMethodHandleExactWithAllArgs(method, it);
+        });
+        thisClass.withField(mhFieldName, ClassFileHelper.toDesc(MethodHandle.class), AccessFlags.ofField(AccessFlag.PUBLIC, AccessFlag.STATIC, AccessFlag.FINAL).flagsMask());
+        return it -> {
+            it.getstatic(thisClassDesc, GENERATOR_FIELD_NAME, ClassFileHelper.toDesc(NativeCallGenerator.class));
+            ClassDesc nativeInterfaceClassDesc = ClassFileHelper.toDesc(method.getDeclaringClass());
+            it.ldc(nativeInterfaceClassDesc);
+            it.ldc(method.getName());
+            it.ldc(ClassFileHelper.toMethodDescriptor(method).insertParameterTypes(0, nativeInterfaceClassDesc));
+            ClassFileHelper.invoke(it, GENERATE_IN_GENERATOR_CONTEXT);
+            it.putstatic(thisClassDesc, mhFieldName, ClassFileHelper.toDesc(MethodHandle.class));
+        };
+    }
 
-        return unloaded.load(nativeInterface.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(lookup))
-                .getLoaded();
+    private void invokeByIndy(Method method, ClassBuilder thisClass, String className) {
+        thisClass.withMethodBody(method.getName(), ClassFileHelper.toMethodDescriptor(method), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+            ClassFileHelper.loadAllArgs(method, it);
+            it.invokeDynamicInstruction(
+                    DynamicCallSiteDesc.of(
+                            MethodHandleDesc.ofMethod(
+                                    DirectMethodHandleDesc.Kind.STATIC, ClassFileHelper.toDesc(InvokeDynamicFactory.class), "nativeCallIndyFactory",
+                                    ClassFileHelper.toMethodDescriptor(INDY_BOOTSTRAP_METHOD)
+                            ),
+                            method.getName(),
+                            ClassFileHelper.toMethodDescriptor(method)
+                    )
+            );
+            it.returnInstruction(ClassFileHelper.calType(method.getReturnType()));
+        });
     }
 
     /**
@@ -455,10 +462,10 @@ public class NativeCallGenerator {
     Supplier<Object> bind(Class<?> nativeInterface) {
         try {
             if (!nativeInterface.isInterface()) {
-                throw new IllegalArgumentException(STR."\{nativeInterface} is not interface");
+                throw new IllegalArgumentException(nativeInterface + " is not interface");
             }
             String className = generateProxyClassName(nativeInterface);
-            currentGenerator.set(this);
+            NativeGeneratorHelper.CURRENT_GENERATOR.set(this);
             MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(nativeInterface, MethodHandles.lookup());
             Class<?> aClass = null;
             try {
@@ -470,7 +477,9 @@ public class NativeCallGenerator {
                 aClass = generateRuntimeProxyClass(lookup, nativeInterface);
             }
             //强制初始化执行cInit
-            lookup.ensureInitialized(aClass);
+            if (!structProxyGenerator.skipInit) {
+                lookup.ensureInitialized(aClass);
+            }
             MethodHandle methodHandle = MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class));
             if (use_lmf) {
                 return NativeGeneratorHelper.ctorBinder(methodHandle);
@@ -487,7 +496,7 @@ public class NativeCallGenerator {
         } catch (Throwable e) {
             throw new StructException("should not reach here!", e);
         } finally {
-            currentGenerator.remove();
+            NativeGeneratorHelper.CURRENT_GENERATOR.remove();
         }
     }
 
@@ -496,7 +505,11 @@ public class NativeCallGenerator {
     }
 
     String generateProxyClassName(Class nativeInterface) {
-        return STR."\{nativeInterface.getName()}_native_call_enhance";
+        String proxyName = nativeInterface.getName() + "_native_call_enhance";
+        if (use_indy) {
+            proxyName = proxyName + "_indy";
+        }
+        return proxyName;
     }
 
     private MemorySegment dlsym(String name) {
@@ -504,17 +517,22 @@ public class NativeCallGenerator {
         return foreignFunctionAddressCache.computeIfAbsent(name, nativeLibLookup::findOrException);
     }
 
-    public void loadSo(Class<?> interfaceClass) throws IOException {
+    public static void loadSo(Class<?> interfaceClass) throws IOException {
         ClassLoader classLoader = interfaceClass.getClassLoader();
         CLib annotation = interfaceClass.getAnnotation(CLib.class);
         if (annotation == null || annotation.value().isBlank()) return;
+        if (annotation.isLib()) {
+            Runtime.getRuntime().loadLibrary(classLoader.getName());
+            return;
+        }
+
         InputStream inputStream = annotation.inClassPath()
-                ? classLoader.getResourceAsStream(STR."\{annotation.value()}")
+                ? classLoader.getResourceAsStream(annotation.value())
                 : new FileInputStream(annotation.value());
         if (inputStream == null) {
-            throw new IllegalArgumentException(STR."cant find clib! classloader: \{classLoader}, path: \{annotation.value()}");
+            throw new IllegalArgumentException("cant find clib! classloader: " + classLoader + ", path: " + annotation.value());
         }
-        String tmpFileName = STR."\{interfaceClass.getSimpleName()}_\{UUID.randomUUID().toString()}_dynamic.so";
+        String tmpFileName = interfaceClass.getSimpleName() + "_" + UUID.randomUUID() + "_dynamic.so";
         File file = File.createTempFile(tmpFileName, ".tmp");
         FileOutputStream fileOutputStream = new FileOutputStream(file);
         file.deleteOnExit();
@@ -522,50 +540,5 @@ public class NativeCallGenerator {
             inputStream.transferTo(fileOutputStream);
             System.load(file.getAbsolutePath());
         }
-    }
-
-    private record ConstFieldInvokerStackManipulation(String className, String mhFieldName,
-                                                      Method method) implements StackManipulation {
-
-        @Override
-        public boolean isValid() {
-            return true;
-        }
-
-        @Override
-        public Size apply(MethodVisitor methodVisitor, Implementation.Context implementationContext) {
-            Size res = Size.ZERO;
-            //获取静态的对应mh字段
-            methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, className.replace(".", "/"), mhFieldName, "Ljava/lang/invoke/MethodHandle;");
-            Size vistStaticSize = new Size(1, 1);
-            res = res.aggregate(vistStaticSize);
-            StackManipulation[] manipulations = new StackManipulation[method.getParameterCount() + 2];
-            Parameter[] parameters = method.getParameters();
-            int offset = 1;
-            //压栈
-            Class[] classes = new Class[parameters.length];
-            for (int i = 0; i < parameters.length; i++) {
-                Class<?> type = parameters[i].getType();
-                MethodVariableAccessLoader loader = MethodVariableAccessLoader.calLoader(type, offset);
-                int targetAddOffset = loader.targetOffset();
-                StackManipulation wait = loader.loadOp();
-                offset += targetAddOffset;
-                manipulations[i] = wait;
-                classes[i] = type;
-            }
-
-            JavaConstant.MethodType methodType = JavaConstant.MethodType.of(method.getReturnType(), classes);
-            //调用handle的invokeExact
-            HandleInvocation handleInvocation = new HandleInvocation(methodType);
-            manipulations[parameters.length] = handleInvocation;
-            Class returnType = method.getReturnType();
-            //准备返回值
-            manipulations[parameters.length + 1] = calMethodReturn(returnType);
-
-            StackManipulation stackManipulation = new StackManipulation.Compound(manipulations);
-            res = res.aggregate(stackManipulation.apply(methodVisitor, implementationContext));
-            return res;
-        }
-
     }
 }

@@ -30,8 +30,8 @@ class NativeLookup implements SymbolLookup {
             MethodHandles.Lookup lookup = MethodHandles.lookup();
             AllocateErrorBuffer_MH = lookup
                     .findStatic(NativeLookup.class, "allocateErrorBuffer", MethodType.methodType(MemorySegment.class));
-            errorHandle = Linker.Option.captureStateLayout()
-                    .varHandle(MemoryLayout.PathElement.groupElement("errno"));
+            errorHandle = MethodHandles.insertCoordinates(Linker.Option.captureStateLayout()
+                    .varHandle(MemoryLayout.PathElement.groupElement("errno")), 1, 0);
             FILL_ERROR_CODE_VOID_MH = lookup
                     .findStatic(NativeLookup.class, "fillTLErrorVoid", MethodType.methodType(void.class));
             FILL_ERROR_CODE_BYTE_MH = lookup
@@ -144,13 +144,13 @@ class NativeLookup implements SymbolLookup {
 
     public MemorySegment findOrException(String name) {
         return find(name)
-                .orElseThrow(() -> new IllegalArgumentException(STR."cant link to \{name}"));
+                .orElseThrow(() -> new IllegalArgumentException("cant link to " + name));
     }
 
     public MethodHandle downcallHandle(String name, FunctionDescriptor functionDescriptor, Linker.Option... options) {
         return find(name)
                 .map(functionAddr -> Linker.nativeLinker().downcallHandle(functionAddr, functionDescriptor, options))
-                .orElseThrow(() -> new IllegalArgumentException(STR. "cant link \{ name }" ));
+                .orElseThrow(() -> new IllegalArgumentException("cant link " + name));
     }
 
     public static MemoryLayout primitiveMapToMemoryLayout(Class source) {

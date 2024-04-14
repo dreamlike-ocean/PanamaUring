@@ -12,20 +12,22 @@
     <packaging>pom</packaging>
     <version>1.0</version>
     <properties>
-        <java.version>21</java.version>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <java.version>22</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <panama.version>3.0.2</panama.version>
+        <panama.version>4.0</panama.version>
         <vertx.version>4.3.7</vertx.version>
         <vertx-async.version>3.0.0</vertx-async.version>
         <native-lib>3.0.0</native-lib>
         <mutiny.version>2.5.0</mutiny.version>
+        <panama-generator>1.2</panama-generator>
+        <log.version>2.23.1</log.version>
     </properties>
+
     <licenses>
         <license>
-            <name>Apache License, Version 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
         </license>
     </licenses>
     <scm>
@@ -45,9 +47,6 @@
     </developers>
     <modules>
         <module>panama-uring</module>
-        <module>example</module>
-        <module>vertx-io-uring-ext</module>
-        <module>native-lib</module>
         <module>panama-generator</module>
         <module>graal-native-example</module>
     </modules>
@@ -88,6 +87,7 @@
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <version>3.4.1</version>
                         <configuration>
+                            <release>${java.version}</release>
                             <!-- jdk1.8要加上，1.7要去掉，否则会报错 -->
                             <additionalJOptions>
                                 <additionalJOption>-Xdoclint:none</additionalJOption>
@@ -132,27 +132,36 @@
         </profile>
     </profiles>
     <dependencyManagement>
+
         <dependencies>
             <dependency>
-                <groupId>io.smallrye.reactive</groupId>
-                <artifactId>mutiny</artifactId>
-                <version>${mutiny.version}</version>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.dreamlike-ocean</groupId>
-                <artifactId>native-lib</artifactId>
-                <version>${native-lib}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.github.dreamlike-ocean</groupId>
-                <artifactId>panama-uring-linux-x86_64</artifactId>
+                <artifactId>panama-uring</artifactId>
                 <version>${panama.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>io.github.dreamlike-ocean</groupId>
-                <artifactId>vertx-io-uring-ext</artifactId>
-                <version>${vertx-async.version}</version>
+                <artifactId>panama-generator</artifactId>
+                <version>${panama-generator}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>5.10.2</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -161,9 +170,18 @@
     <dependencies>
         <!-- https://mvnrepository.com/artifact/junit/junit -->
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
 

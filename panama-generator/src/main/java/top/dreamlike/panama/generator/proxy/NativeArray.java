@@ -1,5 +1,6 @@
 package top.dreamlike.panama.generator.proxy;
 
+import top.dreamlike.panama.generator.helper.NativeAddressable;
 import top.dreamlike.panama.generator.helper.NativeGeneratorHelper;
 import top.dreamlike.panama.generator.helper.NativeStructEnhanceMark;
 
@@ -12,7 +13,7 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-public class NativeArray<T> implements NativeStructEnhanceMark, List<T> {
+public final class NativeArray<T> implements NativeStructEnhanceMark, List<T>, NativeAddressable {
 
     private MemorySegment segment;
 
@@ -24,14 +25,14 @@ public class NativeArray<T> implements NativeStructEnhanceMark, List<T> {
 
     private final List<T> mappingJavaBean;
 
-    NativeArray(StructProxyGenerator generator, MemorySegment memorySegment, Class<T> component) {
+    public NativeArray(StructProxyGenerator generator, MemorySegment memorySegment, Class<T> component) {
         if (component == Object.class) {
-            throw new IllegalArgumentException(STR."please fill generic param");
+            throw new IllegalArgumentException("please fill generic param");
         }
         this.segment = memorySegment;
         this.elementLayout = generator.extract(component);
         if (this.segment.byteSize() % elementLayout.byteSize() != 0L) {
-            throw new IllegalArgumentException(STR. "segment.byteSize() % layout.byteSize() must equals 0!, array size is \{ memorySegment.byteSize() }, single component size is \{ elementLayout.byteSize() }" );
+            throw new IllegalArgumentException("segment.byteSize() % layout.byteSize() must equals 0!, array size is" + memorySegment.byteSize() + ", single component size is" + elementLayout.byteSize());
         }
         this.len = segment.byteSize() / elementLayout.byteSize();
         this.generator = generator;
@@ -50,6 +51,11 @@ public class NativeArray<T> implements NativeStructEnhanceMark, List<T> {
 
     @Override
     public MemorySegment realMemory() {
+        return segment;
+    }
+
+    @Override
+    public MemorySegment address() {
         return segment;
     }
 

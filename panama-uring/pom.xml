@@ -9,35 +9,32 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>panama-uring-linux-x86_64</artifactId>
+    <artifactId>panama-uring</artifactId>
     <version>${panama.version}</version>
+    <packaging>jar</packaging>
 
     <properties>
         <liburing.so.name>liburing-ffi.so.2.6</liburing.so.name>
+        <jemalloc.so.name>libjemalloc.so.2</jemalloc.so.name>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <arch.classifier>${os.detected.classifier}</arch.classifier>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.smallrye.reactive</groupId>
-            <artifactId>mutiny</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.github.dreamlike-ocean</groupId>
-            <artifactId>native-lib</artifactId>
+            <artifactId>panama-generator</artifactId>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.slf4j/jul-to-slf4j -->
+        <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jul-to-slf4j</artifactId>
-            <version>2.0.6</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>2.0.6</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
         </dependency>
 
         <dependency>
@@ -45,9 +42,32 @@
             <artifactId>jctools-core</artifactId>
             <version>4.0.1</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.7.1</version>
+            </extension>
+        </extensions>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -114,28 +134,126 @@
                         </configuration>
                     </execution>
 
+
+                    <execution>
+                        <id>autogen-jemalloc</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>sh</executable>
+                            <workingDirectory>${project.basedir}/c/jemalloc</workingDirectory>
+                            <arguments>
+                                <argument>./autogen.sh</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>configure-jemalloc</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>./configure</executable>
+                            <workingDirectory>${project.basedir}/c/jemalloc</workingDirectory>
+                            <arguments>
+                                <argument>--with-jemalloc-prefix=ring_</argument>
+                                <argument>--disable-initial-exec-tls</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>compile-jemalloc</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>make</executable>
+                            <workingDirectory>${project.basedir}/c/jemalloc</workingDirectory>
+                            <arguments>
+                                <argument>-j</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+
+                    <execution>
+                        <id>clean-jemalloc</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>make</executable>
+                            <workingDirectory>${project.basedir}/c/jemalloc</workingDirectory>
+                            <arguments>
+                                <argument>clean</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>rm-jemalloc</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>rm</executable>
+                            <workingDirectory>${project.basedir}/src/main/resources</workingDirectory>
+                            <arguments>
+                                <argument>-rf</argument>
+                                <argument>jemalloc-ffi.so</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>mv-jemalloc</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>mv</executable>
+                            <workingDirectory>${project.basedir}/c/jemalloc/lib</workingDirectory>
+                            <arguments>
+                                <argument>${jemalloc.so.name}</argument>
+                                <argument>../../../src/main/resources/jemalloc-ffi.so</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
 
             <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
-                    <finalName>${artifactId}-${panama.version}-all-release</finalName>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <appendAssemblyId>false</appendAssemblyId>
-                </configuration>
+                <artifactId>maven-jar-plugin</artifactId>
+
                 <executions>
                     <execution>
-                        <id>package-all-dependency</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>single</goal>
+                            <goal>jar</goal>
                         </goals>
+                        <configuration>
+                            <classifier>${arch.classifier}</classifier>
+                        </configuration>
                     </execution>
                 </executions>
+                <version>3.2.0</version>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <classifier>${arch.classifier}</classifier>
+                </configuration>
+                <version>2.5</version>
+            </plugin>
+
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

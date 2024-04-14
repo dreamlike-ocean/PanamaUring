@@ -26,6 +26,7 @@ public class IndyGeneratorTest {
     @BeforeClass
     public static void init() {
         structProxyGenerator = new StructProxyGenerator();
+        structProxyGenerator.setProxySavePath("apt-generator");
         callGenerator = new NativeCallGenerator(structProxyGenerator);
         callGenerator.indyMode();
         libPerson = callGenerator.generate(LibPerson.class);
