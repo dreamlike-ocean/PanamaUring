@@ -13,7 +13,7 @@ maven坐标为
 <dependency>
     <groupId>io.github.dreamlike-ocean</groupId>
     <artifactId>panama-uring</artifactId>
-    <version>4.0</version>
+    <version>4.0.1</version>
     <classifier>linux-x86_64</classifier>
 </dependency>
 ```
@@ -22,6 +22,15 @@ maven坐标为
 
 ```shell
 git clone --recurse-submodules https://github.com/dreamlike-ocean/PanamaUring.git
+```
+
+测试运行 因为依赖了一些预览特性 所以需要使用jdk 22
+
+```shell
+
+``` shell
+export JAVA_TOOL_OPTIONS=--enable-preview;
+mvn test
 ```
 
 ### 支持的特性

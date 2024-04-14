@@ -11,6 +11,7 @@ import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
+import java.lang.foreign.MemorySegment;
 import java.net.SocketAddress;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -52,9 +53,9 @@ public class AsyncMultiShotTcpSocketFd implements IoUringOperator {
         return ioUringEventLoop.asyncOperation(
                 sqe -> fillMultiOp(sqe, flag),
                 cqe -> {
-                    IoUringSyscallResult<OwnershipMemory> result = null;
+                    IoUringSyscallResult<OwnershipMemory> result;
                     if (cqe.getRes() < 0) {
-                        result = new IoUringSyscallResult<>(cqe.getRes(), null);
+                        result = new IoUringSyscallResult<>(cqe.getRes(), OwnershipMemory.of(MemorySegment.NULL));
                     } else {
                         result = new IoUringSyscallResult<>(cqe.getRes(), parseCqe(cqe));
                     }

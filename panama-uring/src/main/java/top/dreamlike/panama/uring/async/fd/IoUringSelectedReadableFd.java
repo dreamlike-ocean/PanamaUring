@@ -1,5 +1,6 @@
 package top.dreamlike.panama.uring.async.fd;
 
+import top.dreamlike.panama.uring.async.IoUringSyscallResult;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
 import top.dreamlike.panama.uring.async.trait.IoUringOperator;
@@ -40,6 +41,28 @@ public interface IoUringSelectedReadableFd extends IoUringOperator, NativeFd {
                         return CompletableFuture.completedFuture(borrowUringBufferRingElement(ringElement, readLen));
                     }
                 });
+    }
+
+    default CancelableFuture<IoUringSyscallResult<OwnershipMemory>> asyncSelectedReadResult(int len, int offset) {
+        IoUringBufferRing bufferRing = Objects.requireNonNull(bufferRing());
+        return (CancelableFuture<IoUringSyscallResult<OwnershipMemory>>) owner().asyncOperation(sqe -> {
+                    Instance.LIB_URING.io_uring_prep_read(sqe, readFd(), MemorySegment.NULL, len, offset);
+                    sqe.setFlags((byte) (sqe.getFlags() | IoUringConstant.IOSQE_BUFFER_SELECT));
+                    sqe.setBufGroup(bufferRing.getBufferGroupId());
+                })
+                .thenApply(cqe -> {
+                    IoUringSyscallResult<OwnershipMemory> result;
+                    if (cqe.getRes() < 0) {
+                        result = new IoUringSyscallResult<>(cqe.getRes(), OwnershipMemory.of(MemorySegment.NULL));
+                    } else {
+                        int readLen = cqe.getRes();
+                        int bid = cqe.getBid();
+                        IoUringBufferRingElement ringElement = bufferRing.removeBuffer(bid).resultNow();
+                        result = new IoUringSyscallResult<>(cqe.getRes(), borrowUringBufferRingElement(ringElement, readLen));
+                    }
+                    return result;
+                });
+
     }
 
     static OwnershipMemory borrowUringBufferRingElement(IoUringBufferRingElement ringElement, int len) {

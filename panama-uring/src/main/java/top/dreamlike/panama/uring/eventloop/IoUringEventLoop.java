@@ -160,7 +160,11 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
     }
 
     public <V> CompletableFuture<V> runOnEventLoop(Supplier<V> callable) {
-        return CompletableFuture.supplyAsync(callable, this::runOnEventLoop);
+        CompletableFuture<V> future = new CompletableFuture<>();
+        runOnEventLoop(() -> {
+            future.complete(callable.get());
+        });
+        return future;
     }
 
     private void runOnEventLoop(Runnable runnable) {

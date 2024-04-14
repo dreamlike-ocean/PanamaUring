@@ -76,7 +76,10 @@ public class AdvanceLiburingTest {
             Assert.assertFalse(bufferRing.getMemoryByBid(bid).hasOccupy());
 
             memory = asyncFileFd.asyncSelectedRead(1024, 0).get();
-            memory = asyncFileFd.asyncSelectedRead(1024, 0).get();
+
+            memory = asyncFileFd.asyncSelectedReadResult(1024, 0).get().value();
+            actual = NativeHelper.bufToString(memory.resource(), (int) memory.resource().byteSize());
+            Assert.assertEquals(hello, actual);
             Assert.assertFalse(bufferRing.hasAvailableElements());
 
             ExecutionException exception = Assert.assertThrows(ExecutionException.class, () -> {
