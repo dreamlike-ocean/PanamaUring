@@ -16,7 +16,6 @@ maven坐标为
     <version>4.0</version>
     <classifier>linux-x86_64</classifier>
 </dependency>
-</dependency>
 ```
 
 由于依赖了liburing和jemalloc的代码所以需要一并clone 对应仓库

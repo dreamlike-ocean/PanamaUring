@@ -52,14 +52,10 @@ public class Person {
 
 ```java
         MemoryLayout personSizeof = structProxyGenerator.extract(Person.class);
-MemorySegment personInMemory = Arena.global().allocate(personSizeof);
-Person person = structProxyGenerator.enhance(Person.class, personInMemory);
-        person.
-
-setN(1);
-        person.
-
-setA(2);
+        MemorySegment personInMemory = Arena.global().allocate(personSizeof);
+        Person person = structProxyGenerator.enhance(Person.class, personInMemory);
+        person.setN(1);
+        person.setA(2);
 ```
 
 对于原始类型的字段全部的setter和getter都会被劫持成对绑定的那块MemorySegment的操作
@@ -100,6 +96,9 @@ public class TestContainer {
 
     @NativeArrayMark(size = Person.class, length = 5, asPointer = true)
     NativeArray<Person> arrayButPointer;
+
+    @Skip
+    String c;
 
     public int getSize() {
         return size;
@@ -164,7 +163,7 @@ public class TestContainer {
     }
 }
 ```
-
+> @Skip表示不生成这个字段的绑定
 就这么简单，这里涉及到指针的我得多说几句
 
 - NativeArrayMark这个一定要标识是啥类类型，多长要不NativeArray没法正确实例化
@@ -229,6 +228,12 @@ var libPerson = callGenerator.generate(LibPerson.class);
     - needErrorNo，如果设置为true则会使用Linker.Option.captureCallState("errno"),具体后面会讲
 - @Pointer 如果native入参是一个结构体指针，这里支持使用对应被StructProxyGenerator增强过的Java类作为入参
 
+剩余的注意事项是
+
+- 当native函数返回空指针时，会返回null
+- 当native函数返回非空指针时，会自动将返回值映射为对应被StructProxyGenerator增强过的Java类
+- 每一个非原始对象入参都必须要先被StructProxyGenerator增强过，否则会抛出异常
+
 ### errorno
 
 Java Panama FFI errorno api其实是有点奇怪的，所以你需要这样使用
@@ -252,7 +257,7 @@ Java Panama FFI errorno api其实是有点奇怪的，所以你需要这样使�
 
 indy就是invokeDynamic这个字节码
 
-你可以使用如下代码切换下一次生成的绑定使用传统模式还是indy模式
+你可以使用如下代码切换下一次生成的绑定使用传统模式还是indy模式，同一个接口两种模式生成的结果是独立的
 
 ```
         callGenerator.indyMode();
