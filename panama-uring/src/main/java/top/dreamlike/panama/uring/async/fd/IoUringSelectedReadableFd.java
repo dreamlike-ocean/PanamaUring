@@ -20,7 +20,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 public interface IoUringSelectedReadableFd extends IoUringOperator, NativeFd {
-
     IoUringBufferRing bufferRing();
 
     default CancelableFuture<OwnershipMemory> asyncSelectedRead(int len, int offset) {
@@ -30,7 +29,7 @@ public interface IoUringSelectedReadableFd extends IoUringOperator, NativeFd {
                     sqe.setFlags((byte) (sqe.getFlags() | IoUringConstant.IOSQE_BUFFER_SELECT));
                     sqe.setBufGroup(bufferRing.getBufferGroupId());
                 })
-                .thenCompose(cqe -> {
+                .thenComposeAsync(cqe -> {
                     int syscallResult = cqe.getRes();
                     if (syscallResult < 0) {
                         return CompletableFuture.failedFuture(new SyscallException(syscallResult));
@@ -40,7 +39,7 @@ public interface IoUringSelectedReadableFd extends IoUringOperator, NativeFd {
                         IoUringBufferRingElement ringElement = bufferRing.removeBuffer(bid).resultNow();
                         return CompletableFuture.completedFuture(borrowUringBufferRingElement(ringElement, readLen));
                     }
-                });
+                }, r -> owner().runOnEventLoop(r));
     }
 
     default CancelableFuture<IoUringSyscallResult<OwnershipMemory>> asyncSelectedReadResult(int len, int offset) {
@@ -50,7 +49,8 @@ public interface IoUringSelectedReadableFd extends IoUringOperator, NativeFd {
                     sqe.setFlags((byte) (sqe.getFlags() | IoUringConstant.IOSQE_BUFFER_SELECT));
                     sqe.setBufGroup(bufferRing.getBufferGroupId());
                 })
-                .thenApply(cqe -> {
+                .thenApplyAsync(cqe -> {
+                    //强制制定在eventloop上 防止外部get导致切换线程
                     IoUringSyscallResult<OwnershipMemory> result;
                     if (cqe.getRes() < 0) {
                         result = new IoUringSyscallResult<>(cqe.getRes(), OwnershipMemory.of(MemorySegment.NULL));
@@ -61,7 +61,7 @@ public interface IoUringSelectedReadableFd extends IoUringOperator, NativeFd {
                         result = new IoUringSyscallResult<>(cqe.getRes(), borrowUringBufferRingElement(ringElement, readLen));
                     }
                     return result;
-                });
+                }, r -> owner().runOnEventLoop(r));
 
     }
 
@@ -97,7 +97,7 @@ class OwnershipBufferRingElement implements OwnershipMemory {
 
     @Override
     public void drop() {
-        IoUringBufferRingElement waitToRelease = (IoUringBufferRingElement) ELEMENT_VH.compareAndExchange(this, element, (IoUringBufferRingElement)null);
+        IoUringBufferRingElement waitToRelease = (IoUringBufferRingElement) ELEMENT_VH.compareAndExchange(this, element, (IoUringBufferRingElement) null);
         if (waitToRelease == null) {
             return;
         }

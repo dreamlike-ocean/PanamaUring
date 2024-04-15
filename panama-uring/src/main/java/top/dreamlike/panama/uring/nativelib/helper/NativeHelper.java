@@ -6,7 +6,6 @@ import top.dreamlike.panama.uring.async.trait.IoUringOperator;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.helper.LambdaHelper;
 import top.dreamlike.panama.uring.nativelib.Instance;
-import top.dreamlike.panama.uring.nativelib.exception.ErrorKernelVersionException;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.trait.OwnershipResource;
 
@@ -14,16 +13,15 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.nio.ByteOrder;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.IntSupplier;
 
 public class NativeHelper {
 
     public static String JAVA_IO_TMPDIR = System.getProperty("java.io.tmpdir");
+
+    public static boolean enableOpVersionCheck = System.getProperty("enable-detect-os-version", "true").equalsIgnoreCase("true");
 
     private static final Logger logger = LogManager.getLogger(NativeHelper.class);
 
@@ -114,25 +112,6 @@ public class NativeHelper {
                 logger.error("Drop memory failed", throwable);
             }
         }
-    }
-
-
-    public static <T> T enhanceCheck(T afterProxy, Class<T> nativeInterface) {
-        return (T) Proxy.newProxyInstance(nativeInterface.getClassLoader(), new Class[]{nativeInterface}, (Object proxy, Method method, Object[] args) -> {
-            KernelVersionLimit annotation = Optional.ofNullable(method.getAnnotation(KernelVersionLimit.class)).orElse(nativeInterface.getAnnotation(KernelVersionLimit.class));
-            if (annotation != null) {
-                if (!osLinux) {
-                    logger.error("This method is only supported on Linux");
-                    throw new ErrorKernelVersionException();
-                }
-                if (!allowCurrentLinuxVersion(annotation.major(), annotation.minor())) {
-                    logger.error("This method is only supported on Linux kernel version {}.{}, current version is {}.{}",
-                            annotation.major(), annotation.minor(), currentLinuxMajor, currentLinuxMinor);
-                    throw new ErrorKernelVersionException(annotation.major(), annotation.minor());
-                }
-            }
-            return method.invoke(afterProxy, args);
-        });
     }
 
     public static boolean inSameEventLoop(IoUringEventLoop eventLoop, Object o) {

@@ -10,6 +10,7 @@ import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
+import top.dreamlike.panama.uring.nativelib.helper.OSIoUringProbe;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
 import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
@@ -36,6 +37,8 @@ import java.util.function.Supplier;
 import static top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant.IORING_ASYNC_CANCEL_ALL;
 
 public class IoUringEventLoop extends Thread implements AutoCloseable, Executor {
+
+    private static final OSIoUringProbe PROBE = new OSIoUringProbe();
 
     private static final AtomicInteger count = new AtomicInteger(0);
     private static final Logger log = LogManager.getLogger(IoUringEventLoop.class);
@@ -108,7 +111,6 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
     @Override
     public void run() {
         while (!hasClosed.get()) {
-            inWait.set(true);
             while (true) {
                 ScheduledTask next = scheduledTasks.peek();
                 if (next != null && next.deadlineNanos <= System.nanoTime()) {
@@ -132,7 +134,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
                 kernelTime64Type.setTv_nsec(duration % 1000000000);
                 libUring.io_uring_submit_and_wait_timeout(internalRing, cqePtrs, cqeSize, kernelTime64Type, null);
             }
-
+            inWait.set(true);
             processCqes();
         }
         releaseResource();
@@ -167,7 +169,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         return future;
     }
 
-    private void runOnEventLoop(Runnable runnable) {
+    public void runOnEventLoop(Runnable runnable) {
         if (Thread.currentThread() == this) {
             runWithCatchException(runnable);
         } else {
@@ -212,6 +214,10 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         Runnable r = () -> {
             IoUringSqe sqe = ioUringGetSqe();
             sqeFunction.accept(sqe);
+            if (NativeHelper.enableOpVersionCheck && sqe.getOpcode() > PROBE.getLastOp()) {
+               Instance.LIB_URING.io_uring_back_sqe(internalRing);
+               throw new UnsupportedOperationException(sqe.getOpcode() + " is unsupported");
+            }
             sqe.setUser_data(token);
             callBackMap.put(token, new IoUringCompletionCallBack(sqe.getFd(), sqe.getOpcode(), callback));
             if (needSubmit) {
@@ -251,6 +257,12 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         Runnable r = () -> {
             IoUringSqe sqe = ioUringGetSqe();
             sqeFunction.accept(sqe);
+
+            if (NativeHelper.enableOpVersionCheck && sqe.getOpcode() > PROBE.getLastOp()) {
+                Instance.LIB_URING.io_uring_back_sqe(internalRing);
+                throw new UnsupportedOperationException(sqe.getOpcode() + " is unsupported");
+            }
+
             sqe.setUser_data(token);
             if (enableLink) {
                 sqe.setFlags((byte) (sqe.getFlags() | IoUringConstant.IOSQE_IO_LINK));

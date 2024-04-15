@@ -1,38 +1,32 @@
 import org.junit.Assert;
 import org.junit.Test;
-import top.dreamlike.panama.uring.nativelib.Instance;
-import top.dreamlike.panama.uring.nativelib.exception.ErrorKernelVersionException;
-import top.dreamlike.panama.uring.nativelib.helper.KernelVersionLimit;
-import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
+import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
+
+import java.util.concurrent.ArrayBlockingQueue;
 
 public class KernelVersionCheckTest {
 
     @Test
-    public void test() {
-        SomeFunctionalInterface generated = Instance.NATIVE_CALL_GENERATOR.generate(SomeFunctionalInterface.class);
-        SomeFunctionalInterface checked = NativeHelper.enhanceCheck(generated, SomeFunctionalInterface.class);
-        Assert.assertThrows(ErrorKernelVersionException.class, checked::mustThrow);
-        Assert.assertTrue(checked.getpagesize() > 0);
-
-        Assert.assertEquals(3, checked.defaultFunction(1, 2));
-        Assert.assertThrows(ErrorKernelVersionException.class, () -> checked.defaultFunctionMustThrow(1, 2));
+    public void test() throws InterruptedException {
+        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+            params.setSq_entries(4);
+            params.setFlags(0);
+        });
+        ArrayBlockingQueue<Throwable> queue = new ArrayBlockingQueue<>(1);
+        eventLoop.setExceptionHandler(queue::add);
+        eventLoop.start();
+        try(eventLoop) {
+            eventLoop.asyncOperation(sqe -> {
+                sqe.setOpcode(Byte.MAX_VALUE);
+            });
+        } catch (Throwable r) {
+            throw new RuntimeException(r);
+        }
+        eventLoop.join();
+        Assert.assertEquals(1, queue.size());
+        Throwable throwable = queue.take();
+        Assert.assertTrue(throwable instanceof UnsupportedOperationException);
     }
 
-    public interface SomeFunctionalInterface {
-        @KernelVersionLimit(major = 10, minor = 10)
-        void mustThrow();
 
-        @KernelVersionLimit(major = 1, minor = 1)
-        int getpagesize();
-
-        @KernelVersionLimit(major = 1, minor = 1)
-        default int defaultFunction(int a, int b) {
-            return a + b;
-        }
-
-        @KernelVersionLimit(major = 10, minor = 1)
-        default int defaultFunctionMustThrow(int a, int b) {
-            return a + b;
-        }
-    }
 }

@@ -27,8 +27,13 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 @CLib("liburing-ffi.so")
 @KernelVersionLimit(major = 5, minor = 10)
 public interface LibUring {
-    //跟队列本身相关的操作
 
+    @NativeFunction(returnIsPointer = true)
+    IoUringProbe io_uring_get_probe();
+
+    void io_uring_free_probe(@Pointer IoUringProbe probe);
+
+    //跟队列本身相关的操作=
     int io_uring_queue_init(int entries, @Pointer IoUring ring, int flags);
 
     int io_uring_queue_init_params(int entries, @Pointer IoUring ring, @Pointer IoUringParams p);
@@ -202,6 +207,13 @@ public interface LibUring {
                 .reinterpret(sqeLayout.byteSize());
         IoUringConstant.AccessShortcuts.IO_URING_SQ_SQE_TAIL_VARHANDLE.set(realMemory, 0L, next);
         return Instance.STRUCT_PROXY_GENERATOR.enhance(currentSqe);
+    }
+
+    @NativeFunction(fast = true)
+    default void io_uring_back_sqe(@Pointer IoUring ring) {
+        MemorySegment realMemory = StructProxyGenerator.findMemorySegment(ring);
+        int tail = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_SQE_TAIL_VARHANDLE.get(realMemory, 0L);
+        IoUringConstant.AccessShortcuts.IO_URING_SQ_SQE_TAIL_VARHANDLE.set(realMemory, 0L, tail - 1);
     }
 
     default void io_uring_prep_rw(int opcode, @Pointer IoUringSqe sqe, int fd, MemorySegment addr, int len, long offset) {
