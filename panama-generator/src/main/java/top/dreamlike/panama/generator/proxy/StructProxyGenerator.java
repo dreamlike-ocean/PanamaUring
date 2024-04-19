@@ -11,29 +11,24 @@ import java.lang.classfile.AccessFlags;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
-import java.lang.constant.ClassDesc;
-import java.lang.constant.MethodTypeDesc;
+import java.lang.constant.*;
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
-import java.lang.reflect.AccessFlag;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
+import static top.dreamlike.panama.generator.helper.NativeGeneratorHelper.TRANSFORM_OBJECT_TO_STRUCT_MH;
 import static top.dreamlike.panama.generator.proxy.NativeLookup.primitiveMapToMemoryLayout;
 
 public class StructProxyGenerator {
@@ -48,6 +43,8 @@ public class StructProxyGenerator {
 
     private static final Method GENERATOR_VARHANDLE;
 
+    private static final Method SHORTCUT_INDY_BOOTSTRAP_METHOD;
+
     static final MethodHandle ENHANCE_MH;
 
     private volatile boolean use_lmf = !NativeImageHelper.inExecutable();
@@ -61,7 +58,7 @@ public class StructProxyGenerator {
             ENHANCE_MH = MethodHandles.lookup().findVirtual(StructProxyGenerator.class, "enhance", MethodType.methodType(Object.class, Class.class, MemorySegment.class));
             REALMEMORY_METHOD = NativeStructEnhanceMark.class.getMethod("realMemory");
             GENERATOR_VARHANDLE = StructProxyGenerator.class.getMethod("generateVarHandle", MemoryLayout.class, String.class);
-//            NativeGeneratorHelper.fetchCurrentNativeStructGenerator = STRUCT_CONTEXT::get;
+            SHORTCUT_INDY_BOOTSTRAP_METHOD = InvokeDynamicFactory.class.getMethod("shortcutIndyFactory", MethodHandles.Lookup.class, String.class, MethodType.class, Object[].class);
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -317,6 +314,189 @@ public class StructProxyGenerator {
         enhance(target);
     }
 
+    public <T> Supplier<T> generateShortcut(Class<T> shortcutInterface) {
+        if (!shortcutInterface.isInterface()) {
+            throw new IllegalArgumentException("shortcut should be interface!");
+        }
+        String proxyName = generatorShortcutProxyName(shortcutInterface);
+        NativeGeneratorHelper.STRUCT_CONTEXT.set(new StructProxyContext(this, null));
+        try {
+            Class<T> targetProxyClass = null;
+            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(shortcutInterface, MethodHandles.lookup());
+            try {
+                targetProxyClass = (Class<T>) lookup.findClass(proxyName);
+            } catch (ClassNotFoundException ignore) {
+                targetProxyClass = generateShortcutClass(lookup, shortcutInterface);
+            }
+
+            if (!skipInit) {
+                lookup.ensureInitialized(targetProxyClass);
+            }
+            MethodHandle methodHandle = MethodHandles.lookup().findConstructor(targetProxyClass, MethodType.methodType(void.class));
+            if (use_lmf) {
+                return (Supplier<T>) NativeGeneratorHelper.ctorBinder(methodHandle);
+            }
+            return () -> {
+                var mh = methodHandle.asType(methodHandle.type().changeReturnType(Object.class));
+                try {
+                    return (T) mh.invokeExact();
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
+                return null;
+            };
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        } finally {
+            NativeGeneratorHelper.STRUCT_CONTEXT.remove();
+        }
+
+    }
+
+
+    private <T> Class<T> generateShortcutClass(MethodHandles.Lookup lookup, Class<T> interfaceClass) throws IllegalAccessException {
+        List<ShortCutInfo> shortCutInfoList = Arrays.stream(interfaceClass.getMethods())
+                .filter(m -> !m.isSynthetic() && !m.isBridge() && !m.isDefault())
+                .map(this::parseShortcutMethod)
+                .toList();
+
+        String shortcutProxyName = generatorShortcutProxyName(interfaceClass);
+        ClassDesc thisClass = ClassDesc.of(shortcutProxyName);
+        var byteCode = classFile.build(thisClass, cb -> {
+            cb.withField(GENERATOR_FIELD, ClassFileHelper.toDesc(StructProxyGenerator.class), AccessFlags.ofField(AccessFlag.PUBLIC, AccessFlag.STATIC, AccessFlag.FINAL).flagsMask());
+            cb.withInterfaceSymbols(ClassFileHelper.toDesc(interfaceClass));
+            for (ShortCutInfo info : shortCutInfoList) {
+                Method method = info.method;
+                cb.withMethodBody(method.getName(), ClassFileHelper.toMethodDescriptor(method), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+                    ClassFileHelper.loadAllArgs(method, it);
+                    it.invokeDynamicInstruction(
+                            DynamicCallSiteDesc.of(
+                                    MethodHandleDesc.ofMethod(
+                                            DirectMethodHandleDesc.Kind.STATIC, ClassFileHelper.toDesc(InvokeDynamicFactory.class), SHORTCUT_INDY_BOOTSTRAP_METHOD.getName(),
+                                            ClassFileHelper.toMethodDescriptor(SHORTCUT_INDY_BOOTSTRAP_METHOD)
+                                    ),
+                                    method.getName(),
+                                    ClassFileHelper.toMethodDescriptor(method)
+                            )
+                    );
+                    it.returnInstruction(ClassFileHelper.calType(method.getReturnType()));
+                });
+            }
+            cb.withMethodBody("<clinit>", MethodTypeDesc.ofDescriptor("()V"), (AccessFlag.STATIC.mask()), it -> {
+                ClassFileHelper.invoke(it, NativeGeneratorHelper.FETCH_CURRENT_STRUCT_GENERATOR_GENERATOR);
+                it.putstatic(thisClass, GENERATOR_FIELD, ClassFileHelper.toDesc(StructProxyGenerator.class));
+                it.return_();
+            });
+
+            cb.withMethodBody("<init>", MethodTypeDesc.ofDescriptor("()V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+                it.aload(0);
+                it.invokespecial(ClassFileHelper.toDesc(Object.class), "<init>", MethodTypeDesc.ofDescriptor("()V"));
+                it.return_();
+            });
+        });
+
+        if (classDataPeek != null) {
+            classDataPeek.accept(shortcutProxyName, byteCode);
+        }
+
+        return (Class<T>) lookup.defineClass(byteCode);
+    }
+
+    private static final Set<VarHandle.AccessMode> getterModes = Set.of(VarHandle.AccessMode.GET, VarHandle.AccessMode.GET_VOLATILE, VarHandle.AccessMode.GET_OPAQUE, VarHandle.AccessMode.GET_ACQUIRE);
+    private static final Set<VarHandle.AccessMode> setterModes = Set.of(VarHandle.AccessMode.SET, VarHandle.AccessMode.SET_VOLATILE, VarHandle.AccessMode.SET_OPAQUE, VarHandle.AccessMode.SET_RELEASE);
+
+    private ShortCutInfo parseShortcutMethod(Method shortcutMethod) {
+        ShortcutOption option = shortcutMethod.getAnnotation(ShortcutOption.class);
+        if (option == null) {
+            throw new IllegalArgumentException("shortcut method should be marked as ShortcutOption");
+        }
+        Class owner = option.owner();
+        if (primitiveMapToMemoryLayout(owner) != null) {
+            throw new IllegalArgumentException("owner cant be primitive!");
+        }
+
+        VarHandle.AccessMode accessMode = option.mode();
+
+        if (!(getterModes.contains(accessMode) || setterModes.contains(accessMode))) {
+            throw new IllegalArgumentException("mode should be getter or setter");
+        }
+
+        boolean isGetter = getterModes.contains(accessMode);
+        Parameter[] parameters = shortcutMethod.getParameters();
+        MemoryLayout targetFieldLayout;
+        if (isGetter) {
+            //需要返回值为基础类型且入参长度唯一 第一个参数类型为owner一致或者为MemorySegment
+            if (parameters.length != 1 || !(parameters[0].getType().equals(owner) || MemorySegment.class.isAssignableFrom(parameters[0].getType()))) {
+                throw new IllegalArgumentException("getter shortcut method should have one parameter and type should be `owner` or MemorySegment");
+            }
+            if (!shortcutMethod.getReturnType().isPrimitive() || shortcutMethod.getReturnType() == void.class) {
+                throw new IllegalArgumentException("getter shortcut method should return primitive type");
+            }
+            targetFieldLayout = primitiveMapToMemoryLayout(shortcutMethod.getReturnType());
+        } else {
+            //setter
+            //返回值为void 入参长度为2 第一个参数类型为owner一致或者为MemorySegment 第二个参数类型为owner一致
+            if (parameters.length != 2 || !(parameters[0].getType().equals(owner) || MemorySegment.class.isAssignableFrom(parameters[0].getType())) || !parameters[1].getType().isPrimitive()) {
+                throw new IllegalArgumentException("setter shortcut method should have two parameter and type should be `owner` or MemorySegment");
+            }
+            if (!shortcutMethod.getReturnType().equals(void.class)) {
+                throw new IllegalArgumentException("setter shortcut method should return void");
+            }
+            targetFieldLayout = primitiveMapToMemoryLayout(parameters[1].getType());
+        }
+
+        //检查路径是否正确
+        MemoryLayout memoryLayout = extract(owner);
+        String[] pathNodes = option.value();
+
+        if (pathNodes.length < 1) {
+            throw new IllegalArgumentException("path length cant equal zero");
+        }
+
+        for (String node : pathNodes) {
+            MemoryLayout fieldLayout = memoryLayout.select(MemoryLayout.PathElement.groupElement(node));
+            if (fieldLayout instanceof AddressLayout addressLayout) {
+                memoryLayout = addressLayout.targetLayout().orElseThrow(() -> new StructException(node + " as address layout should have target layout"));
+            } else {
+                memoryLayout = fieldLayout;
+            }
+        }
+        if (memoryLayout.byteSize() != targetFieldLayout.byteSize()) {
+            throw new IllegalArgumentException("shortcut type size not match");
+        }
+
+        return new ShortCutInfo(pathNodes, accessMode, shortcutMethod);
+    }
+
+    MethodHandle generateShortcutTrustedMH(Method method) {
+        ShortcutOption shortcutOption = method.getAnnotation(ShortcutOption.class);
+        VarHandle.AccessMode accessMode = shortcutOption.mode();
+
+        Class ownered = shortcutOption.owner();
+        MemoryLayout ownerLayout = extract(ownered);
+        MemoryLayout memoryLayout = ownerLayout;
+        String[] pathNodes = shortcutOption.value();
+        ArrayList<MemoryLayout.PathElement> pathElements = new ArrayList<>(pathNodes.length);
+        for (String node : pathNodes) {
+            memoryLayout = memoryLayout.select(MemoryLayout.PathElement.groupElement(node));
+            pathElements.add(MemoryLayout.PathElement.groupElement(node));
+            if (memoryLayout instanceof AddressLayout addressLayout) {
+                memoryLayout = addressLayout.targetLayout().get();
+                pathElements.add(MemoryLayout.PathElement.dereferenceElement());
+            }
+        }
+        MemoryLayout.PathElement[] path = pathElements.toArray(new MemoryLayout.PathElement[pathElements.size()]);
+        var mh = MethodHandles.insertCoordinates(ownerLayout.varHandle(path), 1, 0L)
+                .toMethodHandle(accessMode);
+        return MethodHandles.filterArguments(
+                mh,
+                0,
+                TRANSFORM_OBJECT_TO_STRUCT_MH.asType(TRANSFORM_OBJECT_TO_STRUCT_MH.type().changeParameterType(0, method.getParameters()[0].getType())));
+    }
+
+    <T> String generatorShortcutProxyName(Class<T> shortcutInterface) {
+        return shortcutInterface.getName() + "_shortcut_proxy";
+    }
 
     public void useLmf(boolean use_lmf) {
         this.use_lmf = use_lmf;
@@ -618,5 +798,9 @@ public class StructProxyGenerator {
         return it -> {
         };
     }
+
+    private record ShortCutInfo(String[] path, VarHandle.AccessMode accessMode, Method method) {
+    }
+
 }
 

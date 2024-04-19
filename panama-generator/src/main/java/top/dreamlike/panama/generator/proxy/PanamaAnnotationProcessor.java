@@ -17,10 +17,8 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.classfile.AccessFlags;
-import java.lang.classfile.AnnotationElement;
 import java.lang.classfile.AnnotationValue;
-import java.lang.classfile.ClassFile;
+import java.lang.classfile.*;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
 import java.lang.constant.ClassDesc;
@@ -29,6 +27,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
@@ -37,6 +36,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -64,9 +64,8 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
 
     private StructProxyGenerator structProxyGenerator;
     private NativeCallGenerator nativeCallGenerator;
-    private ArrayList<NativeProxyPair> nativeCallInterfaceNames = new ArrayList<>();
+    private ArrayList<ProxyPair> proxyPair = new ArrayList<>();
 
-    private ArrayList<NativeProxyPair> structProxyNames = new ArrayList<>();
 
     private ClassFile classFile = ClassFile.of();
 
@@ -94,7 +93,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
         }
 
         this.structProxyGenerator = new StructProxyGenerator();
-        structProxyGenerator.skipInit = true;
+        structProxyGenerator.skipInit = false;
         this.structProxyGenerator.classDataPeek = (className, bytecode) -> {
             try (var ouputStream = this.env.getFiler().createClassFile(className).openOutputStream()) {
                 ouputStream.write(bytecode);
@@ -137,15 +136,28 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 TypeElement typeElement = (TypeElement) element;
                 boolean isInterface = typeElement.getKind().isInterface();
                 Class runtimeClass = toRuntiumeClass(typeElement.asType());
-                if (isInterface) {
-                    MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(runtimeClass, MethodHandles.lookup());
-//                    nativeCallGenerator.generateRuntimeProxyClass(lookup, runtimeClass);
-                    nativeCallGenerator.bind(runtimeClass);
-                    nativeCallInterfaceNames.add(new NativeProxyPair(runtimeClass.getName(), nativeCallGenerator.generateProxyClassName(runtimeClass)));
-                } else {
+                CompileTimeGenerate.GenerateType generateType = element.getAnnotation(CompileTimeGenerate.class).value();
+
+                if (!isInterface) {
                     structProxyGenerator.enhance(runtimeClass);
-                    structProxyNames.add(new NativeProxyPair(runtimeClass.getName(), structProxyGenerator.generateProxyClassName(runtimeClass)));
+                    proxyPair.add(new ProxyPair(runtimeClass.getName(), structProxyGenerator.generateProxyClassName(runtimeClass), CompileTimeGenerate.GenerateType.STRUCT_PROXY));
+                } else {
+                    switch (generateType) {
+                        case STRUCT_PROXY -> {
+                            structProxyGenerator.enhance(runtimeClass);
+                            proxyPair.add(new ProxyPair(runtimeClass.getName(), structProxyGenerator.generateProxyClassName(runtimeClass), CompileTimeGenerate.GenerateType.STRUCT_PROXY));
+                        }
+                        case SHORTCUT -> {
+                            structProxyGenerator.generateShortcut(runtimeClass);
+                            proxyPair.add(new ProxyPair(runtimeClass.getName(), structProxyGenerator.generatorShortcutProxyName(runtimeClass), CompileTimeGenerate.GenerateType.SHORTCUT));
+                        }
+                        case NATIVE_CALL -> {
+                            nativeCallGenerator.generate(runtimeClass);
+                            proxyPair.add(new ProxyPair(runtimeClass.getName(), nativeCallGenerator.generateProxyClassName(runtimeClass), CompileTimeGenerate.GenerateType.NATIVE_CALL));
+                        }
+                    }
                 }
+
             }
             if (roundEnv.processingOver() && enableGraalFeature) {
                 String generatedFeatureJsonFile = generateFeature();
@@ -191,9 +203,20 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
 
         //这里不在乎什么继承啥的 只需要解析内部结构数据就行了
         boolean isInterface = currentTypeElement.getKind().isInterface();
+        CompileTimeGenerate compileTimeGenerate = currentTypeElement.getAnnotation(CompileTimeGenerate.class);
+        CompileTimeGenerate.GenerateType type = compileTimeGenerate.value();
         try {
-            Class c = isInterface ? toRuntimeClassForNativeCallInterface(currentTypeElement) : toRuntimeClassForNativeStruct(currentTypeElement);
-            classMap.put(currentTypeElement.getQualifiedName().toString(), c);
+            Class c = null;
+            if (!isInterface) {
+                c = toRuntimeClassForNativeStruct(currentTypeElement);
+            } else {
+                c = switch (type) {
+                    case STRUCT_PROXY -> toRuntimeClassForNativeStruct(currentTypeElement);
+                    case SHORTCUT -> toRuntimeClassForShortcutInterface(currentTypeElement);
+                    case NATIVE_CALL -> toRuntimeClassForNativeCallInterface(currentTypeElement);
+                };
+            }
+
             return c;
         } catch (Throwable t) {
             throw new StructException("should not reach here!", t);
@@ -209,7 +232,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
             classBuilder.withFlags(AccessFlag.PUBLIC, AccessFlag.INTERFACE, AccessFlag.ABSTRACT);
             CLib cLib = currentTypeElement.getAnnotation(CLib.class);
             if (cLib != null) {
-                java.lang.classfile.Annotation annotation = java.lang.classfile.Annotation.of(
+                Annotation annotation = Annotation.of(
                         ClassFileHelper.toDesc(CLib.class),
                         AnnotationElement.of("value", AnnotationValue.ofString(cLib.value())),
                         AnnotationElement.of("inClassPath", AnnotationValue.ofBoolean(cLib.inClassPath())),
@@ -235,8 +258,8 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 MethodTypeDesc methodTypeDesc = MethodTypeDesc.ofDescriptor("(" + parametersSignature + ")" + returnSignature);
                 classBuilder.withMethod(executableElement.getSimpleName().toString(), methodTypeDesc, AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.ABSTRACT).flagsMask(), it -> {
                     //对参数做处理
-                    List<List<java.lang.classfile.Annotation>> parameterAnnotation = parameters.stream()
-                            .map(v -> v.getAnnotation(Pointer.class) == null ? List.<java.lang.classfile.Annotation>of() : List.of(java.lang.classfile.Annotation.of(ClassFileHelper.toDesc(Pointer.class))))
+                    List<List<Annotation>> parameterAnnotation = parameters.stream()
+                            .map(v -> v.getAnnotation(Pointer.class) == null ? List.<Annotation>of() : List.of(Annotation.of(ClassFileHelper.toDesc(Pointer.class))))
                             .toList();
 
                     it.with(RuntimeVisibleParameterAnnotationsAttribute.of(parameterAnnotation));
@@ -244,7 +267,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                     //NativeFunction处理
                     NativeFunction nativeFunction = executableElement.getAnnotation(NativeFunction.class);
                     if (nativeFunction != null) {
-                        java.lang.classfile.Annotation annotation = java.lang.classfile.Annotation.of(
+                        Annotation annotation = Annotation.of(
                                 ClassFileHelper.toDesc(NativeFunction.class),
                                 AnnotationElement.of("value", AnnotationValue.ofString(nativeFunction.value())),
                                 AnnotationElement.of("fast", AnnotationValue.ofBoolean(nativeFunction.fast())),
@@ -261,6 +284,61 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
         return define(thisClassName, classByteCode);
     }
 
+    public Class toRuntimeClassForShortcutInterface(TypeElement currentTypeElement) throws Throwable {
+        String thisClassName = getRealName(currentTypeElement);
+        ClassDesc thisClassDesc = ClassFileHelper.toDesc(thisClassName);
+        var bytecode = classFile.build(thisClassDesc, cb -> {
+            cb.withFlags(AccessFlag.PUBLIC, AccessFlag.INTERFACE, AccessFlag.ABSTRACT);
+            List<ExecutableElement> executableElements = ElementFilter.methodsIn(currentTypeElement.getEnclosedElements());
+            for (ExecutableElement executableElement : executableElements) {
+                if (executableElement.getModifiers().contains(Modifier.DEFAULT)) {
+                    continue;
+                }
+                //不需要解析default直接跳过
+                if (executableElement.getModifiers().contains(Modifier.DEFAULT)) {
+                    continue;
+                }
+                Class returnClass = toRuntiumeClass(executableElement.getReturnType());
+                List<? extends VariableElement> parameters = executableElement.getParameters();
+                String parametersSignature = parameters.stream()
+                        .map(VariableElement::asType)
+                        .map(this::toRuntiumeClass)
+                        .map(ClassFileHelper::toSignature)
+                        .collect(Collectors.joining());
+                String returnSignature = ClassFileHelper.toSignature(returnClass);
+                MethodTypeDesc methodTypeDesc = MethodTypeDesc.ofDescriptor("(" + parametersSignature + ")" + returnSignature);
+                cb.withMethod(executableElement.getSimpleName().toString(), methodTypeDesc, AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.ABSTRACT).flagsMask(), it -> {
+                    //NativeFunction处理
+                    ShortcutOption option = executableElement.getAnnotation(ShortcutOption.class);
+                    if (option != null) {
+                        var valued = Stream.of(option.value()).map(AnnotationValue::ofString).map(c -> ((AnnotationValue) c)).toList();
+                        Annotation annotation = Annotation.of(
+                                ClassFileHelper.toDesc(ShortcutOption.class),
+                                AnnotationElement.of("value", AnnotationValue.ofArray(valued)),
+                                AnnotationElement.of("mode", AnnotationValue.ofEnum(ClassFileHelper.toDesc(VarHandle.AccessMode.class), option.mode().name())),
+                                AnnotationElement.ofClass("owner", ClassFileHelper.toDesc(getAnnotationAttributeClassValue(option::owner)))
+                        );
+                        it.with(RuntimeVisibleAnnotationsAttribute.of(annotation));
+                    }
+
+                });
+
+
+            }
+        });
+
+        return define(thisClassName, bytecode);
+    }
+
+    private Class getAnnotationAttributeClassValue(Supplier<Class> supplier) {
+        try {
+            return supplier.get();
+        } catch (MirroredTypeException exception) {
+            TypeMirror typeMirror = exception.getTypeMirror();
+            return toRuntiumeClass(typeMirror);
+        }
+    }
+
     public Class toRuntimeClassForNativeStruct(TypeElement currentTypeElement) throws Throwable {
         String thisClassName = getRealName(currentTypeElement);
         String thisClassDescStr = thisClassName.replace(".", "/");
@@ -270,7 +348,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
             classBuilder.withFlags(AccessFlag.PUBLIC);
             Alignment alignment = currentTypeElement.getAnnotation(Alignment.class);
             if (alignment != null) {
-                java.lang.classfile.Annotation annotation = java.lang.classfile.Annotation.of(
+                Annotation annotation = Annotation.of(
                         ClassFileHelper.toDesc(Alignment.class),
                         AnnotationElement.of("byteSize", AnnotationValue.ofInt(alignment.byteSize()))
                 );
@@ -279,7 +357,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
 
             Union union = currentTypeElement.getAnnotation(Union.class);
             if (union != null) {
-                java.lang.classfile.Annotation annotation = java.lang.classfile.Annotation.of(
+                Annotation annotation = Annotation.of(
                         ClassFileHelper.toDesc(Union.class)
                 );
                 classBuilder.with(RuntimeVisibleAnnotationsAttribute.of(annotation));
@@ -288,7 +366,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
             for (VariableElement field : fields) {
                 classBuilder.withField(field.getSimpleName().toString(), ClassFileHelper.toDesc(toRuntiumeClass(field.asType())), it -> {
                     it.withFlags(calModifier(field.getModifiers()));
-                    ArrayList<java.lang.classfile.Annotation> annotations = new ArrayList<>();
+                    ArrayList<Annotation> annotations = new ArrayList<>();
                     Pointer pointer = field.getAnnotation(Pointer.class);
                     if (pointer != null) {
                         Class layout;
@@ -299,7 +377,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                             layout = toRuntiumeClass(typeMirror);
                         }
                         annotations.add(
-                                java.lang.classfile.Annotation.of(
+                                Annotation.of(
                                         ClassFileHelper.toDesc(Pointer.class),
                                         AnnotationElement.of("targetLayout", AnnotationValue.ofClass(ClassFileHelper.toDesc(layout)))
                                 )
@@ -315,7 +393,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                             size = toRuntiumeClass(typeMirror);
                         }
                         annotations.add(
-                                java.lang.classfile.Annotation.of(
+                                Annotation.of(
                                         ClassFileHelper.toDesc(NativeArrayMark.class),
                                         AnnotationElement.of("size", AnnotationValue.ofClass(ClassFileHelper.toDesc(size))),
                                         AnnotationElement.of("length", AnnotationValue.ofInt(nativeArrayMark.length())),
@@ -326,7 +404,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
 
                     if (field.getAnnotation(Skip.class) != null) {
                         annotations.add(
-                                java.lang.classfile.Annotation.of(
+                                Annotation.of(
                                         ClassFileHelper.toDesc(Skip.class)
                                 )
                         );
@@ -342,6 +420,13 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
     }
 
     public Class define(String name, byte[] bytecode) throws Throwable {
+        ClassLoader classLoader = PanamaAnnotationProcessor.class.getClassLoader();
+        try {
+            return Class.forName(name, false, classLoader);
+        } catch (ClassNotFoundException _) {
+        }
+
+
         dump(name, bytecode);
         return ((Class) DEFINE_CLASS_METHOD_HANDLE.invokeExact(PanamaAnnotationProcessor.class.getClassLoader(), bytecode, 0, bytecode.length));
     }
@@ -371,15 +456,17 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
     }
 
     private String generateDuringSetupBlock() {
-        ArrayList<NativeProxyPair> callInterfaceNames = this.nativeCallInterfaceNames;
+        ArrayList<ProxyPair> callInterfaceNames = this.proxyPair;
         return callInterfaceNames.stream()
-                .map(nativeProxyPair -> "NativeImageHelper.initPanamaFeature(" + nativeProxyPair.origin + ".class);")
+                .filter(p -> p.generateType == CompileTimeGenerate.GenerateType.NATIVE_CALL)
+                .map(proxyPair -> "NativeImageHelper.initPanamaFeature(" + proxyPair.origin + ".class);")
                 .collect(Collectors.joining("\n"));
     }
 
     private String generateBeforeAnalysisBlock() {
-        var nativeCallStream = this.nativeCallInterfaceNames
+        var interfaceStream = this.proxyPair
                 .stream()
+                .filter(p -> p.generateType == CompileTimeGenerate.GenerateType.NATIVE_CALL || p.generateType == CompileTimeGenerate.GenerateType.SHORTCUT)
                 .map(p -> String.format("""
                                 needRegisterClass = Class.forName("%s", false, getClass().getClassLoader());
                                 RuntimeReflection.registerFieldLookup(needRegisterClass, "_generator");
@@ -394,8 +481,9 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                               //  RuntimeClassInitialization.initializeAtBuildTime(needRegisterClass);
                         """, p.proxy, p.origin));
 
-        var structProxyStream = this.structProxyNames
+        var structProxyStream = this.proxyPair
                 .stream()
+                .filter(p -> p.generateType == CompileTimeGenerate.GenerateType.STRUCT_PROXY)
                 .map(p -> String.format("""
                                 needRegisterClass = Class.forName("%s", false, getClass().getClassLoader());
                               //  RuntimeReflection.registerConstructorLookup(needRegisterClass, MemorySegment.class);
@@ -415,7 +503,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                         needRegisterClass = Class.forName("%s", false, getClass().getClassLoader());
                          RuntimeReflection.registerAllMethods(needRegisterClass);
                         """, name));
-        return Stream.of(baseStream, nativeCallStream, structProxyStream)
+        return Stream.of(baseStream, interfaceStream, structProxyStream)
                 .flatMap(Function.identity())
                 .collect(Collectors.joining("\n"));
     }
@@ -483,7 +571,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
         return String.join("", realNameDeque);
     }
 
-    private record NativeProxyPair(String origin, String proxy) {
+    private record ProxyPair(String origin, String proxy, CompileTimeGenerate.GenerateType generateType) {
     }
 
     private void dump(String className, byte[] bytes) {

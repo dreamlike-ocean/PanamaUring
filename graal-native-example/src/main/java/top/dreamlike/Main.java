@@ -11,12 +11,15 @@ public class Main {
 
     private static final StdLib STD_LIB;
 
+    private static final Person.PersonShort personShortcut;
+
     static {
         StructProxyGenerator proxyGenerator = new StructProxyGenerator();
         NativeCallGenerator generator = new NativeCallGenerator(proxyGenerator);
         STD_LIB = generator.generate(StdLib.class);
         proxyGenerator.register(Person.class);
         proxyGenerator.register(TestContainer.class);
+        personShortcut = proxyGenerator.generateShortcut(Person.PersonShort.class).get();
     }
 
     static {
@@ -31,6 +34,8 @@ public class Main {
         System.out.println("add :" + add);
         Person person = STD_LIB.fillPerson(1, 100L);
         System.out.println(person);
+
+        System.out.println(personShortcut.getPersonA(person));
     }
 
 }

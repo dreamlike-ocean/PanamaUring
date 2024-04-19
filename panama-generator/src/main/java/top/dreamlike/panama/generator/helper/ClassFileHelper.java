@@ -22,6 +22,10 @@ public class ClassFileHelper {
         return ClassDesc.ofDescriptor(toSignature(c));
     }
 
+    public static ClassDesc toDesc(String className) {
+        return ClassDesc.ofDescriptor("L" + className.replace(".", "/") + ";");
+    }
+
     public static String toSignature(Executable method) {
         String paramSignature = Arrays.stream(method.getParameters())
                 .map(Parameter::getType)

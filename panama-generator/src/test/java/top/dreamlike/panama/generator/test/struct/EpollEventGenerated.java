@@ -21,6 +21,9 @@ public class EpollEventGenerated {
         this.events = events;
     }
 
+    public void setData(epoll_data_t data) {
+        this.data = data;
+    }
 
     @Union
     @Alignment(byteSize = 1)
@@ -40,6 +43,14 @@ public class EpollEventGenerated {
 
         public void setFd(int fd) {
             this.fd = fd;
+        }
+
+        public void setU64(long u64) {
+            this.u64 = u64;
+        }
+
+        public long getU64() {
+            return u64;
         }
     }
 

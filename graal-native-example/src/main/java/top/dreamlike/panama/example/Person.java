@@ -1,6 +1,9 @@
 package top.dreamlike.panama.example;
 
 import top.dreamlike.panama.generator.annotation.CompileTimeGenerate;
+import top.dreamlike.panama.generator.annotation.ShortcutOption;
+
+import java.lang.invoke.VarHandle;
 
 @CompileTimeGenerate
 public class Person {
@@ -26,5 +29,15 @@ public class Person {
     @Override
     public String toString() {
         return "a: " + getA() + ", n: " + getN();
+    }
+
+    @CompileTimeGenerate(CompileTimeGenerate.GenerateType.SHORTCUT)
+    public interface PersonShort {
+        @ShortcutOption(value = "a", owner = Person.class, mode = VarHandle.AccessMode.SET)
+        void setPersonA(Person person, int a);
+
+        @ShortcutOption(value = "a", owner = Person.class, mode = VarHandle.AccessMode.GET)
+        int getPersonA(Person person);
+
     }
 }

@@ -27,6 +27,17 @@ public class InvokeDynamicFactory {
         return new ConstantCallSite(nativeCallMH);
     }
 
+    public static CallSite shortcutIndyFactory(MethodHandles.Lookup lookup, String methodName, MethodType methodType, Object... args) throws Throwable {
+        if (Condition.DEBUG) {
+            System.out.println("call shortcutIndyFactory lookup:" + lookup + " methodName:" + methodName + " methodType:" + methodType);
+        }
+        Class<?> lookupClass = lookup.lookupClass();
+        StructProxyGenerator generator = ((StructProxyGenerator) lookup.findStaticVarHandle(lookupClass, StructProxyGenerator.GENERATOR_FIELD, StructProxyGenerator.class).get());
+        Class<?> targetInterface = lookupClass.getInterfaces()[0];
+        Method method = targetInterface.getMethod(methodName, methodType.parameterArray());
+        return new ConstantCallSite(generator.generateShortcutTrustedMH(method));
+    }
+
     /**
      * 默认已经 aload0
      *
