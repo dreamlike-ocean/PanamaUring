@@ -21,6 +21,7 @@
         <mutiny.version>2.5.0</mutiny.version>
         <panama-generator>1.3</panama-generator>
         <log.version>2.23.1</log.version>
+        <networking.version>0.0.1</networking.version>
     </properties>
 
     <licenses>
@@ -49,6 +50,7 @@
         <module>panama-uring</module>
         <module>panama-generator</module>
         <module>graal-native-example</module>
+        <module>panama-uring-networking</module>
     </modules>
     <profiles>
         <profile>
