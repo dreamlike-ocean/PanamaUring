@@ -203,8 +203,12 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
             try {
                 resPtr = Instance.LIB_JEMALLOC.malloc(ValueLayout.JAVA_LONG.byteSize());
                 NativeIoUringBufRing bufRing = libUring.io_uring_setup_buf_ring(internalRing, internalEntries, bufferGroupId, 0, resPtr);
+                int res = resPtr.get(ValueLayout.JAVA_INT, 0);
+                if (res < 0) {
+                    return new IoUringBufRingSetupResult(res, null);
+                }
                 InternalNativeIoUringRing bufferRing = new InternalNativeIoUringRing(bufRing, bufferGroupId, internalEntries, blockSize);
-                return new IoUringBufRingSetupResult(resPtr.get(ValueLayout.JAVA_INT, 0), bufferRing);
+                return new IoUringBufRingSetupResult(res, bufferRing);
             } finally {
                 if (resPtr != null) {
                     Instance.LIB_JEMALLOC.free(resPtr);

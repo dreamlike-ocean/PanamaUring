@@ -287,7 +287,8 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSele
     }
 
     public boolean bindBufferRing(IoUringBufferRing bufferRing) {
-        return BUFFER_RING_VH.compareAndSet(this, null, bufferRing);
+        BUFFER_RING_VH.setVolatile(this, bufferRing);
+        return true;
     }
 
     @Override
