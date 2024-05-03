@@ -13,7 +13,7 @@ import java.util.function.LongFunction;
 
 public class ReaderEventLoop extends IoUringEventLoop {
 
-    private final LongFunction<IoUringBufferRing> choose;
+    final LongFunction<IoUringBufferRing> choose;
 
     public ReaderEventLoop(ReadEventLoopOption option) {
         super(option.toConfig());
@@ -22,6 +22,10 @@ public class ReaderEventLoop extends IoUringEventLoop {
 
     public void register(IOStream stream) {
 
+    }
+
+    public LongFunction<IoUringBufferRing> getChoose() {
+        return choose;
     }
 
     public static class DefaultBufferRingChoose implements LongFunction<IoUringBufferRing> {

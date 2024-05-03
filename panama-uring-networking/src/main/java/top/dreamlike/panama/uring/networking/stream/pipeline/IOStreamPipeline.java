@@ -1,26 +1,33 @@
 package top.dreamlike.panama.uring.networking.stream.pipeline;
 
+import top.dreamlike.panama.uring.async.trait.IoUringOperator;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
+import top.dreamlike.panama.uring.networking.stream.IOStream;
 
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-public class IOStreamPipeline {
+public class IOStreamPipeline <T extends IoUringOperator> {
 
 
     private final IoUringEventLoop eventLoop;
 
     private IOContext head;
     private IOContext tail;
-
-    private boolean autoRead = true;
+    private final IOStream<T> stream;
 
     private ReentrantReadWriteLock contextListLock = new ReentrantReadWriteLock();
 
-    public IOStreamPipeline(IoUringEventLoop eventLoop) {
+    public IOStreamPipeline(IoUringEventLoop eventLoop, IOStream<T> stream) {
         this.eventLoop = eventLoop;
+        this.stream = stream;
+    }
 
+    public IOStream<T> stream() {
+        return stream;
     }
 
     public void addLast(String name, IOHandler handler) {
@@ -185,6 +192,36 @@ public class IOStreamPipeline {
         return res;
     }
 
+    public void fireRead(Object msg) {
+        fireEvent(head, (c) -> c.ioHandler.onRead(c, msg));
+    }
+
+    public void fireError(Throwable throwable) {
+        fireEvent(head, (c) -> c.ioHandler.onError(c, throwable));
+    }
+
+    public void fireWrite(Object msg, CompletableFuture<Integer> promise) {
+        fireEvent(head, c -> c.ioHandler.onWrite(c, msg, promise));
+    }
+
+    private void fireEvent(IOContext context, Consumer<IOContext> handle) {
+        if (context == null) {
+            return;
+        }
+        Runnable r = () -> {
+            try {
+                handle.accept(context);
+            } catch (Throwable e) {
+                context.fireNextError(e);
+            }
+        };
+        if (context.ioHandler.executor() == null) {
+            eventLoop.runOnEventLoop(r);
+        } else {
+            context.ioHandler.executor().execute(r);
+        }
+    }
+
     public class IOContext {
         IOHandler ioHandler;
         IOContext prev;
@@ -192,56 +229,21 @@ public class IOStreamPipeline {
 
         String name;
 
-        public void fireNextHandleActive() {
-            if (after == null) {
-                return;
-            }
-            if (ioHandler.executor() == null) {
-                eventLoop.runOnEventLoop(() -> after.ioHandler.onHandleActive(after));
-            } else {
-                ioHandler.executor().execute(() -> {
-                    after.ioHandler.onHandleActive(after);
-                });
-            }
-        }
 
         public void fireNextHandleInactive() {
-            if (after == null) {
-                return;
-            }
-            if (ioHandler.executor() == null) {
-                eventLoop.runOnEventLoop(() -> after.ioHandler.onHandleInactive(after));
-            } else {
-                ioHandler.executor().execute(() -> {
-                    after.ioHandler.onHandleInactive(after);
-                });
-            }
+            fireEvent(after, c -> c.ioHandler.onHandleInactive(c));
         }
 
         public void fireNextRead(Object msg) {
-            if (after == null) {
-                return;
-            }
-            if (ioHandler.executor() == null) {
-                eventLoop.runOnEventLoop(() -> after.ioHandler.onRead(after, msg));
-            } else {
-                ioHandler.executor().execute(() -> {
-                    after.ioHandler.onRead(after, msg);
-                });
-            }
+            fireEvent(after, c -> c.ioHandler.onRead(c, msg));
         }
 
-        public void fireNextWrite(Object msg) {
-            if (after == null) {
-                return;
-            }
-            if (ioHandler.executor() == null) {
-                eventLoop.runOnEventLoop(() -> after.ioHandler.onWrite(after, msg));
-            } else {
-                ioHandler.executor().execute(() -> {
-                    after.ioHandler.onWrite(after, msg);
-                });
-            }
+        public void fireNextWrite(Object msg, CompletableFuture<Integer> writePrmoise) {
+            fireEvent(after, c -> c.ioHandler.onWrite(c, msg, writePrmoise));
+        }
+
+        public void fireNextError(Throwable cause) {
+            fireEvent(after, c -> c.ioHandler.onError(c, cause));
         }
 
 

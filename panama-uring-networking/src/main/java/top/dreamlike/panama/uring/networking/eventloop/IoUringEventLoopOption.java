@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 public class IoUringEventLoopOption<T extends IoUringEventLoopOption<T>> {
     protected int ringSize = 32;
     protected int submissionQueueSize = 32;
-    protected int completionQueueSize = 32;
+    protected int completionQueueSize = submissionQueueSize * 2;
     protected int flags = 0;
 
     protected int wqFd = -1;
@@ -21,7 +21,7 @@ public class IoUringEventLoopOption<T extends IoUringEventLoopOption<T>> {
 
     public T setRingSize(int ringSize) {
         this.ringSize = ringSize;
-        return (T)this;
+        return (T) this;
     }
 
     public int getSubmissionQueueSize() {
@@ -30,7 +30,7 @@ public class IoUringEventLoopOption<T extends IoUringEventLoopOption<T>> {
 
     public T setSubmissionQueueSize(int submissionQueueSize) {
         this.submissionQueueSize = submissionQueueSize;
-        return (T)this;
+        return (T) this;
     }
 
     public int getCompletionQueueSize() {
@@ -39,7 +39,7 @@ public class IoUringEventLoopOption<T extends IoUringEventLoopOption<T>> {
 
     public T setCompletionQueueSize(int completionQueueSize) {
         this.completionQueueSize = completionQueueSize;
-        return (T)this;
+        return (T) this;
     }
 
     public int getFlags() {
@@ -48,17 +48,17 @@ public class IoUringEventLoopOption<T extends IoUringEventLoopOption<T>> {
 
     public T setFlags(int flags) {
         this.flags = flags;
-        return (T)this;
+        return (T) this;
     }
 
     public int getWqFd() {
         return wqFd;
     }
-    
+
     public T setWqFd(IoUringEventLoop ioUringEventLoop) {
         this.wqFd = PanamaUringSecret.findUring.apply(ioUringEventLoop).getRing_fd();
         this.flags = this.flags | IoUringConstant.IORING_SETUP_ATTACH_WQ;
-        return (T)this;
+        return (T) this;
     }
 
     Consumer<IoUringParams> toConfig() {

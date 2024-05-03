@@ -1,6 +1,7 @@
 package top.dreamlike.panama.uring.helper;
 
 import top.dreamlike.panama.uring.async.cancel.CancelToken;
+import top.dreamlike.panama.uring.async.fd.AsyncMultiShotTcpSocketFd;
 import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
@@ -18,4 +19,6 @@ public class PanamaUringSecret {
     public static Function<CancelToken, Long> peekCancelToken;
 
     public static Function<IoUringEventLoop, IoUring> findUring;
+
+    public static Function<AsyncMultiShotTcpSocketFd,  IoUringBufferRing> findBufferRing;
 }
