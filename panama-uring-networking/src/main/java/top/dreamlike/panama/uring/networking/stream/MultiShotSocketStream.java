@@ -6,11 +6,10 @@ import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
+import top.dreamlike.panama.uring.nativelib.libs.Libc;
 import top.dreamlike.panama.uring.networking.eventloop.ReaderEventLoop;
 import top.dreamlike.panama.uring.networking.stream.pipeline.IOStreamPipeline;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.LongFunction;
 
 public final class MultiShotSocketStream extends IOStream<AsyncMultiShotTcpSocketFd> {
@@ -18,9 +17,6 @@ public final class MultiShotSocketStream extends IOStream<AsyncMultiShotTcpSocke
     private final AsyncMultiShotTcpSocketFd socketFd;
 
     private CancelToken multiShotCancelToken = null;
-
-
-    private AtomicBoolean registered = new AtomicBoolean(false);
 
     private LongFunction<IoUringBufferRing> choose;
 
@@ -32,7 +28,7 @@ public final class MultiShotSocketStream extends IOStream<AsyncMultiShotTcpSocke
         this.socketFd = socketFd;
         IoUringEventLoop ioUringEventLoop = socketFd.owner();
         this.autoRead = autoRead;
-        this.pipeline = new IOStreamPipeline<>(ioUringEventLoop, this);
+        this.pipeline = new IOStreamPipeline<>(this);
         this.carrier = ioUringEventLoop;
         if (ioUringEventLoop instanceof ReaderEventLoop readerEventLoop) {
             choose = readerEventLoop.getChoose();
@@ -46,22 +42,6 @@ public final class MultiShotSocketStream extends IOStream<AsyncMultiShotTcpSocke
         }
     }
 
-
-    private void startAutoRead() {
-        IoUringBufferRing bufferRing = choose.apply(-1);
-        this.multiShotCancelToken = socketFd.asyncRecvMulti(0, bufferRing, ioUringCall -> {
-            if (ioUringCall.canceled()) {
-                return;
-            }
-            if (ioUringCall.res() < 0) {
-                pipeline.fireError(new SyscallException(ioUringCall.res()));
-                return;
-            }
-            pipeline.fireRead(ioUringCall.value());
-        });
-    }
-
-
     @Override
     public void setAutoRead(boolean autoRead) {
         if (autoRead == this.autoRead) {
@@ -71,14 +51,25 @@ public final class MultiShotSocketStream extends IOStream<AsyncMultiShotTcpSocke
     }
 
     @Override
-    public void startWrite(Object msg, CompletableFuture<Integer> promise) {
-        pipeline.fireWrite(msg, promise);
-    }
-
-    @Override
-    public AsyncMultiShotTcpSocketFd fd() {
+    public AsyncMultiShotTcpSocketFd socket() {
         return socketFd;
     }
+
+    private void startAutoRead() {
+        IoUringBufferRing bufferRing = choose.apply(-1);
+        this.multiShotCancelToken = socketFd.asyncRecvMulti(0, bufferRing, ioUringCall -> {
+            if (ioUringCall.canceled()) {
+                return;
+            }
+            if (ioUringCall.res() < 0) {
+                this.autoRead = false;
+                pipeline.fireError(new SyscallException(ioUringCall.res()));
+                return;
+            }
+            pipeline.fireRead(ioUringCall.value());
+        });
+    }
+
 
     private void setAutoRead0(boolean autoRead) {
         if (this.autoRead == autoRead) {
@@ -109,22 +100,17 @@ public final class MultiShotSocketStream extends IOStream<AsyncMultiShotTcpSocke
         cancelAutoRead0(token);
     }
 
-    private void cancelAutoRead0( CancelToken token) {
-        this.multiShotCancelToken = null;
+    private void cancelAutoRead0(CancelToken token) {
         token.cancelOperation()
                 .whenComplete((result, _) -> {
-
-                    if (result instanceof CancelToken.SuccessResult successResult) {
-                        this.autoRead = false;
-                        return;
-                    }
-                    if (result instanceof CancelToken.AlreadyResult) {
-                        cancelAutoRead0(token);
-                        return;
-                    }
-                    if (result instanceof CancelToken.OtherError otherError) {
-                        pipeline.fireError(new SyscallException(otherError.errno()));
-                        return;
+                    switch (result) {
+                        case CancelToken.AlreadyResult _ -> cancelAutoRead0(token);
+                        case CancelToken.SuccessResult(int _) -> this.autoRead = false;
+                        case CancelToken.OtherError(int errno) -> pipeline.fireError(new SyscallException(errno));
+                        case CancelToken.NoElementResult _ ->
+                                pipeline.fireError(new SyscallException(-Libc.Error_H.ENOENT));
+                        case CancelToken.InvalidResult _ ->
+                                pipeline.fireError(new SyscallException(-Libc.Error_H.EINVAL));
                     }
                 });
     }
@@ -135,7 +121,7 @@ public final class MultiShotSocketStream extends IOStream<AsyncMultiShotTcpSocke
     }
 
     @Override
-    public IOStreamPipeline pipeline() {
+    public IOStreamPipeline<AsyncMultiShotTcpSocketFd> pipeline() {
         return pipeline;
     }
 

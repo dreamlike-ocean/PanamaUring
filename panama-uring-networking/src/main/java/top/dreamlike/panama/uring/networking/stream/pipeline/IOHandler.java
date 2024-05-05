@@ -27,7 +27,7 @@ public interface IOHandler {
 
     }
 
-    default void onWrite(IOStreamPipeline.IOContext context, Object msg, CompletableFuture<Integer> promise) {
+    default void onWrite(IOStreamPipeline.IOContext context, Object msg, CompletableFuture<Void> promise) {
         context.fireNextWrite(msg, promise);
     }
 }

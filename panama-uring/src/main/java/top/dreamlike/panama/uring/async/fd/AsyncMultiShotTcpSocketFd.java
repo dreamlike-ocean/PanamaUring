@@ -4,7 +4,7 @@ import top.dreamlike.panama.uring.async.IoUringSyscallResult;
 import top.dreamlike.panama.uring.async.cancel.CancelToken;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
-import top.dreamlike.panama.uring.async.trait.IoUringOperator;
+import top.dreamlike.panama.uring.async.trait.IoUringSocketOperator;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.helper.CloseHandle;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
@@ -20,7 +20,7 @@ import java.net.SocketAddress;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-public class AsyncMultiShotTcpSocketFd implements IoUringOperator {
+public class AsyncMultiShotTcpSocketFd implements IoUringSocketOperator {
     final int fd;
 
     final SocketAddress localAddress;
@@ -108,7 +108,12 @@ public class AsyncMultiShotTcpSocketFd implements IoUringOperator {
         PanamaUringSecret.findBufferRing = (fd) -> fd.bufferRing;
     }
 
-    public void close() {
+    @Override
+    public int fd() {
+        return fd;
+    }
 
+    public void close() {
+        closeHandle.close();
     }
 }

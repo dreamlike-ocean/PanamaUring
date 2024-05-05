@@ -1,17 +1,21 @@
 package top.dreamlike.panama.uring.networking.stream.pipeline;
 
-import top.dreamlike.panama.uring.async.trait.IoUringOperator;
+import top.dreamlike.panama.uring.async.trait.IoUringSocketOperator;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
+import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.networking.stream.IOStream;
+import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
+import java.lang.foreign.MemorySegment;
+import java.util.ArrayDeque;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-public class IOStreamPipeline <T extends IoUringOperator> {
-
+public class IOStreamPipeline<T extends IoUringSocketOperator> {
 
     private final IoUringEventLoop eventLoop;
 
@@ -21,9 +25,12 @@ public class IOStreamPipeline <T extends IoUringOperator> {
 
     private ReentrantReadWriteLock contextListLock = new ReentrantReadWriteLock();
 
-    public IOStreamPipeline(IoUringEventLoop eventLoop, IOStream<T> stream) {
-        this.eventLoop = eventLoop;
+    private final Queue<OwnerShipMemoryProxy> sendQueue;
+
+    public IOStreamPipeline(IOStream<T> stream) {
+        this.eventLoop = stream.socket().owner();
         this.stream = stream;
+        this.sendQueue = new ArrayDeque<>();
     }
 
     public IOStream<T> stream() {
@@ -200,8 +207,50 @@ public class IOStreamPipeline <T extends IoUringOperator> {
         fireEvent(head, (c) -> c.ioHandler.onError(c, throwable));
     }
 
-    public void fireWrite(Object msg, CompletableFuture<Integer> promise) {
+    public void fireWrite(Object msg, CompletableFuture<Void> promise) {
         fireEvent(head, c -> c.ioHandler.onWrite(c, msg, promise));
+    }
+
+
+    private void flushSendQueue(OwnershipMemory msg, CompletableFuture<Void> sendPromise) {
+        eventLoop.runOnEventLoop(() -> flushSendQueue0(msg, sendPromise));
+    }
+
+    private void flushSendQueue0(OwnershipMemory msg, CompletableFuture<Void> sendPromise) {
+        OwnerShipMemoryProxy memoryProxy = sendQueue.peek();
+        OwnerShipMemoryProxy sendTask = new OwnerShipMemoryProxy(msg, sendPromise);
+        if (memoryProxy != null) {
+            //当前有数据正在发送
+            sendQueue.offer(sendTask);
+            return;
+        }
+        sendQueue.offer(sendTask);
+        send0();
+    }
+
+    private void send0() {
+        OwnerShipMemoryProxy currentSendTask = sendQueue.peek();
+        T socket = stream.socket();
+        OwnershipMemory sendBuffer = currentSendTask.toOwnershipMemory();
+        socket.asyncSend(sendBuffer, (int) sendBuffer.resource().byteSize(), 0)
+                .whenComplete((br, t) -> {
+                    if (t != null) {
+                        fireError(t);
+                        return;
+                    }
+                    int i = br.syscallRes();
+                    if (i < 0) {
+                        fireError(new SyscallException(i));
+                        return;
+                    }
+                    int hasSend = i;
+                    currentSendTask.hasSend += hasSend;
+                    if (currentSendTask.hasSend == currentSendTask.total) {
+                        currentSendTask.drop();
+                    } else {
+                        send0();
+                    }
+                });
     }
 
     private void fireEvent(IOContext context, Consumer<IOContext> handle) {
@@ -238,7 +287,16 @@ public class IOStreamPipeline <T extends IoUringOperator> {
             fireEvent(after, c -> c.ioHandler.onRead(c, msg));
         }
 
-        public void fireNextWrite(Object msg, CompletableFuture<Integer> writePrmoise) {
+        public void fireNextWrite(Object msg, CompletableFuture<Void> writePrmoise) {
+            if (after == null) {
+                if (msg instanceof OwnershipMemory memory) {
+                    //下一个没了 说明当前是最后一个准备直接写出
+                    flushSendQueue(memory, writePrmoise);
+                } else {
+                    fireError(new IllegalArgumentException("msg is not OwnershipMemory"));
+                }
+                return;
+            }
             fireEvent(after, c -> c.ioHandler.onWrite(c, msg, writePrmoise));
         }
 
@@ -247,6 +305,38 @@ public class IOStreamPipeline <T extends IoUringOperator> {
         }
 
 
+    }
+
+
+    private static class OwnerShipMemoryProxy implements OwnershipMemory {
+        private final OwnershipMemory originalMemory;
+        long hasSend;
+        long total;
+        private final CompletableFuture<Void> sendPromise;
+
+        private OwnerShipMemoryProxy(OwnershipMemory originalMemory, CompletableFuture<Void> sendPromise) {
+            this.originalMemory = originalMemory;
+            this.hasSend = 0L;
+            this.total = originalMemory.resource().byteSize();
+            this.sendPromise = sendPromise;
+        }
+
+        @Override
+        public MemorySegment resource() {
+            MemorySegment waitToSend = originalMemory.resource();
+            waitToSend = waitToSend.asSlice(hasSend, total - hasSend);
+            return waitToSend;
+        }
+
+        public OwnershipMemory toOwnershipMemory() {
+            return OwnershipMemory.of(resource());
+        }
+
+        @Override
+        public void drop() {
+            originalMemory.drop();
+            sendPromise.complete(null);
+        }
     }
 
 }
