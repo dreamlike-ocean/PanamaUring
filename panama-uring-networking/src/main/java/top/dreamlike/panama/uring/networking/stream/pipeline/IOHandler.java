@@ -2,11 +2,12 @@ package top.dreamlike.panama.uring.networking.stream.pipeline;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public interface IOHandler {
 
     default Executor executor() {
-        return null;
+        return Executors.newVirtualThreadPerTaskExecutor();
     }
 
     default void onHandleAdded(IOStreamPipeline.IOContext context) {

@@ -25,6 +25,8 @@ public final class SocketStream extends IOStream<AsyncTcpSocketFd> {
 
     private final IoUringEventLoop carrier;
 
+    private final IoUringEventLoop sender;
+
     private LongFunction<IoUringBufferRing> choose;
 
     private long lastRecv;
@@ -33,12 +35,13 @@ public final class SocketStream extends IOStream<AsyncTcpSocketFd> {
 
     private boolean allowFallBack = false;
 
-    private SocketStream(AsyncTcpSocketFd socketFd, boolean autoRead, boolean allowFallBack) {
+    public SocketStream(AsyncTcpSocketFd socketFd, IoUringEventLoop sender, boolean autoRead, boolean allowFallBack) {
         this.socketFd = socketFd;
         IoUringEventLoop ioUringEventLoop = socketFd.owner();
         this.autoRead = autoRead;
         this.pipeline = new IOStreamPipeline<>(this);
         this.carrier = ioUringEventLoop;
+        this.sender = sender;
         if (ioUringEventLoop instanceof ReaderEventLoop readerEventLoop) {
             choose = readerEventLoop.getChoose();
         } else {
@@ -49,6 +52,9 @@ public final class SocketStream extends IOStream<AsyncTcpSocketFd> {
         if (autoRead) {
             setAutoRead(true);
         }
+    }
+    public SocketStream(AsyncTcpSocketFd socketFd, boolean autoRead, boolean allowFallBack) {
+        this(socketFd, socketFd.owner(), autoRead, allowFallBack);
     }
 
 

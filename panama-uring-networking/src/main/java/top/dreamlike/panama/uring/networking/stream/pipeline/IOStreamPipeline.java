@@ -1,7 +1,9 @@
 package top.dreamlike.panama.uring.networking.stream.pipeline;
 
+import top.dreamlike.panama.uring.async.BufferResult;
 import top.dreamlike.panama.uring.async.trait.IoUringSocketOperator;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
+import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.networking.stream.IOStream;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
@@ -17,7 +19,8 @@ import java.util.function.Predicate;
 
 public class IOStreamPipeline<T extends IoUringSocketOperator> {
 
-    private final IoUringEventLoop eventLoop;
+    private final IoUringEventLoop readerEventLoop;
+    private final IoUringEventLoop writerEventLoop;
 
     private IOContext head;
     private IOContext tail;
@@ -28,7 +31,12 @@ public class IOStreamPipeline<T extends IoUringSocketOperator> {
     private final Queue<OwnerShipMemoryProxy> sendQueue;
 
     public IOStreamPipeline(IOStream<T> stream) {
-        this.eventLoop = stream.socket().owner();
+        this(stream, stream.socket().owner());
+    }
+
+    public IOStreamPipeline(IOStream<T> stream, IoUringEventLoop writerEventLoop) {
+        this.readerEventLoop = stream.socket().owner();
+        this.writerEventLoop = writerEventLoop;
         this.stream = stream;
         this.sendQueue = new ArrayDeque<>();
     }
@@ -54,7 +62,7 @@ public class IOStreamPipeline<T extends IoUringSocketOperator> {
             contextListLock.writeLock().unlock();
         }
         if (handler.executor() == null) {
-            eventLoop.runOnEventLoop(() -> handler.onHandleAdded(context));
+            readerEventLoop.runOnEventLoop(() -> handler.onHandleAdded(context));
         } else {
             handler.executor().execute(() -> {
                 handler.onHandleAdded(context);
@@ -145,7 +153,7 @@ public class IOStreamPipeline<T extends IoUringSocketOperator> {
 
         IOContext finalIoContext = newContext;
         if (ioHandler.executor() == null) {
-            eventLoop.runOnEventLoop(() -> ioHandler.onHandleAdded(finalIoContext));
+            readerEventLoop.runOnEventLoop(() -> ioHandler.onHandleAdded(finalIoContext));
         } else {
             ioHandler.executor().execute(() -> {
                 ioHandler.onHandleAdded(finalIoContext);
@@ -190,7 +198,7 @@ public class IOStreamPipeline<T extends IoUringSocketOperator> {
 
         IOContext finalIoContext = removedContext;
         if (removedContext.ioHandler.executor() == null) {
-            eventLoop.runOnEventLoop(() -> finalIoContext.ioHandler.onHandleAdded(finalIoContext));
+            readerEventLoop.runOnEventLoop(() -> finalIoContext.ioHandler.onHandleAdded(finalIoContext));
         } else {
             removedContext.ioHandler.executor().execute(() -> {
                 finalIoContext.ioHandler.onHandleAdded(finalIoContext);
@@ -213,7 +221,7 @@ public class IOStreamPipeline<T extends IoUringSocketOperator> {
 
 
     private void flushSendQueue(OwnershipMemory msg, CompletableFuture<Void> sendPromise) {
-        eventLoop.runOnEventLoop(() -> flushSendQueue0(msg, sendPromise));
+        writerEventLoop.runOnEventLoop(() -> flushSendQueue0(msg, sendPromise));
     }
 
     private void flushSendQueue0(OwnershipMemory msg, CompletableFuture<Void> sendPromise) {
@@ -232,7 +240,9 @@ public class IOStreamPipeline<T extends IoUringSocketOperator> {
         OwnerShipMemoryProxy currentSendTask = sendQueue.peek();
         T socket = stream.socket();
         OwnershipMemory sendBuffer = currentSendTask.toOwnershipMemory();
-        socket.asyncSend(sendBuffer, (int) sendBuffer.resource().byteSize(), 0)
+        writerEventLoop.asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_send(sqe, socket.fd(), sendBuffer.resource(), (int) sendBuffer.resource().byteSize(), 0))
+                .whenComplete(sendBuffer::DropWhenException)
+                .thenApply(cqe -> new BufferResult<>(sendBuffer, cqe.getRes()))
                 .whenComplete((br, t) -> {
                     if (t != null) {
                         fireError(t);
@@ -251,6 +261,7 @@ public class IOStreamPipeline<T extends IoUringSocketOperator> {
                         send0();
                     }
                 });
+
     }
 
     private void fireEvent(IOContext context, Consumer<IOContext> handle) {
@@ -265,7 +276,7 @@ public class IOStreamPipeline<T extends IoUringSocketOperator> {
             }
         };
         if (context.ioHandler.executor() == null) {
-            eventLoop.runOnEventLoop(r);
+            readerEventLoop.runOnEventLoop(r);
         } else {
             context.ioHandler.executor().execute(r);
         }

@@ -22,14 +22,17 @@ public final class MultiShotSocketStream extends IOStream<AsyncMultiShotTcpSocke
 
     private final IoUringEventLoop carrier;
 
+    private final IoUringEventLoop sender;
+
     private boolean autoRead;
 
-    private MultiShotSocketStream(AsyncMultiShotTcpSocketFd socketFd, boolean autoRead) {
+    public MultiShotSocketStream(AsyncMultiShotTcpSocketFd socketFd, IoUringEventLoop sender, boolean autoRead) {
         this.socketFd = socketFd;
         IoUringEventLoop ioUringEventLoop = socketFd.owner();
         this.autoRead = autoRead;
         this.pipeline = new IOStreamPipeline<>(this);
         this.carrier = ioUringEventLoop;
+        this.sender = sender;
         if (ioUringEventLoop instanceof ReaderEventLoop readerEventLoop) {
             choose = readerEventLoop.getChoose();
         } else {
@@ -40,6 +43,10 @@ public final class MultiShotSocketStream extends IOStream<AsyncMultiShotTcpSocke
         if (autoRead) {
             startAutoRead();
         }
+    }
+
+    public MultiShotSocketStream(AsyncMultiShotTcpSocketFd socketFd, boolean autoRead) {
+        this(socketFd, socketFd.owner(), autoRead);
     }
 
     @Override
