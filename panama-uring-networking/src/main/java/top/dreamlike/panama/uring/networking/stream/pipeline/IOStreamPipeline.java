@@ -1,9 +1,9 @@
 package top.dreamlike.panama.uring.networking.stream.pipeline;
 
-import top.dreamlike.panama.uring.async.BufferResult;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import top.dreamlike.panama.uring.async.trait.IoUringSocketOperator;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
-import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.networking.stream.IOStream;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
@@ -13,11 +13,14 @@ import java.util.ArrayDeque;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class IOStreamPipeline<T extends IoUringSocketOperator> {
+
+    private static final Logger log = LogManager.getLogger(IOStreamPipeline.class);
 
     private final IoUringEventLoop readerEventLoop;
     private final IoUringEventLoop writerEventLoop;
@@ -30,15 +33,31 @@ public class IOStreamPipeline<T extends IoUringSocketOperator> {
 
     private final Queue<OwnerShipMemoryProxy> sendQueue;
 
+    private final IoUringSocketOperator socketOperator;
+
     public IOStreamPipeline(IOStream<T> stream) {
         this(stream, stream.socket().owner());
     }
 
     public IOStreamPipeline(IOStream<T> stream, IoUringEventLoop writerEventLoop) {
-        this.readerEventLoop = stream.socket().owner();
+        T socket = stream.socket();
+        this.readerEventLoop = socket.owner();
         this.writerEventLoop = writerEventLoop;
         this.stream = stream;
         this.sendQueue = new ArrayDeque<>();
+        int fd = socket.fd();
+        this.socketOperator = new IoUringSocketOperator() {
+            @Override
+            public IoUringEventLoop owner() {
+                return writerEventLoop;
+            }
+
+            @Override
+            public int fd() {
+                return fd;
+            }
+        };
+        addLast(GuardIOHandle.INSTANCE);
     }
 
     public IOStream<T> stream() {
@@ -197,7 +216,7 @@ public class IOStreamPipeline<T extends IoUringSocketOperator> {
         }
 
         IOContext finalIoContext = removedContext;
-        if (removedContext.ioHandler.executor() == null) {
+        if (removedContext.ioHandler.executor() == IOHandler.EventLoop) {
             readerEventLoop.runOnEventLoop(() -> finalIoContext.ioHandler.onHandleAdded(finalIoContext));
         } else {
             removedContext.ioHandler.executor().execute(() -> {
@@ -238,11 +257,8 @@ public class IOStreamPipeline<T extends IoUringSocketOperator> {
 
     private void send0() {
         OwnerShipMemoryProxy currentSendTask = sendQueue.peek();
-        T socket = stream.socket();
         OwnershipMemory sendBuffer = currentSendTask.toOwnershipMemory();
-        writerEventLoop.asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_send(sqe, socket.fd(), sendBuffer.resource(), (int) sendBuffer.resource().byteSize(), 0))
-                .whenComplete(sendBuffer::DropWhenException)
-                .thenApply(cqe -> new BufferResult<>(sendBuffer, cqe.getRes()))
+        socketOperator.asyncSend(sendBuffer, (int) sendBuffer.resource().byteSize(), 0)
                 .whenComplete((br, t) -> {
                     if (t != null) {
                         fireError(t);
@@ -275,7 +291,7 @@ public class IOStreamPipeline<T extends IoUringSocketOperator> {
                 context.fireNextError(e);
             }
         };
-        if (context.ioHandler.executor() == null) {
+        if (context.ioHandler.executor() == IOHandler.EventLoop) {
             readerEventLoop.runOnEventLoop(r);
         } else {
             context.ioHandler.executor().execute(r);
@@ -295,6 +311,13 @@ public class IOStreamPipeline<T extends IoUringSocketOperator> {
         }
 
         public void fireNextRead(Object msg) {
+            if (after == null) {
+                if (msg instanceof OwnershipMemory memory) {
+                    memory.drop();
+                    log.error("msg is OwnershipMemory but next is null, drop it");
+                }
+                return;
+            }
             fireEvent(after, c -> c.ioHandler.onRead(c, msg));
         }
 
@@ -350,4 +373,11 @@ public class IOStreamPipeline<T extends IoUringSocketOperator> {
         }
     }
 
+    private static class GuardIOHandle implements IOHandler {
+        public static final GuardIOHandle INSTANCE = new GuardIOHandle();
+        @Override
+        public Executor executor() {
+            return IOHandler.EventLoop;
+        }
+    }
 }

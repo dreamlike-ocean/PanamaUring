@@ -6,6 +6,8 @@ import java.util.concurrent.Executors;
 
 public interface IOHandler {
 
+    public Executor EventLoop = null;
+
     default Executor executor() {
         return Executors.newVirtualThreadPerTaskExecutor();
     }
@@ -22,7 +24,9 @@ public interface IOHandler {
 
     }
 
-    void onRead(IOStreamPipeline.IOContext context, Object msg);
+    default void onRead(IOStreamPipeline.IOContext context, Object msg) {
+        context.fireNextRead(msg);
+    }
 
     default void onError(IOStreamPipeline.IOContext context, Throwable cause) {
 

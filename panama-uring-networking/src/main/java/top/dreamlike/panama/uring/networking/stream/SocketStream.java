@@ -39,7 +39,6 @@ public final class SocketStream extends IOStream<AsyncTcpSocketFd> {
         this.socketFd = socketFd;
         IoUringEventLoop ioUringEventLoop = socketFd.owner();
         this.autoRead = autoRead;
-        this.pipeline = new IOStreamPipeline<>(this);
         this.carrier = ioUringEventLoop;
         this.sender = sender;
         if (ioUringEventLoop instanceof ReaderEventLoop readerEventLoop) {
@@ -49,6 +48,7 @@ public final class SocketStream extends IOStream<AsyncTcpSocketFd> {
         }
         this.lastRecv = -1;
         this.allowFallBack = allowFallBack;
+        this.pipeline = new IOStreamPipeline<>(this, sender);
         if (autoRead) {
             setAutoRead(true);
         }

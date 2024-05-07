@@ -30,7 +30,6 @@ public final class MultiShotSocketStream extends IOStream<AsyncMultiShotTcpSocke
         this.socketFd = socketFd;
         IoUringEventLoop ioUringEventLoop = socketFd.owner();
         this.autoRead = autoRead;
-        this.pipeline = new IOStreamPipeline<>(this);
         this.carrier = ioUringEventLoop;
         this.sender = sender;
         if (ioUringEventLoop instanceof ReaderEventLoop readerEventLoop) {
@@ -39,7 +38,7 @@ public final class MultiShotSocketStream extends IOStream<AsyncMultiShotTcpSocke
             final IoUringBufferRing bufferRing = PanamaUringSecret.findBufferRing.apply(socketFd);
             choose = (_) -> bufferRing;
         }
-
+        this.pipeline = new IOStreamPipeline<>(this, sender);
         if (autoRead) {
             startAutoRead();
         }
