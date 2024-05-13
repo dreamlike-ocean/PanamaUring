@@ -455,7 +455,7 @@ public class LiburingTest {
                 }
             });
             acceptCondition.await();
-
+            Thread.sleep(1000);
             Map<Integer, Socket> portToSocket = sockets.stream()
                     .collect(Collectors.toMap(Socket::getLocalPort, Function.identity()));
             for (var result : syscallResults) {

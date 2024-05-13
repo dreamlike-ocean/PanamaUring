@@ -3,9 +3,11 @@ package top.dreamlike.panama.uring.eventloop;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jctools.queues.MpscUnboundedArrayQueue;
+import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.async.cancel.CancelToken;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
+import top.dreamlike.panama.uring.helper.JemallocAllocator;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
@@ -18,7 +20,6 @@ import top.dreamlike.panama.uring.sync.fd.EventFd;
 import top.dreamlike.panama.uring.thirdparty.colletion.LongObjectHashMap;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.BitSet;
@@ -51,8 +52,6 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
 
     private IoUring internalRing;
 
-    private Arena singleThreadArena;
-
     private final MpscUnboundedArrayQueue<Runnable> taskQueue;
 
     private MemorySegment cqePtrs;
@@ -80,24 +79,33 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         this.hasClosed = new AtomicBoolean();
         this.tokenGenerator = new AtomicLong(0);
         this.callBackMap = new LongObjectHashMap<>();
-        this.taskQueue.add(() -> initRing(ioUringParamsFactory));
         this.scheduledTasks = new PriorityQueue<>();
         setName("IoUringEventLoop-" + count.getAndIncrement());
+        initRing(ioUringParamsFactory);
     }
 
     private void initRing(Consumer<IoUringParams> ioUringParamsFactory) {
-        this.singleThreadArena = Arena.ofConfined();
-        this.internalRing = Instance.STRUCT_PROXY_GENERATOR.allocate(singleThreadArena, IoUring.class);
-        IoUringParams ioUringParams = Instance.STRUCT_PROXY_GENERATOR.allocate(singleThreadArena, IoUringParams.class);
+        MemorySegment ioUringMemory = Instance.LIB_JEMALLOC.malloc(IoUring.LAYOUT.byteSize());
+        MemorySegment ioUringParamMemory = Instance.LIB_JEMALLOC.malloc(IoUringParams.LAYOUT.byteSize());
+
+        this.internalRing = Instance.STRUCT_PROXY_GENERATOR.enhance(ioUringMemory);
+        IoUringParams ioUringParams = Instance.STRUCT_PROXY_GENERATOR.enhance(ioUringParamMemory);
+
         ioUringParamsFactory.accept(ioUringParams);
-        int initRes = Instance.LIB_URING.io_uring_queue_init_params(ioUringParams.getSq_entries(), internalRing, ioUringParams);
-        if (initRes < 0) {
-            throw new SyscallException(initRes);
+        try {
+            int initRes = Instance.LIB_URING.io_uring_queue_init_params(ioUringParams.getSq_entries(), internalRing, ioUringParams);
+            if (initRes < 0) {
+                Instance.LIB_JEMALLOC.free(ioUringMemory);
+                throw new SyscallException(initRes);
+            }
+            this.cqePtrs = JemallocAllocator.INSTANCE.allocate(ValueLayout.ADDRESS, cqeSize);
+            this.kernelTime64Type = Instance.STRUCT_PROXY_GENERATOR.allocate(JemallocAllocator.INSTANCE, KernelTime64Type.class);
+            this.eventReadBuffer = JemallocAllocator.INSTANCE.allocate(ValueLayout.JAVA_LONG);
+            initWakeUpFdMultiShot();
+        } finally {
+            Instance.LIB_JEMALLOC.free(ioUringParamMemory);
         }
-        this.cqePtrs = singleThreadArena.allocate(ValueLayout.ADDRESS, cqeSize);
-        this.kernelTime64Type = Instance.STRUCT_PROXY_GENERATOR.allocate(singleThreadArena, KernelTime64Type.class);
-        this.eventReadBuffer = singleThreadArena.allocate(ValueLayout.JAVA_LONG);
-        initWakeUpFdMultiShot();
+
     }
 
     private void registerWakeUpFd(IoUringSqe sqe) {
@@ -132,7 +140,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
                 long duration = nextTask.deadlineNanos - System.nanoTime();
                 kernelTime64Type.setTv_sec(duration / 1000000000);
                 kernelTime64Type.setTv_nsec(duration % 1000000000);
-                libUring.io_uring_submit_and_wait_timeout(internalRing, cqePtrs, cqeSize, kernelTime64Type, null);
+                libUring.io_uring_submit_and_wait_timeout(internalRing, cqePtrs, 1, kernelTime64Type, null);
             }
             inWait.set(true);
             processCqes();
@@ -195,8 +203,12 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
             try {
                 resPtr = Instance.LIB_JEMALLOC.malloc(ValueLayout.JAVA_LONG.byteSize());
                 NativeIoUringBufRing bufRing = libUring.io_uring_setup_buf_ring(internalRing, internalEntries, bufferGroupId, 0, resPtr);
+                int res = resPtr.get(ValueLayout.JAVA_INT, 0);
+                if (res < 0) {
+                    return new IoUringBufRingSetupResult(res, null);
+                }
                 InternalNativeIoUringRing bufferRing = new InternalNativeIoUringRing(bufRing, bufferGroupId, internalEntries, blockSize);
-                return new IoUringBufRingSetupResult(resPtr.get(ValueLayout.JAVA_INT, 0), bufferRing);
+                return new IoUringBufRingSetupResult(res, bufferRing);
             } finally {
                 if (resPtr != null) {
                     Instance.LIB_JEMALLOC.free(resPtr);
@@ -215,8 +227,8 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
             IoUringSqe sqe = ioUringGetSqe();
             sqeFunction.accept(sqe);
             if (NativeHelper.enableOpVersionCheck && sqe.getOpcode() > PROBE.getLastOp()) {
-               Instance.LIB_URING.io_uring_back_sqe(internalRing);
-               throw new UnsupportedOperationException(sqe.getOpcode() + " is unsupported");
+                Instance.LIB_URING.io_uring_back_sqe(internalRing);
+                throw new UnsupportedOperationException(sqe.getOpcode() + " is unsupported");
             }
             sqe.setUser_data(token);
             callBackMap.put(token, new IoUringCompletionCallBack(sqe.getFd(), sqe.getOpcode(), callback));
@@ -330,7 +342,12 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
     private void releaseResource() {
         this.wakeUpFd.close();
         Instance.LIB_URING.io_uring_queue_exit(internalRing);
-        this.singleThreadArena.close();
+        MemorySegment ioUringMemory = StructProxyGenerator.findMemorySegment(internalRing);
+        Instance.LIB_JEMALLOC.free(ioUringMemory);
+        Instance.LIB_JEMALLOC.free(cqePtrs);
+        MemorySegment kernelTime64Type = StructProxyGenerator.findMemorySegment(internalRing);
+        Instance.LIB_JEMALLOC.free(kernelTime64Type);
+        Instance.LIB_JEMALLOC.free(eventReadBuffer);
     }
 
     private boolean inEventLoop() {
@@ -512,6 +529,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
 
         static {
             PanamaUringSecret.peekOccupyBitSet = (r) -> ((InternalNativeIoUringRing) r).occupySet;
+            PanamaUringSecret.findUring = (loop) -> loop.internalRing;
         }
     }
 

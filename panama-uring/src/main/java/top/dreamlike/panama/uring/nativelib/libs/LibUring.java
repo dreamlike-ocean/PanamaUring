@@ -40,6 +40,8 @@ public interface LibUring {
 
     void io_uring_queue_exit(@Pointer IoUring ring);
 
+    int io_uring_setup(int entries, @Pointer IoUringParams ioUringParams);
+
     //cqe相关的操作
     @NativeFunction(fast = true)
     default int io_uring_peek_batch_cqe(@Pointer IoUring ring, @Pointer MemorySegment cqes, int count) {
