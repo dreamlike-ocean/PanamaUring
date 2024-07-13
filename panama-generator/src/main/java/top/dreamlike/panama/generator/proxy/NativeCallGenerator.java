@@ -11,7 +11,9 @@ import java.lang.classfile.AccessFlags;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
-import java.lang.constant.*;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.DynamicCallSiteDesc;
 import java.lang.foreign.*;
 import java.lang.invoke.*;
 import java.lang.reflect.AccessFlag;
@@ -36,7 +38,6 @@ public class NativeCallGenerator {
 
     private static final MethodHandle DLSYM_MH;
 
-    private static final Method INDY_BOOTSTRAP_METHOD;
 
     private final NativeLookup nativeLibLookup;
 
@@ -45,7 +46,6 @@ public class NativeCallGenerator {
     static {
         try {
             DLSYM_MH = MethodHandles.lookup().findVirtual(NativeCallGenerator.class, "dlsym", MethodType.methodType(MemorySegment.class, String.class));
-            INDY_BOOTSTRAP_METHOD = InvokeDynamicFactory.class.getMethod("nativeCallIndyFactory", MethodHandles.Lookup.class, String.class, MethodType.class, Object[].class);
             GENERATE_IN_GENERATOR_CONTEXT = NativeCallGenerator.class.getMethod("generateInGeneratorContext", Class.class, String.class, MethodType.class);
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -385,9 +385,9 @@ public class NativeCallGenerator {
                 it.ldc(ClassFileHelper.toDesc(nativeInterface));
                 ClassFileHelper.invoke(it, NativeGeneratorHelper.LOAD_SO);
             });
-            classBuilder.withMethodBody("<init>", MethodTypeDesc.ofDescriptor("()V"), Modifier.PUBLIC, it -> {
+            classBuilder.withMethodBody(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, Modifier.PUBLIC, it -> {
                         it.aload(0);
-                        it.invokespecial(ClassFileHelper.toDesc(Object.class), "<init>", MethodTypeDesc.ofDescriptor("()V"));
+                        it.invokespecial(ConstantDescs.CD_Object, ConstantDescs.INIT_NAME, ConstantDescs.MTD_void);
                         it.return_();
                     }
             );
@@ -403,7 +403,7 @@ public class NativeCallGenerator {
                 }
                 invokeByIndy(method, classBuilder, className);
             }
-            classBuilder.withMethodBody("<clinit>", MethodTypeDesc.ofDescriptor("()V"), (AccessFlag.STATIC.mask()), it -> {
+            classBuilder.withMethodBody(ConstantDescs.CLASS_INIT_NAME, ConstantDescs.MTD_void, (AccessFlag.STATIC.mask()), it -> {
                 clinits.forEach(init -> init.accept(it));
                 it.return_();
             });
@@ -416,7 +416,7 @@ public class NativeCallGenerator {
 
     private Consumer<CodeBuilder> invokeByMh(Method method, ClassBuilder thisClass, String className) {
         String mhFieldName = method.getName() + "_native_method_handle";
-        ClassDesc thisClassDesc = ClassDesc.ofDescriptor("L" + className.replace(".", "/") + ";");
+        ClassDesc thisClassDesc = ClassDesc.of(className);
         thisClass.withMethodBody(method.getName(), ClassFileHelper.toMethodDescriptor(method), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             it.getstatic(thisClassDesc, mhFieldName, ClassFileHelper.toDesc(MethodHandle.class));
             ClassFileHelper.invokeMethodHandleExactWithAllArgs(method, it);
@@ -438,15 +438,12 @@ public class NativeCallGenerator {
             ClassFileHelper.loadAllArgs(method, it);
             it.invokeDynamicInstruction(
                     DynamicCallSiteDesc.of(
-                            MethodHandleDesc.ofMethod(
-                                    DirectMethodHandleDesc.Kind.STATIC, ClassFileHelper.toDesc(InvokeDynamicFactory.class), "nativeCallIndyFactory",
-                                    ClassFileHelper.toMethodDescriptor(INDY_BOOTSTRAP_METHOD)
-                            ),
+                            ConstantDescs.ofCallsiteBootstrap(ClassFileHelper.toDesc(InvokeDynamicFactory.class), "nativeCallIndyFactory", ConstantDescs.CD_CallSite),
                             method.getName(),
                             ClassFileHelper.toMethodDescriptor(method)
                     )
             );
-            it.returnInstruction(ClassFileHelper.calType(method.getReturnType()));
+            ClassFileHelper.returnValue(it, method.getReturnType());
         });
     }
 

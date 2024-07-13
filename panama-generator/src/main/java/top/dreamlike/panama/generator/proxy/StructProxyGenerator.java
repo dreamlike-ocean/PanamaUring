@@ -7,10 +7,7 @@ import top.dreamlike.panama.generator.annotation.*;
 import top.dreamlike.panama.generator.exception.StructException;
 import top.dreamlike.panama.generator.helper.*;
 
-import java.lang.classfile.AccessFlags;
-import java.lang.classfile.ClassBuilder;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.*;
 import java.lang.constant.*;
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
@@ -250,7 +247,7 @@ public class StructProxyGenerator {
             } catch (ClassNotFoundException ignore) {
             }
             if (aClass == null) {
-                var thisClassDesc = ClassDesc.ofDescriptor("L" + className.replace(".", "/") + ";");
+                var thisClassDesc = ClassDesc.of(className);
                 byte[] classByteCode = classFile.build(thisClassDesc, classBuilder -> {
                     generatorCtor(classBuilder, thisClassDesc, targetClass);
                     ArrayList<Consumer<CodeBuilder>> clinitBlocks = new ArrayList<>();
@@ -272,7 +269,7 @@ public class StructProxyGenerator {
                         clinitBlocks.add(clinitBlock);
                     }
 
-                    classBuilder.withMethodBody("<clinit>", MethodTypeDesc.ofDescriptor("()V"), (AccessFlag.STATIC.mask()), it -> {
+                    classBuilder.withMethodBody(ConstantDescs.CLASS_INIT_NAME, ConstantDescs.MTD_void, (AccessFlag.STATIC.mask()), it -> {
                         clinitBlocks.forEach(init -> init.accept(it));
                         it.return_();
                     });
@@ -379,18 +376,18 @@ public class StructProxyGenerator {
                                     ClassFileHelper.toMethodDescriptor(method)
                             )
                     );
-                    it.returnInstruction(ClassFileHelper.calType(method.getReturnType()));
+                    ClassFileHelper.returnValue(it, method.getReturnType());
                 });
             }
-            cb.withMethodBody("<clinit>", MethodTypeDesc.ofDescriptor("()V"), (AccessFlag.STATIC.mask()), it -> {
+            cb.withMethodBody(ConstantDescs.CLASS_INIT_NAME, ConstantDescs.MTD_void, (AccessFlag.STATIC.mask()), it -> {
                 ClassFileHelper.invoke(it, NativeGeneratorHelper.FETCH_CURRENT_STRUCT_GENERATOR_GENERATOR);
                 it.putstatic(thisClass, GENERATOR_FIELD, ClassFileHelper.toDesc(StructProxyGenerator.class));
                 it.return_();
             });
 
-            cb.withMethodBody("<init>", MethodTypeDesc.ofDescriptor("()V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+            cb.withMethodBody(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
                 it.aload(0);
-                it.invokespecial(ClassFileHelper.toDesc(Object.class), "<init>", MethodTypeDesc.ofDescriptor("()V"));
+                it.invokespecial(ConstantDescs.CD_Object, ConstantDescs.INIT_NAME, ConstantDescs.MTD_void);
                 it.return_();
             });
         });
@@ -449,7 +446,7 @@ public class StructProxyGenerator {
         MemoryLayout memoryLayout = extract(owner);
         String[] pathNodes = option.value();
 
-        if (pathNodes.length < 1) {
+        if (pathNodes.length == 0) {
             throw new IllegalArgumentException("path length cant equal zero");
         }
 
@@ -549,12 +546,18 @@ public class StructProxyGenerator {
 
         cb.withMethodBody("rebind", ClassFileHelper.toMethodDescriptor(NativeGeneratorHelper.REBIND_MEMORY), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             it.aload(1);
+
             it.aload(0);
             it.getfield(thisClass, MEMORY_FIELD, ClassFileHelper.toDesc(MemorySegment.class));
+
+            //NativeGeneratorHelper.rebindMemory(newSegment, this._realMemory)
             ClassFileHelper.invoke(it, NativeGeneratorHelper.REBIND_ASSERT_METHOD);
+
             it.aload(0);
             it.aload(1);
+            //this._realMemory = newSegment;
             it.putfield(thisClass, MEMORY_FIELD, ClassFileHelper.toDesc(MemorySegment.class));
+            //return
             it.return_();
         });
         cb.withMethodBody("layout", ClassFileHelper.toMethodDescriptor(NativeGeneratorHelper.REAL_MEMORY), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
@@ -571,9 +574,12 @@ public class StructProxyGenerator {
 
     private void generatorCtor(ClassBuilder cb, ClassDesc thisClass, Class originClass) {
         cb.withSuperclass(ClassFileHelper.toDesc(originClass));
-        cb.withMethodBody("<init>", MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(MemorySegment.class) + ")V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        cb.withMethodBody(ConstantDescs.INIT_NAME, MethodType.methodType(void.class, MemorySegment.class).describeConstable().get(), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+            //super()
             it.aload(0);
-            it.invokespecial(ClassFileHelper.toDesc(originClass), "<init>", MethodTypeDesc.ofDescriptor("()V"));
+            it.invokespecial(ClassFileHelper.toDesc(originClass), ConstantDescs.INIT_NAME, ConstantDescs.MTD_void);
+
+            //this._realMemory = newSegment;
             it.aload(0);
             it.aload(1);
             it.putfield(thisClass, MEMORY_FIELD, ClassFileHelper.toDesc(MemorySegment.class));
@@ -595,24 +601,40 @@ public class StructProxyGenerator {
     private Consumer<CodeBuilder> generatePrimitiveFieldVarHandle(ClassBuilder cb, ClassDesc thisClass, Field field, MemoryLayout __) {
 
         String varHandleFieldName = field.getName() + "_native_struct_vh";
-        cb.withMethodBody("get" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("()" + ClassFileHelper.toSignature(field.getType())), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
-            it.getstatic(thisClass, varHandleFieldName, ClassFileHelper.toDesc(VarHandle.class));
-            it.aload(0);
-            ClassFileHelper.invoke(it, REALMEMORY_METHOD, true);
-            MethodTypeDesc methodTypeDesc = MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(MemorySegment.class) + ")" + ClassFileHelper.toSignature(field.getType()));
-            it.invokevirtual(ClassFileHelper.toDesc(VarHandle.class), "get", methodTypeDesc);
-            it.returnInstruction(ClassFileHelper.calType(field.getType()));
-        });
+        cb.withMethodBody(
+                "get" + upperFirstChar(field.getName()),
+                MethodType.methodType(field.getType()).describeConstable().get(),
+                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                it -> {
+                    it.getstatic(thisClass, varHandleFieldName, ClassFileHelper.toDesc(VarHandle.class));
 
-        cb.withMethodBody("set" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(field.getType()) + ")V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
-            it.getstatic(thisClass, varHandleFieldName, ClassFileHelper.toDesc(VarHandle.class));
-            it.aload(0);
-            ClassFileHelper.invoke(it, REALMEMORY_METHOD, true);
-            it.loadInstruction(ClassFileHelper.calType(field.getType()), 1);
-            MethodTypeDesc methodTypeDesc = MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(MemorySegment.class) + ClassFileHelper.toSignature(field.getType()) + ")V");
-            it.invokevirtual(ClassFileHelper.toDesc(VarHandle.class), "set", methodTypeDesc);
-            it.return_();
-        });
+                    //var m = this.realMemory()
+                    it.aload(0);
+                    ClassFileHelper.invoke(it, REALMEMORY_METHOD, true);
+
+                    //this.xxx_native_struct_vh.get(m)
+                    MethodTypeDesc methodTypeDesc = MethodType.methodType(field.getType(), MemorySegment.class).describeConstable().get();
+                    it.invokevirtual(ClassFileHelper.toDesc(VarHandle.class), "get", methodTypeDesc);
+
+                    ClassFileHelper.returnValue(it, field.getType());
+                });
+
+        cb.withMethodBody(
+                "set" + upperFirstChar(field.getName()),
+                MethodType.methodType(void.class, field.getType()).describeConstable().get(),
+                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                it -> {
+                    it.getstatic(thisClass, varHandleFieldName, ClassFileHelper.toDesc(VarHandle.class));
+                    it.aload(0);
+                    ClassFileHelper.invoke(it, REALMEMORY_METHOD, true);
+
+                    TypeKind typeKind = TypeKind.from(field.getType());
+                    //加载第一个参数
+                    it.loadInstruction(typeKind, it.parameterSlot(0));
+                    MethodTypeDesc methodTypeDesc = MethodType.methodType(void.class, MemorySegment.class, field.getType()).describeConstable().get();
+                    it.invokevirtual(ConstantDescs.CD_VarHandle, "set", methodTypeDesc);
+                    it.return_();
+                });
 
         return initVarHandleBlock(cb, thisClass, field);
     }
@@ -626,53 +648,69 @@ public class StructProxyGenerator {
         long newSize = extract(arrayMark.size()).byteSize() * arrayMark.length();
         boolean asPointer = field.getAnnotation(Pointer.class) != null || arrayMark.asPointer();
         //不在生成出来的代码里面做分支 减少运行时分支判断
-        cb.withMethodBody("get" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("()" + ClassFileHelper.toSignature(NativeArray.class)), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
-            it.aload(0);
-            //MemorySegment realMemory = this.realMemory();
-            ClassFileHelper.invoke(it, REALMEMORY_METHOD, true);
-            it.astore(1);
-            it.aload(1);
-            if (asPointer) {
-                it.getstatic(ClassFileHelper.toDesc(ValueLayout.class), "ADDRESS", ClassFileHelper.toDesc(AddressLayout.class));
-                //realMemory = realMemory.get(ValueLayout.ADDRESS, offset).reinterpret(newSize);
-                it.ldc(offset);
-                ClassFileHelper.invoke(it, NativeGeneratorHelper.GET_ADDRESS_FROM_MEMORY_SEGMENT, true);
-                it.ldc(newSize);
-                ClassFileHelper.invoke(it, NativeGeneratorHelper.REINTERPRET, true);
-            } else {
-                //realMemory = realMemory.asSlice(offset, newSize)
-                it.ldc(offset);
-                it.ldc(newSize);
-                ClassFileHelper.invoke(it, NativeGeneratorHelper.AS_SLICE, true);
-            }
-            it.astore(1);
-            it.new_(ClassFileHelper.toDesc(NativeArray.class));
-            it.dup();
-            it.getstatic(thisClass, GENERATOR_FIELD, ClassFileHelper.toDesc(StructProxyGenerator.class));
-            it.aload(1);
-            it.ldc(ClassFileHelper.toDesc(arrayMark.size()));
-            //new NativeArray<>(this, realMemory, arrayMark.size());
-            it.invokespecial(ClassFileHelper.toDesc(NativeArray.class), "<init>", MethodTypeDesc.ofDescriptor("(Ltop/dreamlike/panama/generator/proxy/StructProxyGenerator;Ljava/lang/foreign/MemorySegment;Ljava/lang/Class;)V"));
-            it.areturn();
-        });
+        cb.withMethodBody(
+                "get" + upperFirstChar(field.getName()),
+                MethodType.methodType(NativeArray.class).describeConstable().get(),
+                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                it -> {
+                    it.aload(0);
+                    //MemorySegment realMemory = this.realMemory();
+                    ClassFileHelper.invoke(it, REALMEMORY_METHOD, true);
+                    it.astore(1);
+                    it.aload(1);
+                    if (asPointer) {
+                        it.getstatic(ClassFileHelper.toDesc(ValueLayout.class), "ADDRESS", ClassFileHelper.toDesc(AddressLayout.class));
+                        //realMemory = realMemory.get(ValueLayout.ADDRESS, offset).reinterpret(newSize);
+                        it.ldc(offset);
+                        ClassFileHelper.invoke(it, NativeGeneratorHelper.GET_ADDRESS_FROM_MEMORY_SEGMENT, true);
+                        it.ldc(newSize);
+                        ClassFileHelper.invoke(it, NativeGeneratorHelper.REINTERPRET, true);
+                    } else {
+                        //realMemory = realMemory.asSlice(offset, newSize)
+                        it.ldc(offset);
+                        it.ldc(newSize);
+                        ClassFileHelper.invoke(it, NativeGeneratorHelper.AS_SLICE, true);
+                    }
+                    it.astore(1);
+                    it.new_(ClassFileHelper.toDesc(NativeArray.class));
+                    it.dup();
+                    it.getstatic(thisClass, GENERATOR_FIELD, ClassFileHelper.toDesc(StructProxyGenerator.class));
+                    it.aload(1);
+                    it.ldc(ClassFileHelper.toDesc(arrayMark.size()));
+                    //new NativeArray<>(this, realMemory, arrayMark.size());
+                    it.invokespecial(
+                            ClassFileHelper.toDesc(NativeArray.class),
+                            ConstantDescs.INIT_NAME,
+                            MethodType.methodType(void.class, StructProxyGenerator.class, MemorySegment.class, Class.class).describeConstable().get()
+                    );
+                    it.areturn();
+                });
 
-        cb.withMethodBody("set" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(NativeArray.class) + ")V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
-            if (asPointer) {
-                generateSetPtr(it, offset);
-            } else {
-                generateSetSubElement(it, offset, newSize);
-            }
-            it.return_();
-        });
+        cb.withMethodBody(
+                "set" + upperFirstChar(field.getName()),
+                MethodType.methodType(void.class, NativeArray.class).describeConstable().get(),
+                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                it -> {
+                    if (asPointer) {
+                        generateSetPtr(it, offset);
+                    } else {
+                        generateSetSubElement(it, offset, newSize);
+                    }
+                    it.return_();
+                });
 
-        cb.withMethodBody("set" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(MemorySegment.class) + ")V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
-            if (asPointer) {
-                generateSetPtr(it, offset);
-            } else {
-                generateSetSubElement(it, offset, newSize);
-            }
-            it.return_();
-        });
+        cb.withMethodBody(
+                "set" + upperFirstChar(field.getName()),
+                MethodType.methodType(void.class, MemorySegment.class).describeConstable().get(),
+                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                it -> {
+                    if (asPointer) {
+                        generateSetPtr(it, offset);
+                    } else {
+                        generateSetSubElement(it, offset, newSize);
+                    }
+                    it.return_();
+                });
 
         return (it) -> {
         };
@@ -699,46 +737,54 @@ public class StructProxyGenerator {
         NativeArrayMark arrayMark = field.getAnnotation(NativeArrayMark.class);
         boolean pointerMarked = field.getAnnotation(Pointer.class) != null;
         boolean pointer = arrayMark != null && arrayMark.asPointer();
-        cb.withMethodBody("get" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("()" + ClassFileHelper.toSignature(MemorySegment.class)), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
-            it.aload(0);
-            //MemorySegment realMemory = this.realMemory();
-            ClassFileHelper.invoke(it, REALMEMORY_METHOD, true);
-            it.astore(1);
-            it.aload(1);
-            if (pointerMarked) {
-                it.getstatic(ClassFileHelper.toDesc(ValueLayout.class), "ADDRESS", ClassFileHelper.toDesc(AddressLayout.class));
-                it.ldc(offset);
-                ClassFileHelper.invoke(it, NativeGeneratorHelper.GET_ADDRESS_FROM_MEMORY_SEGMENT, true);
-                it.areturn();
-                return;
-            }
-            MemoryLayout realSize = extract(arrayMark.size());
-            if (pointer) {
-                it.getstatic(ClassFileHelper.toDesc(ValueLayout.class), "ADDRESS", ClassFileHelper.toDesc(AddressLayout.class));
-                it.ldc(offset);
-                ClassFileHelper.invoke(it, NativeGeneratorHelper.GET_ADDRESS_FROM_MEMORY_SEGMENT, true);
-                it.ldc(realSize.byteSize() * arrayMark.length());
+        cb.withMethodBody(
+                "get" + upperFirstChar(field.getName()),
+                MethodType.methodType(MemorySegment.class).describeConstable().get(),
+                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                it -> {
+                    it.aload(0);
+                    //MemorySegment realMemory = this.realMemory();
+                    ClassFileHelper.invoke(it, REALMEMORY_METHOD, true);
+                    it.astore(1);
+                    it.aload(1);
+                    if (pointerMarked) {
+                        it.getstatic(ClassFileHelper.toDesc(ValueLayout.class), "ADDRESS", ClassFileHelper.toDesc(AddressLayout.class));
+                        it.ldc(offset);
+                        ClassFileHelper.invoke(it, NativeGeneratorHelper.GET_ADDRESS_FROM_MEMORY_SEGMENT, true);
+                        it.areturn();
+                        return;
+                    }
+                    MemoryLayout realSize = extract(arrayMark.size());
+                    if (pointer) {
+                        it.getstatic(ClassFileHelper.toDesc(ValueLayout.class), "ADDRESS", ClassFileHelper.toDesc(AddressLayout.class));
+                        it.ldc(offset);
+                        ClassFileHelper.invoke(it, NativeGeneratorHelper.GET_ADDRESS_FROM_MEMORY_SEGMENT, true);
+                        it.ldc(realSize.byteSize() * arrayMark.length());
 //                memory.reinterpret(realSize.byteSize() * arrayMark.length());
-                ClassFileHelper.invoke(it, NativeGeneratorHelper.REINTERPRET, true);
-                it.areturn();
-            } else {
+                        ClassFileHelper.invoke(it, NativeGeneratorHelper.REINTERPRET, true);
+                        it.areturn();
+                    } else {
 //                realMemory.asSlice(offset, realSize.byteSize() * arrayMark.length());
-                it.ldc(offset);
-                it.ldc(realSize.byteSize() * arrayMark.length());
-                ClassFileHelper.invoke(it, NativeGeneratorHelper.AS_SLICE, true);
-                it.areturn();
-            }
-        });
+                        it.ldc(offset);
+                        it.ldc(realSize.byteSize() * arrayMark.length());
+                        ClassFileHelper.invoke(it, NativeGeneratorHelper.AS_SLICE, true);
+                        it.areturn();
+                    }
+                });
 
-        cb.withMethodBody("set" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(MemorySegment.class) + ")V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
-            if (pointer || pointerMarked) {
-                generateSetPtr(it, offset);
-            } else {
-                MemoryLayout realSize = extract(arrayMark.size());
-                generateSetSubElement(it, offset, realSize.byteSize() * arrayMark.length());
-            }
-            it.return_();
-        });
+        cb.withMethodBody(
+                "set" + upperFirstChar(field.getName()),
+                MethodType.methodType(void.class, MemorySegment.class).describeConstable().get(),
+                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                it -> {
+                    if (pointer || pointerMarked) {
+                        generateSetPtr(it, offset);
+                    } else {
+                        MemoryLayout realSize = extract(arrayMark.size());
+                        generateSetSubElement(it, offset, realSize.byteSize() * arrayMark.length());
+                    }
+                    it.return_();
+                });
         return it -> {
         };
     }
@@ -747,53 +793,65 @@ public class StructProxyGenerator {
         long subStructLayoutSize = structLayout.select(MemoryLayout.PathElement.groupElement(field.getName())).byteSize();
         long offset = structLayout.byteOffset(MemoryLayout.PathElement.groupElement(field.getName()));
         boolean isPointer = field.getAnnotation(Pointer.class) != null;
-        cb.withMethodBody("get" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("()" + ClassFileHelper.toSignature(field.getType())), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
-            it.aload(0);
-            //MemorySegment realMemory = this.realMemory();
-            ClassFileHelper.invoke(it, REALMEMORY_METHOD, true);
-            it.astore(1);
-            it.aload(1);
-            if (isPointer) {
-                it.getstatic(ClassFileHelper.toDesc(ValueLayout.class), "ADDRESS", ClassFileHelper.toDesc(AddressLayout.class));
-                it.ldc(offset);
-                ClassFileHelper.invoke(it, NativeGeneratorHelper.GET_ADDRESS_FROM_MEMORY_SEGMENT, true);
-                it.ldc(subStructLayoutSize);
-                ClassFileHelper.invoke(it, NativeGeneratorHelper.REINTERPRET, true);
-                it.astore(2);
-                it.getstatic(thisClass, GENERATOR_FIELD, ClassFileHelper.toDesc(StructProxyGenerator.class));
-                it.ldc(ClassFileHelper.toDesc(field.getType()));
-                it.aload(2);
-            } else {
-                it.ldc(offset);
-                it.ldc(subStructLayoutSize);
-                ClassFileHelper.invoke(it, NativeGeneratorHelper.AS_SLICE, true);
-                it.astore(1);
-                it.getstatic(thisClass, GENERATOR_FIELD, ClassFileHelper.toDesc(StructProxyGenerator.class));
-                it.ldc(ClassFileHelper.toDesc(field.getType()));
-                it.aload(1);
-            }
-            ClassFileHelper.invoke(it, NativeGeneratorHelper.ENHANCE);
-            it.checkcast(ClassFileHelper.toDesc(field.getType()));
-            it.areturn();
-        });
+        cb.withMethodBody(
+                "get" + upperFirstChar(field.getName()),
+                MethodType.methodType(field.getType()).describeConstable().get(),
+                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                it -> {
+                    it.aload(0);
+                    //MemorySegment realMemory = this.realMemory();
+                    ClassFileHelper.invoke(it, REALMEMORY_METHOD, true);
+                    it.astore(1);
+                    it.aload(1);
+                    if (isPointer) {
+                        it.getstatic(ClassFileHelper.toDesc(ValueLayout.class), "ADDRESS", ClassFileHelper.toDesc(AddressLayout.class));
+                        it.ldc(offset);
+                        ClassFileHelper.invoke(it, NativeGeneratorHelper.GET_ADDRESS_FROM_MEMORY_SEGMENT, true);
+                        it.ldc(subStructLayoutSize);
+                        ClassFileHelper.invoke(it, NativeGeneratorHelper.REINTERPRET, true);
+                        it.astore(2);
+                        it.getstatic(thisClass, GENERATOR_FIELD, ClassFileHelper.toDesc(StructProxyGenerator.class));
+                        it.ldc(ClassFileHelper.toDesc(field.getType()));
+                        it.aload(2);
+                    } else {
+                        it.ldc(offset);
+                        it.ldc(subStructLayoutSize);
+                        ClassFileHelper.invoke(it, NativeGeneratorHelper.AS_SLICE, true);
+                        it.astore(1);
+                        it.getstatic(thisClass, GENERATOR_FIELD, ClassFileHelper.toDesc(StructProxyGenerator.class));
+                        it.ldc(ClassFileHelper.toDesc(field.getType()));
+                        it.aload(1);
+                    }
+                    ClassFileHelper.invoke(it, NativeGeneratorHelper.ENHANCE);
+                    it.checkcast(ClassFileHelper.toDesc(field.getType()));
+                    it.areturn();
+                });
 
-        cb.withMethodBody("set" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(field.getType()) + ")V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
-            if (isPointer) {
-                generateSetPtr(it, offset);
-            } else {
-                generateSetSubElement(it, offset, subStructLayoutSize);
-            }
-            it.return_();
-        });
+        cb.withMethodBody(
+                "set" + upperFirstChar(field.getName()),
+                MethodType.methodType(void.class, field.getType()).describeConstable().get(),
+                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                it -> {
+                    if (isPointer) {
+                        generateSetPtr(it, offset);
+                    } else {
+                        generateSetSubElement(it, offset, subStructLayoutSize);
+                    }
+                    it.return_();
+                });
 
-        cb.withMethodBody("set" + upperFirstChar(field.getName()), MethodTypeDesc.ofDescriptor("(" + ClassFileHelper.toSignature(MemorySegment.class) + ")V"), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
-            if (isPointer) {
-                generateSetPtr(it, offset);
-            } else {
-                generateSetSubElement(it, offset, subStructLayoutSize);
-            }
-            it.return_();
-        });
+        cb.withMethodBody(
+                "set" + upperFirstChar(field.getName()),
+                MethodType.methodType(void.class, MemorySegment.class).describeConstable().get(),
+                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                it -> {
+                    if (isPointer) {
+                        generateSetPtr(it, offset);
+                    } else {
+                        generateSetSubElement(it, offset, subStructLayoutSize);
+                    }
+                    it.return_();
+                });
 
         return it -> {
         };

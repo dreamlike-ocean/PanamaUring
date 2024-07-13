@@ -3,7 +3,9 @@ package top.dreamlike.panama.uring.async.fd;
 import top.dreamlike.panama.uring.async.BufferResult;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
+import top.dreamlike.panama.uring.async.trait.IoUringSocketOperator;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
+import top.dreamlike.panama.uring.helper.CloseHandle;
 import top.dreamlike.panama.uring.helper.LambdaHelper;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
@@ -31,7 +33,7 @@ import static top.dreamlike.panama.uring.nativelib.Instance.LIBC;
 import static top.dreamlike.panama.uring.nativelib.libs.Libc.Socket_H.OptName.SO_REUSEADDR;
 import static top.dreamlike.panama.uring.nativelib.libs.Libc.Socket_H.SetSockOpt.SOL_SOCKET;
 
-public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSelectedReadableFd {
+public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSelectedReadableFd, IoUringSocketOperator {
 
     private static final VarHandle BUFFER_RING_VH;
 
@@ -47,18 +49,22 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSele
 
     IoUringBufferRing bufferRing;
 
+    private final CloseHandle closeHandle;
+
     AsyncTcpSocketFd(IoUringEventLoop ioUringEventLoop, int fd, SocketAddress localAddress, SocketAddress remoteAddress) {
         this.ioUringEventLoop = ioUringEventLoop;
         this.fd = fd;
         this.localAddress = localAddress;
         this.remoteAddress = remoteAddress;
         this.hasConnected = true;
+        this.closeHandle = new CloseHandle(PollableFd.super::close);
     }
 
     public AsyncTcpSocketFd(IoUringEventLoop ioUringEventLoop, SocketAddress remoteAddress) {
         this.remoteAddress = remoteAddress;
         this.fd = socketSysCall(remoteAddress);
         this.ioUringEventLoop = ioUringEventLoop;
+        this.closeHandle = new CloseHandle(PollableFd.super::close);
     }
 
 
@@ -226,10 +232,7 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSele
         if (!hasConnected) {
             throw new IllegalStateException("before recv, must connect first.");
         }
-        return (CancelableFuture<BufferResult<OwnershipMemory>>)
-                owner().asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_recv(sqe, fd, buffer.resource(), len, flag))
-                        .whenComplete(buffer::DropWhenException)
-                        .thenApply(cqe -> new BufferResult<>(buffer, cqe.getRes()));
+      return IoUringSocketOperator.super.asyncRecv(buffer, len, flag);
     }
 
     public CancelableFuture<OwnershipMemory> asyncRecvSelected(int len, int flag) {
@@ -258,36 +261,24 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSele
         if (!hasConnected) {
             throw new IllegalStateException("before send, must connect first.");
         }
-        return ((CancelableFuture<BufferResult<OwnershipMemory>>) owner().asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_send(sqe, fd, buffer.resource(), len, flag))
-                .whenComplete(buffer::DropWhenException)
-                .thenApply(cqe -> new BufferResult<>(buffer, cqe.getRes())));
+        return IoUringSocketOperator.super.asyncSend(buffer, len, flag);
     }
 
     public CancelableFuture<BufferResult<OwnershipMemory>> asyncSendZc(OwnershipMemory buffer, int len, int flag, int zcFlags) {
         if (!hasConnected) {
             throw new IllegalStateException("before send, must connect first.");
         }
-        ZCContext context = new ZCContext();
-        return (CancelableFuture<BufferResult<OwnershipMemory>>) (new CancelableFuture<BufferResult<OwnershipMemory>>(promise ->
-                owner().asyncOperation(
-                        sqe -> Instance.LIB_URING.io_uring_prep_send_zc(sqe, fd, buffer.resource(), len, flag, zcFlags),
-                        cqe -> {
-                            if (cqe.hasMore()) {
-                                context.stage = ZCContext.Stage.MORE;
-                                context.sendRes = cqe.getRes();
-                            } else {
-                                context.stage = ZCContext.Stage.END;
-                                promise.complete(new BufferResult<>(buffer, cqe.getRes()));
-                            }
-                        }
-                )
-        ).whenComplete(buffer::DropWhenException));
+        return IoUringSocketOperator.super.asyncSendZc(buffer, len, flag, zcFlags);
+    }
 
-
+    @Override
+    public void close() {
+        closeHandle.close();
     }
 
     public boolean bindBufferRing(IoUringBufferRing bufferRing) {
-        return BUFFER_RING_VH.compareAndSet(this, null, bufferRing);
+        BUFFER_RING_VH.setVolatile(this, bufferRing);
+        return true;
     }
 
     @Override
@@ -326,17 +317,6 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSele
     @Override
     public IoUringBufferRing bufferRing() {
         return bufferRing;
-    }
-
-    private static class ZCContext {
-        Stage stage = Stage.WAIT_MORE;
-        int sendRes;
-
-        private enum Stage {
-            WAIT_MORE,
-            MORE,
-            END;
-        }
     }
 
     static {

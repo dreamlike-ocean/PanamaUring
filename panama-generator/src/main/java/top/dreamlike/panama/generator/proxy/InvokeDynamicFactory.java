@@ -13,7 +13,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 public class InvokeDynamicFactory {
-    public static CallSite nativeCallIndyFactory(MethodHandles.Lookup lookup, String methodName, MethodType methodType, Object... args) throws Throwable {
+    public static CallSite nativeCallIndyFactory(MethodHandles.Lookup lookup, String methodName, MethodType methodType) throws Throwable {
         if (Condition.DEBUG) {
             System.out.println("call nativeCallIndyFactory lookup:" + lookup + " methodName:" + methodName + " methodType:" + methodType);
         }

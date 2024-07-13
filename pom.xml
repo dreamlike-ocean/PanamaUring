@@ -19,8 +19,9 @@
         <vertx-async.version>3.0.0</vertx-async.version>
         <native-lib>3.0.0</native-lib>
         <mutiny.version>2.5.0</mutiny.version>
-        <panama-generator>1.3</panama-generator>
+        <panama-generator>1.3.1</panama-generator>
         <log.version>2.23.1</log.version>
+        <networking.version>0.0.1</networking.version>
     </properties>
 
     <licenses>
@@ -186,5 +187,18 @@
         </dependency>
 
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M5</version>
+                <configuration>
+                    <argLine>--enable-preview</argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
