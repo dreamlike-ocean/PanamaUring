@@ -50,7 +50,6 @@
         <module>panama-uring</module>
         <module>panama-generator</module>
         <module>graal-native-example</module>
-        <module>panama-uring-networking</module>
     </modules>
     <profiles>
         <profile>
