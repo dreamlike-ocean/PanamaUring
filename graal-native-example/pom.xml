@@ -160,7 +160,7 @@
                         </annotationProcessor>
                     </annotationProcessors>
                     <compilerArgs>
-                        <compilerArg>-Aindy.enable=false</compilerArg>
+                        <compilerArg>-Aindy.enable=true</compilerArg>
                         <compilerArg>-Agenerate.graal.feature.enable=true</compilerArg>
                         <compilerArg>-Agenerate.graal.feature.name=${graal.feature}</compilerArg>
                     </compilerArgs>

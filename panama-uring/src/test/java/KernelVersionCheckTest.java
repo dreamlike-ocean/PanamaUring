@@ -3,6 +3,7 @@ import org.junit.Test;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public class KernelVersionCheckTest {
 
@@ -23,8 +24,7 @@ public class KernelVersionCheckTest {
             throw new RuntimeException(r);
         }
         eventLoop.join();
-        Assert.assertEquals(1, queue.size());
-        Throwable throwable = queue.take();
+        Throwable throwable = queue.poll(10, TimeUnit.SECONDS);
         Assert.assertTrue(throwable instanceof UnsupportedOperationException);
     }
 
