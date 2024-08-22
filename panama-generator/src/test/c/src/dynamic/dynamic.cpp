@@ -118,3 +118,7 @@ long set_error_no(int error, long returnValue) {
     *errno_location = error;
     return returnValue;
 }
+
+ void set_array(long* array, int index, long value) {
+    array[index] = value;
+ }

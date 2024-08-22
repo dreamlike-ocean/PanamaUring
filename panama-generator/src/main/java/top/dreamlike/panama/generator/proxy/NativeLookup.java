@@ -20,6 +20,16 @@ class NativeLookup implements SymbolLookup {
     public static final MethodHandle FILL_ERROR_CODE_BOOLEAN_MH;
     public static final MethodHandle FILL_ERROR_CODE_CHAR_MH;
     public static final MethodHandle FILL_ERROR_CODE_ADDRESS_MH;
+
+    private static final MethodHandle MEMORY_SEGMENT_HEAP_INT_MH;
+    private static final MethodHandle MEMORY_SEGMENT_HEAP_LONG_MH;
+    private static final MethodHandle MEMORY_SEGMENT_HEAP_CHAR_MH;
+    private static final MethodHandle MEMORY_SEGMENT_HEAP_FLOAT_MH;
+    private static final MethodHandle MEMORY_SEGMENT_HEAP_DOUBLE_MH;
+    private static final MethodHandle MEMORY_SEGMENT_HEAP_BYTE_MH;
+    private static final MethodHandle MEMORY_SEGMENT_HEAP_SHORT_MH;
+
+
     private static final VarHandle errorHandle;
 
     //sb java 只能枚举全部原始类型了
@@ -52,6 +62,14 @@ class NativeLookup implements SymbolLookup {
                     .findStatic(NativeLookup.class, "fillTLErrorChar", MethodType.methodType(char.class, char.class));
             FILL_ERROR_CODE_ADDRESS_MH = lookup
                     .findStatic(NativeLookup.class, "fillTLErrorAddress", MethodType.methodType(MemorySegment.class, MemorySegment.class));
+
+            MEMORY_SEGMENT_HEAP_INT_MH = lookup.findStatic(MemorySegment.class,"ofArray", MethodType.methodType(MemorySegment.class, int[].class));
+            MEMORY_SEGMENT_HEAP_LONG_MH = lookup.findStatic(MemorySegment.class,"ofArray", MethodType.methodType(MemorySegment.class, long[].class));
+            MEMORY_SEGMENT_HEAP_CHAR_MH = lookup.findStatic(MemorySegment.class,"ofArray", MethodType.methodType(MemorySegment.class, char[].class));
+            MEMORY_SEGMENT_HEAP_FLOAT_MH = lookup.findStatic(MemorySegment.class,"ofArray", MethodType.methodType(MemorySegment.class, float[].class));
+            MEMORY_SEGMENT_HEAP_DOUBLE_MH = lookup.findStatic(MemorySegment.class,"ofArray", MethodType.methodType(MemorySegment.class, double[].class));
+            MEMORY_SEGMENT_HEAP_BYTE_MH = lookup.findStatic(MemorySegment.class,"ofArray", MethodType.methodType(MemorySegment.class, byte[].class));
+            MEMORY_SEGMENT_HEAP_SHORT_MH = lookup.findStatic(MemorySegment.class,"ofArray", MethodType.methodType(MemorySegment.class, short[].class));
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -81,6 +99,22 @@ class NativeLookup implements SymbolLookup {
                     MethodHandles.filterReturnValue(methodHandle, FILL_ERROR_CODE_BOOLEAN_MH);
             case Class c when c == void.class -> MethodHandles.filterReturnValue(methodHandle, FILL_ERROR_CODE_VOID_MH);
             default -> MethodHandles.filterReturnValue(methodHandle, FILL_ERROR_CODE_ADDRESS_MH);
+        };
+    }
+
+    public static MethodHandle heapAccessMH(Class primitiveType) {
+        if (!primitiveType.isPrimitive()) {
+            throw new IllegalArgumentException("primitiveType must be a primitive type");
+        }
+        return switch (primitiveType) {
+            case Class c when c == int.class -> MEMORY_SEGMENT_HEAP_INT_MH;
+            case Class c when c == long.class -> MEMORY_SEGMENT_HEAP_LONG_MH;
+            case Class c when c == short.class -> MEMORY_SEGMENT_HEAP_SHORT_MH;
+            case Class c when c == char.class -> MEMORY_SEGMENT_HEAP_CHAR_MH;
+            case Class c when c == float.class -> MEMORY_SEGMENT_HEAP_FLOAT_MH;
+            case Class c when c == double.class -> MEMORY_SEGMENT_HEAP_DOUBLE_MH;
+            case Class c when c == byte.class -> MEMORY_SEGMENT_HEAP_BYTE_MH;
+            default -> throw new IllegalArgumentException("primitiveType must be a primitive type");
         };
     }
 

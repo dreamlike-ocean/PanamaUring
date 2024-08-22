@@ -11,6 +11,7 @@ import top.dreamlike.panama.generator.helper.NativeStructEnhanceMark;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -191,6 +192,25 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 default -> throw new IllegalArgumentException("should not reach here! " + mirror);
             };
         }
+        
+        if (mirror.getKind() == TypeKind.ARRAY) {
+            ArrayType type = (ArrayType) mirror;
+            TypeMirror typeComponentType = type.getComponentType();
+            if (!typeComponentType.getKind().isPrimitive()) {
+                throw new IllegalArgumentException("array must be primitive type");
+            }
+            return switch (mirror.getKind()) {
+                case BYTE -> byte[].class;
+                case SHORT -> short[].class;
+                case INT -> int[].class;
+                case LONG -> long[].class;
+                case CHAR -> char[].class;
+                case FLOAT -> float[].class;
+                case DOUBLE -> double[].class;
+                default -> throw new IllegalArgumentException("should not reach here! " + mirror);
+            };
+        }
+        
         TypeElement currentTypeElement = (TypeElement) env.getTypeUtils().asElement(mirror);
         if (mirror.getKind() != TypeKind.DECLARED) {
             throw new IllegalStateException("dont support other type!" + "current kind is: " + mirror.getKind() + ", in " + currentTypeElement);

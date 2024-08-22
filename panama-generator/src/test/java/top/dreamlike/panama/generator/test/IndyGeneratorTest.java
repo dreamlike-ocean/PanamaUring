@@ -39,6 +39,14 @@ public class IndyGeneratorTest {
     }
 
     @Test
+    public void testSimpleFunctionHeap() {
+        long[] longs = new long[10];
+        Assert.assertEquals( 0, longs[1]);
+        libPerson.set_array(longs,1, 20010329);
+        Assert.assertEquals(20010329, longs[1]);
+    }
+
+    @Test
     public void testSimpleStruct() {
         MemoryLayout personSizeof = structProxyGenerator.extract(Person.class);
         MemorySegment personInMemory = Arena.global().allocate(personSizeof);

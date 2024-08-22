@@ -271,6 +271,20 @@ public class NativeCallGenerator {
             );
         }
 
+        for (int i = 0; i < parameters.length; i++) {
+            Parameter parameter = parameters[i];
+            Class<?> parameterType = parameter.getType();
+            if (!parameterType.isArray()) {
+                continue;
+            }
+            MethodHandle wrapperMH = NativeLookup.heapAccessMH(parameterType.getComponentType());
+            methodHandle = MethodHandles.filterArguments(
+                    methodHandle,
+                    i,
+                    wrapperMH
+            );
+        }
+
         if (needCaptureStatue) {
             /*
              *  别看fillErrorNoAfterReturn 太丑了。。SB java.。
@@ -323,10 +337,9 @@ public class NativeCallGenerator {
         Class<?> returnType = method.getReturnType();
         boolean returnPointer = !returnType.isPrimitive() && function != null && function.returnIsPointer();
         ArrayList<Linker.Option> options = new ArrayList<>(2);
-        boolean allowPassHeap = function != null && function.allowPassHeap();
-        if (function != null && function.fast()) {
-            options.add(Linker.Option.critical(allowPassHeap));
-        }
+
+        boolean needFast = function != null && function.fast();
+        boolean needHeap = function != null && function.allowPassHeap();
 
         boolean needCaptureStatue = function != null && function.needErrorNo();
         if (needCaptureStatue) {
@@ -346,6 +359,16 @@ public class NativeCallGenerator {
                 rawMemoryIndex.add(i);
                 continue;
             }
+
+            if (typeClass.isArray()) {
+                if (!typeClass.getComponentType().isPrimitive()) {
+                    throw new IllegalArgumentException("array must be primitive type");
+                }
+                needFast = needHeap = true;
+                layouts[i] = ValueLayout.ADDRESS;
+                continue;
+            }
+
             layouts[i] = structProxyGenerator.extract(typeClass);
             if (!typeClass.isPrimitive()) {
                 rawMemoryIndex.add(i);
@@ -358,6 +381,11 @@ public class NativeCallGenerator {
         } else {
             returnLayout = structProxyGenerator.extract(returnType);
         }
+
+        if (needFast) {
+            options.add(Linker.Option.critical(needHeap));
+        }
+
         FunctionDescriptor fd = returnType == void.class
                 ? FunctionDescriptor.ofVoid(layouts)
                 : FunctionDescriptor.of(

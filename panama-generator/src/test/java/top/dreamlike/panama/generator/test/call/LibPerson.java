@@ -40,4 +40,6 @@ public interface LibPerson {
 
     @NativeFunction(fast = true)
     long set_error_no(int error, long returnValue);
+
+    long set_array(long[] error, int index, long value);
 }

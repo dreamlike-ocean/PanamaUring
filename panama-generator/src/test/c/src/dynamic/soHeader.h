@@ -49,5 +49,7 @@ extern "C" {
     int current_error(int dummy, long dummy2);
 
     long set_error_no(int error, long returnValue);
+
+    void set_array(long* array, int index, long value);
 };
 #endif //PLAYGROUD_DYNAMIC_LIB_H
