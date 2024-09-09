@@ -27,8 +27,6 @@ git clone --recurse-submodules https://github.com/dreamlike-ocean/PanamaUring.gi
 测试运行 因为依赖了一些预览特性 所以需要使用jdk 22
 
 ```shell
-
-``` shell
 export JAVA_TOOL_OPTIONS=--enable-preview;
 mvn test
 ```
