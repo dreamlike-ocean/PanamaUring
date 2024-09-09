@@ -1,7 +1,8 @@
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import struct.io_uring_cqe_struct;
 import struct.io_uring_sqe_struct;
 import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
@@ -45,7 +46,7 @@ import java.util.stream.IntStream;
 public class LiburingTest {
 
 
-    private static final Logger log = LogManager.getLogger(LiburingTest.class);
+    private final static Logger log = LoggerFactory.getLogger(LiburingTest.class);
 
     @Test
     public void testLayout() {

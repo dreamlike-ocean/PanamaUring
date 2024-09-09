@@ -1,6 +1,7 @@
 package top.dreamlike.panama.uring.nativelib.helper;
 
 import sun.misc.Unsafe;
+import top.dreamlike.unsafe.core.MasterKey;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -24,13 +25,11 @@ public class UnsafeHelper {
 
     static {
         try {
+            MethodHandles.Lookup trustedLookup = MasterKey.INSTANCE.getTrustedLookup();
             Field field = Unsafe.class.getDeclaredField("theUnsafe");
             field.setAccessible(true);
-            unsafe = (Unsafe) field.get(null);
-            Field implLookupField = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-            Object base = unsafe.staticFieldBase(implLookupField);
-            long fieldOffset = unsafe.staticFieldOffset(implLookupField);
-            trusted_lookup = ((MethodHandles.Lookup) unsafe.getObject(base, fieldOffset));
+            unsafe = (Unsafe) trustedLookup.unreflectVarHandle(field).get();
+            trusted_lookup = trustedLookup;
             getDirectMemorySizeMH = trusted_lookup.findStatic(Class.forName("jdk.internal.misc.VM"), "maxDirectMemory", MethodType.methodType(long.class));
         } catch (Throwable e) {
             throw new RuntimeException(e);

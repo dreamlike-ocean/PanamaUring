@@ -7,9 +7,9 @@ public class SyscallException extends RuntimeException {
 
     final int errorno;
 
-    public SyscallException(int errorno) {
-        super("syscall error: " + NativeHelper.getErrorStr(-errorno));
-        this.errorno = -errorno;
+    public SyscallException(int negativeErrorNo) {
+        super("syscall error: " + NativeHelper.getErrorStr(-negativeErrorNo));
+        this.errorno = -negativeErrorNo;
     }
 
     public int getErrorno() {

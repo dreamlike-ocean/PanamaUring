@@ -102,7 +102,7 @@ class OwnershipBufferRingElement implements OwnershipMemory {
             return;
         }
         CompletableFuture<Void> buffer = waitToRelease.ring().releaseBuffer(waitToRelease);
-        if (Thread.currentThread() != waitToRelease.ring().owner()) {
+        if (!waitToRelease.ring().owner().inEventLoop()) {
             LambdaHelper.runWithThrowable(buffer::get);
         }
     }
