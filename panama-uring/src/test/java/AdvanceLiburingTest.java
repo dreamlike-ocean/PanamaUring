@@ -1,6 +1,10 @@
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.async.fd.AsyncFileFd;
 import top.dreamlike.panama.uring.async.fd.AsyncInotifyFd;
@@ -38,11 +42,29 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+@RunWith(Parameterized.class)
 public class AdvanceLiburingTest {
+
+    private final static Logger log = LoggerFactory.getLogger(AdvanceLiburingTest.class);
+    
+    public final boolean vt;
+
+    public AdvanceLiburingTest(boolean vt) {
+        this.vt = vt;
+    }
+
+    @Parameterized.Parameters
+    public static Object[] data() {
+        return new Object[]{
+                false,
+                true
+        };
+    }
 
     @Test
     public void testSelectedRead() {
-        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+        log.info("start testSelectedRead");
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -96,7 +118,8 @@ public class AdvanceLiburingTest {
 
     @Test
     public void testSelectedRecv() {
-        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+        log.info("start testSelectedRecv");
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -157,7 +180,8 @@ public class AdvanceLiburingTest {
 
     @Test
     public void testWatchService() {
-        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+        log.info("start testWatchService");
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -199,6 +223,7 @@ public class AdvanceLiburingTest {
     @Test
     @Timeout(value = 2, unit = TimeUnit.SECONDS)
     public void testMultiRecv() throws Exception {
+        log.info("start testMultiRecv");
         Path udsPath = Path.of(NativeHelper.JAVA_IO_TMPDIR).resolve(UUID.randomUUID().toString() + ".sock");
         UnixDomainSocketAddress address = UnixDomainSocketAddress.of(udsPath);
         ServerSocketChannel serverChannel = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
@@ -206,7 +231,7 @@ public class AdvanceLiburingTest {
         ExecutorService threadPool = Executors.newVirtualThreadPerTaskExecutor();
         Future<SocketChannel> getTestSocket = threadPool.submit(serverChannel::accept);
 
-        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -267,7 +292,8 @@ public class AdvanceLiburingTest {
 
     @Test
     public void testLinked() throws Exception {
-        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+        log.info("start testLinked");
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });

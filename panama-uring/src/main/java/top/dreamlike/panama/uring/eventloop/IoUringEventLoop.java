@@ -42,13 +42,13 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
 
     private static final OSIoUringProbe PROBE = new OSIoUringProbe();
 
-    private static final AtomicInteger count = new AtomicInteger(0);
+    protected static final AtomicInteger count = new AtomicInteger(0);
     private final static Logger log = LoggerFactory.getLogger(IoUringEventLoop.class);
 
     protected static final LibUring libUring = Instance.LIB_URING;
     private static final int cqeSize = 4;
     private final EventFd wakeUpFd;
-    private final AtomicBoolean inWait;
+
     protected final AtomicBoolean hasClosed;
 
     protected IoUring internalRing;
@@ -86,7 +86,6 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory, ThreadFactory factory) {
         this.wakeUpFd = new EventFd(0, 0);
         log.info("wakeupFd: {}", wakeUpFd);
-        this.inWait = new AtomicBoolean(false);
         this.taskQueue = new MpscUnboundedArrayQueue<>(1024);
         this.hasClosed = new AtomicBoolean();
         this.tokenGenerator = new AtomicLong(0);
@@ -148,14 +147,12 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
             }
             ScheduledTask nextTask = scheduledTasks.peek();
             //如果没有任务或者下一个任务的时间大于当前时间，那么就直接提交
-            inWait.set(false);
             if (nextTask == null) {
                 submitAndWait(-1);
             } else if (nextTask.deadlineNanos >= System.nanoTime()) {
                 long duration = nextTask.deadlineNanos - System.nanoTime();
                 submitAndWait(duration);
             }
-            inWait.set(true);
             processCqes();
         }
         releaseResource();
@@ -345,7 +342,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     private void processCqes() {
         int count = libUring.io_uring_peek_batch_cqe(internalRing, cqePtrs, cqeSize);
         if (log.isDebugEnabled()) {
-            log.info("processCqes count:{}", count);
+            log.debug("processCqes count:{}", count);
         }
         for (int i = 0; i < count; i++) {
             IoUringCqe nativeCqe = Instance.STRUCT_PROXY_GENERATOR.enhance(cqePtrs.getAtIndex(ValueLayout.ADDRESS, i));
@@ -354,7 +351,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
             IoUringCompletionCallBack callback = multiShot ? callBackMap.get(token) : callBackMap.remove(token);
             if (callback != null && callback.userCallBack != null) {
                 if (log.isDebugEnabled()) {
-                    log.info("IoUringCompletionCallBack: {}", callback);
+                    log.debug("IoUringCompletionCallBack: {}", callback);
                 }
                 runWithCatchException(() -> callback.userCallBack.accept(nativeCqe));
             }
@@ -366,6 +363,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     @Override
     public void close() throws Exception {
         if (hasClosed.compareAndSet(false, true)) {
+            log.debug("close wakeup!");
             wakeup();
         }
         join();
@@ -400,9 +398,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     }
 
     private void wakeup() {
-        if (inWait.compareAndSet(false, true)) {
-            wakeUpFd.eventfdWrite(1);
-        }
+        wakeUpFd.eventfdWrite(1);
     }
 
     public void submitScheduleTask(long delay, TimeUnit timeUnit, Runnable task) {

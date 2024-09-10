@@ -13,7 +13,7 @@ maven坐标为
 <dependency>
     <groupId>io.github.dreamlike-ocean</groupId>
     <artifactId>panama-uring</artifactId>
-    <version>4.0.1</version>
+    <version>${lastest}</version>
     <classifier>linux-x86_64</classifier>
 </dependency>
 ```
@@ -223,3 +223,11 @@ private void multiShotReadEventfd() {
     return true;
 }
 ```
+
+#### 虚拟线程支持
+
+当前做了一个特殊的实现 `VTIoUringEventLoop` 其使用虚拟线程作为EventLoop实现，原理如下：
+
+首先java虚拟线程底层有一组read poller来不断poll事件然后恢复对应线程执行，那么我们实际上就可以把一些fd直接挂到这个poller上，请它来poll一些fd,已知iouring发布cqe时支持自动向某个eventfd发送消息（io_uring_register_eventfd） 那么我就可以把这个eventfd挂到jdk的poller上 然后开启一个虚拟线程跑对应的EventLoop，还可以复用对应的ForkJoin线程池来处理cqe回调和各种操作，直接去“借用”JDK内部的虚拟线程池化算力
+
+具体的Poll实现可以参考 `sun.nio.ch.Poller::poll` 是一个内部的静态方法，我通过一些hack的手段强行打开的
