@@ -1,7 +1,7 @@
 package top.dreamlike.panama.uring.nativelib.helper;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import top.dreamlike.panama.uring.async.trait.IoUringOperator;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.helper.LambdaHelper;
@@ -23,7 +23,7 @@ public class NativeHelper {
 
     public static boolean enableOpVersionCheck = System.getProperty("enable-detect-os-version", "true").equalsIgnoreCase("true");
 
-    private static final Logger logger = LogManager.getLogger(NativeHelper.class);
+    private final static Logger logger = LoggerFactory.getLogger(NativeHelper.class);
 
     private static final String[] errStr = new String[257];
 

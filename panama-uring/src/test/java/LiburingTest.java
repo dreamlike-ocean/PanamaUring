@@ -1,7 +1,10 @@
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import struct.io_uring_cqe_struct;
 import struct.io_uring_sqe_struct;
 import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
@@ -42,10 +45,24 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+@RunWith(Parameterized.class)
 public class LiburingTest {
 
+    public final boolean vt;
 
-    private static final Logger log = LogManager.getLogger(LiburingTest.class);
+    private final static Logger log = LoggerFactory.getLogger(LiburingTest.class);
+
+    public LiburingTest(boolean vt) {
+        this.vt = vt;
+    }
+
+    @Parameterized.Parameters
+    public static Object[] data() {
+        return new Object[]{
+                false,
+                true
+        };
+    }
 
     @Test
     public void testLayout() {
@@ -106,7 +123,7 @@ public class LiburingTest {
     @Test
     public void testAsyncFile() throws Throwable {
 
-        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -145,7 +162,7 @@ public class LiburingTest {
 
     @Test
     public void testAsyncFd() {
-        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -200,7 +217,7 @@ public class LiburingTest {
 
     @Test
     public void testAsyncServer() throws Exception {
-        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -239,7 +256,7 @@ public class LiburingTest {
 
     @Test
     public void testAsyncSocket() throws Exception {
-        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -309,13 +326,14 @@ public class LiburingTest {
 
     @Test
     public void testAsyncPoller() {
-        try (IoUringEventLoop ioUringEventLoop = new IoUringEventLoop(params -> {
+        try (IoUringEventLoop ioUringEventLoop = IoUringEventLoopGetter.get(vt, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         })) {
             ioUringEventLoop.start();
 
             AsyncPipeFd pipeFd = new AsyncPipeFd(ioUringEventLoop);
+            log.info("pipeFd: {}", pipeFd);
             String demoStr = "hello async pipe";
             OwnershipMemory writeBuffer = Instance.LIB_JEMALLOC.mallocMemory(demoStr.length());
             MemorySegment.copy(demoStr.getBytes(), 0, writeBuffer.resource(), ValueLayout.JAVA_BYTE, 0, demoStr.length());
@@ -326,6 +344,7 @@ public class LiburingTest {
             Assert.assertEquals(demoStr.length(), readRes.syscallRes());
             Assert.assertEquals(demoStr, NativeHelper.bufToString(readBuffer.resource(), demoStr.length()));
 
+            log.info("start test async poller");
             AsyncPoller poller = new AsyncPoller(ioUringEventLoop);
             int syscallRes = Instance.LIBC.fcntl(pipeFd.readFd(), Libc.Fcntl_H.F_SETFL, Libc.Fcntl_H.O_NONBLOCK);
             Assert.assertTrue(syscallRes >= 0);
@@ -333,9 +352,10 @@ public class LiburingTest {
             Assert.assertEquals(0, readCount);
 
             CancelableFuture<Integer> pollInRes = poller.register(pipeFd, LibPoll.POLLIN);
-            ioUringEventLoop.submitScheduleTask(200, TimeUnit.MILLISECONDS, () -> {
+            ioUringEventLoop.submitScheduleTask(1000, TimeUnit.MILLISECONDS, () -> {
                 try (OwnershipMemory writeBuffer1 = Instance.LIB_JEMALLOC.mallocMemory(demoStr.length())) {
                     MemorySegment.copy(demoStr.getBytes(), 0, writeBuffer1.resource(), ValueLayout.JAVA_BYTE, 0, demoStr.length());
+                    log.info("submitScheduleTask start!");
                     pipeFd.asyncWrite(writeBuffer1, demoStr.length(), 0);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -356,7 +376,7 @@ public class LiburingTest {
 
     @Test
     public void testAsyncSplicer() {
-        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -411,14 +431,14 @@ public class LiburingTest {
 
     @Test
     public void multiShotAcceptTest() {
-        IoUringEventLoop eventLoop = new IoUringEventLoop(params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
         try (eventLoop) {
             eventLoop.start();
-            InetSocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
-            AsyncTcpServerSocketFd serverFd = new AsyncTcpServerSocketFd(eventLoop, serverAddress, 5000);
+            InetSocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000 + (vt ? 1 : 0));
+            AsyncTcpServerSocketFd serverFd = new AsyncTcpServerSocketFd(eventLoop, serverAddress, 5000 + (vt ? 1 : 0));
             serverFd.bind();
             serverFd.listen(16);
 
@@ -470,6 +490,8 @@ public class LiburingTest {
             Assert.assertEquals(Integer.valueOf(1), cancelToken.cancel().get());
             cancelCondition.await();
             Assert.assertTrue(cqeHasCancel.get());
+            serverSocketFd.close();
+            Thread.sleep(1000);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

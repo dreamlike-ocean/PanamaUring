@@ -1,8 +1,8 @@
 package top.dreamlike.panama.uring.eventloop;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jctools.queues.MpscUnboundedArrayQueue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.async.cancel.CancelToken;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,20 +38,20 @@ import java.util.function.Supplier;
 
 import static top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant.IORING_ASYNC_CANCEL_ALL;
 
-public class IoUringEventLoop extends Thread implements AutoCloseable, Executor {
+public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnable permits VTIoUringEventLoop {
 
     private static final OSIoUringProbe PROBE = new OSIoUringProbe();
 
-    private static final AtomicInteger count = new AtomicInteger(0);
-    private static final Logger log = LogManager.getLogger(IoUringEventLoop.class);
+    protected static final AtomicInteger count = new AtomicInteger(0);
+    private final static Logger log = LoggerFactory.getLogger(IoUringEventLoop.class);
 
-    private static final LibUring libUring = Instance.LIB_URING;
+    protected static final LibUring libUring = Instance.LIB_URING;
     private static final int cqeSize = 4;
     private final EventFd wakeUpFd;
-    private final AtomicBoolean inWait;
-    private final AtomicBoolean hasClosed;
 
-    private IoUring internalRing;
+    protected final AtomicBoolean hasClosed;
+
+    protected IoUring internalRing;
 
     private final MpscUnboundedArrayQueue<Runnable> taskQueue;
 
@@ -66,6 +67,8 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
 
     private MemorySegment eventReadBuffer;
 
+    protected final Thread owner;
+
     private Consumer<Throwable> exceptionHandler = (t) -> {
         log.error("Uncaught exception in event loop", t);
     };
@@ -73,15 +76,27 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
     private boolean enableLink;
 
     public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory) {
+        this(ioUringParamsFactory, (r) -> {
+            Thread thread = new Thread(r);
+            thread.setName("IoUringEventLoop-" + count.incrementAndGet());
+            return thread;
+        });
+    }
+
+    public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory, ThreadFactory factory) {
         this.wakeUpFd = new EventFd(0, 0);
-        this.inWait = new AtomicBoolean(false);
+        log.info("wakeupFd: {}", wakeUpFd);
         this.taskQueue = new MpscUnboundedArrayQueue<>(1024);
         this.hasClosed = new AtomicBoolean();
         this.tokenGenerator = new AtomicLong(0);
         this.callBackMap = new LongObjectHashMap<>();
         this.scheduledTasks = new PriorityQueue<>();
-        setName("IoUringEventLoop-" + count.getAndIncrement());
         initRing(ioUringParamsFactory);
+        owner = factory.newThread(this);
+    }
+
+    public void start() {
+        owner.start();
     }
 
     private void initRing(Consumer<IoUringParams> ioUringParamsFactory) {
@@ -133,19 +148,25 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
             ScheduledTask nextTask = scheduledTasks.peek();
             //如果没有任务或者下一个任务的时间大于当前时间，那么就直接提交
             if (nextTask == null) {
-                inWait.set(false);
-                libUring.io_uring_submit_and_wait(internalRing, 1);
+                submitAndWait(-1);
             } else if (nextTask.deadlineNanos >= System.nanoTime()) {
-                inWait.set(false);
                 long duration = nextTask.deadlineNanos - System.nanoTime();
-                kernelTime64Type.setTv_sec(duration / 1000000000);
-                kernelTime64Type.setTv_nsec(duration % 1000000000);
-                libUring.io_uring_submit_and_wait_timeout(internalRing, cqePtrs, 1, kernelTime64Type, null);
+                submitAndWait(duration);
             }
-            inWait.set(true);
             processCqes();
         }
         releaseResource();
+    }
+
+    protected void submitAndWait(long duration) {
+        log.debug("duration: {}", duration);
+        if (duration == -1) {
+            libUring.io_uring_submit_and_wait(internalRing, 1);
+        } else {
+            kernelTime64Type.setTv_sec(duration / 1000000000);
+            kernelTime64Type.setTv_nsec(duration % 1000000000);
+            libUring.io_uring_submit_and_wait_timeout(internalRing, cqePtrs, 1, kernelTime64Type, null);
+        }
     }
 
     private void runWithCatchException(Runnable r) {
@@ -178,7 +199,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
     }
 
     public void runOnEventLoop(Runnable runnable) {
-        if (Thread.currentThread() == this) {
+        if (Thread.currentThread() == owner) {
             runWithCatchException(runnable);
         } else {
             execute(runnable);
@@ -295,6 +316,10 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         return cancelToken;
     }
 
+    public boolean isVirtual() {
+        return owner.isVirtual();
+    }
+
     private IoUringSqe ioUringGetSqe() {
         IoUringSqe sqe = libUring.io_uring_get_sqe(internalRing);
         //fast_sqe
@@ -317,7 +342,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
     private void processCqes() {
         int count = libUring.io_uring_peek_batch_cqe(internalRing, cqePtrs, cqeSize);
         if (log.isDebugEnabled()) {
-            log.info("processCqes count:{}", count);
+            log.debug("processCqes count:{}", count);
         }
         for (int i = 0; i < count; i++) {
             IoUringCqe nativeCqe = Instance.STRUCT_PROXY_GENERATOR.enhance(cqePtrs.getAtIndex(ValueLayout.ADDRESS, i));
@@ -325,6 +350,9 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
             boolean multiShot = nativeCqe.hasMore();
             IoUringCompletionCallBack callback = multiShot ? callBackMap.get(token) : callBackMap.remove(token);
             if (callback != null && callback.userCallBack != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("IoUringCompletionCallBack: {}", callback);
+                }
                 runWithCatchException(() -> callback.userCallBack.accept(nativeCqe));
             }
         }
@@ -335,11 +363,13 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
     @Override
     public void close() throws Exception {
         if (hasClosed.compareAndSet(false, true)) {
+            log.debug("close wakeup!");
             wakeup();
         }
+        join();
     }
 
-    private void releaseResource() {
+    protected void releaseResource() {
         this.wakeUpFd.close();
         Instance.LIB_URING.io_uring_queue_exit(internalRing);
         MemorySegment ioUringMemory = StructProxyGenerator.findMemorySegment(internalRing);
@@ -350,8 +380,12 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
         Instance.LIB_JEMALLOC.free(eventReadBuffer);
     }
 
-    private boolean inEventLoop() {
-        return Thread.currentThread() == this;
+    public boolean inEventLoop() {
+        return Thread.currentThread() == owner;
+    }
+
+    public void join() throws InterruptedException {
+        owner.join();
     }
 
     @Override
@@ -364,9 +398,7 @@ public class IoUringEventLoop extends Thread implements AutoCloseable, Executor 
     }
 
     private void wakeup() {
-        if (inWait.compareAndSet(false, true)) {
-            wakeUpFd.eventfdWrite(1);
-        }
+        wakeUpFd.eventfdWrite(1);
     }
 
     public void submitScheduleTask(long delay, TimeUnit timeUnit, Runnable task) {

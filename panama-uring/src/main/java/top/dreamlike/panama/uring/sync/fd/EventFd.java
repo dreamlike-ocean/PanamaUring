@@ -49,4 +49,10 @@ public class EventFd implements NativeFd, PollableFd {
         return fd;
     }
 
+    @Override
+    public String toString() {
+        return "EventFd{" +
+               "fd=" + fd +
+               '}';
+    }
 }

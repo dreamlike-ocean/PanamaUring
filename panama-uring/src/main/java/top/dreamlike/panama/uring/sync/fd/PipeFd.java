@@ -53,4 +53,13 @@ public class PipeFd implements PollableFd, NativeFd {
         }
 
     }
+
+    @Override
+    public String toString() {
+        return "PipeFd{" +
+               "readSide=" + readSide +
+               ", writeSide=" + writeSide +
+               ", hasClosed=" + hasClosed +
+               '}';
+    }
 }
