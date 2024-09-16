@@ -1,4 +1,3 @@
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,11 +15,14 @@ import top.dreamlike.panama.uring.async.IoUringSyscallResult;
 import top.dreamlike.panama.uring.async.cancel.CancelToken;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.async.fd.*;
+import top.dreamlike.panama.uring.async.other.IoUringMadvise;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
+import top.dreamlike.panama.uring.nativelib.libs.LibMman;
 import top.dreamlike.panama.uring.nativelib.libs.LibPoll;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
+import top.dreamlike.panama.uring.nativelib.libs.PosixBridge;
 import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
 import top.dreamlike.panama.uring.sync.fd.PipeFd;
@@ -34,6 +36,9 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.net.*;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
@@ -48,9 +53,8 @@ import java.util.stream.IntStream;
 @RunWith(Parameterized.class)
 public class LiburingTest {
 
-    public final boolean vt;
-
     private final static Logger log = LoggerFactory.getLogger(LiburingTest.class);
+    public final boolean vt;
 
     public LiburingTest(boolean vt) {
         this.vt = vt;
@@ -494,6 +498,52 @@ public class LiburingTest {
             Thread.sleep(1000);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void testMadvise() throws Exception {
+        log.info("start test madvise vt:{}", vt);
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
+            params.setSq_entries(4);
+            params.setFlags(0);
+        });
+
+        try (eventLoop) {
+            eventLoop.start();
+            File tempFile = File.createTempFile("test4IoUringMmap", ".txt");
+            tempFile.deleteOnExit();
+            String content = "hello mmap";
+            int fileSize = 0;
+            try (var output = new FileOutputStream(tempFile)) {
+                output.write(content.getBytes());
+                fileSize = (int) output.getChannel().size();
+            }
+            var fd = PosixBridge.open(tempFile, Libc.Fcntl_H.O_RDWR);
+            Assert.assertTrue(fd > 0);
+
+            LibMman libMman = Instance.LIB_MMAN;
+            MemorySegment mmapBasePointer = libMman.mmap(MemorySegment.NULL, fileSize, LibMman.Prot.PROT_READ, LibMman.Flag.MAP_SHARED, fd, 0);
+            mmapBasePointer = mmapBasePointer.reinterpret(fileSize);
+
+            IoUringSyscallResult<Void> result = IoUringMadvise.asyncMadiveDirect(eventLoop, mmapBasePointer, LibMman.Advice.MADV_SEQUENTIAL | LibMman.Advice.MADV_WILLNEED).get();
+            Assert.assertFalse(result.canceled());
+            Assert.assertEquals(0, result.res());
+
+            try (
+                    FileChannel fileChannel = FileChannel.open(tempFile.toPath(), StandardOpenOption.READ);
+                    Arena arena = Arena.ofConfined()
+            ) {
+                MappedByteBuffer mappedByteBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileSize);
+                result = IoUringMadvise.asyncMadive(eventLoop, mappedByteBuffer, LibMman.Advice.MADV_SEQUENTIAL | LibMman.Advice.MADV_WILLNEED).get();
+                Assert.assertFalse(result.canceled());
+                Assert.assertEquals(0, result.res());
+
+                MemorySegment memorySegment = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileSize, arena);
+                IoUringMadvise.asyncMadive(eventLoop, memorySegment, LibMman.Advice.MADV_SEQUENTIAL | LibMman.Advice.MADV_WILLNEED).get();
+                Assert.assertFalse(result.canceled());
+                Assert.assertEquals(0, result.res());
+            }
         }
     }
 
