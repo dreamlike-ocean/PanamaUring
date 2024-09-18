@@ -1,7 +1,6 @@
 
 package top.dreamlike.panama.generator.proxy;
 
-import sun.misc.Unsafe;
 import top.dreamlike.panama.generator.annotation.*;
 import top.dreamlike.panama.generator.exception.StructException;
 import top.dreamlike.panama.generator.helper.ClassFileHelper;
@@ -25,12 +24,8 @@ import java.lang.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.foreign.MemorySegment;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.AccessFlag;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -70,7 +65,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
 
     private ClassFile classFile = ClassFile.of();
 
-    private MethodHandle DEFINE_CLASS_METHOD_HANDLE;
+    private ProxyClassLoader classLoader = new ProxyClassLoader();
 
     private Map<String, Class> classMap = new HashMap<>(
             Map.of(
@@ -110,19 +105,6 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
         } else {
             nativeCallGenerator.plainMode();
         }
-
-        try {
-            Field field = Unsafe.class.getDeclaredField("theUnsafe");
-            field.setAccessible(true);
-            Unsafe unsafe = (Unsafe) field.get(null);
-            Field implLookup = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-            long offset = unsafe.staticFieldOffset(implLookup);
-            MethodHandles.Lookup mastKey = (MethodHandles.Lookup) unsafe.getObject(unsafe.staticFieldBase(implLookup), offset);
-            //todo替换为unsafe-java
-            this.DEFINE_CLASS_METHOD_HANDLE = mastKey.findVirtual(ClassLoader.class, "defineClass", MethodType.methodType(Class.class, byte[].class, int.class, int.class));
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
@@ -153,7 +135,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                             proxyPair.add(new ProxyPair(runtimeClass.getName(), structProxyGenerator.generatorShortcutProxyName(runtimeClass), CompileTimeGenerate.GenerateType.SHORTCUT));
                         }
                         case NATIVE_CALL -> {
-                            nativeCallGenerator.generate(runtimeClass);
+                            nativeCallGenerator.generateSupplier(runtimeClass);
                             proxyPair.add(new ProxyPair(runtimeClass.getName(), nativeCallGenerator.generateProxyClassName(runtimeClass), CompileTimeGenerate.GenerateType.NATIVE_CALL));
                         }
                     }
@@ -440,15 +422,14 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
     }
 
     public Class define(String name, byte[] bytecode) throws Throwable {
-        ClassLoader classLoader = PanamaAnnotationProcessor.class.getClassLoader();
+        ClassLoader classLoader = this.classLoader;
         try {
             return Class.forName(name, false, classLoader);
         } catch (ClassNotFoundException _) {
         }
 
-
         dump(name, bytecode);
-        return ((Class) DEFINE_CLASS_METHOD_HANDLE.invokeExact(PanamaAnnotationProcessor.class.getClassLoader(), bytecode, 0, bytecode.length));
+        return this.classLoader.defindClass(name, bytecode);
     }
 
     private int calModifier(Set<Modifier> modifiers) {
@@ -609,6 +590,35 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
             throw new RuntimeException(r);
         }
     }
+
+    static class ProxyClassLoader extends ClassLoader {
+
+        private final Map<String, Class> loadedClassed = new HashMap<>();
+
+        private static final ClassLoader parent = PanamaAnnotationProcessor.class.getClassLoader();
+
+        @Override
+        protected Class<?> findClass(String name) throws ClassNotFoundException {
+           try {
+               return Class.forName(name, false, parent);
+           }catch (ClassNotFoundException _) {
+
+           }
+           name = name.replace('.', '/');
+            Class aClass = loadedClassed.get(name);
+            if (aClass == null) {
+                throw new ClassNotFoundException(name);
+            }
+            return aClass;
+        }
+
+        public Class<?> defindClass(String name, byte[] bytes) {
+            Class<?> aClass = defineClass(null, bytes, 0, bytes.length);
+            loadedClassed.put(name, aClass);
+            return aClass;
+        }
+    }
+
 
 }
 

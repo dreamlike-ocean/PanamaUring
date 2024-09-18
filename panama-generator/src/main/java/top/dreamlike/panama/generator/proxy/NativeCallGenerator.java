@@ -91,10 +91,13 @@ public class NativeCallGenerator {
 
     @SuppressWarnings("unchecked")
     public <T> T generate(Class<T> nativeInterface) {
+        return generateSupplier(nativeInterface).get();
+    }
+
+    public <T> Supplier<T> generateSupplier(Class<T> nativeInterface) {
         Objects.requireNonNull(nativeInterface);
         try {
-            return (T) ctorCaches.computeIfAbsent(nativeInterface, key -> bind(nativeInterface))
-                    .get();
+            return (Supplier<T>) ctorCaches.computeIfAbsent(nativeInterface, key -> bind(nativeInterface));
         } catch (Throwable throwable) {
             throw new StructException("should not reach here!", throwable);
         }
