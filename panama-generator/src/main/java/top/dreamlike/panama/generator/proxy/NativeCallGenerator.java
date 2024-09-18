@@ -464,7 +464,7 @@ public class NativeCallGenerator {
     private void invokeByIndy(Method method, ClassBuilder thisClass, String className) {
         thisClass.withMethodBody(method.getName(), ClassFileHelper.toMethodDescriptor(method), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
             ClassFileHelper.loadAllArgs(method, it);
-            it.invokeDynamicInstruction(
+            it.invokedynamic(
                     DynamicCallSiteDesc.of(
                             ConstantDescs.ofCallsiteBootstrap(ClassFileHelper.toDesc(InvokeDynamicFactory.class), "nativeCallIndyFactory", ConstantDescs.CD_CallSite),
                             method.getName(),

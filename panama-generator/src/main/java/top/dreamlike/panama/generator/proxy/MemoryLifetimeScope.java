@@ -24,7 +24,7 @@ public class MemoryLifetimeScope {
 
     public <T> T active(Callable<T> callable) throws Exception {
         return ScopedValue.where(currentAllocator, allocator)
-                .call(callable);
+                .call(callable::call);
     }
 
     public void active(Runnable runnable) {

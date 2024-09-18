@@ -366,7 +366,7 @@ public class StructProxyGenerator {
                 Method method = info.method;
                 cb.withMethodBody(method.getName(), ClassFileHelper.toMethodDescriptor(method), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
                     ClassFileHelper.loadAllArgs(method, it);
-                    it.invokeDynamicInstruction(
+                    it.invokedynamic(
                             DynamicCallSiteDesc.of(
                                     MethodHandleDesc.ofMethod(
                                             DirectMethodHandleDesc.Kind.STATIC, ClassFileHelper.toDesc(InvokeDynamicFactory.class), SHORTCUT_INDY_BOOTSTRAP_METHOD.getName(),
@@ -630,7 +630,7 @@ public class StructProxyGenerator {
 
                     TypeKind typeKind = TypeKind.from(field.getType());
                     //加载第一个参数
-                    it.loadInstruction(typeKind, it.parameterSlot(0));
+                    it.loadLocal(typeKind, it.parameterSlot(0));
                     MethodTypeDesc methodTypeDesc = MethodType.methodType(void.class, MemorySegment.class, field.getType()).describeConstable().get();
                     it.invokevirtual(ConstantDescs.CD_VarHandle, "set", methodTypeDesc);
                     it.return_();

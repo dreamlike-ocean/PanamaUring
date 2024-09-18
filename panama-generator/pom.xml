@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.dreamlike-ocean</groupId>
         <artifactId>PanamaUring</artifactId>
-        <version>1.0</version>
+        <version>1.0.1</version>
     </parent>
 
     <artifactId>panama-generator</artifactId>
@@ -81,8 +81,6 @@
                             <executable>java</executable>
                             <workingDirectory>${project.basedir}</workingDirectory>
                             <arguments>
-                                <argument>--enable-preview</argument>
-                                <argument>--source ${java.version}</argument>
                                 <argument>BuildScript.java</argument>
                                 <argument>${project.basedir}</argument>
                                 <argument>${debug}</argument>

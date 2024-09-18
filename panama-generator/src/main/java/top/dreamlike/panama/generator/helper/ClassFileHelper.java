@@ -41,7 +41,7 @@ public class ClassFileHelper {
                 "invokeExact",
                 toMethodDescriptor(method)
         );
-        it.returnInstruction(TypeKind.from(method.getReturnType()));
+        it.return_(TypeKind.from(method.getReturnType()));
     }
 
     public static void loadAllArgs(Method method, CodeBuilder it) {
@@ -49,7 +49,7 @@ public class ClassFileHelper {
         int nextSlot = 1;
         for (int i = 0; i < parameters.length; i++) {
             TypeKind typeKind = TypeKind.from(parameters[i].getType());
-            it.loadInstruction(typeKind, nextSlot);
+            it.loadLocal(typeKind, nextSlot);
             nextSlot += typeKind.slotSize();
         }
     }
@@ -126,7 +126,7 @@ public class ClassFileHelper {
 
     public static void returnValue(CodeBuilder cb, Class returnType) {
         var type = TypeKind.from(returnType);
-        cb.returnInstruction(type);
+        cb.return_(type);
     }
 
 
