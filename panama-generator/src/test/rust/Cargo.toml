@@ -1,0 +1,19 @@
+[package]
+name = "person"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libc = "0.2"
+
+[lib]
+name = "person"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+
+[profile.release]
+lto = true
+opt-level = 'z'
+panic = 'abort'
+# strip = true

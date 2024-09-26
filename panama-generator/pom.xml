@@ -89,32 +89,31 @@
                     </execution>
 
                     <execution>
+                        <id>clean-so</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>sh</executable>
+                            <workingDirectory>${project.basedir}/src/test/rust</workingDirectory>
+                            <arguments>
+                                <argument>clean.sh</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
                         <id>prepare-test-libPerson</id>
                         <phase>generate-test-sources</phase>
                         <goals>
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <executable>cmake</executable>
-                            <workingDirectory>${project.basedir}/src/test/c</workingDirectory>
+                            <executable>sh</executable>
+                            <workingDirectory>${project.basedir}/src/test/rust</workingDirectory>
                             <arguments>
-                                <argument>-DCMAKE_BUILD_TYPE=Release .</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <id>compile-test-libPerson</id>
-                        <phase>generate-test-sources</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>cmake</executable>
-                            <workingDirectory>${project.basedir}/src/test/c</workingDirectory>
-                            <arguments>
-                                <argument>--build</argument>
-                                <argument>.</argument>
+                                <argument>build.sh</argument>
                             </arguments>
                         </configuration>
                     </execution>
