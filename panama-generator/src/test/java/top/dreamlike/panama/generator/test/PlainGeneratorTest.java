@@ -7,6 +7,7 @@ import top.dreamlike.panama.generator.annotation.Pointer;
 import top.dreamlike.panama.generator.proxy.NativeArray;
 import top.dreamlike.panama.generator.proxy.NativeCallGenerator;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
+import top.dreamlike.panama.generator.test.call.LibPage;
 import top.dreamlike.panama.generator.test.call.LibPerson;
 import top.dreamlike.panama.generator.test.struct.Person;
 import top.dreamlike.panama.generator.test.struct.PointerVersionTestContainer;
@@ -358,6 +359,11 @@ public class PlainGeneratorTest {
         Assert.assertEquals(129, intMemory.get(ValueLayout.JAVA_INT, 0));
     }
 
+    @Test
+    public void testSuffix() {
+        LibPage page = callGenerator.generate(LibPage.class);
+        Assert.assertEquals(page.getPageSize(), page.page());
+    }
 
     public static class IntPtr {
         @Pointer(targetLayout = int.class)

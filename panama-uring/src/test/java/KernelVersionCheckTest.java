@@ -1,11 +1,15 @@
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class KernelVersionCheckTest {
+
+    private static final Logger log = LoggerFactory.getLogger(KernelVersionCheckTest.class);
 
     @Test
     public void test() throws InterruptedException {
@@ -18,6 +22,7 @@ public class KernelVersionCheckTest {
         eventLoop.start();
         try(eventLoop) {
             eventLoop.asyncOperation(sqe -> {
+                log.info("will setOpCode");
                 sqe.setOpcode(Byte.MAX_VALUE);
             });
         } catch (Throwable r) {

@@ -1,0 +1,9 @@
+[workspace]
+
+members = [
+    "jemalloc_rs", "liburing_rs",
+]
+
+[profile.release]
+lto = true
+panic = 'abort'

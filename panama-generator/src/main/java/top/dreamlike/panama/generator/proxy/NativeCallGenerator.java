@@ -337,6 +337,12 @@ public class NativeCallGenerator {
         String functionName = function == null || Objects.requireNonNullElse(function.value(), "").isBlank()
                 ? method.getName()
                 : function.value();
+
+        CLib lib = method.getDeclaringClass().getAnnotation(CLib.class);
+        if (lib != null) {
+            functionName = lib.prefix() + functionName + lib.suffix();
+        }
+
         Class<?> returnType = method.getReturnType();
         boolean returnPointer = !returnType.isPrimitive() && function != null && function.returnIsPointer();
         ArrayList<Linker.Option> options = new ArrayList<>(2);

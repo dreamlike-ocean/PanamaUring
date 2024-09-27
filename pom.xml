@@ -10,16 +10,16 @@
     <groupId>io.github.dreamlike-ocean</groupId>
     <artifactId>PanamaUring</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
     <properties>
         <java.version>23</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <panama.version>4.1.3</panama.version>
+        <panama.version>4.1.4</panama.version>
         <vertx.version>4.3.7</vertx.version>
         <vertx-async.version>3.0.0</vertx-async.version>
         <native-lib>3.0.0</native-lib>
         <mutiny.version>2.5.0</mutiny.version>
-        <panama-generator>1.4.1</panama-generator>
+        <panama-generator>1.4.2</panama-generator>
         <log.version>2.23.1</log.version>
     </properties>
 

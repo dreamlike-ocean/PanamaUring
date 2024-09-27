@@ -24,7 +24,7 @@ import java.nio.ByteOrder;
 
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
-@CLib("liburing-ffi.so")
+@CLib(value = "liburing-ffi.so", suffix = "_rs")
 @KernelVersionLimit(major = 5, minor = 10)
 public interface LibUring {
 

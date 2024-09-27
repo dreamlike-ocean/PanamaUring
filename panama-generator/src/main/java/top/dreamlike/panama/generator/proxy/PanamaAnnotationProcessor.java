@@ -238,7 +238,9 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                         ClassFileHelper.toDesc(CLib.class),
                         AnnotationElement.of("value", AnnotationValue.ofString(cLib.value())),
                         AnnotationElement.of("inClassPath", AnnotationValue.ofBoolean(cLib.inClassPath())),
-                        AnnotationElement.of("isLib", AnnotationValue.ofBoolean(cLib.isLib()))
+                        AnnotationElement.of("isLib", AnnotationValue.ofBoolean(cLib.isLib())),
+                        AnnotationElement.of("prefix", AnnotationValue.ofString(cLib.prefix())),
+                        AnnotationElement.of("suffix", AnnotationValue.ofString(cLib.suffix()))
                 );
                 classBuilder.with(RuntimeVisibleAnnotationsAttribute.of(annotation));
             }

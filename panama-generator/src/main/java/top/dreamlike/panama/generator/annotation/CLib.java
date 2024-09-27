@@ -9,9 +9,13 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface CLib {
-    String value();
+    String value() default "";
 
     boolean inClassPath() default true;
 
     boolean isLib() default false;
+
+    String prefix() default "";
+
+    String suffix() default "";
 }

@@ -18,17 +18,14 @@ maven坐标为
 </dependency>
 ```
 
-由于依赖了liburing和jemalloc的代码所以需要一并clone 对应仓库
-
 ```shell
-git clone --recurse-submodules https://github.com/dreamlike-ocean/PanamaUring.git
+git clone https://github.com/dreamlike-ocean/PanamaUring.git
 ```
 
-测试运行 因为依赖了一些预览特性 所以需要使用jdk 22
+测试运行 因为依赖了一些预览特性 所以需要使用最新的jdk
 
 ```shell
-export JAVA_TOOL_OPTIONS=--enable-preview;
-mvn test
+mvn clean test -am
 ```
 
 ### 支持的特性
