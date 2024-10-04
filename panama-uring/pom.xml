@@ -5,7 +5,7 @@
     <parent>
         <artifactId>PanamaUring</artifactId>
         <groupId>io.github.dreamlike-ocean</groupId>
-        <version>1.0.3</version>
+        <version>1.0.4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -18,7 +18,6 @@
         <jemalloc.so.name>libjemalloc.so.2</jemalloc.so.name>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <arch.classifier>${os.detected.classifier}</arch.classifier>
-        <logback.version>1.2.3</logback.version>
     </properties>
 
     <dependencies>
