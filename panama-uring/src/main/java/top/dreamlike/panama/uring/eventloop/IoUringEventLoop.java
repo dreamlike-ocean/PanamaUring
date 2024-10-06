@@ -38,7 +38,7 @@ import java.util.function.Supplier;
 
 import static top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant.IORING_ASYNC_CANCEL_ALL;
 
-public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnable permits VTIoUringEventLoop, BridgeEventLoop {
+public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnable permits VTIoUringEventLoop, NettyEpollBridgeEventLoop {
 
     protected static final AtomicInteger count = new AtomicInteger(0);
     protected static final LibUring libUring = Instance.LIB_URING;

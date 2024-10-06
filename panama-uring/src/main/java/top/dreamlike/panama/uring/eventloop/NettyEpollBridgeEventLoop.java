@@ -1,6 +1,5 @@
-package io.github.dreamlike.panama.uring.netty.Epoll;
+package top.dreamlike.panama.uring.eventloop;
 
-import io.github.dreamlike.panama.uring.netty.NettyHelper;
 import io.netty.channel.IoEvent;
 import io.netty.channel.IoRegistration;
 import io.netty.channel.SingleThreadIoEventLoop;
@@ -11,8 +10,8 @@ import io.netty.channel.unix.FileDescriptor;
 import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import top.dreamlike.panama.uring.eventloop.BridgeEventLoop;
 import top.dreamlike.panama.uring.helper.JemallocAllocator;
+import top.dreamlike.panama.uring.helper.NettyHelper;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
@@ -22,12 +21,13 @@ import top.dreamlike.panama.uring.sync.fd.EventFd;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-public class EpollBridgeEventLoop extends BridgeEventLoop implements EpollIoHandle {
+public final class NettyEpollBridgeEventLoop extends IoUringEventLoop implements EpollIoHandle {
 
-    private static final Logger log = LoggerFactory.getLogger(EpollBridgeEventLoop.class);
+    private static final Logger log = LoggerFactory.getLogger(NettyEpollBridgeEventLoop.class);
 
     private final SingleThreadIoEventLoop eventLoop;
 
@@ -35,14 +35,15 @@ public class EpollBridgeEventLoop extends BridgeEventLoop implements EpollIoHand
     private final MemorySegment cqeReadyMemory;
     private final FileDescriptor fd;
     private IoRegistration registration;
+    private final CountDownLatch shutdownLatch = new CountDownLatch(1);
 
     /**
      * 只在eventloop上跑所以不需要volatile
      */
     private boolean haveSqe = false;
 
-    public EpollBridgeEventLoop(SingleThreadIoEventLoop eventLoop, Consumer<IoUringParams> ioUringParamsFactory) {
-        super(NettyHelper.getEventLoopThread(eventLoop), ioUringParamsFactory);
+    public NettyEpollBridgeEventLoop(SingleThreadIoEventLoop eventLoop, Consumer<IoUringParams> ioUringParamsFactory) {
+        super(ioUringParamsFactory, (_) -> null);
         this.eventLoop = eventLoop;
         this.cqeReadyEventFd = new EventFd(0, Libc.Fcntl_H.O_NONBLOCK);
 
@@ -155,12 +156,40 @@ public class EpollBridgeEventLoop extends BridgeEventLoop implements EpollIoHand
            }
            Instance.LIBC.close(cqeReadyEventFd.fd());
            Instance.LIB_JEMALLOC.free(cqeReadyMemory);
+           shutdownLatch.countDown();
        });
     }
 
     @Override
     public boolean inEventLoop() {
         return eventLoop.inEventLoop();
+    }
+
+    @Override
+    protected boolean needWakeUpFd() {
+        return false;
+    }
+
+    @Override
+    public boolean isVirtual() {
+        return false;
+    }
+
+    @Override
+    public void start() {
+        //do nothing
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (hasClosed.compareAndSet(false, true)) {
+            runOnEventLoop(this::releaseResource);
+        }
+    }
+
+    @Override
+    public void join() throws InterruptedException {
+        shutdownLatch.await();
     }
 
     static {

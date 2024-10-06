@@ -1,4 +1,4 @@
-package io.github.dreamlike.panama.uring.netty;
+package top.dreamlike.panama.uring.helper;
 
 import io.netty.util.concurrent.SingleThreadEventExecutor;
 import top.dreamlike.unsafe.core.MasterKey;
