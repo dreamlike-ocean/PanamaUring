@@ -38,37 +38,24 @@ import java.util.function.Supplier;
 
 import static top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant.IORING_ASYNC_CANCEL_ALL;
 
-public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnable permits VTIoUringEventLoop {
-
-    private static final OSIoUringProbe PROBE = new OSIoUringProbe();
+public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnable permits VTIoUringEventLoop, NettyEpollBridgeEventLoop {
 
     protected static final AtomicInteger count = new AtomicInteger(0);
-    private final static Logger log = LoggerFactory.getLogger(IoUringEventLoop.class);
-
     protected static final LibUring libUring = Instance.LIB_URING;
+    private static final OSIoUringProbe PROBE = new OSIoUringProbe();
+    private final static Logger log = LoggerFactory.getLogger(IoUringEventLoop.class);
     private static final int cqeSize = 4;
-    private final EventFd wakeUpFd;
-
     protected final AtomicBoolean hasClosed;
-
-    protected IoUring internalRing;
-
-    private final MpscUnboundedArrayQueue<Runnable> taskQueue;
-
-    private MemorySegment cqePtrs;
-
-    private final AtomicLong tokenGenerator;
-
-    private final LongObjectHashMap<IoUringCompletionCallBack> callBackMap;
-
-    private final PriorityQueue<ScheduledTask> scheduledTasks;
-
-    private KernelTime64Type kernelTime64Type;
-
-    private MemorySegment eventReadBuffer;
-
     protected final Thread owner;
-
+    private final EventFd wakeUpFd;
+    private final MpscUnboundedArrayQueue<Runnable> taskQueue;
+    private final AtomicLong tokenGenerator;
+    private final LongObjectHashMap<IoUringCompletionCallBack> callBackMap;
+    private final PriorityQueue<ScheduledTask> scheduledTasks;
+    protected IoUring internalRing;
+    private MemorySegment cqePtrs;
+    private KernelTime64Type kernelTime64Type;
+    private MemorySegment eventReadBuffer;
     private Consumer<Throwable> exceptionHandler = (t) -> {
         log.error("Uncaught exception in event loop", t);
     };
@@ -116,11 +103,17 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
             this.cqePtrs = JemallocAllocator.INSTANCE.allocate(ValueLayout.ADDRESS, cqeSize);
             this.kernelTime64Type = Instance.STRUCT_PROXY_GENERATOR.allocate(JemallocAllocator.INSTANCE, KernelTime64Type.class);
             this.eventReadBuffer = JemallocAllocator.INSTANCE.allocate(ValueLayout.JAVA_LONG);
-            initWakeUpFdMultiShot();
+            if (needWakeUpFd()) {
+                initWakeUpFdMultiShot();
+            }
         } finally {
             Instance.LIB_JEMALLOC.free(ioUringParamMemory);
         }
 
+    }
+
+    protected boolean needWakeUpFd() {
+        return true;
     }
 
     private void registerWakeUpFd(IoUringSqe sqe) {
@@ -296,6 +289,8 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
                 throw new UnsupportedOperationException(sqe.getOpcode() + " is unsupported");
             }
 
+            log.debug("sqe op: {}", sqe.getOpcode());
+
             sqe.setUser_data(token);
             if (enableLink) {
                 sqe.setFlags((byte) (sqe.getFlags() | IoUringConstant.IOSQE_IO_LINK));
@@ -307,6 +302,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
                 uringCqe.setUser_data(cqe.getUser_data());
                 repeatableCallback.accept(uringCqe);
             }));
+            afterFill(sqe);
         };
         if (inEventLoop()) {
             runWithCatchException(r);
@@ -315,6 +311,8 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         }
         return cancelToken;
     }
+
+    protected void afterFill(IoUringSqe nativeSqe) {}
 
     public boolean isVirtual() {
         return owner.isVirtual();
@@ -339,7 +337,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     }
 
 
-    private void processCqes() {
+    protected final void processCqes() {
         int count = libUring.io_uring_peek_batch_cqe(internalRing, cqePtrs, cqeSize);
         if (log.isDebugEnabled()) {
             log.debug("processCqes count:{}", count);
@@ -423,9 +421,12 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     }
 
     private class IoUringCancelToken implements CancelToken {
+        static {
+            PanamaUringSecret.peekCancelToken = (r) -> ((IoUringCancelToken) r).token;
+        }
+
         long token;
         AtomicReference<CompletableFuture<Integer>> cancelPromise = new AtomicReference<>();
-
 
         public IoUringCancelToken(long token) {
             this.token = token;
@@ -452,23 +453,22 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         public boolean isCancelled() {
             return cancelPromise.get() != null;
         }
-
-        static {
-            PanamaUringSecret.peekCancelToken = (r) -> ((IoUringCancelToken) r).token;
-        }
     }
 
     private class InternalNativeIoUringRing implements IoUringBufferRing {
+        static {
+            PanamaUringSecret.peekOccupyBitSet = (r) -> ((InternalNativeIoUringRing) r).occupySet;
+            PanamaUringSecret.findUring = (loop) -> loop.internalRing;
+        }
+
         private final NativeIoUringBufRing internal;
         private final short bufferGroupId;
         private final OwnershipMemory base;
         private final int count;
         private final int blockSize;
         private final int mask;
-
-        private boolean hasRelease = false;
-
         private final BitSet occupySet;
+        private boolean hasRelease = false;
 
         private InternalNativeIoUringRing(NativeIoUringBufRing internal, short bufferGroupId, int count, int blockSize) {
             this.internal = internal;
@@ -557,11 +557,6 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         @Override
         public short getBufferGroupId() {
             return bufferGroupId;
-        }
-
-        static {
-            PanamaUringSecret.peekOccupyBitSet = (r) -> ((InternalNativeIoUringRing) r).occupySet;
-            PanamaUringSecret.findUring = (loop) -> loop.internalRing;
         }
     }
 

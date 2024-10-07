@@ -54,18 +54,15 @@ import java.util.stream.IntStream;
 public class LiburingTest {
 
     private final static Logger log = LoggerFactory.getLogger(LiburingTest.class);
-    public final boolean vt;
+    public final IoUringEventLoopGetter.EventLoopType eventLoopType;
 
-    public LiburingTest(boolean vt) {
-        this.vt = vt;
+    public LiburingTest(IoUringEventLoopGetter.EventLoopType eventLoopType) {
+        this.eventLoopType = eventLoopType;
     }
 
     @Parameterized.Parameters
     public static Object[] data() {
-        return new Object[]{
-                false,
-                true
-        };
+        return IoUringEventLoopGetter.EventLoopType.values();
     }
 
     @Test
@@ -127,7 +124,7 @@ public class LiburingTest {
     @Test
     public void testAsyncFile() throws Throwable {
 
-        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(eventLoopType, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -166,7 +163,7 @@ public class LiburingTest {
 
     @Test
     public void testAsyncFd() {
-        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(eventLoopType, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -221,7 +218,7 @@ public class LiburingTest {
 
     @Test
     public void testAsyncServer() throws Exception {
-        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(eventLoopType, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -260,7 +257,7 @@ public class LiburingTest {
 
     @Test
     public void testAsyncSocket() throws Exception {
-        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(eventLoopType, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -330,7 +327,7 @@ public class LiburingTest {
 
     @Test
     public void testAsyncPoller() {
-        try (IoUringEventLoop ioUringEventLoop = IoUringEventLoopGetter.get(vt, params -> {
+        try (IoUringEventLoop ioUringEventLoop = IoUringEventLoopGetter.get(eventLoopType, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         })) {
@@ -380,7 +377,7 @@ public class LiburingTest {
 
     @Test
     public void testAsyncSplicer() {
-        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(eventLoopType, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -435,14 +432,14 @@ public class LiburingTest {
 
     @Test
     public void multiShotAcceptTest() {
-        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(eventLoopType, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
         try (eventLoop) {
             eventLoop.start();
-            InetSocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000 + (vt ? 1 : 0));
-            AsyncTcpServerSocketFd serverFd = new AsyncTcpServerSocketFd(eventLoop, serverAddress, 5000 + (vt ? 1 : 0));
+            InetSocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000 + eventLoopType.ordinal());
+            AsyncTcpServerSocketFd serverFd = new AsyncTcpServerSocketFd(eventLoop, serverAddress, 5000 + eventLoopType.ordinal());
             serverFd.bind();
             serverFd.listen(16);
 
@@ -503,8 +500,8 @@ public class LiburingTest {
 
     @Test
     public void testMadvise() throws Exception {
-        log.info("start test madvise vt:{}", vt);
-        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
+        log.info("start test madvise vt:{}", eventLoopType);
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(eventLoopType, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });

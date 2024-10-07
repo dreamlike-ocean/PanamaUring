@@ -47,24 +47,21 @@ public class AdvanceLiburingTest {
 
     private final static Logger log = LoggerFactory.getLogger(AdvanceLiburingTest.class);
     
-    public final boolean vt;
+    public final IoUringEventLoopGetter.EventLoopType eventLoopType;
 
-    public AdvanceLiburingTest(boolean vt) {
-        this.vt = vt;
+    public AdvanceLiburingTest(IoUringEventLoopGetter.EventLoopType eventLoopType) {
+        this.eventLoopType = eventLoopType;
     }
 
     @Parameterized.Parameters
     public static Object[] data() {
-        return new Object[]{
-                false,
-                true
-        };
+        return IoUringEventLoopGetter.EventLoopType.values();
     }
 
     @Test
     public void testSelectedRead() {
         log.info("start testSelectedRead");
-        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(eventLoopType, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -119,7 +116,7 @@ public class AdvanceLiburingTest {
     @Test
     public void testSelectedRecv() {
         log.info("start testSelectedRecv");
-        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(eventLoopType, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -181,7 +178,7 @@ public class AdvanceLiburingTest {
     @Test
     public void testWatchService() {
         log.info("start testWatchService");
-        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(eventLoopType, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -231,7 +228,7 @@ public class AdvanceLiburingTest {
         ExecutorService threadPool = Executors.newVirtualThreadPerTaskExecutor();
         Future<SocketChannel> getTestSocket = threadPool.submit(serverChannel::accept);
 
-        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(eventLoopType, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -293,7 +290,7 @@ public class AdvanceLiburingTest {
     @Test
     public void testLinked() throws Exception {
         log.info("start testLinked");
-        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(vt, params -> {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(eventLoopType, params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
