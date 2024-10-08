@@ -14,7 +14,6 @@
     <properties>
         <java.version>23</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <panama.version>4.1.5</panama.version>
         <vertx.version>4.3.7</vertx.version>
         <vertx-async.version>3.0.0</vertx-async.version>
         <native-lib>3.0.0</native-lib>
@@ -145,11 +144,6 @@
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-api</artifactId>
                 <version>${log.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.github.dreamlike-ocean</groupId>
-                <artifactId>panama-uring</artifactId>
-                <version>${panama.version}</version>
             </dependency>
 
             <dependency>
