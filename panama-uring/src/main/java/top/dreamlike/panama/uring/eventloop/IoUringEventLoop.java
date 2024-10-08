@@ -121,7 +121,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     }
 
     private void initWakeUpFdMultiShot() {
-        fillTemplate(this::registerWakeUpFd, _ -> initWakeUpFdMultiShot());
+        asyncOperation(this::registerWakeUpFd, _ -> initWakeUpFdMultiShot());
     }
 
     @Override
@@ -231,33 +231,6 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         });
     }
 
-    private CancelToken fillTemplate(Consumer<IoUringSqe> sqeFunction, Consumer<IoUringCqe> callback) {
-        return fillTemplate(sqeFunction, callback, false);
-    }
-
-    private CancelToken fillTemplate(Consumer<IoUringSqe> sqeFunction, Consumer<IoUringCqe> callback, boolean needSubmit) {
-        long token = tokenGenerator.getAndIncrement();
-        Runnable r = () -> {
-            IoUringSqe sqe = ioUringGetSqe();
-            sqeFunction.accept(sqe);
-            if (NativeHelper.enableOpVersionCheck && sqe.getOpcode() > PROBE.getLastOp()) {
-                Instance.LIB_URING.io_uring_back_sqe(internalRing);
-                throw new UnsupportedOperationException(sqe.getOpcode() + " is unsupported");
-            }
-            sqe.setUser_data(token);
-            callBackMap.put(token, new IoUringCompletionCallBack(sqe.getFd(), sqe.getOpcode(), callback));
-            if (needSubmit) {
-                flush();
-            }
-        };
-        if (inEventLoop()) {
-            runWithCatchException(r);
-        } else {
-            execute(r);
-        }
-        return new IoUringCancelToken(token);
-    }
-
     public CancelableFuture<IoUringCqe> asyncOperation(Consumer<IoUringSqe> sqeFunction) {
         IoUringCancelToken cancelToken = new IoUringCancelToken(0);
         CancelableFuture<IoUringCqe> promise = new CancelableFuture<>(cancelToken);
@@ -278,6 +251,10 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     }
 
     public CancelToken asyncOperation(Consumer<IoUringSqe> sqeFunction, Consumer<IoUringCqe> repeatableCallback) {
+        return asyncOperation(sqeFunction, repeatableCallback, false);
+    }
+
+    public CancelToken asyncOperation(Consumer<IoUringSqe> sqeFunction, Consumer<IoUringCqe> repeatableCallback, boolean neeSubmit) {
         long token = tokenGenerator.getAndIncrement();
         IoUringCancelToken cancelToken = new IoUringCancelToken(token);
         Runnable r = () -> {
@@ -303,6 +280,9 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
                 repeatableCallback.accept(uringCqe);
             }));
             afterFill(sqe);
+            if (neeSubmit) {
+                flush();
+            }
         };
         if (inEventLoop()) {
             runWithCatchException(r);
@@ -434,6 +414,11 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
 
         @Override
         public CompletableFuture<Integer> cancel() {
+            return ioUringCancel(true);
+        }
+
+        @Override
+        public CompletableFuture<Integer> ioUringCancel(boolean needSubmit) {
             if (isCancelled()) {
                 return cancelPromise.get();
             }
@@ -443,9 +428,11 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
             if (!hasCancel) {
                 return cancelPromise.get();
             }
-            CancelToken _ = fillTemplate(sqe -> {
-                Instance.LIB_URING.io_uring_prep_cancel64(sqe, token, IORING_ASYNC_CANCEL_ALL);
-            }, cqe -> promise.complete(cqe.getRes()), true);
+            asyncOperation(
+                    sqe -> Instance.LIB_URING.io_uring_prep_cancel64(sqe, token, IORING_ASYNC_CANCEL_ALL),
+                    cqe -> promise.complete(cqe.getRes()),
+                    needSubmit
+            );
             return promise;
         }
 

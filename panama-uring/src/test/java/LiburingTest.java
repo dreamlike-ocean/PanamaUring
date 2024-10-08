@@ -182,7 +182,7 @@ public class LiburingTest {
             //cancel Test:
             var cancelableReadFuture = eventFd.asyncRead(memory, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
             eventLoop.submitScheduleTask(1, TimeUnit.SECONDS, () -> {
-                cancelableReadFuture.cancel()
+                cancelableReadFuture.ioUringCancel(true)
                         .thenAccept(count -> Assert.assertEquals(1L, (long) count));
             });
             Integer res = cancelableReadFuture.get().syscallRes();
@@ -488,7 +488,12 @@ public class LiburingTest {
                 Socket remoteSocket = portToSocket.get(remoteAddress.getPort());
                 Assert.assertNotNull(remoteSocket);
             }
-            Assert.assertEquals(Integer.valueOf(1), cancelToken.cancel().get());
+            CancelToken.CancelResult cancelResult = cancelToken.cancelOperation(true).get();
+            if (cancelResult instanceof CancelToken.SuccessResult r) {
+                Assert.assertEquals(1, r.count());
+            } else {
+                Assert.fail();
+            }
             cancelCondition.await();
             Assert.assertTrue(cqeHasCancel.get());
             serverSocketFd.close();

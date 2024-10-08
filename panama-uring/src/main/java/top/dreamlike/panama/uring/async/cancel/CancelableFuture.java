@@ -20,6 +20,12 @@ public class CancelableFuture<T> extends CompletableFuture<T> implements CancelT
     }
 
     @Override
+    public CompletableFuture<Integer> ioUringCancel(boolean needSubmit) {
+        return token.ioUringCancel(needSubmit);
+    }
+
+
+    @Override
     public boolean isCancelled() {
         return token.isCancelled();
     }

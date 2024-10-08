@@ -280,7 +280,7 @@ public class AdvanceLiburingTest {
             checker.accept(strings.take());
 
             cancel.set(true);
-            token.cancel();
+            token.ioUringCancel(true);
             cancelCondition.await();
 
         }

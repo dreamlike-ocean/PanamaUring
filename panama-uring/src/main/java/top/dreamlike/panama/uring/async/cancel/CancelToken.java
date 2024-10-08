@@ -9,10 +9,17 @@ public interface CancelToken {
     /**
      * Cancel the operation.
      */
+    @Deprecated
     CompletableFuture<Integer> cancel();
 
+    CompletableFuture<Integer> ioUringCancel(boolean needSubmit);
+
     default CompletableFuture<CancelResult> cancelOperation() {
-        return cancel()
+        return cancelOperation(true);
+    }
+
+    default CompletableFuture<CancelResult> cancelOperation(boolean needSubmit) {
+        return ioUringCancel(true)
                 .thenApply(i -> {
                     if (i >= 0) {
                         return new SuccessResult(i);
