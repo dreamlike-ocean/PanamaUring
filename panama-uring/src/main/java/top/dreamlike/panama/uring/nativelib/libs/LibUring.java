@@ -28,6 +28,21 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 @KernelVersionLimit(major = 5, minor = 10)
 public interface LibUring {
 
+    @NativeFunction(fast = true)
+    int io_uring_struct_size();
+
+    @NativeFunction(fast = true)
+    int io_uring_cq_struct_size();
+
+    @NativeFunction(fast = true)
+    int io_uring_cqe_struct_size();
+
+    @NativeFunction(fast = true)
+    int io_uring_sq_struct_size();
+
+    @NativeFunction(fast = true)
+    int io_uring_sqe_struct_size();
+
     @NativeFunction(returnIsPointer = true)
     IoUringProbe io_uring_get_probe();
 
@@ -570,8 +585,8 @@ public interface LibUring {
     }
 
     @KernelVersionLimit(major = 5, minor = 18)
-    default void io_uring_prep_msg_ring(@Pointer IoUringSqe sqe, int fd, int len, long data, int flags) {
-        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_MSG_RING, sqe, fd, MemorySegment.NULL, len, data);
+    default void io_uring_prep_msg_ring(@Pointer IoUringSqe sqe, int fd, int targetCqeRes, long targetCqeUserData, int flags) {
+        io_uring_prep_rw(IoUringConstant.Opcode.IORING_OP_MSG_RING, sqe, fd, MemorySegment.NULL, targetCqeRes, targetCqeUserData);
         sqe.setFlagsInFlagsUnion(flags);
     }
 

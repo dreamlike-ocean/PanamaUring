@@ -1,7 +1,32 @@
 use uring_sys2::{
-    __kernel_timespec, io_uring, io_uring_buf_reg, io_uring_buf_ring, io_uring_cqe, io_uring_probe,
-    iovec, sigset_t,
+    __kernel_timespec, io_uring, io_uring_buf_reg, io_uring_buf_ring, io_uring_cq, io_uring_cqe, io_uring_probe, io_uring_sq, io_uring_sqe, iovec, sigset_t
 };
+
+#[no_mangle]
+pub unsafe extern "C" fn io_uring_struct_size_rs() -> usize {
+    std::mem::size_of::<io_uring>()
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn io_uring_cq_struct_size_rs() -> usize {
+    std::mem::size_of::<io_uring_cq>()
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn io_uring_cqe_struct_size_rs() -> usize {
+    std::mem::size_of::<io_uring_cqe>()
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn io_uring_sq_struct_size_rs() -> usize {
+    std::mem::size_of::<io_uring_sq>()
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn io_uring_sqe_struct_size_rs() -> usize {
+    std::mem::size_of::<io_uring_sqe>()
+}
+
 
 #[no_mangle]
 pub unsafe extern "C" fn io_uring_get_probe_rs() -> *mut io_uring_probe {

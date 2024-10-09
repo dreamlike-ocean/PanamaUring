@@ -17,6 +17,7 @@ import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.async.fd.*;
 import top.dreamlike.panama.uring.async.other.IoUringMadvise;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
+import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.LibMman;
@@ -68,12 +69,12 @@ public class LiburingTest {
     @Test
     public void testLayout() {
         MemoryLayout sqeLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringSqe.class).withName("io_uring_sqe");
-        Assert.assertEquals(io_uring_sqe_struct.layout.byteSize(), sqeLayout.byteSize());
+        Assert.assertEquals(Instance.LIB_URING.io_uring_sqe_struct_size(), sqeLayout.byteSize());
         Assert.assertEquals(io_uring_sqe_struct.layout, sqeLayout);
 
 
         MemoryLayout cqeLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringCqe.class).withName("io_uring_cqe");
-        Assert.assertEquals(io_uring_cqe_struct.layout.byteSize(), cqeLayout.byteSize());
+        Assert.assertEquals(Instance.LIB_URING.io_uring_cqe_struct_size(), cqeLayout.byteSize());
         Assert.assertEquals(io_uring_cqe_struct.layout, cqeLayout);
 
 
@@ -112,13 +113,13 @@ public class LiburingTest {
 
 
         MemoryLayout ioUringSqLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringSq.class).withName("io_uring_sq");
-        Assert.assertEquals(struct.io_uring_sq.layout.byteSize(), ioUringSqLayout.byteSize());
+        Assert.assertEquals(Instance.LIB_URING.io_uring_sq_struct_size(), ioUringSqLayout.byteSize());
 
         MemoryLayout ioUringCqLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringCq.class).withName("io_uring_cq");
-        Assert.assertEquals(struct.io_uring_cq.layout.byteSize(), ioUringCqLayout.byteSize());
+        Assert.assertEquals(Instance.LIB_URING.io_uring_cq_struct_size(), ioUringCqLayout.byteSize());
 
         MemoryLayout ioUringLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUring.class).withName("io_uring");
-        Assert.assertEquals(struct.io_uring.layout.byteSize(), ioUringLayout.byteSize());
+        Assert.assertEquals(Instance.LIB_URING.io_uring_struct_size(), ioUringLayout.byteSize());
     }
 
     @Test
@@ -163,15 +164,18 @@ public class LiburingTest {
 
     @Test
     public void testAsyncFd() {
+        int cqeSize = 16;
         IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(eventLoopType, params -> {
             params.setSq_entries(4);
-            params.setFlags(0);
+            params.setCq_entries(cqeSize);
+            params.setFlags(IoUringConstant.IORING_SETUP_CQSIZE);
         });
 
         try (eventLoop;
              Arena allocator = Arena.ofConfined()) {
             //readTest
             eventLoop.start();
+            Assert.assertEquals(Integer.valueOf(cqeSize), PanamaUringSecret.getCqSize.apply(eventLoop));
             AsyncEventFd eventFd = new AsyncEventFd(eventLoop);
             eventFd.eventfdWrite(1);
             OwnershipMemory memory = OwnershipMemory.of(allocator.allocate(ValueLayout.JAVA_LONG));

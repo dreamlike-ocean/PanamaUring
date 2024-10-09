@@ -21,4 +21,6 @@ public class PanamaUringSecret {
     public static Function<IoUringEventLoop, IoUring> findUring;
 
     public static Function<AsyncMultiShotTcpSocketFd,  IoUringBufferRing> findBufferRing;
+
+    public static Function<IoUringEventLoop, Integer> getCqSize;
 }
