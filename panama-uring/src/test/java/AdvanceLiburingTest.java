@@ -13,6 +13,7 @@ import top.dreamlike.panama.uring.async.fd.AsyncTcpSocketFd;
 import top.dreamlike.panama.uring.async.operator.IoUringNoOp;
 import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
+import top.dreamlike.panama.uring.helper.JemallocAllocator;
 import top.dreamlike.panama.uring.helper.Pair;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
@@ -20,13 +21,13 @@ import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.helper.OSIoUringProbe;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufRingSetupResult;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingElement;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
@@ -39,6 +40,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -327,6 +329,72 @@ public class AdvanceLiburingTest {
         for (Integer i : queue) {
             Assert.assertEquals(Integer.valueOf(0), i);
         }
+    }
+
+    @Test
+    public void testSendMessageIoUring() throws ExecutionException, InterruptedException {
+        log.info("start testSendMessageIoUring for self");
+        Consumer<IoUringParams> paramsFactory = params -> {
+            params.setSq_entries(4);
+            params.setFlags(0);
+        };
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(eventLoopType, paramsFactory);
+        eventLoop.start();
+        int message = 20010329;
+        AtomicInteger target = new AtomicInteger(0);
+        CountDownLatch count = new CountDownLatch(1);
+        IoUringCqe ioUringCqe = eventLoop.sendMessage(eventLoop, message, (cqe) -> {
+            target.set(cqe.getRes());
+            count.countDown();
+        }).get();
+        Assert.assertEquals(0, ioUringCqe.getRes());
+        count.await();
+        Assert.assertEquals(message, target.get());
+
+        log.info("start testSendMessageIoUring for other");
+        IoUringEventLoop peerEventLoop = IoUringEventLoopGetter.get(eventLoopType, paramsFactory);
+        peerEventLoop.start();
+        Thread peerThread = peerEventLoop.runOnEventLoop(Thread::currentThread).get();
+
+        message = 20010214;
+        CompletableFuture<Pair<Integer, Thread>> completableFuture = new CompletableFuture<>();
+        ioUringCqe = eventLoop.sendMessage(peerEventLoop, message, (cqe) -> {
+            completableFuture.complete(new Pair<>(cqe.getRes(), peerThread));
+        }).get();
+
+        Assert.assertEquals(0, ioUringCqe.getRes());
+        Pair<Integer, Thread> pair = completableFuture.join();
+        Assert.assertEquals(Integer.valueOf(message), pair.t1());
+        Assert.assertEquals(peerThread, pair.t2());
+
+        log.info("start testSendMessageIoUring for rawFd");
+
+       Assert.assertThrows(IllegalArgumentException.class,() -> {
+           eventLoop.sendMessage(PanamaUringSecret.findUring.apply(eventLoop).getRing_fd(),1, 1);
+       });
+
+        MemorySegment ioUringMemory = Instance.LIB_JEMALLOC.malloc(IoUring.LAYOUT.byteSize());
+        IoUring internalRing = Instance.STRUCT_PROXY_GENERATOR.enhance(ioUringMemory);
+        MemorySegment ioUringParamMemory = Instance.LIB_JEMALLOC.malloc(IoUringParams.LAYOUT.byteSize());
+        IoUringParams ioUringParams = Instance.STRUCT_PROXY_GENERATOR.enhance(ioUringParamMemory);
+        paramsFactory.accept(ioUringParams);
+        int initRes = Instance.LIB_URING.io_uring_queue_init_params(ioUringParams.getSq_entries(), internalRing, ioUringParams);
+        if (initRes < 0) {
+            Instance.LIB_JEMALLOC.free(ioUringMemory);
+            throw new SyscallException(initRes);
+        }
+
+        ioUringCqe = eventLoop.sendMessage(internalRing.getRing_fd(), message, message).join();
+        Assert.assertEquals(0, ioUringCqe.getRes());
+        Instance.LIB_URING.io_uring_submit_and_wait(internalRing, 1);
+
+        var cqeArrayPtr = JemallocAllocator.INSTANCE.allocate(ValueLayout.ADDRESS, 4);
+        int cqe_count =  Instance.LIB_URING.io_uring_peek_batch_cqe(internalRing, cqeArrayPtr, 4);
+        Assert.assertEquals(1, cqe_count);
+
+        IoUringCqe nativeCqe = Instance.STRUCT_PROXY_GENERATOR.enhance(cqeArrayPtr.getAtIndex(ValueLayout.ADDRESS, 0));
+        Assert.assertEquals(message, nativeCqe.getRes());
+        Assert.assertEquals(message, nativeCqe.getUser_data());
     }
 
     @Test
