@@ -15,6 +15,8 @@ import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -111,6 +113,10 @@ public class IoUringCore implements AutoCloseable {
     }
 
     public final void processCqes(Consumer<IoUringCqe> nativeCqeConsumer) {
+        processCqes(nativeCqeConsumer, true);
+    }
+
+    public final void processCqes(Consumer<IoUringCqe> nativeCqeConsumer, boolean advance) {
         int count = libUring.io_uring_peek_batch_cqe(internalRing, cqePtrArray, cqeSize);
         if (log.isDebugEnabled()) {
             log.debug("processCqes count:{}", count);
@@ -119,6 +125,14 @@ public class IoUringCore implements AutoCloseable {
             IoUringCqe nativeCqe = Instance.STRUCT_PROXY_GENERATOR.enhance(cqePtrArray.getAtIndex(ValueLayout.ADDRESS, i));
             nativeCqeConsumer.accept(nativeCqe);
         }
-        libUring.io_uring_cq_advance(internalRing, count);
+        if (advance) {
+            libUring.io_uring_cq_advance(internalRing, count);
+        }
+    }
+
+    public final List<IoUringCqe> processCqes() {
+        ArrayList<IoUringCqe> list = new ArrayList<>();
+        processCqes(list::add, false);
+        return list;
     }
 }
