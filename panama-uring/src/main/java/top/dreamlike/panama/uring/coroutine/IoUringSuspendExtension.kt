@@ -32,7 +32,6 @@ suspend inline fun <T : OwnershipResource<*>, R> ioUringOpSuspend(
         if (u == null) {
             continuation.resume(t!!) { _, _, _ -> }
         } else {
-            resources.safeBatchDrop()
             continuation.resumeWithException(u)
         }
     }
