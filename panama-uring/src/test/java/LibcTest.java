@@ -2,12 +2,15 @@ import org.junit.Assert;
 import org.junit.Test;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
+import top.dreamlike.panama.uring.nativelib.helper.UnsafeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.nio.channels.FileChannel;
+import java.nio.file.StandardOpenOption;
 import java.util.UUID;
 
 public class LibcTest {
@@ -36,6 +39,16 @@ public class LibcTest {
 
             String readbuf = NativeHelper.bufToString(readBuf, string.length());
             Assert.assertEquals(string, readbuf);
+        }
+    }
+
+    @Test
+    public void testGetFd() throws IOException {
+        File path = File.createTempFile(UUID.randomUUID().toString(), ".tmp");
+        path.deleteOnExit();
+        try (var fc = FileChannel.open(path.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+            int fd = UnsafeHelper.getFd(fc);
+            Assert.assertTrue(fd > 0);
         }
     }
 
