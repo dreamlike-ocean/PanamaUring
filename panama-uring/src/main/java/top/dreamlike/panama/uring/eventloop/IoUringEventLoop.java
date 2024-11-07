@@ -3,26 +3,17 @@ package top.dreamlike.panama.uring.eventloop;
 import org.jctools.queues.MpscUnboundedArrayQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.async.cancel.CancelToken;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
 import top.dreamlike.panama.uring.helper.JemallocAllocator;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
-import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.helper.OSIoUringProbe;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufRingSetupResult;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingElement;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringParams;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.NativeIoUringBufRing;
-import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
+import top.dreamlike.panama.uring.nativelib.wrapper.IoUringCore;
 import top.dreamlike.panama.uring.sync.fd.EventFd;
 import top.dreamlike.panama.uring.thirdparty.colletion.LongObjectHashMap;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
@@ -32,9 +23,7 @@ import java.lang.foreign.ValueLayout;
 import java.util.BitSet;
 import java.util.Objects;
 import java.util.PriorityQueue;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -53,11 +42,10 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     protected static final LibUring libUring = Instance.LIB_URING;
     private static final OSIoUringProbe PROBE = new OSIoUringProbe();
     private final static Logger log = LoggerFactory.getLogger(IoUringEventLoop.class);
-    private static final Set<Integer> ioUringFds = new CopyOnWriteArraySet<>();
 
     static {
-        PanamaUringSecret.findUring = (loop) -> loop.internalRing;
-        PanamaUringSecret.getCqSize = (loop) -> loop.cqeSize;
+        PanamaUringSecret.findUring = (loop) -> loop.ioUringCore.getInternalRing();
+        PanamaUringSecret.findIoUringCore = (loop) -> loop.ioUringCore;
     }
 
     protected final AtomicBoolean hasClosed;
@@ -67,15 +55,15 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     private final AtomicLong tokenGenerator;
     private final LongObjectHashMap<IoUringCompletionCallBack> callBackMap;
     private final PriorityQueue<ScheduledTask> scheduledTasks;
-    protected IoUring internalRing;
-    private int cqeSize = 4;
-    private MemorySegment cqePtrArray;
-    private KernelTime64Type kernelTime64Type;
+    protected final IoUring internalRing;
+
     private MemorySegment eventReadBuffer;
     private Consumer<Throwable> exceptionHandler = (t) -> {
         log.error("Uncaught exception in event loop", t);
     };
     private boolean enableLink;
+
+    protected IoUringCore ioUringCore;
 
     public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory) {
         this(ioUringParamsFactory, (r) -> {
@@ -87,47 +75,23 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
 
     public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory, ThreadFactory factory) {
         this.wakeUpFd = new EventFd(0, 0);
-        log.debug("wakeupFd: {}", wakeUpFd);
+        log.info("wakeupFd: {}", wakeUpFd);
         this.taskQueue = new MpscUnboundedArrayQueue<>(1024);
         this.hasClosed = new AtomicBoolean();
         this.tokenGenerator = new AtomicLong(0);
         this.callBackMap = new LongObjectHashMap<>();
         this.scheduledTasks = new PriorityQueue<>();
-        initRing(ioUringParamsFactory);
-        owner = factory.newThread(this);
+        this.ioUringCore = new IoUringCore(ioUringParamsFactory);
+        this.internalRing = ioUringCore.getInternalRing();
+        this.owner = factory.newThread(this);
+        this.eventReadBuffer = JemallocAllocator.INSTANCE.allocate(ValueLayout.JAVA_LONG);
+        if (needWakeUpFd()) {
+            initWakeUpFdMultiShot();
+        }
     }
 
     public void start() {
         owner.start();
-    }
-
-    private void initRing(Consumer<IoUringParams> ioUringParamsFactory) {
-        MemorySegment ioUringMemory = Instance.LIB_JEMALLOC.malloc(IoUring.LAYOUT.byteSize());
-        MemorySegment ioUringParamMemory = Instance.LIB_JEMALLOC.malloc(IoUringParams.LAYOUT.byteSize());
-
-        this.internalRing = Instance.STRUCT_PROXY_GENERATOR.enhance(ioUringMemory);
-        IoUringParams ioUringParams = Instance.STRUCT_PROXY_GENERATOR.enhance(ioUringParamMemory);
-
-        ioUringParamsFactory.accept(ioUringParams);
-        try {
-            int initRes = Instance.LIB_URING.io_uring_queue_init_params(ioUringParams.getSq_entries(), internalRing, ioUringParams);
-            if (initRes < 0) {
-                Instance.LIB_JEMALLOC.free(ioUringMemory);
-                throw new SyscallException(initRes);
-            }
-            int uringFd = this.internalRing.getRing_fd();
-            ioUringFds.add(uringFd);
-            this.cqeSize = ioUringParams.getCq_entries();
-            this.cqePtrArray = JemallocAllocator.INSTANCE.allocate(ValueLayout.ADDRESS, cqeSize);
-            this.kernelTime64Type = Instance.STRUCT_PROXY_GENERATOR.allocate(JemallocAllocator.INSTANCE, KernelTime64Type.class);
-            this.eventReadBuffer = JemallocAllocator.INSTANCE.allocate(ValueLayout.JAVA_LONG);
-            if (needWakeUpFd()) {
-                initWakeUpFdMultiShot();
-            }
-        } finally {
-            Instance.LIB_JEMALLOC.free(ioUringParamMemory);
-        }
-
     }
 
     protected boolean needWakeUpFd() {
@@ -164,20 +128,13 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
                 long duration = nextTask.deadlineNanos - System.nanoTime();
                 submitAndWait(duration);
             }
-            processCqes();
+            ioUringCore.processCqes(this::processCqes);
         }
         releaseResource();
     }
 
     protected void submitAndWait(long duration) {
-        log.debug("duration: {}", duration);
-        if (duration == -1) {
-            libUring.io_uring_submit_and_wait(internalRing, 1);
-        } else {
-            kernelTime64Type.setTv_sec(duration / 1000000000);
-            kernelTime64Type.setTv_nsec(duration % 1000000000);
-            libUring.io_uring_submit_and_wait_timeout(internalRing, cqePtrArray, 1, kernelTime64Type, null);
-        }
+        ioUringCore.submitAndWait(duration);
     }
 
     private void runWithCatchException(Runnable r) {
@@ -288,7 +245,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
 
     public CancelableFuture<IoUringCqe> sendMessage(int otherRingFd, int message, long userData) {
         //这里判断是为了防止干扰到IoUringEventLoop的userData到callback的机制
-        if (ioUringFds.contains(otherRingFd)) {
+        if (IoUringCore.haveInit(otherRingFd)) {
             throw new IllegalArgumentException("please use sendMessage(IoUringEventLoop peer, int message, Consumer<IoUringCqe> peerMessageHandle)");
         }
 
@@ -303,7 +260,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         long token = tokenGenerator.getAndIncrement();
         IoUringCancelToken cancelToken = new IoUringCancelToken(token);
         Runnable r = () -> {
-            IoUringSqe sqe = ioUringGetSqe();
+            IoUringSqe sqe = ioUringCore.ioUringGetSqe(true).get();
             sqeFunction.accept(sqe);
 
             if (NativeHelper.enableOpVersionCheck && sqe.getOpcode() > PROBE.getLastOp()) {
@@ -344,42 +301,25 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         return owner.isVirtual();
     }
 
-    private IoUringSqe ioUringGetSqe() {
-        IoUringSqe sqe = libUring.io_uring_get_sqe(internalRing);
-        //fast_sqe
-        if (sqe != null) {
-            return sqe;
-        }
-        flush();
-        return libUring.io_uring_get_sqe(internalRing);
-    }
-
     public void flush() {
         if (inEventLoop()) {
-            libUring.io_uring_submit(internalRing);
+            ioUringCore.submit();
         } else {
             execute(this::flush);
         }
     }
 
-    protected final void processCqes() {
-        int count = libUring.io_uring_peek_batch_cqe(internalRing, cqePtrArray, cqeSize);
-        if (log.isDebugEnabled()) {
-            log.debug("processCqes count:{}", count);
-        }
-        for (int i = 0; i < count; i++) {
-            IoUringCqe nativeCqe = Instance.STRUCT_PROXY_GENERATOR.enhance(cqePtrArray.getAtIndex(ValueLayout.ADDRESS, i));
-            long token = nativeCqe.getUser_data();
-            boolean multiShot = nativeCqe.hasMore();
-            IoUringCompletionCallBack callback = multiShot ? callBackMap.get(token) : callBackMap.remove(token);
-            if (callback != null && callback.userCallBack != null) {
-                if (log.isDebugEnabled()) {
-                    log.debug("IoUringCompletionCallBack: {}", callback);
-                }
-                runWithCatchException(() -> callback.userCallBack.accept(nativeCqe));
+    protected final void processCqes(IoUringCqe nativeCqe) {
+        long token = nativeCqe.getUser_data();
+        boolean multiShot = nativeCqe.hasMore();
+        IoUringCompletionCallBack callback = multiShot ? callBackMap.get(token) : callBackMap.remove(token);
+        if (callback != null && callback.userCallBack != null) {
+            if (log.isDebugEnabled()) {
+                log.debug("IoUringCompletionCallBack: {}", callback);
             }
+            runWithCatchException(() -> callback.userCallBack.accept(nativeCqe));
         }
-        libUring.io_uring_cq_advance(internalRing, count);
+
     }
 
     @Override
@@ -393,13 +333,12 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
 
     protected void releaseResource() {
         this.wakeUpFd.close();
-        Instance.LIB_URING.io_uring_queue_exit(internalRing);
-        MemorySegment ioUringMemory = StructProxyGenerator.findMemorySegment(internalRing);
-        Instance.LIB_JEMALLOC.free(ioUringMemory);
-        Instance.LIB_JEMALLOC.free(cqePtrArray);
-        MemorySegment kernelTime64Type = StructProxyGenerator.findMemorySegment(internalRing);
-        Instance.LIB_JEMALLOC.free(kernelTime64Type);
         Instance.LIB_JEMALLOC.free(eventReadBuffer);
+        try {
+            ioUringCore.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public boolean inEventLoop() {
