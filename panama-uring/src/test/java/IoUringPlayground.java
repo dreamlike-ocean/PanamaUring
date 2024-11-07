@@ -2,9 +2,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
 import top.dreamlike.panama.uring.nativelib.wrapper.IoUringCore;
@@ -12,7 +14,13 @@ import top.dreamlike.panama.uring.sync.fd.EventFd;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
 import java.io.IOException;
-import java.lang.foreign.*;
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.StructLayout;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
 import java.net.InetAddress;
@@ -20,6 +28,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class IoUringPlayground {
 
@@ -115,7 +124,7 @@ public class IoUringPlayground {
 
             ioUringCore.submitAndWait(-1);
             List<IoUringCqe> ioUringCqes = ioUringCore.processCqes();
-            Assert.assertEquals( 1, ioUringCqes.size());
+            Assert.assertEquals(1, ioUringCqes.size());
             IoUringCqe ioUringCqe = ioUringCqes.get(0);
             Assert.assertEquals(-Libc.Error_H.EAGAIN, ioUringCqe.getRes());
         }
@@ -129,5 +138,54 @@ public class IoUringPlayground {
         readMH.invoke(capturedState, fd, Arena.global().allocate(ValueLayout.JAVA_LONG), 8);
         int errno = (int) errnoHandle.get(capturedState, 0L);
         return errno;
+    }
+
+
+    @Test
+    public void overflowTest() throws Exception {
+        int sqeCount = 4;
+        try (IoUringCore ioUringCore = new IoUringCore(p -> {
+            p.setSq_entries(sqeCount);
+            p.setCq_entries(sqeCount);
+            p.setFlags(IoUringConstant.IORING_SETUP_CQSIZE);
+        })) {
+            if ((ioUringCore.getInternalRing().getFeatures() & IoUringConstant.IORING_FEAT_NODROP) == 0) {
+                log.info("current kernel dont support IORING_FEAT_NODROP");
+                return;
+            }
+
+            for (int i = 0; i < sqeCount; i++) {
+                IoUringSqe ioUringSqe = ioUringCore.ioUringGetSqe(true).get();
+                Instance.LIB_URING.io_uring_prep_nop(ioUringSqe);
+            }
+
+            int submitResult = ioUringCore.submit();
+            Assert.assertEquals(sqeCount, submitResult);
+            Assert.assertEquals(sqeCount,ioUringCore.countReadyCqe());
+
+            for (int i = 0; i < sqeCount; i++) {
+                IoUringSqe ioUringSqe = ioUringCore.ioUringGetSqe(true).get();
+                Instance.LIB_URING.io_uring_prep_nop(ioUringSqe);
+            }
+            submitResult = ioUringCore.submit();
+            Assert.assertEquals(sqeCount, submitResult);
+
+            AtomicInteger counter = new AtomicInteger(0);
+            while (true) {
+                int old = counter.get();
+                ioUringCore.processCqes(cqe -> {
+                    counter.incrementAndGet();
+                });
+                if (old == counter.get()) {
+                    break;
+                }
+            }
+
+            MemorySegment memorySegment = StructProxyGenerator.findMemorySegment(ioUringCore.getInternalRing());
+            int kOverflow = (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_K_OVERFLOW_VARHANDLE.get(memorySegment, 0L);
+            //todo k overflow is not work
+            Assert.assertEquals(sqeCount * 2, counter.get());
+            Assert.assertEquals(0,ioUringCore.countReadyCqe());
+        }
     }
 }

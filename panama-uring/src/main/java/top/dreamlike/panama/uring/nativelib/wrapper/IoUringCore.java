@@ -91,8 +91,8 @@ public class IoUringCore implements AutoCloseable {
         }
     }
 
-    public void submit() {
-        libUring.io_uring_submit(internalRing);
+    public int submit() {
+        return libUring.io_uring_submit(internalRing);
     }
 
     public Optional<IoUringSqe> ioUringGetSqe(boolean flushIfExhausted) {
@@ -110,6 +110,10 @@ public class IoUringCore implements AutoCloseable {
         }
 
         return Optional.of(sqe);
+    }
+
+    public final int countReadyCqe() {
+        return libUring.io_uring_cq_ready(internalRing);
     }
 
     public final void processCqes(Consumer<IoUringCqe> nativeCqeConsumer) {

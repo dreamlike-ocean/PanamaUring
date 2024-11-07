@@ -204,6 +204,12 @@ public class IoUringConstant {
                 MemoryLayout.PathElement.groupElement("cqes")
         ).withInvokeExactBehavior();
 
+        public static final VarHandle IO_URING_CQ_K_OVERFLOW_VARHANDLE = IoUringLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("cq"),
+                MemoryLayout.PathElement.groupElement("koverflow"),
+                MemoryLayout.PathElement.dereferenceElement()
+        ).withInvokeExactBehavior();
+
         public static final MemoryLayout IoUringBufLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringBuf.class);
 
         public static final VarHandle IO_URING_BUF_ADDR_VARHANDLE = IoUringBufLayout.varHandle(
@@ -408,4 +414,25 @@ public class IoUringConstant {
     public static final int IORING_ENTER_SQ_WAIT = 1 << 2;
     public static final int IORING_ENTER_EXT_ARG = 1 << 3;
     public static final int IORING_ENTER_REGISTERED_RING = 1 << 4;
+
+    /*
+     * io_uring_params->features flags
+     */
+    public static final int IORING_FEAT_SINGLE_MMAP = 1 << 0;
+    public static final int IORING_FEAT_NODROP = 1 << 1;
+    public static final int IORING_FEAT_SUBMIT_STABLE = 1 << 2;
+    public static final int IORING_FEAT_RW_CUR_POS = 1 << 3;
+    public static final int IORING_FEAT_CUR_PERSONALITY = 1 << 4;
+    public static final int IORING_FEAT_FAST_POLL = 1 << 5;
+    public static final int IORING_FEAT_POLL_32BITS = 1 << 6;
+    public static final int IORING_FEAT_SQPOLL_NONFIXED = 1 << 7;
+    public static final int IORING_FEAT_EXT_ARG = 1 << 8;
+    public static final int IORING_FEAT_NATIVE_WORKERS = 1 << 9;
+    public static final int IORING_FEAT_RSRC_TAGS = 1 << 10;
+    public static final int IORING_FEAT_CQE_SKIP = 1 << 11;
+    public static final int IORING_FEAT_LINKED_FILE = 1 << 12;
+    public static final int IORING_FEAT_REG_REG_RING = 1 << 13;
+    public static final int IORING_FEAT_RECVSEND_BUNDLE = 1 << 14;
+    public static final int IORING_FEAT_MIN_TIMEOUT = 1 << 15;
+
 }
