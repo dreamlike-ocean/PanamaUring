@@ -6,6 +6,7 @@ import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
@@ -149,26 +150,50 @@ public class IoUringPlayground {
             p.setCq_entries(sqeCount);
             p.setFlags(IoUringConstant.IORING_SETUP_CQSIZE);
         })) {
-            if ((ioUringCore.getInternalRing().getFeatures() & IoUringConstant.IORING_FEAT_NODROP) == 0) {
+            IoUring ring = ioUringCore.getInternalRing();
+            MemorySegment ringMemorySegment = StructProxyGenerator.findMemorySegment(ring);
+            if ((ring.getFeatures() & IoUringConstant.IORING_FEAT_NODROP) == 0) {
                 log.info("current kernel dont support IORING_FEAT_NODROP");
                 return;
             }
 
-            for (int i = 0; i < sqeCount; i++) {
-                IoUringSqe ioUringSqe = ioUringCore.ioUringGetSqe(true).get();
-                Instance.LIB_URING.io_uring_prep_nop(ioUringSqe);
+            {
+                //填充sq
+                int submitResult = submitNOP(ioUringCore, sqeCount);
+                log.info("The results of submitting the first batch of four SQE submissions are: {}", submitResult);
+                Assert.assertEquals(sqeCount, submitResult);
+                Assert.assertEquals(sqeCount, ioUringCore.countReadyCqe());
+
+                //检查cq溢出
+                boolean overflow = Instance.LIB_URING.io_uring_cq_has_overflow(ring);
+                Assert.assertFalse(overflow);
             }
 
-            int submitResult = ioUringCore.submit();
-            Assert.assertEquals(sqeCount, submitResult);
-            Assert.assertEquals(sqeCount,ioUringCore.countReadyCqe());
 
-            for (int i = 0; i < sqeCount; i++) {
-                IoUringSqe ioUringSqe = ioUringCore.ioUringGetSqe(true).get();
-                Instance.LIB_URING.io_uring_prep_nop(ioUringSqe);
+            {
+                //准备使得cq溢出
+                int submitResult = submitNOP(ioUringCore, sqeCount);
+                log.info("The results of submitting the second batch of four SQE submissions are: {}", submitResult);
+                Assert.assertEquals(sqeCount, submitResult);
+                Assert.assertEquals(sqeCount, ioUringCore.countReadyCqe());
+                //检查cq溢出
+                boolean overflow = Instance.LIB_URING.io_uring_cq_has_overflow(ring);
+                Assert.assertTrue(overflow);
             }
-            submitResult = ioUringCore.submit();
-            Assert.assertEquals(sqeCount, submitResult);
+
+
+            {
+                //检查cq溢出
+                boolean overflow = Instance.LIB_URING.io_uring_cq_has_overflow(ring);
+                Assert.assertTrue(overflow);
+                //准备使得第二次cq溢出
+                int submitResult = submitNOP(ioUringCore, sqeCount);
+                log.info("The results of submitting the third batch of four SQE submissions are: {}", submitResult);
+                Assert.assertEquals(sqeCount, submitResult);
+                Assert.assertEquals(sqeCount, ioUringCore.countReadyCqe());
+            }
+
+
 
             AtomicInteger counter = new AtomicInteger(0);
             while (true) {
@@ -181,11 +206,20 @@ public class IoUringPlayground {
                 }
             }
 
-            MemorySegment memorySegment = StructProxyGenerator.findMemorySegment(ioUringCore.getInternalRing());
-            int kOverflow = (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_K_OVERFLOW_VARHANDLE.get(memorySegment, 0L);
-            //todo k overflow is not work
-            Assert.assertEquals(sqeCount * 2, counter.get());
-            Assert.assertEquals(0,ioUringCore.countReadyCqe());
+            //拿出来全部的就绪cqe
+            Assert.assertEquals(sqeCount * 3, counter.get());
+            Assert.assertEquals(0, ioUringCore.countReadyCqe());
         }
     }
+
+    private int submitNOP(IoUringCore ioUringCore, int count) {
+        for (int i = 0; i < count; i++) {
+            IoUringSqe ioUringSqe = ioUringCore.ioUringGetSqe(true).get();
+            Instance.LIB_URING.io_uring_prep_nop(ioUringSqe);
+        }
+        int submitResult = ioUringCore.submit();
+        log.info("submit result:{}", submitResult);
+        return submitResult;
+    }
+
 }

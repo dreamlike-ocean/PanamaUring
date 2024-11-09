@@ -11,7 +11,13 @@ import top.dreamlike.panama.uring.nativelib.helper.KernelVersionLimit;
 import top.dreamlike.panama.uring.nativelib.struct.epoll.NativeEpollEvent;
 import top.dreamlike.panama.uring.nativelib.struct.futex.FutexWaitV;
 import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufReg;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringParams;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringProbe;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.NativeIoUringBufRing;
 import top.dreamlike.panama.uring.nativelib.struct.sigset.SigsetType;
 import top.dreamlike.panama.uring.nativelib.struct.socket.MsgHdr;
 import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
@@ -93,6 +99,11 @@ public interface LibUring {
             }
         } while (overflow_checked);
         return 0;
+    }
+
+    default int get_koverflow(@Pointer IoUring uring) {
+        MemorySegment ringStruct = StructProxyGenerator.findMemorySegment(uring);
+        return (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_K_OVERFLOW_VARHANDLE.get(ringStruct, 0L);
     }
 
     //https://lwn.net/Articles/804108/
@@ -699,7 +710,7 @@ public interface LibUring {
 
     default boolean io_uring_cq_has_overflow(@Pointer IoUring ring) {
         MemorySegment realMemory = StructProxyGenerator.findMemorySegment(ring);
-        int cqKFlags = (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KFLAGS_DEFERENCE_VARHANDLE.get(realMemory, 0L);
+        int cqKFlags = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_KFLAGS_DEFERENCE_VARHANDLE.getAcquire(realMemory, 0L);
         return (cqKFlags & IoUringConstant.IORING_SQ_CQ_OVERFLOW) != 0;
     }
 

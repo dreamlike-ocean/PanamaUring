@@ -13,7 +13,7 @@ suspend fun IoUringAsyncFd.readSuspend(
     length: Int,
     lazyCancel: Boolean = false
 ) = ioUringOpSuspend(buffer, lazyCancel) {
-    asyncRead(buffer, offset, length)
+    asyncRead(buffer, length, offset)
 }
 
 suspend fun IoUringAsyncFd.readVSuspend(
@@ -32,7 +32,7 @@ suspend fun IoUringAsyncFd.writeSuspend(
     length: Int,
     lazyCancel: Boolean = false
 ) = ioUringOpSuspend(buffer, lazyCancel) {
-    asyncWrite(buffer, offset, length)
+    asyncWrite(buffer, length, offset)
 }
 
 suspend fun IoUringAsyncFd.writeVSuspend(
