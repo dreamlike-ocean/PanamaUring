@@ -1,6 +1,9 @@
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
+import org.slf4j.LoggerFactory
 import top.dreamlike.panama.generator.proxy.NativeArrayPointer
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator
 import top.dreamlike.panama.uring.async.fd.AsyncEventFd
@@ -10,8 +13,13 @@ import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec
 import top.dreamlike.panama.uring.trait.OwnershipResource
 import java.lang.foreign.Arena
 import java.lang.foreign.ValueLayout
+import java.util.concurrent.CountDownLatch
 
 class CoroutineTest {
+
+    companion object {
+        val log = LoggerFactory.getLogger(CoroutineTest::class.java)
+    }
 
     @Test
     fun testCoroutineFd(): Unit = runBlocking {
@@ -21,6 +29,8 @@ class CoroutineTest {
         }.use { eventLoop ->
             eventLoop.start()
             val eventFd = AsyncEventFd(eventLoop)
+            log.info("eventfd : ${eventFd.fd()}")
+
             //write
             val writeBuffer = MalloceUnboundMemory(ValueLayout.JAVA_LONG.byteSize())
             writeBuffer.resource().set(ValueLayout.JAVA_LONG, 0, 1024)
@@ -59,4 +69,25 @@ class CoroutineTest {
         }
     }
 
+
+    @Test
+    fun testCancel(): Unit = runBlocking {
+        IoUringEventLoopGetter.get(IoUringEventLoopGetter.EventLoopType.Original) {
+            it.sq_entries = 4
+            it.flags = 0
+        }.use { eventLoop ->
+            eventLoop.start()
+            val eventFd = AsyncEventFd(eventLoop)
+            val latch = CountDownLatch(1)
+            val readBuffer = MalloceUnboundMemory(ValueLayout.JAVA_LONG.byteSize()) {
+                latch.countDown()
+            }
+            val job = async(coroutineContext) {
+                eventFd.readSuspend(readBuffer, 0, ValueLayout.JAVA_LONG.byteSize().toInt())
+            }
+            delay(1000)
+            job.cancel()
+            latch.await()
+        }
+    }
 }

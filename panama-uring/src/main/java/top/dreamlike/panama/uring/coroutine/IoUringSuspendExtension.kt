@@ -9,19 +9,19 @@ import kotlin.coroutines.resumeWithException
 
 suspend inline fun <T : OwnershipResource<*>, R> ioUringOpSuspend(
     resource: T,
-    lazyCancel: Boolean = false,
+    lazyCancel: Boolean = true,
     crossinline action: () -> CancelableFuture<R>
 ) = ioUringOpSuspend(listOf(resource), lazyCancel, action)
 
 suspend inline fun <T : OwnershipResource<*>, R> ioUringOpSuspend(
     resources: List<T>,
-    lazyCancel: Boolean = false,
+    lazyCancel: Boolean = true,
     crossinline action: () -> CancelableFuture<R>
 ) = suspendCancellableCoroutine { continuation ->
     val task = action()
     continuation.invokeOnCancellation { cause ->
         if (cause is CancellationException) {
-            val ignore = task.ioUringCancel(lazyCancel)
+            val ignore = task.ioUringCancel(!lazyCancel)
         }
     }
     task.handle { t, u ->
