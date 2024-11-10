@@ -16,20 +16,24 @@ import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn;
 import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn6;
 import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrUn;
-import top.dreamlike.panama.uring.sync.trait.PollableFd;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.net.*;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.UnixDomainSocketAddress;
+import java.net.UnknownHostException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import static top.dreamlike.panama.uring.nativelib.Instance.LIBC;
 
-public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSelectedReadableFd, IoUringSocketOperator {
+public class AsyncTcpSocketFd implements IoUringAsyncFd, IoUringSelectedReadableFd, IoUringSocketOperator {
 
     private static final VarHandle BUFFER_RING_VH;
 
@@ -53,14 +57,14 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, PollableFd, IoUringSele
         this.localAddress = localAddress;
         this.remoteAddress = remoteAddress;
         this.hasConnected = true;
-        this.closeHandle = new CloseHandle(PollableFd.super::close);
+        this.closeHandle = new CloseHandle(IoUringSocketOperator.super::close);
     }
 
     public AsyncTcpSocketFd(IoUringEventLoop ioUringEventLoop, SocketAddress remoteAddress) {
         this.remoteAddress = remoteAddress;
         this.fd = socketSysCall(remoteAddress);
         this.ioUringEventLoop = ioUringEventLoop;
-        this.closeHandle = new CloseHandle(PollableFd.super::close);
+        this.closeHandle = new CloseHandle(IoUringSocketOperator.super::close);
     }
 
 

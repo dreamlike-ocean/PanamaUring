@@ -11,10 +11,19 @@ import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.helper.OSIoUringProbe;
+import top.dreamlike.panama.uring.nativelib.libs.LibPoll;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufRingSetupResult;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingElement;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringParams;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.NativeIoUringBufRing;
 import top.dreamlike.panama.uring.nativelib.wrapper.IoUringCore;
 import top.dreamlike.panama.uring.sync.fd.EventFd;
+import top.dreamlike.panama.uring.sync.trait.PollableFd;
 import top.dreamlike.panama.uring.thirdparty.colletion.LongObjectHashMap;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
@@ -50,20 +59,18 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
 
     protected final AtomicBoolean hasClosed;
     protected final Thread owner;
+    protected final IoUring internalRing;
     private final EventFd wakeUpFd;
     private final MpscUnboundedArrayQueue<Runnable> taskQueue;
     private final AtomicLong tokenGenerator;
     private final LongObjectHashMap<IoUringCompletionCallBack> callBackMap;
     private final PriorityQueue<ScheduledTask> scheduledTasks;
-    protected final IoUring internalRing;
-
+    protected IoUringCore ioUringCore;
     private MemorySegment eventReadBuffer;
     private Consumer<Throwable> exceptionHandler = (t) -> {
         log.error("Uncaught exception in event loop", t);
     };
     private boolean enableLink;
-
-    protected IoUringCore ioUringCore;
 
     public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory) {
         this(ioUringParamsFactory, (r) -> {
@@ -206,6 +213,20 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         });
     }
 
+    public CancelableFuture<Integer> poll(PollableFd fd, int pollMask) {
+        return (CancelableFuture<Integer>) asyncOperation(sqe -> {
+            int registerFd = -1;
+            if ((pollMask & LibPoll.POLLIN) != 0) {
+                registerFd = fd.readFd();
+            } else if ((pollMask & LibPoll.POLLOUT) != 0) {
+                registerFd = fd.writeFd();
+            } else {
+                fd.fd();
+            }
+            libUring.io_uring_prep_poll_add(sqe, registerFd, pollMask);
+        }).thenApply(IoUringCqe::getRes);
+    }
+
     public CancelableFuture<IoUringCqe> asyncOperation(Consumer<IoUringSqe> sqeFunction) {
         IoUringCancelToken cancelToken = new IoUringCancelToken(0);
         CancelableFuture<IoUringCqe> promise = new CancelableFuture<>(cancelToken);
@@ -329,6 +350,10 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
             wakeup();
         }
         join();
+    }
+
+    public boolean closed() {
+        return hasClosed.get();
     }
 
     protected void releaseResource() {

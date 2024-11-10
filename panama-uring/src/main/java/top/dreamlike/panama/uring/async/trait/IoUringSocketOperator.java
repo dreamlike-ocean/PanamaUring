@@ -4,9 +4,10 @@ import top.dreamlike.panama.uring.async.BufferResult;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.sync.trait.NativeFd;
+import top.dreamlike.panama.uring.sync.trait.PollableFd;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
-public interface IoUringSocketOperator extends IoUringOperator, NativeFd {
+public interface IoUringSocketOperator extends IoUringOperator, NativeFd, PollableFd {
     default CancelableFuture<BufferResult<OwnershipMemory>> asyncSend(OwnershipMemory buffer, int len, int flag) {
         return ((CancelableFuture<BufferResult<OwnershipMemory>>) owner().asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_send(sqe, fd(), buffer.resource(), len, flag))
                 .whenComplete(buffer::DropWhenException)
@@ -50,6 +51,5 @@ public interface IoUringSocketOperator extends IoUringOperator, NativeFd {
                         .whenComplete(buffer::DropWhenException)
                         .thenApply(cqe -> new BufferResult<>(buffer, cqe.getRes()));
     }
-
 
 }

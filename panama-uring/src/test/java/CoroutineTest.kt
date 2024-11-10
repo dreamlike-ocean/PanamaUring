@@ -1,19 +1,28 @@
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.junit.Assert
 import org.junit.Test
 import org.slf4j.LoggerFactory
 import top.dreamlike.panama.generator.proxy.NativeArrayPointer
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator
 import top.dreamlike.panama.uring.async.fd.AsyncEventFd
+import top.dreamlike.panama.uring.async.fd.AsyncTcpSocketFd
 import top.dreamlike.panama.uring.coroutine.*
 import top.dreamlike.panama.uring.nativelib.Instance
+import top.dreamlike.panama.uring.nativelib.exception.SyscallException
 import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec
 import top.dreamlike.panama.uring.trait.OwnershipResource
+import java.io.File
 import java.lang.foreign.Arena
 import java.lang.foreign.ValueLayout
+import java.net.StandardProtocolFamily
+import java.net.UnixDomainSocketAddress
+import java.nio.ByteBuffer
+import java.nio.channels.ServerSocketChannel
+import java.nio.channels.SocketChannel
+import java.nio.charset.Charset
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 class CoroutineTest {
 
@@ -90,4 +99,101 @@ class CoroutineTest {
             latch.await()
         }
     }
+
+    @Test
+    fun testPollSocket() = runBlocking {
+        IoUringEventLoopGetter.get(IoUringEventLoopGetter.EventLoopType.Original) {
+            it.sq_entries = 4
+            it.flags = 0
+        }.use { eventLoop ->
+            eventLoop.start()
+            val socketPath = File("/tmp/pollSocket.sock")
+            socketPath.deleteOnExit()
+            val socketRef = AtomicReference<SocketChannel>()
+            ServerSocketChannel.open(StandardProtocolFamily.UNIX).use { serverSocket ->
+                Thread.startVirtualThread {
+                    serverSocket.bind(UnixDomainSocketAddress.of(socketPath.toPath()))
+                    val accept = serverSocket.accept()
+                    log.info("accept : {}", socketPath)
+                    socketRef.set(accept)
+                    //什么都不做
+                }
+
+                // 等待连接
+                delay(1_000)
+                val socket = AsyncTcpSocketFd(eventLoop, UnixDomainSocketAddress.of(socketPath.toPath()))
+                val connectRes = socket.asyncConnect().await()
+                log.info("after connect")
+                if (connectRes < 0) {
+                    throw SyscallException(connectRes)
+                }
+                val drop = AtomicBoolean(false)
+                var readBuffer = MalloceUnboundMemory(ValueLayout.JAVA_LONG.byteSize()) {
+                    drop.set(true)
+                    log.info("resource will be dropped")
+                }
+
+               val task = async {
+                   socket.pollableRead(readBuffer, readBuffer.resource().byteSize().toInt(), 0)
+               }
+
+                delay(1_000)
+                log.info("cancel!")
+                task.cancel()
+                delay(5_00)
+                Assert.assertTrue(drop.get())
+
+                val jdkSocket =socketRef.get()
+                Assert.assertNotNull(jdkSocket)
+
+                val readTask = async {
+                    socket.pollableRead(readBuffer, readBuffer.resource().byteSize().toInt(), 0)
+                }
+
+                val message = "hello coroutine poll".toByteArray(Charset.defaultCharset())
+                readBuffer = MalloceUnboundMemory(message.size.toLong())
+
+                delay(5_00)
+
+                val writeResult = jdkSocket.write(ByteBuffer.wrap(message))
+                log.info("write to jdk socket! size {}", writeResult)
+
+                //read socket
+                val bufferResult = readTask.await()
+
+                Assert.assertEquals(bufferResult.syscallRes, message.size)
+                val buffer = readBuffer.resource()
+                val read = buffer.toArray(ValueLayout.JAVA_BYTE)
+                log.info("poll read is : {}", String(read))
+                Assert.assertArrayEquals(message, read)
+            }
+
+        }
+    }
+
+    @Test
+    fun test(): Unit = runBlocking {
+        val task = async {
+            someDelay()
+        }
+        delay(1000)
+        task.cancel()
+        log.info("cancel !")
+        delay(10_000)
+
+    }
+
+
+    suspend fun someDelay() {
+        try {
+            withContext(NonCancellable + Dispatchers.Default) {
+                delay(2_000)
+                log.info("cant cancel")
+            }
+            log.info("after withContext(NonCancellable) : {}", currentCoroutineContext().job.isCancelled)
+        } finally {
+            log.info("finally, cancel: {}", currentCoroutineContext().job.isCancelled)
+        }
+    }
+
 }
