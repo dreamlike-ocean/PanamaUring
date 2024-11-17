@@ -35,6 +35,8 @@ public interface Libc {
 
     int listen(int socketFd, int backlog);
 
+    int connect(int socketFd,@Pointer MemorySegment addr, int addrLen);
+
     int getsockname(int socketFd, @Pointer MemorySegment addr, @Pointer MemorySegment addrlen);
 
     int getpeername(int socketFd, @Pointer MemorySegment addr, @Pointer MemorySegment addrlen);
@@ -209,6 +211,10 @@ public interface Libc {
             int SO_SNDLOWAT = 19;
             int SO_RCVTIMEO_OLD = 20;
             int SO_SNDTIMEO_OLD = 21;
+        }
+
+        interface Flag {
+            int MSG_DONTWAIT = 0x40;
         }
     }
 

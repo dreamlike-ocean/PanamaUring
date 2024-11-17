@@ -102,7 +102,7 @@ public final class NettyEpollBridgeEventLoop extends IoUringEventLoop implements
         //清除事件
         cqeReadyEventFd.read(cqeReadyMemory, (int) ValueLayout.JAVA_LONG.byteSize());
         //处理cqe
-        processCqes();
+        ioUringCore.processCqes(this::processCqes);
     }
 
     @Override
@@ -131,7 +131,7 @@ public final class NettyEpollBridgeEventLoop extends IoUringEventLoop implements
     @Override
     public void flush() {
         if (inEventLoop()) {
-            libUring.io_uring_submit(internalRing);
+            ioUringCore.submit();
             haveSqe = false;
         } else {
             execute(this::flush);
@@ -178,6 +178,11 @@ public final class NettyEpollBridgeEventLoop extends IoUringEventLoop implements
     @Override
     public void start() {
         //do nothing
+    }
+
+    @Override
+    public void run() {
+
     }
 
     @Override

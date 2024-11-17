@@ -19,7 +19,8 @@ public class IoUringCq {
     private MemorySegment kring_entries;
     @Pointer(targetLayout = int.class)
     private MemorySegment kflags;
-    @Pointer
+
+    @Pointer(targetLayout = int.class)
     private MemorySegment koverflow;
 
     private NativeArrayPointer<IoUringCqe> cqes;
