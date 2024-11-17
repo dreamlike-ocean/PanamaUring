@@ -134,7 +134,7 @@ class CoroutineTest {
                 }
 
                val task = async {
-                   socket.pollableRead(readBuffer, readBuffer.resource().byteSize().toInt(), 0)
+                   socket.pollableReadSuspend(readBuffer, readBuffer.resource().byteSize().toInt(), 0)
                }
 
                 delay(1_000)
@@ -147,7 +147,7 @@ class CoroutineTest {
                 Assert.assertNotNull(jdkSocket)
 
                 val readTask = async {
-                    socket.pollableRead(readBuffer, readBuffer.resource().byteSize().toInt(), 0)
+                    socket.pollableReadSuspend(readBuffer, readBuffer.resource().byteSize().toInt(), 0)
                 }
 
                 val message = "hello coroutine poll".toByteArray(Charset.defaultCharset())
@@ -171,29 +171,5 @@ class CoroutineTest {
         }
     }
 
-    @Test
-    fun test(): Unit = runBlocking {
-        val task = async {
-            someDelay()
-        }
-        delay(1000)
-        task.cancel()
-        log.info("cancel !")
-        delay(10_000)
-
-    }
-
-
-    suspend fun someDelay() {
-        try {
-            withContext(NonCancellable + Dispatchers.Default) {
-                delay(2_000)
-                log.info("cant cancel")
-            }
-            log.info("after withContext(NonCancellable) : {}", currentCoroutineContext().job.isCancelled)
-        } finally {
-            log.info("finally, cancel: {}", currentCoroutineContext().job.isCancelled)
-        }
-    }
 
 }

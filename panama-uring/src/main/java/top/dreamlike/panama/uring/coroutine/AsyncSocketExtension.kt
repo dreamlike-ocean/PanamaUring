@@ -12,7 +12,7 @@ import top.dreamlike.panama.uring.nativelib.libs.Libc
 import top.dreamlike.panama.uring.trait.OwnershipMemory
 import kotlin.coroutines.coroutineContext
 
-suspend fun IoUringSocketOperator.pollableRead(
+suspend fun IoUringSocketOperator.pollableReadSuspend(
     buffer: OwnershipMemory,
     len: Int,
     flags: Int
