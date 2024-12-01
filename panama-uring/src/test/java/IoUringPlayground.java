@@ -3,6 +3,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
+import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
@@ -222,4 +223,10 @@ public class IoUringPlayground {
         return submitResult;
     }
 
+    public void testNettyIoUring() {
+        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(IoUringEventLoopGetter.EventLoopType.Netty_IoUring, params -> {
+            params.setSq_entries(4);
+            params.setFlags(0);
+        });
+    }
 }

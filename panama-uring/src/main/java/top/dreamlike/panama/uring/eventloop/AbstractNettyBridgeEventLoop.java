@@ -50,8 +50,8 @@ public non-sealed abstract class AbstractNettyBridgeEventLoop extends IoUringEve
 
         this.cqeReadyMemory = JemallocAllocator.INSTANCE.allocate(ValueLayout.JAVA_LONG);
         this.nettyFd = new FileDescriptor(cqeReadyEventFd.fd());
-
-        Future<IoRegistration> future = eventLoop.register(ioHandle());
+        IoHandle handle = ioHandle();
+        Future<IoRegistration> future = eventLoop.register(handle);
         future.addListener(future1 -> {
             if (future1.isSuccess()) {
                 setRegistration((IoRegistration) future1.resultNow());

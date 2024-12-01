@@ -1,7 +1,6 @@
 package top.dreamlike.panama.uring.eventloop;
 
 import io.netty.channel.IoEvent;
-import io.netty.channel.IoHandle;
 import io.netty.channel.IoRegistration;
 import io.netty.channel.SingleThreadIoEventLoop;
 import io.netty.channel.epoll.EpollIoEvent;
@@ -35,7 +34,7 @@ public class NettyEpollBridgeEventLoop extends AbstractNettyBridgeEventLoop impl
     }
 
     @Override
-    protected IoHandle ioHandle() {
+    protected EpollIoHandle ioHandle() {
         return this;
     }
 
