@@ -70,12 +70,14 @@ public class NettyIoUringBridgeEventLoop extends AbstractNettyBridgeEventLoop im
         }
 
         try {
+            int res = nettyIoUringEvent.res();
             if (opCode == IoUringConstant.Opcode.IORING_OP_READ) {
                 //关闭时出现的cqe 告诉被取消了
                 //如果不判断就去processCqes会导致摸到被close的io uring fd的被mumap的cq
                 //导致coredump
-                if (nettyIoUringEvent.res() == -Libc.Error_H.ECANCELED) {
+                if (res == -Libc.Error_H.ECANCELED) {
                     log.debug("eventLoop is closed");
+                    releaseResource();
                     return;
                 }
                 //处理cqe
@@ -83,9 +85,12 @@ public class NettyIoUringBridgeEventLoop extends AbstractNettyBridgeEventLoop im
                 return;
             }
 
-            if (opCode == IoUringConstant.Opcode.IORING_OP_ASYNC_CANCEL) {
-                releaseResource();
+            if (opCode == IoUringConstant.Opcode.IORING_OP_ASYNC_CANCEL && res == -Libc.Error_H.EALREADY) {
+                registration.submit(IoUringIoOps.newAsyncCancel(nettyFd.intValue(), 0, nettyIoUringReadId, IoUringConstant.Opcode.IORING_OP_READ));
             }
+        } catch (Exception e) {
+            //should not reach hear
+            throw new RuntimeException(e);
         } finally {
             if (!hasClosed.get()) {
                 registerReadyFdOneShot();

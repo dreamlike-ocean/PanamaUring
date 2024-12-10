@@ -112,7 +112,9 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     }
 
     private void initWakeUpFdMultiShot() {
-        asyncOperation(this::registerWakeUpFd, _ -> initWakeUpFdMultiShot());
+      if (!closed()) {
+          asyncOperation(this::registerWakeUpFd, _ -> initWakeUpFdMultiShot());
+      }
     }
 
     @Override
