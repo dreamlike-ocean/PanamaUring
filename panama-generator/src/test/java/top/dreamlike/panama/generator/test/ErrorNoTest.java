@@ -28,16 +28,15 @@ public class ErrorNoTest {
 
     @Test
     public void testError() {
-        Assert.assertThrows(IllegalStateException.class, () -> {
-            libPerson.current_error(123, 123);
-        });
+        long res = libPerson.set_error_no(999, 2);
+        Assert.assertEquals(res, 2);
+        Assert.assertEquals(ErrorNo.error.get().intValue(), 999);
+
         try (Arena arena = Arena.ofConfined()) {
             MemoryLifetimeScope.of(arena)
                     .active(() -> {
-                        long l = libPerson.set_error_no(888, 1);
-                        Assert.assertEquals(l, 1);
-                        int error = libPerson.current_error(1, 2);
-                        Assert.assertEquals(error, 888);
+                        long res1 = libPerson.set_error_no(888, 2);
+                        Assert.assertEquals(res1, 2);
                         Assert.assertEquals(ErrorNo.error.get().intValue(), 888);
                     });
         }

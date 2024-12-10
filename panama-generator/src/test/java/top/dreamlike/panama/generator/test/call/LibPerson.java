@@ -38,7 +38,7 @@ public interface LibPerson {
     @NativeFunction(fast = false, needErrorNo = true)
     int current_error(int dummy, long dummy2);
 
-    @NativeFunction(fast = true)
+    @NativeFunction(needErrorNo = true)
     long set_error_no(int error, long returnValue);
 
     long set_array(long[] error, int index, long value);

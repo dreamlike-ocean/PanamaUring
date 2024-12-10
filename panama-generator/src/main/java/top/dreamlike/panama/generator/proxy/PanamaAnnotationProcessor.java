@@ -1,15 +1,31 @@
-
 package top.dreamlike.panama.generator.proxy;
 
-import top.dreamlike.panama.generator.annotation.*;
+import top.dreamlike.panama.generator.annotation.Alignment;
+import top.dreamlike.panama.generator.annotation.CLib;
+import top.dreamlike.panama.generator.annotation.CompileTimeGenerate;
+import top.dreamlike.panama.generator.annotation.NativeArrayMark;
+import top.dreamlike.panama.generator.annotation.NativeFunction;
+import top.dreamlike.panama.generator.annotation.Pointer;
+import top.dreamlike.panama.generator.annotation.ShortcutOption;
+import top.dreamlike.panama.generator.annotation.Skip;
+import top.dreamlike.panama.generator.annotation.Union;
 import top.dreamlike.panama.generator.exception.StructException;
 import top.dreamlike.panama.generator.helper.ClassFileHelper;
 import top.dreamlike.panama.generator.helper.NativeGeneratorHelper;
 import top.dreamlike.panama.generator.helper.NativeStructEnhanceMark;
 
-import javax.annotation.processing.*;
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedOptions;
+import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.*;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeKind;
@@ -17,8 +33,10 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.classfile.Annotation;
+import java.lang.classfile.AnnotationElement;
 import java.lang.classfile.AnnotationValue;
-import java.lang.classfile.*;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
 import java.lang.constant.ClassDesc;
@@ -30,7 +48,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -60,14 +83,14 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
 
     private StructProxyGenerator structProxyGenerator;
     private NativeCallGenerator nativeCallGenerator;
-    private ArrayList<ProxyPair> proxyPair = new ArrayList<>();
+    private final ArrayList<ProxyPair> proxyPair = new ArrayList<>();
 
 
-    private ClassFile classFile = ClassFile.of();
+    private final ClassFile classFile = ClassFile.of();
 
-    private ProxyClassLoader classLoader = new ProxyClassLoader();
+    private final ProxyClassLoader classLoader = new ProxyClassLoader();
 
-    private Map<String, Class> classMap = new HashMap<>(
+    private final Map<String, Class> classMap = new HashMap<>(
             Map.of(
                     MemorySegment.class.getCanonicalName(), MemorySegment.class,
                     NativeArray.class.getCanonicalName(), NativeArray.class
@@ -113,22 +136,21 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
             Set<? extends Element> elements = roundEnv.getElementsAnnotatedWith(CompileTimeGenerate.class);
 
             for (Element element : elements) {
-                if (!(element instanceof TypeElement)) {
+                if (!(element instanceof TypeElement typeElement)) {
                     continue;
                 }
-                TypeElement typeElement = (TypeElement) element;
                 boolean isInterface = typeElement.getKind().isInterface();
                 Class runtimeClass = toRuntiumeClass(typeElement.asType());
                 CompileTimeGenerate.GenerateType generateType = element.getAnnotation(CompileTimeGenerate.class).value();
 
                 if (!isInterface) {
                     structProxyGenerator.enhance(runtimeClass);
-                    proxyPair.add(new ProxyPair(runtimeClass.getName(), structProxyGenerator.generateProxyClassName(runtimeClass), CompileTimeGenerate.GenerateType.STRUCT_PROXY));
+                    proxyPair.add(new ProxyPair(runtimeClass.getName(), StructProxyGenerator.generateProxyClassName(runtimeClass), CompileTimeGenerate.GenerateType.STRUCT_PROXY));
                 } else {
                     switch (generateType) {
                         case STRUCT_PROXY -> {
                             structProxyGenerator.enhance(runtimeClass);
-                            proxyPair.add(new ProxyPair(runtimeClass.getName(), structProxyGenerator.generateProxyClassName(runtimeClass), CompileTimeGenerate.GenerateType.STRUCT_PROXY));
+                            proxyPair.add(new ProxyPair(runtimeClass.getName(), StructProxyGenerator.generateProxyClassName(runtimeClass), CompileTimeGenerate.GenerateType.STRUCT_PROXY));
                         }
                         case SHORTCUT -> {
                             structProxyGenerator.generateShortcut(runtimeClass);
@@ -174,7 +196,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 default -> throw new IllegalArgumentException("should not reach here! " + mirror);
             };
         }
-        
+
         if (mirror.getKind() == TypeKind.ARRAY) {
             ArrayType type = (ArrayType) mirror;
             TypeMirror typeComponentType = type.getComponentType();
@@ -192,7 +214,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 default -> throw new IllegalArgumentException("should not reach here! " + mirror);
             };
         }
-        
+
         TypeElement currentTypeElement = (TypeElement) env.getTypeUtils().asElement(mirror);
         if (mirror.getKind() != TypeKind.DECLARED) {
             throw new IllegalStateException("dont support other type!" + "current kind is: " + mirror.getKind() + ", in " + currentTypeElement);
@@ -260,7 +282,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                         .collect(Collectors.joining());
                 String returnSignature = ClassFileHelper.toSignature(returnClass);
                 MethodTypeDesc methodTypeDesc = MethodTypeDesc.ofDescriptor("(" + parametersSignature + ")" + returnSignature);
-                classBuilder.withMethod(executableElement.getSimpleName().toString(), methodTypeDesc, AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.ABSTRACT).flagsMask(), it -> {
+                classBuilder.withMethod(executableElement.getSimpleName().toString(), methodTypeDesc, AccessFlag.PUBLIC.mask() | AccessFlag.ABSTRACT.mask(), it -> {
                     //对参数做处理
                     List<List<Annotation>> parameterAnnotation = parameters.stream()
                             .map(v -> v.getAnnotation(Pointer.class) == null ? List.<Annotation>of() : List.of(Annotation.of(ClassFileHelper.toDesc(Pointer.class))))
@@ -311,7 +333,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                         .collect(Collectors.joining());
                 String returnSignature = ClassFileHelper.toSignature(returnClass);
                 MethodTypeDesc methodTypeDesc = MethodTypeDesc.ofDescriptor("(" + parametersSignature + ")" + returnSignature);
-                cb.withMethod(executableElement.getSimpleName().toString(), methodTypeDesc, AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.ABSTRACT).flagsMask(), it -> {
+                cb.withMethod(executableElement.getSimpleName().toString(), methodTypeDesc, AccessFlag.ABSTRACT.mask() | AccessFlag.PUBLIC.mask(), it -> {
                     //NativeFunction处理
                     ShortcutOption option = executableElement.getAnnotation(ShortcutOption.class);
                     if (option != null) {
@@ -479,7 +501,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                                 RuntimeReflection.registerForReflectiveInstantiation(needRegisterClass);
                                 needRegisterClass = Class.forName("%s", false, getClass().getClassLoader());
                                 RuntimeReflection.registerAllMethods(needRegisterClass);
-
+                        
                                 RuntimeReflection.registerAllDeclaredClasses(needRegisterClass);
                               //  RuntimeClassInitialization.initializeAtBuildTime(needRegisterClass);
                         """, p.proxy, p.origin));
@@ -529,14 +551,14 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                     @Override
                     public void duringSetup(DuringSetupAccess access) {
                        Class needRegisterClass = null;
-
+                
                        try {
                          %s
                        } catch(Throwable t) {
                           t.printStackTrace();
                        }
                     }
-
+                
                     @Override
                     public void beforeAnalysis(BeforeAnalysisAccess access) {
                         Class needRegisterClass = null;
@@ -574,9 +596,6 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
         return String.join("", realNameDeque);
     }
 
-    private record ProxyPair(String origin, String proxy, CompileTimeGenerate.GenerateType generateType) {
-    }
-
     private void dump(String className, byte[] bytes) {
         if (System.getProperty("panama.generator.debug") == null) {
             return;
@@ -593,20 +612,22 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
         }
     }
 
+    private record ProxyPair(String origin, String proxy, CompileTimeGenerate.GenerateType generateType) {
+    }
+
     static class ProxyClassLoader extends ClassLoader {
 
-        private final Map<String, Class> loadedClassed = new HashMap<>();
-
         private static final ClassLoader parent = PanamaAnnotationProcessor.class.getClassLoader();
+        private final Map<String, Class> loadedClassed = new HashMap<>();
 
         @Override
         protected Class<?> findClass(String name) throws ClassNotFoundException {
-           try {
-               return Class.forName(name, false, parent);
-           }catch (ClassNotFoundException _) {
+            try {
+                return Class.forName(name, false, parent);
+            } catch (ClassNotFoundException _) {
 
-           }
-           name = name.replace('.', '/');
+            }
+            name = name.replace('.', '/');
             Class aClass = loadedClassed.get(name);
             if (aClass == null) {
                 throw new ClassNotFoundException(name);
