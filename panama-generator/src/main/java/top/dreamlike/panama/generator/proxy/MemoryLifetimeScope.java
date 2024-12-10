@@ -5,7 +5,7 @@ import java.lang.foreign.SegmentAllocator;
 import java.util.concurrent.Callable;
 
 public class MemoryLifetimeScope {
-    static ScopedValue<SegmentAllocator> currentAllocator = ScopedValue.newInstance();
+    static ThreadLocal<SegmentAllocator> currentAllocator = new ThreadLocal<>();
     final SegmentAllocator allocator;
 
     private MemoryLifetimeScope(SegmentAllocator allocator) {
@@ -23,13 +23,21 @@ public class MemoryLifetimeScope {
     }
 
     public <T> T active(Callable<T> callable) throws Exception {
-        return ScopedValue.where(currentAllocator, allocator)
-                .call(callable::call);
+        try {
+            currentAllocator.set(allocator);
+            return callable.call();
+        } finally {
+            currentAllocator.remove();
+        }
     }
 
     public void active(Runnable runnable) {
-        ScopedValue.where(currentAllocator, allocator)
-                .run(runnable);
+        try {
+            currentAllocator.set(allocator);
+            runnable.run();
+        } finally {
+            currentAllocator.remove();
+        }
     }
 
 }

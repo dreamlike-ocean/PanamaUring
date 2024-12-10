@@ -4,18 +4,34 @@ import top.dreamlike.panama.generator.annotation.CLib;
 import top.dreamlike.panama.generator.annotation.NativeFunction;
 import top.dreamlike.panama.generator.annotation.Pointer;
 import top.dreamlike.panama.generator.exception.StructException;
-import top.dreamlike.panama.generator.helper.*;
+import top.dreamlike.panama.generator.helper.ClassFileHelper;
+import top.dreamlike.panama.generator.helper.DowncallContext;
+import top.dreamlike.panama.generator.helper.FunctionPointer;
+import top.dreamlike.panama.generator.helper.NativeAddressable;
+import top.dreamlike.panama.generator.helper.NativeGeneratorHelper;
 
-import java.io.*;
-import java.lang.classfile.AccessFlags;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.DynamicCallSiteDesc;
-import java.lang.foreign.*;
-import java.lang.invoke.*;
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -58,7 +74,7 @@ public class NativeCallGenerator {
     private static final Method GENERATE_IN_GENERATOR_CONTEXT;
 
     public volatile boolean use_lmf = !NativeImageHelper.inExecutable();
-    private Map<String, MemorySegment> foreignFunctionAddressCache = new ConcurrentHashMap<>();
+    private final Map<String, MemorySegment> foreignFunctionAddressCache = new ConcurrentHashMap<>();
     private volatile boolean use_indy = !NativeImageHelper.inExecutable();
 
     final Map<Class<?>, Supplier<Object>> ctorCaches = new ConcurrentHashMap<>();
@@ -410,7 +426,7 @@ public class NativeCallGenerator {
         var thisClassDesc = ClassDesc.ofDescriptor("L" + className.replace(".", "/") + ";");
         var thisClass = classFile.build(thisClassDesc, classBuilder -> {
             classBuilder.withInterfaceSymbols(ClassFileHelper.toDesc(nativeInterface));
-            classBuilder.withField(GENERATOR_FIELD_NAME, ClassFileHelper.toDesc(NativeCallGenerator.class), AccessFlags.ofField(AccessFlag.PUBLIC, AccessFlag.STATIC, AccessFlag.FINAL).flagsMask());
+            classBuilder.withField(GENERATOR_FIELD_NAME, ClassFileHelper.toDesc(NativeCallGenerator.class), AccessFlag.PUBLIC.mask() | AccessFlag.STATIC.mask() | AccessFlag.FINAL.mask());
             ArrayList<Consumer<CodeBuilder>> clinits = new ArrayList<>();
             //初始化内部的genertor字段
             clinits.add(it -> {
@@ -454,11 +470,11 @@ public class NativeCallGenerator {
     private Consumer<CodeBuilder> invokeByMh(Method method, ClassBuilder thisClass, String className) {
         String mhFieldName = method.getName() + "_native_method_handle";
         ClassDesc thisClassDesc = ClassDesc.of(className);
-        thisClass.withMethodBody(method.getName(), ClassFileHelper.toMethodDescriptor(method), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        thisClass.withMethodBody(method.getName(), ClassFileHelper.toMethodDescriptor(method), AccessFlag.PUBLIC.mask(), it -> {
             it.getstatic(thisClassDesc, mhFieldName, ClassFileHelper.toDesc(MethodHandle.class));
             ClassFileHelper.invokeMethodHandleExactWithAllArgs(method, it);
         });
-        thisClass.withField(mhFieldName, ClassFileHelper.toDesc(MethodHandle.class), AccessFlags.ofField(AccessFlag.PUBLIC, AccessFlag.STATIC, AccessFlag.FINAL).flagsMask());
+        thisClass.withField(mhFieldName, ClassFileHelper.toDesc(MethodHandle.class), ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC | ClassFile.ACC_FINAL);
         return it -> {
             it.getstatic(thisClassDesc, GENERATOR_FIELD_NAME, ClassFileHelper.toDesc(NativeCallGenerator.class));
             ClassDesc nativeInterfaceClassDesc = ClassFileHelper.toDesc(method.getDeclaringClass());
@@ -471,7 +487,7 @@ public class NativeCallGenerator {
     }
 
     private void invokeByIndy(Method method, ClassBuilder thisClass, String className) {
-        thisClass.withMethodBody(method.getName(), ClassFileHelper.toMethodDescriptor(method), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        thisClass.withMethodBody(method.getName(), ClassFileHelper.toMethodDescriptor(method), ClassFile.ACC_PUBLIC, it -> {
             ClassFileHelper.loadAllArgs(method, it);
             it.invokedynamic(
                     DynamicCallSiteDesc.of(

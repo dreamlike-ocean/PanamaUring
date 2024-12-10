@@ -1,24 +1,55 @@
-
-
 package top.dreamlike.panama.generator.proxy;
 
 
-import top.dreamlike.panama.generator.annotation.*;
+import top.dreamlike.panama.generator.annotation.Alignment;
+import top.dreamlike.panama.generator.annotation.NativeArrayMark;
+import top.dreamlike.panama.generator.annotation.Pointer;
+import top.dreamlike.panama.generator.annotation.ShortcutOption;
+import top.dreamlike.panama.generator.annotation.Skip;
+import top.dreamlike.panama.generator.annotation.Union;
 import top.dreamlike.panama.generator.exception.StructException;
-import top.dreamlike.panama.generator.helper.*;
+import top.dreamlike.panama.generator.helper.ClassFileHelper;
+import top.dreamlike.panama.generator.helper.NativeAddressable;
+import top.dreamlike.panama.generator.helper.NativeGeneratorHelper;
+import top.dreamlike.panama.generator.helper.NativeStructEnhanceMark;
+import top.dreamlike.panama.generator.helper.StructProxyContext;
 
-import java.lang.classfile.*;
-import java.lang.constant.*;
-import java.lang.foreign.*;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.TypeKind;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.DirectMethodHandleDesc;
+import java.lang.constant.DynamicCallSiteDesc;
+import java.lang.constant.MethodHandleDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.foreign.AddressLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.UnionLayout;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
-import java.lang.reflect.*;
+import java.lang.reflect.AccessFlag;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -34,21 +65,14 @@ public class StructProxyGenerator {
     static final String GENERATOR_FIELD = "_generator";
 
     static final String LAYOUT_FIELD = "_layout";
-    BiConsumer<String, byte[]> classDataPeek;
-
+    static final MethodHandle ENHANCE_MH;
     private static final Method REALMEMORY_METHOD;
 
     private static final Method GENERATOR_VARHANDLE;
 
     private static final Method SHORTCUT_INDY_BOOTSTRAP_METHOD;
-
-    static final MethodHandle ENHANCE_MH;
-
-    private volatile boolean use_lmf = !NativeImageHelper.inExecutable();
-
-    private ClassFile classFile = ClassFile.of();
-
-    boolean skipInit = false;
+    private static final Set<VarHandle.AccessMode> getterModes = Set.of(VarHandle.AccessMode.GET, VarHandle.AccessMode.GET_VOLATILE, VarHandle.AccessMode.GET_OPAQUE, VarHandle.AccessMode.GET_ACQUIRE);
+    private static final Set<VarHandle.AccessMode> setterModes = Set.of(VarHandle.AccessMode.SET, VarHandle.AccessMode.SET_VOLATILE, VarHandle.AccessMode.SET_OPAQUE, VarHandle.AccessMode.SET_RELEASE);
 
     static {
         try {
@@ -62,8 +86,11 @@ public class StructProxyGenerator {
     }
 
     final Map<Class<?>, Function<MemorySegment, Object>> ctorCaches = new ConcurrentHashMap<>();
-
     private final Map<Class<?>, MemoryLayout> layoutCaches = new ConcurrentHashMap<>();
+    BiConsumer<String, byte[]> classDataPeek;
+    boolean skipInit = false;
+    private volatile boolean use_lmf = !NativeImageHelper.inExecutable();
+    private final ClassFile classFile = ClassFile.of();
 
     public StructProxyGenerator() {
     }
@@ -90,17 +117,6 @@ public class StructProxyGenerator {
         throw new StructException("before findMemorySegment, you should enhance it");
     }
 
-    @SuppressWarnings("unchecked")
-    public <T> T enhance(MemorySegment binder, T... dummy) {
-        return this.enhance((Class<T>) dummy.getClass().componentType(), binder);
-    }
-
-    @SafeVarargs
-    public final <T> NativeArray<T> enhanceArray(MemorySegment chunk, T... dummy) {
-        Class<T> component = (Class<T>) dummy.getClass().getComponentType();
-        return new NativeArray<>(this, chunk, component);
-    }
-
     public static boolean isNativeStruct(Object o) {
         return o instanceof NativeStructEnhanceMark || o instanceof NativeAddressable;
     }
@@ -111,6 +127,25 @@ public class StructProxyGenerator {
             return;
         }
         throw new StructException("before rebinding, you should enhance it");
+    }
+
+    static String generateProxyClassName(Class targetClass) {
+        return targetClass.getName() + "_native_struct_proxy";
+    }
+
+    static String generateVarHandleName(Field field) {
+        return field.getName() + "_native_struct_vh";
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T enhance(MemorySegment binder, T... dummy) {
+        return this.enhance((Class<T>) dummy.getClass().componentType(), binder);
+    }
+
+    @SafeVarargs
+    public final <T> NativeArray<T> enhanceArray(MemorySegment chunk, T... dummy) {
+        Class<T> component = (Class<T>) dummy.getClass().getComponentType();
+        return new NativeArray<>(this, chunk, component);
     }
 
     @SuppressWarnings("unchecked")
@@ -350,7 +385,6 @@ public class StructProxyGenerator {
 
     }
 
-
     private <T> Class<T> generateShortcutClass(MethodHandles.Lookup lookup, Class<T> interfaceClass) throws IllegalAccessException {
         List<ShortCutInfo> shortCutInfoList = Arrays.stream(interfaceClass.getMethods())
                 .filter(m -> !m.isSynthetic() && !m.isBridge() && !m.isDefault())
@@ -360,11 +394,11 @@ public class StructProxyGenerator {
         String shortcutProxyName = generatorShortcutProxyName(interfaceClass);
         ClassDesc thisClass = ClassDesc.of(shortcutProxyName);
         var byteCode = classFile.build(thisClass, cb -> {
-            cb.withField(GENERATOR_FIELD, ClassFileHelper.toDesc(StructProxyGenerator.class), AccessFlags.ofField(AccessFlag.PUBLIC, AccessFlag.STATIC, AccessFlag.FINAL).flagsMask());
+            cb.withField(GENERATOR_FIELD, ClassFileHelper.toDesc(StructProxyGenerator.class), ClassFile.ACC_STATIC | ClassFile.ACC_PUBLIC | ClassFile.ACC_FINAL);
             cb.withInterfaceSymbols(ClassFileHelper.toDesc(interfaceClass));
             for (ShortCutInfo info : shortCutInfoList) {
                 Method method = info.method;
-                cb.withMethodBody(method.getName(), ClassFileHelper.toMethodDescriptor(method), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+                cb.withMethodBody(method.getName(), ClassFileHelper.toMethodDescriptor(method), ClassFile.ACC_PUBLIC, it -> {
                     ClassFileHelper.loadAllArgs(method, it);
                     it.invokedynamic(
                             DynamicCallSiteDesc.of(
@@ -385,7 +419,7 @@ public class StructProxyGenerator {
                 it.return_();
             });
 
-            cb.withMethodBody(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+            cb.withMethodBody(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, ClassFile.ACC_PUBLIC, it -> {
                 it.aload(0);
                 it.invokespecial(ConstantDescs.CD_Object, ConstantDescs.INIT_NAME, ConstantDescs.MTD_void);
                 it.return_();
@@ -398,9 +432,6 @@ public class StructProxyGenerator {
 
         return (Class<T>) lookup.defineClass(byteCode);
     }
-
-    private static final Set<VarHandle.AccessMode> getterModes = Set.of(VarHandle.AccessMode.GET, VarHandle.AccessMode.GET_VOLATILE, VarHandle.AccessMode.GET_OPAQUE, VarHandle.AccessMode.GET_ACQUIRE);
-    private static final Set<VarHandle.AccessMode> setterModes = Set.of(VarHandle.AccessMode.SET, VarHandle.AccessMode.SET_VOLATILE, VarHandle.AccessMode.SET_OPAQUE, VarHandle.AccessMode.SET_RELEASE);
 
     private ShortCutInfo parseShortcutMethod(Method shortcutMethod) {
         ShortcutOption option = shortcutMethod.getAnnotation(ShortcutOption.class);
@@ -511,40 +542,32 @@ public class StructProxyGenerator {
         }
         Class<?> type = field.getType();
         if (type.isPrimitive()
-                || field.getAnnotation(Pointer.class) != null
-                || Optional.ofNullable(field.getAnnotation(NativeArrayMark.class)).map(NativeArrayMark::asPointer).orElse(false)
+            || field.getAnnotation(Pointer.class) != null
+            || Optional.ofNullable(field.getAnnotation(NativeArrayMark.class)).map(NativeArrayMark::asPointer).orElse(false)
         ) {
             return MethodHandles.insertCoordinates(layout.varHandle(MemoryLayout.PathElement.groupElement(field.getName())), 1, 0);
         }
         throw new StructException("only support primitive type or pointer type");
     }
 
-    static String generateProxyClassName(Class targetClass) {
-        return targetClass.getName() + "_native_struct_proxy";
-    }
-
-    static String generateVarHandleName(Field field) {
-        return field.getName() + "_native_struct_vh";
-    }
-
     private Consumer<CodeBuilder> implementStructMarkInterface(ClassBuilder cb, ClassDesc thisClass) {
 
-        cb.withField(GENERATOR_FIELD, ClassFileHelper.toDesc(StructProxyGenerator.class), AccessFlags.ofField(AccessFlag.PUBLIC, AccessFlag.STATIC, AccessFlag.FINAL).flagsMask());
-        cb.withField(LAYOUT_FIELD, ClassFileHelper.toDesc(MemoryLayout.class), AccessFlags.ofField(AccessFlag.PUBLIC, AccessFlag.STATIC, AccessFlag.FINAL).flagsMask());
-        cb.withField(MEMORY_FIELD, ClassFileHelper.toDesc(MemorySegment.class), AccessFlags.ofField(AccessFlag.PUBLIC).flagsMask());
+        cb.withField(GENERATOR_FIELD, ClassFileHelper.toDesc(StructProxyGenerator.class), ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC | ClassFile.ACC_FINAL);
+        cb.withField(LAYOUT_FIELD, ClassFileHelper.toDesc(MemoryLayout.class), ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC | ClassFile.ACC_FINAL);
+        cb.withField(MEMORY_FIELD, ClassFileHelper.toDesc(MemorySegment.class), ClassFile.ACC_PUBLIC);
 
         cb.withInterfaceSymbols(ClassFileHelper.toDesc(NativeStructEnhanceMark.class));
-        cb.withMethodBody("fetchStructProxyGenerator", ClassFileHelper.toMethodDescriptor(NativeGeneratorHelper.FETCH_STRUCT_PROXY_GENERATOR), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        cb.withMethodBody("fetchStructProxyGenerator", ClassFileHelper.toMethodDescriptor(NativeGeneratorHelper.FETCH_STRUCT_PROXY_GENERATOR), ClassFile.ACC_PUBLIC, it -> {
             it.getstatic(thisClass, GENERATOR_FIELD, ClassFileHelper.toDesc(StructProxyGenerator.class));
             it.areturn();
         });
-        cb.withMethodBody("realMemory", ClassFileHelper.toMethodDescriptor(NativeGeneratorHelper.REAL_MEMORY), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        cb.withMethodBody("realMemory", ClassFileHelper.toMethodDescriptor(NativeGeneratorHelper.REAL_MEMORY), ClassFile.ACC_PUBLIC, it -> {
             it.aload(0);
             it.getfield(thisClass, MEMORY_FIELD, ClassFileHelper.toDesc(MemorySegment.class));
             it.areturn();
         });
 
-        cb.withMethodBody("rebind", ClassFileHelper.toMethodDescriptor(NativeGeneratorHelper.REBIND_MEMORY), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        cb.withMethodBody("rebind", ClassFileHelper.toMethodDescriptor(NativeGeneratorHelper.REBIND_MEMORY), ClassFile.ACC_PUBLIC, it -> {
             it.aload(1);
 
             it.aload(0);
@@ -560,7 +583,7 @@ public class StructProxyGenerator {
             //return
             it.return_();
         });
-        cb.withMethodBody("layout", ClassFileHelper.toMethodDescriptor(NativeGeneratorHelper.REAL_MEMORY), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        cb.withMethodBody("layout", ClassFileHelper.toMethodDescriptor(NativeGeneratorHelper.REAL_MEMORY), ClassFile.ACC_PUBLIC, it -> {
             it.getstatic(thisClass, LAYOUT_FIELD, ClassFileHelper.toDesc(MemoryLayout.class));
             it.areturn();
         });
@@ -574,7 +597,7 @@ public class StructProxyGenerator {
 
     private void generatorCtor(ClassBuilder cb, ClassDesc thisClass, Class originClass) {
         cb.withSuperclass(ClassFileHelper.toDesc(originClass));
-        cb.withMethodBody(ConstantDescs.INIT_NAME, MethodType.methodType(void.class, MemorySegment.class).describeConstable().get(), AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(), it -> {
+        cb.withMethodBody(ConstantDescs.INIT_NAME, MethodType.methodType(void.class, MemorySegment.class).describeConstable().get(), ClassFile.ACC_PUBLIC, it -> {
             //super()
             it.aload(0);
             it.invokespecial(ClassFileHelper.toDesc(originClass), ConstantDescs.INIT_NAME, ConstantDescs.MTD_void);
@@ -589,7 +612,7 @@ public class StructProxyGenerator {
 
     private Consumer<CodeBuilder> initVarHandleBlock(ClassBuilder cb, ClassDesc thisClass, Field field) {
         String varHandleFieldName = generateVarHandleName(field);
-        cb.withField(varHandleFieldName, ClassFileHelper.toDesc(VarHandle.class), AccessFlags.ofField(AccessFlag.FINAL, AccessFlag.STATIC, AccessFlag.PUBLIC).flagsMask());
+        cb.withField(varHandleFieldName, ClassFileHelper.toDesc(VarHandle.class), ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC | ClassFile.ACC_FINAL);
         return (it) -> {
             it.getstatic(thisClass, LAYOUT_FIELD, ClassFileHelper.toDesc(MemoryLayout.class));
             it.ldc(field.getName());
@@ -604,7 +627,7 @@ public class StructProxyGenerator {
         cb.withMethodBody(
                 "get" + upperFirstChar(field.getName()),
                 MethodType.methodType(field.getType()).describeConstable().get(),
-                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                ClassFile.ACC_PUBLIC,
                 it -> {
                     it.getstatic(thisClass, varHandleFieldName, ClassFileHelper.toDesc(VarHandle.class));
 
@@ -622,7 +645,7 @@ public class StructProxyGenerator {
         cb.withMethodBody(
                 "set" + upperFirstChar(field.getName()),
                 MethodType.methodType(void.class, field.getType()).describeConstable().get(),
-                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                ClassFile.ACC_PUBLIC,
                 it -> {
                     it.getstatic(thisClass, varHandleFieldName, ClassFileHelper.toDesc(VarHandle.class));
                     it.aload(0);
@@ -651,7 +674,7 @@ public class StructProxyGenerator {
         cb.withMethodBody(
                 "get" + upperFirstChar(field.getName()),
                 MethodType.methodType(NativeArray.class).describeConstable().get(),
-                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                ClassFile.ACC_PUBLIC,
                 it -> {
                     it.aload(0);
                     //MemorySegment realMemory = this.realMemory();
@@ -689,7 +712,7 @@ public class StructProxyGenerator {
         cb.withMethodBody(
                 "set" + upperFirstChar(field.getName()),
                 MethodType.methodType(void.class, NativeArray.class).describeConstable().get(),
-                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                ClassFile.ACC_PUBLIC,
                 it -> {
                     if (asPointer) {
                         generateSetPtr(it, offset);
@@ -702,7 +725,7 @@ public class StructProxyGenerator {
         cb.withMethodBody(
                 "set" + upperFirstChar(field.getName()),
                 MethodType.methodType(void.class, MemorySegment.class).describeConstable().get(),
-                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                ClassFile.ACC_PUBLIC,
                 it -> {
                     if (asPointer) {
                         generateSetPtr(it, offset);
@@ -740,7 +763,7 @@ public class StructProxyGenerator {
         cb.withMethodBody(
                 "get" + upperFirstChar(field.getName()),
                 MethodType.methodType(MemorySegment.class).describeConstable().get(),
-                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                ClassFile.ACC_PUBLIC,
                 it -> {
                     it.aload(0);
                     //MemorySegment realMemory = this.realMemory();
@@ -775,7 +798,7 @@ public class StructProxyGenerator {
         cb.withMethodBody(
                 "set" + upperFirstChar(field.getName()),
                 MethodType.methodType(void.class, MemorySegment.class).describeConstable().get(),
-                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                ClassFile.ACC_PUBLIC,
                 it -> {
                     if (pointer || pointerMarked) {
                         generateSetPtr(it, offset);
@@ -796,7 +819,7 @@ public class StructProxyGenerator {
         cb.withMethodBody(
                 "get" + upperFirstChar(field.getName()),
                 MethodType.methodType(field.getType()).describeConstable().get(),
-                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                ClassFile.ACC_PUBLIC,
                 it -> {
                     it.aload(0);
                     //MemorySegment realMemory = this.realMemory();
@@ -830,7 +853,7 @@ public class StructProxyGenerator {
         cb.withMethodBody(
                 "set" + upperFirstChar(field.getName()),
                 MethodType.methodType(void.class, field.getType()).describeConstable().get(),
-                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                ClassFile.ACC_PUBLIC,
                 it -> {
                     if (isPointer) {
                         generateSetPtr(it, offset);
@@ -843,7 +866,7 @@ public class StructProxyGenerator {
         cb.withMethodBody(
                 "set" + upperFirstChar(field.getName()),
                 MethodType.methodType(void.class, MemorySegment.class).describeConstable().get(),
-                AccessFlags.ofMethod(AccessFlag.PUBLIC).flagsMask(),
+                ClassFile.ACC_PUBLIC,
                 it -> {
                     if (isPointer) {
                         generateSetPtr(it, offset);

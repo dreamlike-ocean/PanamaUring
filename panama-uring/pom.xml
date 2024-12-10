@@ -5,7 +5,7 @@
     <parent>
         <artifactId>PanamaUring</artifactId>
         <groupId>io.github.dreamlike-ocean</groupId>
-        <version>1.0.4</version>
+        <version>1.0.5</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -235,9 +235,6 @@
                 <configuration>
                     <target>${java.version}</target>
                     <source>${java.version}</source>
-                    <compilerArgs>
-                        <compilerArg>--enable-preview</compilerArg>
-                    </compilerArgs>
                 </configuration>
             </plugin>
         </plugins>
