@@ -63,8 +63,8 @@ public class AsyncInotifyFd implements IoUringAsyncFd {
     }
 
     public CancelableFuture<Pair<OwnershipMemory, List<InotifyEvent>>> asyncPoll(OwnershipMemory buffer) {
-        return (CancelableFuture<Pair<OwnershipMemory,
-                List<InotifyEvent>>>) asyncRead(buffer, (int) buffer.resource().byteSize(), 0)
+        return (CancelableFuture<Pair<OwnershipMemory, List<InotifyEvent>>>)
+                asyncRead(buffer, (int) buffer.resource().byteSize(), 0)
                 .thenCompose(res -> res.syscallRes() < 0 ? CompletableFuture.failedFuture(new SyscallException(res.syscallRes())) : CompletableFuture.completedFuture(res))
                 .thenApply(res -> new Pair<>(buffer, parseEvents(res.buffer().resource(), res.syscallRes())));
     }

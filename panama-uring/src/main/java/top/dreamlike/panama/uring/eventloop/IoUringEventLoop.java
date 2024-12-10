@@ -13,6 +13,7 @@ import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.helper.OSIoUringProbe;
 import top.dreamlike.panama.uring.nativelib.libs.LibPoll;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
+import top.dreamlike.panama.uring.nativelib.libs.Libc;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufRingSetupResult;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingElement;
@@ -25,6 +26,7 @@ import top.dreamlike.panama.uring.nativelib.wrapper.IoUringCore;
 import top.dreamlike.panama.uring.sync.fd.EventFd;
 import top.dreamlike.panama.uring.sync.trait.PollableFd;
 import top.dreamlike.panama.uring.thirdparty.colletion.LongObjectHashMap;
+import top.dreamlike.panama.uring.thirdparty.colletion.LongObjectMap;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
 import java.lang.foreign.MemorySegment;
@@ -45,7 +47,7 @@ import java.util.function.Supplier;
 
 import static top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant.IORING_ASYNC_CANCEL_ALL;
 
-public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnable permits VTIoUringEventLoop, NettyEpollBridgeEventLoop {
+public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnable permits VTIoUringEventLoop, AbstractNettyBridgeEventLoop {
 
     protected static final AtomicInteger count = new AtomicInteger(0);
     protected static final LibUring libUring = Instance.LIB_URING;
@@ -66,7 +68,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     private final LongObjectHashMap<IoUringCompletionCallBack> callBackMap;
     private final PriorityQueue<ScheduledTask> scheduledTasks;
     protected IoUringCore ioUringCore;
-    private MemorySegment eventReadBuffer;
+    private final MemorySegment eventReadBuffer;
     private Consumer<Throwable> exceptionHandler = (t) -> {
         log.error("Uncaught exception in event loop", t);
     };
@@ -110,7 +112,9 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     }
 
     private void initWakeUpFdMultiShot() {
-        asyncOperation(this::registerWakeUpFd, _ -> initWakeUpFdMultiShot());
+      if (!closed()) {
+          asyncOperation(this::registerWakeUpFd, _ -> initWakeUpFdMultiShot());
+      }
     }
 
     @Override
@@ -137,6 +141,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
             }
             ioUringCore.processCqes(this::processCqes);
         }
+
         releaseResource();
     }
 
@@ -278,6 +283,9 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     }
 
     public CancelToken asyncOperation(Consumer<IoUringSqe> sqeFunction, Consumer<IoUringCqe> repeatableCallback, boolean neeSubmit) {
+        if (closed()) {
+            throw new IllegalStateException("event loop is closed");
+        }
         long token = tokenGenerator.getAndIncrement();
         IoUringCancelToken cancelToken = new IoUringCancelToken(token);
         Runnable r = () -> {
@@ -357,13 +365,24 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     }
 
     protected void releaseResource() {
-        this.wakeUpFd.close();
-        Instance.LIB_JEMALLOC.free(eventReadBuffer);
-        try {
-            ioUringCore.close();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+       try {
+           for (LongObjectMap.PrimitiveEntry<IoUringCompletionCallBack> entry : callBackMap.entries()) {
+               long userData = entry.key();
+               IoUringCompletionCallBack callBack = entry.value();
+               IoUringCqe fakeCqe = new IoUringCqe();
+               fakeCqe.setRes(-Libc.Error_H.ECANCELED);
+               fakeCqe.setUser_data(userData);
+               callBack.userCallBack.accept(fakeCqe);
+           }
+       } finally {
+           this.wakeUpFd.close();
+           Instance.LIB_JEMALLOC.free(eventReadBuffer);
+           try {
+               ioUringCore.close();
+           } catch (Exception e) {
+               throw new RuntimeException(e);
+           }
+       }
     }
 
     public boolean inEventLoop() {

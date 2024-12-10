@@ -25,6 +25,7 @@ public class KernelVersionCheckTest {
                 log.info("will setOpCode");
                 sqe.setOpcode(Byte.MAX_VALUE);
             });
+            Thread.sleep(1_000);
         } catch (Throwable r) {
             throw new RuntimeException(r);
         }

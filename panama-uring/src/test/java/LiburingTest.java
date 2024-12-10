@@ -14,7 +14,13 @@ import top.dreamlike.panama.uring.async.IoUringSyscallOwnershipResult;
 import top.dreamlike.panama.uring.async.IoUringSyscallResult;
 import top.dreamlike.panama.uring.async.cancel.CancelToken;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
-import top.dreamlike.panama.uring.async.fd.*;
+import top.dreamlike.panama.uring.async.fd.AsyncEventFd;
+import top.dreamlike.panama.uring.async.fd.AsyncFileFd;
+import top.dreamlike.panama.uring.async.fd.AsyncMultiShotTcpServerSocketFd;
+import top.dreamlike.panama.uring.async.fd.AsyncPipeFd;
+import top.dreamlike.panama.uring.async.fd.AsyncSplicer;
+import top.dreamlike.panama.uring.async.fd.AsyncTcpServerSocketFd;
+import top.dreamlike.panama.uring.async.fd.AsyncTcpSocketFd;
 import top.dreamlike.panama.uring.async.other.IoUringMadvise;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
@@ -25,18 +31,33 @@ import top.dreamlike.panama.uring.nativelib.libs.LibPoll;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
 import top.dreamlike.panama.uring.nativelib.libs.PosixBridge;
 import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCq;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringParams;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSq;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
 import top.dreamlike.panama.uring.sync.fd.PipeFd;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 import top.dreamlike.panama.uring.trait.OwnershipResource;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.StandardSocketOptions;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
@@ -150,9 +171,9 @@ public class LiburingTest {
                 Assert.assertEquals(helloIoUring, string);
             }
             Integer fsyncRes = fd.asyncFsync(0).get();
-            Assert.assertTrue(fsyncRes == 0);
+            Assert.assertEquals(0, (int) fsyncRes);
             fsyncRes = fd.asyncFsync(0, 0, (int) (str.byteSize() - 1)).get();
-            Assert.assertTrue(fsyncRes == 0);
+            Assert.assertEquals(0, (int) fsyncRes);
             //async read
             var readBuffer = new OwnershipMemoryForTest(arena.allocate(str.byteSize() - 1));
             Integer readRes = fd.asyncRead(readBuffer, (int) str.byteSize() - 1, 0).get().syscallRes();
@@ -180,7 +201,7 @@ public class LiburingTest {
             eventFd.eventfdWrite(1);
             OwnershipMemory memory = OwnershipMemory.of(allocator.allocate(ValueLayout.JAVA_LONG));
             var read = eventFd.asyncRead(memory, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
-            Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), (int) read.get().syscallRes());
+            Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), read.get().syscallRes());
             Assert.assertEquals(1, memory.resource().get(ValueLayout.JAVA_LONG, 0));
 
             //cancel Test:
@@ -202,7 +223,7 @@ public class LiburingTest {
             OwnershipResourceForTest<NativeArrayPointer<Iovec>> resource = new OwnershipResourceForTest<>(pointer);
             var readvRes = eventFd.asyncReadV(resource, 1, 0)
                     .get();
-            Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), (int) readvRes.syscallRes());
+            Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), readvRes.syscallRes());
             Assert.assertEquals(214, readBufferVec0.get(ValueLayout.JAVA_LONG, 0));
             Assert.assertTrue(resource.dontDrop());
 

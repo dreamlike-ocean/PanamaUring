@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.helper.JemallocAllocator;
+import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
@@ -30,9 +31,9 @@ public class IoUringCore implements AutoCloseable {
     private final IoUring internalRing;
     private final int cqeSize;
 
-    private MemorySegment cqePtrArray;
+    private final MemorySegment cqePtrArray;
 
-    private KernelTime64Type kernelTime64Type;
+    private final KernelTime64Type kernelTime64Type;
 
     public IoUringCore(Consumer<IoUringParams> ioUringParamsFactory) {
         MemorySegment ioUringMemory = Instance.LIB_JEMALLOC.malloc(IoUring.LAYOUT.byteSize());
@@ -138,5 +139,9 @@ public class IoUringCore implements AutoCloseable {
         ArrayList<IoUringCqe> list = new ArrayList<>();
         processCqes(list::add, false);
         return list;
+    }
+
+    static {
+        PanamaUringSecret.getCqSizeFromCore = c -> c.cqeSize;
     }
 }
