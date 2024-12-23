@@ -40,12 +40,20 @@ public class AsyncFileFd implements IoUringAsyncFd, IoUringSelectedReadableFd {
         this.fd = fd;
     }
 
-    public AsyncFileFd(IoUringEventLoop ioUringEventLoop, File file) throws IOException {
+    public AsyncFileFd(IoUringEventLoop ioUringEventLoop, File file){
+        this(ioUringEventLoop, open(file));
+    }
+
+    private static FileChannel open(File file) {
         if (!file.exists()) {
             throw new IllegalArgumentException("file not exists");
         }
-        FileChannel open = FileChannel.open(file.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE);
-        this(ioUringEventLoop, open);
+       try {
+           FileChannel open = FileChannel.open(file.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE);
+           return open;
+       } catch (IOException e) {
+           throw new RuntimeException(e);
+       }
     }
 
     public AsyncFileFd(IoUringEventLoop ioUringEventLoop, FileChannel fc) {
