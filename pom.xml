@@ -91,7 +91,6 @@
                             <!-- jdk1.8要加上，1.7要去掉，否则会报错 -->
                             <additionalJOptions>
                                 <additionalJOption>-Xdoclint:none</additionalJOption>
-                                <additonalJOption>--enable-preview</additonalJOption>
                             </additionalJOptions>
                         </configuration>
                         <executions>
@@ -189,7 +188,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M5</version>
                 <configuration>
-                    <argLine>--enable-preview</argLine>
                 </configuration>
             </plugin>
         </plugins>
