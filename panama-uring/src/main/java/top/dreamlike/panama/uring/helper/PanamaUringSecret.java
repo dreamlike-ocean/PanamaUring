@@ -9,13 +9,10 @@ import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingEle
 import top.dreamlike.panama.uring.nativelib.wrapper.IoUringCore;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
-import java.util.BitSet;
 import java.util.function.Function;
 
 public class PanamaUringSecret {
     public static Function<OwnershipMemory, IoUringBufferRingElement> lookupOwnershipBufferRingElement;
-
-    public static Function<IoUringBufferRing, BitSet> peekOccupyBitSet;
 
     public static Function<CancelToken, Long> peekCancelToken;
 

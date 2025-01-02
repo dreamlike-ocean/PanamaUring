@@ -569,11 +569,9 @@ public interface LibUring {
         sqe.setIoprio((short) (sqe.getIoprio() | IoUringConstant.IORING_RECV_MULTISHOT));
     }
 
-    default void io_uring_prep_recv_multishot(@Pointer IoUringSqe sqe, int sockfd, int flags, short bufferGroupId) {
+    default void io_uring_prep_recv_multishot(@Pointer IoUringSqe sqe, int sockfd, int flags) {
         io_uring_prep_recv(sqe, sockfd, MemorySegment.NULL, 0, flags);
         sqe.setIoprio((short) (sqe.getIoprio() | IoUringConstant.IORING_RECV_MULTISHOT));
-        sqe.setBufGroup(bufferGroupId);
-        sqe.setFlags((byte) (sqe.getFlags() | IoUringConstant.IOSQE_BUFFER_SELECT));
     }
 
     default void io_uring_prep_epoll_ctl(@Pointer IoUringSqe sqe, int epfd, int fd, int op, @Pointer NativeEpollEvent event) {

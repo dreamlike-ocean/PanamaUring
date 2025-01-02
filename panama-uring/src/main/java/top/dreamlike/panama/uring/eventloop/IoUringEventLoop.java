@@ -7,6 +7,7 @@ import top.dreamlike.panama.uring.async.cancel.CancelToken;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
 import top.dreamlike.panama.uring.helper.JemallocAllocator;
+import top.dreamlike.panama.uring.helper.MemoryAllocator;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
@@ -31,7 +32,6 @@ import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
-import java.util.BitSet;
 import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.concurrent.CompletableFuture;
@@ -470,47 +470,40 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     }
 
     private class InternalNativeIoUringRing implements IoUringBufferRing {
-        static {
-            PanamaUringSecret.peekOccupyBitSet = (r) -> ((InternalNativeIoUringRing) r).occupySet;
-        }
 
         private final NativeIoUringBufRing internal;
         private final short bufferGroupId;
-        private final OwnershipMemory base;
+        private final IoUringBufferRingElement[] buffers;
+        private final MemoryAllocator allocator;
         private final int count;
         private final int blockSize;
-        private final int mask;
-        private final BitSet occupySet;
         private boolean hasRelease = false;
+        private short hasAllocate;
 
         private InternalNativeIoUringRing(NativeIoUringBufRing internal, short bufferGroupId, int count, int blockSize) {
+            this(internal, bufferGroupId, count, blockSize, JemallocAllocator.INSTANCE);
+        }
+
+        private InternalNativeIoUringRing(NativeIoUringBufRing internal, short bufferGroupId, int count, int blockSize, MemoryAllocator allocator) {
             this.internal = internal;
             this.bufferGroupId = bufferGroupId;
             this.blockSize = blockSize;
             this.count = count;
-            this.mask = Instance.LIB_URING.io_uring_buf_ring_mask(count);
-            try (OwnershipMemory bufPtrPtr = Instance.LIB_JEMALLOC.mallocMemory(ValueLayout.ADDRESS.byteSize())) {
-                base = Instance.LIB_JEMALLOC.posixMemalign(bufPtrPtr.resource(), 4096, (long) blockSize * count);
-                MemorySegment blockBase = base.resource();
-                for (int i = 0; i < count; i++) {
-                    Instance.LIB_URING.io_uring_buf_ring_add(internal, blockBase, blockSize, (short) (i + 1), mask, i);
-                    blockBase = MemorySegment.ofAddress(blockBase.address() + blockSize);
-                }
-                Instance.LIB_URING.io_uring_buf_ring_advance(internal, count);
-                occupySet = new BitSet(count);
-            } catch (Throwable t) {
-                log.error("release memory failure!", t);
-                throw new IllegalStateException(t);
-            }
+            this.allocator = allocator;
+            this.hasAllocate = 0;
+            this.buffers = new IoUringBufferRingElement[count];
         }
 
         public IoUringBufferRingElement getMemoryByBid(int bid) {
-            if (bid > count || bid < 0) {
+            if (bid >= count || bid < 0) {
                 throw new IllegalArgumentException("bid must in (0," + count + ")");
             }
             assertClose();
-            MemorySegment element = MemorySegment.ofAddress(base.resource().address() + (long) (bid - 1) * blockSize).reinterpret(blockSize);
-            return new IoUringBufferRingElement(this, bid, element, occupySet.get(bid - 1));
+            IoUringBufferRingElement buffer = buffers[bid];
+            if (buffer == null) {
+                throw new IllegalStateException(bid + " buffer is null");
+            }
+            return buffer;
         }
 
         public CompletableFuture<IoUringBufferRingElement> removeBuffer(int bid) {
@@ -518,8 +511,10 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
                 if (bid > count || bid < 0) {
                     throw new IllegalArgumentException("bid must in (0," + count + ")");
                 }
-                occupySet.set(bid - 1);
-                return getMemoryByBid(bid);
+                IoUringBufferRingElement buffer = getMemoryByBid(bid);
+                IoUringBufferRingElement ioUringBufferRingElement = new IoUringBufferRingElement(this, bid, OwnershipMemory.of(buffer.element().resource()), true);
+                buffers[bid] = ioUringBufferRingElement;
+                return buffer;
             });
         }
 
@@ -529,12 +524,11 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
                     throw new IllegalArgumentException("The element is not belong to this ring");
                 }
                 int bid = element.bid();
-                if (!occupySet.get(bid - 1)) {
-                    throw new IllegalArgumentException("The element has been released");
-                }
-                Instance.LIB_URING.io_uring_buf_ring_add(internal, element.element(), blockSize, (short) bid, mask, 0);
+                IoUringBufferRingElement real = buffers[bid];
+                Instance.LIB_URING.io_uring_buf_ring_add(internal, real.element().resource(), blockSize, (short) bid, libUring.io_uring_buf_ring_mask(buffers.length), 0);
                 Instance.LIB_URING.io_uring_buf_ring_advance(internal, 1);
-                occupySet.clear(bid - 1);
+                IoUringBufferRingElement ioUringBufferRingElement = new IoUringBufferRingElement(this, bid, real.element(), false);
+                buffers[bid] = ioUringBufferRingElement;
                 return null;
             });
         }
@@ -542,6 +536,21 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         @Override
         public IoUringEventLoop owner() {
             return IoUringEventLoop.this;
+        }
+
+        @Override
+        public void fillSqe(IoUringSqe sqe) {
+            assertClose();
+            if (hasAllocate < count) {
+                OwnershipMemory memory = allocator.allocate(blockSize);
+                Instance.LIB_URING.io_uring_buf_ring_add(internal, memory.resource(), blockSize, hasAllocate, libUring.io_uring_buf_ring_mask(buffers.length), 0);
+                IoUringBufferRingElement ioUringBufferRingElement = new IoUringBufferRingElement(this, hasAllocate, memory, false);
+                buffers[hasAllocate] = ioUringBufferRingElement;
+                hasAllocate++;
+            }
+            //我们不校验是否有元素可以使用 直接填充
+            sqe.setFlags((byte) (sqe.getFlags() | IoUringConstant.IOSQE_BUFFER_SELECT));
+            sqe.setBufGroup(bufferGroupId);
         }
 
         private void assertClose() {
@@ -557,14 +566,24 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
                 assertClose();
                 Instance.LIB_URING.io_uring_unregister_buf_ring(internalRing, bufferGroupId);
                 hasRelease = true;
-                Instance.LIB_JEMALLOC.free(base.resource());
+                for (int i = 0; i < buffers.length; i++) {
+                    IoUringBufferRingElement ioUringBufferRingElement = buffers[i];
+                    if (ioUringBufferRingElement != null) {
+                        allocator.free(ioUringBufferRingElement.element());
+                    }
+                }
                 return null;
             });
         }
 
         //是否还有余量
         public boolean hasAvailableElements() {
-            return occupySet.cardinality() < count;
+            for (IoUringBufferRingElement ioUringBufferRingElement : buffers) {
+                if (ioUringBufferRingElement != null && !ioUringBufferRingElement.hasOccupy()) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override

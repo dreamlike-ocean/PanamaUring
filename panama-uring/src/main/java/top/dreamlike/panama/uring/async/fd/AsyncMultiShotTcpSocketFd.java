@@ -10,7 +10,6 @@ import top.dreamlike.panama.uring.helper.CloseHandle;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingElement;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
@@ -77,7 +76,7 @@ public class AsyncMultiShotTcpSocketFd implements IoUringSocketOperator {
 
     public CancelToken asyncRecvMulti(int flag, IoUringBufferRing bufferRing, Consumer<IoUringSyscallResult<OwnershipMemory>> handleRecv) {
         return ioUringEventLoop.asyncOperation(
-                sqe -> fillMultiOp(sqe, flag, bufferRing.getBufferGroupId()),
+                sqe -> fillMultiOp(sqe, flag, bufferRing),
                 cqe -> {
                     IoUringSyscallResult<OwnershipMemory> result;
                     if (cqe.getRes() < 0) {
@@ -91,12 +90,12 @@ public class AsyncMultiShotTcpSocketFd implements IoUringSocketOperator {
     }
 
     private OwnershipMemory parseCqe(IoUringCqe cqe) {
-        IoUringBufferRingElement memoryByBid = bufferRing.removeBuffer(cqe.getBid()).resultNow();
-        return new OwnershipBufferRingElement(memoryByBid, cqe.getRes());
+        return bufferRing.removeBuffer(cqe.getBid()).resultNow();
     }
 
-    private void fillMultiOp(IoUringSqe sqe, int flag, short bufferGroupId) {
-        Instance.LIB_URING.io_uring_prep_recv_multishot(sqe, fd, flag, bufferGroupId);
+    private void fillMultiOp(IoUringSqe sqe, int flag, IoUringBufferRing ring) {
+        Instance.LIB_URING.io_uring_prep_recv_multishot(sqe, fd, flag);
+        ring.fillSqe(sqe);
     }
 
     @Override

@@ -1,12 +1,13 @@
 package top.dreamlike.panama.uring.helper;
 
 import top.dreamlike.panama.uring.nativelib.Instance;
+import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
 
-public class JemallocAllocator implements SegmentAllocator {
+public class JemallocAllocator implements SegmentAllocator, MemoryAllocator {
     private final static int pageSize = Instance.LIBC.getpagesize();
     private static final long MAX_MALLOC_ALIGN = ValueLayout.ADDRESS.byteSize() == 4 ? 8 : 16;
 
@@ -22,5 +23,10 @@ public class JemallocAllocator implements SegmentAllocator {
 
     public void free(MemorySegment segment) {
         Instance.LIB_JEMALLOC.free(segment);
+    }
+
+    @Override
+    public OwnershipMemory allocate(int size) {
+        return Instance.LIB_JEMALLOC.mallocMemory(size);
     }
 }
