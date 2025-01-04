@@ -6,14 +6,14 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
 public interface MemoryAllocator {
-    OwnershipMemory allocate(int size);
+    OwnershipMemory allocateOwnerShipMemory(long size);
     default void free(OwnershipMemory memory) {
         memory.drop();
     }
 
     MemoryAllocator JDK_SINGLE_THREAD = new MemoryAllocator() {
         @Override
-        public OwnershipMemory allocate(int size) {
+        public OwnershipMemory allocateOwnerShipMemory(long size) {
             Arena arena = Arena.ofConfined();
             MemorySegment memorySegment = arena.allocate(size);
             return new OwnershipMemory() {
@@ -32,7 +32,7 @@ public interface MemoryAllocator {
 
     MemoryAllocator JDK_MULTI_THREAD = new MemoryAllocator() {
         @Override
-        public OwnershipMemory allocate(int size) {
+        public OwnershipMemory allocateOwnerShipMemory(long size) {
             Arena arena = Arena.ofShared();
             MemorySegment memorySegment = arena.allocate(size);
             return new OwnershipMemory() {

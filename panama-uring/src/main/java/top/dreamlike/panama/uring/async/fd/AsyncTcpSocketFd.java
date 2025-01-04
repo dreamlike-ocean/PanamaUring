@@ -210,7 +210,7 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, IoUringSelectedReadable
             } else {
                 int bid = cqe.getBid();
                 IoUringBufferRingElement ringElement = LambdaHelper.runWithThrowable(() -> bufferRing.removeBuffer(bid).get());
-                return CompletableFuture.completedFuture(IoUringSelectedReadableFd.borrowUringBufferRingElement(ringElement, syscallResult));
+                return CompletableFuture.completedFuture(IoUringSelectedReadableFd.reinterpretUringBufferRingElement(ringElement, syscallResult));
             }
         });
 

@@ -10,6 +10,7 @@ import top.dreamlike.panama.uring.helper.CloseHandle;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingElement;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
@@ -90,7 +91,8 @@ public class AsyncMultiShotTcpSocketFd implements IoUringSocketOperator {
     }
 
     private OwnershipMemory parseCqe(IoUringCqe cqe) {
-        return bufferRing.removeBuffer(cqe.getBid()).resultNow();
+        IoUringBufferRingElement ioUringBufferRingElement = bufferRing.removeBuffer(cqe.getBid()).resultNow();
+        return IoUringSelectedReadableFd.reinterpretUringBufferRingElement(ioUringBufferRingElement,cqe.getRes());
     }
 
     private void fillMultiOp(IoUringSqe sqe, int flag, IoUringBufferRing ring) {

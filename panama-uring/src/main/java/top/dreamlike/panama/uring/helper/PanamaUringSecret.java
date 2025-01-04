@@ -12,8 +12,7 @@ import top.dreamlike.panama.uring.trait.OwnershipMemory;
 import java.util.function.Function;
 
 public class PanamaUringSecret {
-    public static Function<OwnershipMemory, IoUringBufferRingElement> lookupOwnershipBufferRingElement;
-
+    public final static Function<OwnershipMemory, IoUringBufferRingElement> lookupOwnershipBufferRingElement = memory -> (IoUringBufferRingElement) memory;
     public static Function<CancelToken, Long> peekCancelToken;
 
     public static Function<IoUringEventLoop, IoUring> findUring;

@@ -67,8 +67,9 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     private final AtomicLong tokenGenerator;
     private final LongObjectHashMap<IoUringCompletionCallBack> callBackMap;
     private final PriorityQueue<ScheduledTask> scheduledTasks;
-    protected IoUringCore ioUringCore;
     private final MemorySegment eventReadBuffer;
+    private final MemoryAllocator memoryAllocator;
+    protected IoUringCore ioUringCore;
     private Consumer<Throwable> exceptionHandler = (t) -> {
         log.error("Uncaught exception in event loop", t);
     };
@@ -79,14 +80,19 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
             Thread thread = new Thread(r);
             thread.setName("IoUringEventLoop-" + count.incrementAndGet());
             return thread;
-        });
+        }, MemoryAllocator.JDK_MULTI_THREAD);
     }
 
     public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory, ThreadFactory factory) {
+        this(ioUringParamsFactory, factory, MemoryAllocator.JDK_MULTI_THREAD);
+    }
+
+    public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory, ThreadFactory factory, MemoryAllocator allocator) {
         this.wakeUpFd = new EventFd(0, 0);
         log.info("wakeupFd: {}", wakeUpFd);
         this.taskQueue = new MpscUnboundedArrayQueue<>(1024);
         this.hasClosed = new AtomicBoolean();
+        this.memoryAllocator = allocator;
         this.tokenGenerator = new AtomicLong(0);
         this.callBackMap = new LongObjectHashMap<>();
         this.scheduledTasks = new PriorityQueue<>();
@@ -112,9 +118,9 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     }
 
     private void initWakeUpFdMultiShot() {
-      if (!closed()) {
-          asyncOperation(this::registerWakeUpFd, _ -> initWakeUpFdMultiShot());
-      }
+        if (!closed()) {
+            asyncOperation(this::registerWakeUpFd, _ -> initWakeUpFdMultiShot());
+        }
     }
 
     @Override
@@ -186,11 +192,15 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         }
     }
 
+    public CompletableFuture<IoUringBufRingSetupResult> setupBufferRing(int entries, int blockSize, short bufferGroupId) {
+        return setupBufferRing(entries, blockSize, bufferGroupId, 0);
+    }
+
     /**
      * @param entries       entries 是缓冲区环中请求的条目数。该参数的大小必须是 2 的幂。
      * @param bufferGroupId bgid 是所选的缓冲区组 ID
      */
-    public CompletableFuture<IoUringBufRingSetupResult> setupBufferRing(int entries, int blockSize, short bufferGroupId) {
+    public CompletableFuture<IoUringBufRingSetupResult> setupBufferRing(int entries, int blockSize, short bufferGroupId, int initCount) {
         if (entries <= 0) {
             throw new IllegalArgumentException("entries must be greater than 0");
         }
@@ -200,19 +210,23 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         entries = (entries < 0) ? 1 : (entries >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : entries + 1;
         int internalEntries = entries;
         return runOnEventLoop(() -> {
-            MemorySegment resPtr = null;
+            OwnershipMemory resPtr = null;
             try {
-                resPtr = Instance.LIB_JEMALLOC.malloc(ValueLayout.JAVA_LONG.byteSize());
-                NativeIoUringBufRing bufRing = libUring.io_uring_setup_buf_ring(internalRing, internalEntries, bufferGroupId, 0, resPtr);
-                int res = resPtr.get(ValueLayout.JAVA_INT, 0);
+                resPtr = memoryAllocator.allocateOwnerShipMemory(ValueLayout.JAVA_LONG.byteSize());
+                NativeIoUringBufRing bufRing = libUring.io_uring_setup_buf_ring(internalRing, internalEntries, bufferGroupId, 0, resPtr.resource());
+                int res = resPtr.resource().get(ValueLayout.JAVA_INT, 0);
                 if (res < 0) {
                     return new IoUringBufRingSetupResult(res, null);
                 }
-                InternalNativeIoUringRing bufferRing = new InternalNativeIoUringRing(bufRing, bufferGroupId, internalEntries, blockSize);
+                InternalNativeIoUringRing bufferRing = new InternalNativeIoUringRing(bufRing, bufferGroupId, internalEntries, blockSize, memoryAllocator);
+
+                int needInit = Math.min(initCount, internalEntries);
+                bufferRing.appendBuffer(needInit);
+
                 return new IoUringBufRingSetupResult(res, bufferRing);
             } finally {
                 if (resPtr != null) {
-                    Instance.LIB_JEMALLOC.free(resPtr);
+                    resPtr.drop();
                 }
             }
         });
@@ -365,24 +379,24 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     }
 
     protected void releaseResource() {
-       try {
-           for (LongObjectMap.PrimitiveEntry<IoUringCompletionCallBack> entry : callBackMap.entries()) {
-               long userData = entry.key();
-               IoUringCompletionCallBack callBack = entry.value();
-               IoUringCqe fakeCqe = new IoUringCqe();
-               fakeCqe.setRes(-Libc.Error_H.ECANCELED);
-               fakeCqe.setUser_data(userData);
-               callBack.userCallBack.accept(fakeCqe);
-           }
-       } finally {
-           this.wakeUpFd.close();
-           Instance.LIB_JEMALLOC.free(eventReadBuffer);
-           try {
-               ioUringCore.close();
-           } catch (Exception e) {
-               throw new RuntimeException(e);
-           }
-       }
+        try {
+            for (LongObjectMap.PrimitiveEntry<IoUringCompletionCallBack> entry : callBackMap.entries()) {
+                long userData = entry.key();
+                IoUringCompletionCallBack callBack = entry.value();
+                IoUringCqe fakeCqe = new IoUringCqe();
+                fakeCqe.setRes(-Libc.Error_H.ECANCELED);
+                fakeCqe.setUser_data(userData);
+                callBack.userCallBack.accept(fakeCqe);
+            }
+        } finally {
+            this.wakeUpFd.close();
+            Instance.LIB_JEMALLOC.free(eventReadBuffer);
+            try {
+                ioUringCore.close();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public boolean inEventLoop() {
@@ -480,10 +494,6 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         private boolean hasRelease = false;
         private short hasAllocate;
 
-        private InternalNativeIoUringRing(NativeIoUringBufRing internal, short bufferGroupId, int count, int blockSize) {
-            this(internal, bufferGroupId, count, blockSize, JemallocAllocator.INSTANCE);
-        }
-
         private InternalNativeIoUringRing(NativeIoUringBufRing internal, short bufferGroupId, int count, int blockSize, MemoryAllocator allocator) {
             this.internal = internal;
             this.bufferGroupId = bufferGroupId;
@@ -542,15 +552,26 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         public void fillSqe(IoUringSqe sqe) {
             assertClose();
             if (hasAllocate < count) {
-                OwnershipMemory memory = allocator.allocate(blockSize);
-                Instance.LIB_URING.io_uring_buf_ring_add(internal, memory.resource(), blockSize, hasAllocate, libUring.io_uring_buf_ring_mask(buffers.length), 0);
-                IoUringBufferRingElement ioUringBufferRingElement = new IoUringBufferRingElement(this, hasAllocate, memory, false);
-                buffers[hasAllocate] = ioUringBufferRingElement;
-                hasAllocate++;
+                appendBuffer(1);
             }
             //我们不校验是否有元素可以使用 直接填充
             sqe.setFlags((byte) (sqe.getFlags() | IoUringConstant.IOSQE_BUFFER_SELECT));
             sqe.setBufGroup(bufferGroupId);
+        }
+
+        private void appendBuffer(int count) {
+            if (count <= 0) {
+                return;
+            }
+
+            for (int i = 0; i < count; i++) {
+                OwnershipMemory memory = allocator.allocateOwnerShipMemory(blockSize);
+                Instance.LIB_URING.io_uring_buf_ring_add(internal, memory.resource(), blockSize, hasAllocate, libUring.io_uring_buf_ring_mask(buffers.length), i);
+                IoUringBufferRingElement ioUringBufferRingElement = new IoUringBufferRingElement(this, hasAllocate, memory, false);
+                buffers[hasAllocate] = ioUringBufferRingElement;
+                hasAllocate++;
+            }
+            Instance.LIB_URING.io_uring_buf_ring_advance(internal, count);
         }
 
         private void assertClose() {

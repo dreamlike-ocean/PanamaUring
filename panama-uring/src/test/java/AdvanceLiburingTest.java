@@ -21,7 +21,12 @@ import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.helper.OSIoUringProbe;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufRingSetupResult;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingElement;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringParams;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
 import java.io.File;
@@ -38,7 +43,14 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -90,7 +102,7 @@ public class AdvanceLiburingTest {
             String actual = NativeHelper.bufToString(memory.resource(), (int) memory.resource().byteSize());
             Assert.assertEquals(hello, actual);
 
-            IoUringBufferRingElement ringElement = PanamaUringSecret.lookupOwnershipBufferRingElement.apply(memory);
+            IoUringBufferRingElement ringElement = (IoUringBufferRingElement) memory;
             int bid = ringElement.bid();
             Assert.assertEquals(bufferRing, ringElement.ring());
             Assert.assertTrue(bufferRing.getMemoryByBid(bid).hasOccupy());
@@ -130,7 +142,7 @@ public class AdvanceLiburingTest {
             Assert.assertNotNull(bufferRing);
             Assert.assertFalse(ringSetupResult.res() < 0);
 
-            Path udsPath = Path.of(NativeHelper.JAVA_IO_TMPDIR).resolve(UUID.randomUUID().toString() + ".sock");
+            Path udsPath = Path.of(NativeHelper.JAVA_IO_TMPDIR).resolve(UUID.randomUUID() + ".sock");
             UnixDomainSocketAddress address = UnixDomainSocketAddress.of(udsPath);
             ArrayBlockingQueue<SocketChannel> oneshot = new ArrayBlockingQueue<>(1);
             CountDownLatch listenCondition = new CountDownLatch(1);
@@ -223,7 +235,7 @@ public class AdvanceLiburingTest {
     @Timeout(value = 2, unit = TimeUnit.SECONDS)
     public void testMultiRecv() throws Exception {
         log.info("start testMultiRecv");
-        Path udsPath = Path.of(NativeHelper.JAVA_IO_TMPDIR).resolve(UUID.randomUUID().toString() + ".sock");
+        Path udsPath = Path.of(NativeHelper.JAVA_IO_TMPDIR).resolve(UUID.randomUUID() + ".sock");
         UnixDomainSocketAddress address = UnixDomainSocketAddress.of(udsPath);
         ServerSocketChannel serverChannel = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
         serverChannel.bind(address);
@@ -241,7 +253,7 @@ public class AdvanceLiburingTest {
             Integer connectRes = socketFd.asyncConnect().get();
             Assert.assertTrue(connectRes >= 0);
 
-            IoUringBufRingSetupResult result = eventLoop.setupBufferRing(4, 1024, (short) 1).get();
+            IoUringBufRingSetupResult result = eventLoop.setupBufferRing(4, 1024, (short) 1, 4).get();
             Assert.assertNotNull(result.bufRing());
             Assert.assertTrue(result.res() >= 0);
 
@@ -264,15 +276,18 @@ public class AdvanceLiburingTest {
                     cancelCondition.countDown();
                     return;
                 }
+                Assert.assertTrue(event.res() >= 0);
                 OwnershipMemory memory = event.value();
                 String hello = NativeHelper.bufToString(memory.resource(), (int) memory.resource().byteSize());
+
+                memory.drop();
                 strings.offer(new Pair<>(hello, memory));
             });
             Consumer<Pair<String, OwnershipMemory>> checker = (p) -> {
                 String msg = p.t1();
                 OwnershipMemory element = p.t2();
                 Assert.assertTrue(checkMsgSet.contains(msg));
-                IoUringBufferRingElement ringElement = PanamaUringSecret.lookupOwnershipBufferRingElement.apply(element);
+                IoUringBufferRingElement ringElement = (IoUringBufferRingElement) element;
                 Assert.assertTrue(ringElement.hasOccupy());
                 element.drop();
                 Assert.assertFalse(ringElement.ring().getMemoryByBid(ringElement.bid()).hasOccupy());

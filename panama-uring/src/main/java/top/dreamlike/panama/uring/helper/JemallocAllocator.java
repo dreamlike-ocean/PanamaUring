@@ -26,7 +26,7 @@ public class JemallocAllocator implements SegmentAllocator, MemoryAllocator {
     }
 
     @Override
-    public OwnershipMemory allocate(int size) {
+    public OwnershipMemory allocateOwnerShipMemory(long size) {
         return Instance.LIB_JEMALLOC.mallocMemory(size);
     }
 }

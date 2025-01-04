@@ -702,7 +702,6 @@ public interface LibUring {
 
     default int io_uring_cq_ready(@Pointer IoUring ring) {
         MemorySegment realMemory = StructProxyGenerator.findMemorySegment(ring);
-        System.out.println(realMemory);
         return (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KTAIL_DEFERENCE_VARHANDLE.get(realMemory, 0L)
                 - (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KHEAD_DEFERENCE_VARHANDLE.get(realMemory, 0L);
     }

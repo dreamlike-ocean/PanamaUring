@@ -31,7 +31,7 @@ public interface IoUringSelectedReadableFd extends IoUringOperator, NativeFd {
                         int readLen = syscallResult;
                         int bid = cqe.getBid();
                         IoUringBufferRingElement ringElement = bufferRing.removeBuffer(bid).resultNow();
-                        return CompletableFuture.completedFuture(borrowUringBufferRingElement(ringElement, readLen));
+                        return CompletableFuture.completedFuture(reinterpretUringBufferRingElement(ringElement, readLen));
                     }
                 }, r -> owner().runOnEventLoop(r));
     }
@@ -51,14 +51,14 @@ public interface IoUringSelectedReadableFd extends IoUringOperator, NativeFd {
                         int readLen = cqe.getRes();
                         int bid = cqe.getBid();
                         IoUringBufferRingElement ringElement = bufferRing.removeBuffer(bid).resultNow();
-                        result = new IoUringSyscallResult<>(cqe.getRes(), borrowUringBufferRingElement(ringElement, readLen));
+                        result = new IoUringSyscallResult<>(cqe.getRes(), reinterpretUringBufferRingElement(ringElement, readLen));
                     }
                     return result;
                 }, r -> owner().runOnEventLoop(r));
 
     }
 
-    static OwnershipMemory borrowUringBufferRingElement(IoUringBufferRingElement ringElement, int len) {
+    static OwnershipMemory reinterpretUringBufferRingElement(IoUringBufferRingElement ringElement, int len) {
         OwnershipMemory element = ringElement.element();
         element = OwnershipMemory.of(element.resource().reinterpret(len));
         return new IoUringBufferRingElement(ringElement.ring(), ringElement.bid(), element, true);
