@@ -2,18 +2,22 @@ package top.dreamlike.panama.uring.sync.fd;
 
 import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
 import top.dreamlike.panama.uring.helper.EpollEvent;
+import top.dreamlike.panama.uring.helper.MemoryAllocator;
 import top.dreamlike.panama.uring.helper.Unsafe;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.struct.epoll.NativeEpollEvent;
 import top.dreamlike.panama.uring.sync.trait.NativeFd;
 import top.dreamlike.panama.uring.sync.trait.PollableFd;
+import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
 import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class EpollFd implements NativeFd, PollableFd {
 
@@ -23,7 +27,15 @@ public class EpollFd implements NativeFd, PollableFd {
 
     private final NativeArrayPointer<NativeEpollEvent> base;
 
+    private final NativeEpollEvent nativeEpollEvent;
+
+    private final OwnershipMemory rawEpollEventArray;
+
+    private final OwnershipMemory rawEpollEventPtr;
+
     private final AtomicBoolean closed = new AtomicBoolean(false);
+
+    private final Lock ctlLock;
 
     public EpollFd(int flag, int maxEvent) {
         int epoll_create = Instance.LIB_EPOLL.epoll_create(flag);
@@ -32,8 +44,11 @@ public class EpollFd implements NativeFd, PollableFd {
         }
         this.epfd = epoll_create;
         this.maxEvent = maxEvent;
-        MemorySegment base = Instance.LIB_JEMALLOC.malloc(maxEvent * NativeEpollEvent.LAYOUT.byteSize());
-        this.base = new NativeArrayPointer<>(Instance.STRUCT_PROXY_GENERATOR, base);
+        this.rawEpollEventArray = MemoryAllocator.LIBC_MALLOC.allocateOwnerShipMemory(maxEvent * NativeEpollEvent.LAYOUT.byteSize());
+        this.rawEpollEventPtr = MemoryAllocator.LIBC_MALLOC.allocateOwnerShipMemory(NativeEpollEvent.LAYOUT.byteSize());
+        this.base = new NativeArrayPointer<>(Instance.STRUCT_PROXY_GENERATOR, rawEpollEventArray.resource());
+        this.nativeEpollEvent = Instance.STRUCT_PROXY_GENERATOR.enhance(rawEpollEventPtr.resource());
+        this.ctlLock = new ReentrantLock();
     }
 
     public EpollFd() {
@@ -41,15 +56,20 @@ public class EpollFd implements NativeFd, PollableFd {
     }
 
     public int epollCtl(PollableFd targetFd, int op, EpollEvent event) {
-        try (var nativeEvent = Instance.LIB_JEMALLOC.mallocMemory(NativeEpollEvent.LAYOUT.byteSize())) {
-            MemorySegment memorySegment = nativeEvent.resource();
-            NativeEpollEvent e = Instance.STRUCT_PROXY_GENERATOR.enhance(memorySegment);
-            e.setEvents(event.events());
-            e.setU64(event.data());
-            return Instance.LIB_EPOLL.epoll_ctl(epfd, op, targetFd.fd(), e);
-        } catch (Exception t) {
-            throw new IllegalArgumentException("epoll_ctl failed, error: " + NativeHelper.currentErrorStr());
+        if (closed.get()) {
+            throw new IllegalArgumentException("epoll fd is closed");
         }
+        ctlLock.lock();
+
+        try {
+            MemorySegment nativeStruct = rawEpollEventPtr.resource();
+            NativeEpollEvent.U64_VH.set(nativeStruct, 0L, event.data());
+            NativeEpollEvent.EVENTS_VH.set(nativeStruct, 0L, event.events());
+            return Instance.LIB_EPOLL.epoll_ctl(epfd, op, targetFd.fd(), this.nativeEpollEvent);
+        } finally {
+            ctlLock.unlock();
+        }
+
     }
 
     @Unsafe("Not Thread Safe")
@@ -92,7 +112,8 @@ public class EpollFd implements NativeFd, PollableFd {
     public void close() {
         if (closed.compareAndSet(false, true)) {
             Instance.LIBC.close(epfd);
-            Instance.LIB_JEMALLOC.free(base.address());
+            rawEpollEventArray.drop();
+            rawEpollEventPtr.drop();
         }
     }
 }

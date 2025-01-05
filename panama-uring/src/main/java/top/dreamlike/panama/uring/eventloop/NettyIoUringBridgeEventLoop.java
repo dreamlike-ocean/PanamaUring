@@ -44,7 +44,7 @@ public class NettyIoUringBridgeEventLoop extends AbstractNettyBridgeEventLoop im
                     new IoUringIoOps(
                             IoUringConstant.Opcode.IORING_OP_READ,
                             0, (short) 0, nettyFd.intValue(), 0,
-                            cqeReadyMemory.address(), (int) ValueLayout.JAVA_LONG.byteSize(),
+                            cqeReadyMemory.resource().address(), (int) ValueLayout.JAVA_LONG.byteSize(),
                             0, (short) 0
                     )
             );

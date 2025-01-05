@@ -3,8 +3,8 @@ package top.dreamlike.panama.uring.nativelib.wrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
-import top.dreamlike.panama.uring.helper.JemallocAllocator;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
+import top.dreamlike.panama.uring.helper.Unsafe;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
+@Unsafe("only single Thread")
 public class IoUringCore implements AutoCloseable {
 
     protected static final LibUring libUring = Instance.LIB_URING;
@@ -36,8 +37,8 @@ public class IoUringCore implements AutoCloseable {
     private final KernelTime64Type kernelTime64Type;
 
     public IoUringCore(Consumer<IoUringParams> ioUringParamsFactory) {
-        MemorySegment ioUringMemory = Instance.LIB_JEMALLOC.malloc(IoUring.LAYOUT.byteSize());
-        MemorySegment ioUringParamMemory = Instance.LIB_JEMALLOC.malloc(IoUringParams.LAYOUT.byteSize());
+        MemorySegment ioUringMemory = Instance.LIBC_MALLOC.malloc(IoUring.LAYOUT.byteSize());
+        MemorySegment ioUringParamMemory = Instance.LIBC_MALLOC.malloc(IoUringParams.LAYOUT.byteSize());
 
         this.internalRing = Instance.STRUCT_PROXY_GENERATOR.enhance(ioUringMemory);
         IoUringParams ioUringParams = Instance.STRUCT_PROXY_GENERATOR.enhance(ioUringParamMemory);
@@ -46,16 +47,18 @@ public class IoUringCore implements AutoCloseable {
         try {
             int initRes = Instance.LIB_URING.io_uring_queue_init_params(ioUringParams.getSq_entries(), internalRing, ioUringParams);
             if (initRes < 0) {
-                Instance.LIB_JEMALLOC.free(ioUringMemory);
+                Instance.LIBC_MALLOC.free(ioUringMemory);
                 throw new SyscallException(initRes);
             }
             int uringFd = this.internalRing.getRing_fd();
             ioUringFds.add(uringFd);
             this.cqeSize = ioUringParams.getCq_entries();
-            this.cqePtrArray = JemallocAllocator.INSTANCE.allocate(ValueLayout.ADDRESS, cqeSize);
-            this.kernelTime64Type = Instance.STRUCT_PROXY_GENERATOR.allocate(JemallocAllocator.INSTANCE, KernelTime64Type.class);
+            this.cqePtrArray = Instance.LIBC_MALLOC.malloc(ValueLayout.ADDRESS.byteSize() * cqeSize);
+            this.kernelTime64Type = Instance.STRUCT_PROXY_GENERATOR.enhance(
+                    Instance.LIBC_MALLOC.malloc(KernelTime64Type.LAYOUT.byteSize())
+            );
         } finally {
-            Instance.LIB_JEMALLOC.free(ioUringParamMemory);
+            Instance.LIBC_MALLOC.free(ioUringParamMemory);
         }
     }
 
@@ -71,10 +74,10 @@ public class IoUringCore implements AutoCloseable {
     public void close() throws Exception {
         Instance.LIB_URING.io_uring_queue_exit(internalRing);
         MemorySegment ioUringMemory = StructProxyGenerator.findMemorySegment(internalRing);
-        Instance.LIB_JEMALLOC.free(ioUringMemory);
-        Instance.LIB_JEMALLOC.free(cqePtrArray);
-        MemorySegment kernelTime64Type = StructProxyGenerator.findMemorySegment(internalRing);
-        Instance.LIB_JEMALLOC.free(kernelTime64Type);
+        Instance.LIBC_MALLOC.free(ioUringMemory);
+        Instance.LIBC_MALLOC.free(cqePtrArray);
+        MemorySegment kernelTime64Type = StructProxyGenerator.findMemorySegment(this.kernelTime64Type);
+        Instance.LIBC_MALLOC.free(kernelTime64Type);
     }
 
     public IoUring getInternalRing() {

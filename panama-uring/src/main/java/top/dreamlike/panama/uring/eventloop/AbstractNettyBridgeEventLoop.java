@@ -7,15 +7,14 @@ import io.netty.channel.unix.FileDescriptor;
 import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import top.dreamlike.panama.uring.helper.JemallocAllocator;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringParams;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
 import top.dreamlike.panama.uring.sync.fd.EventFd;
+import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
-import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +27,7 @@ public non-sealed abstract class AbstractNettyBridgeEventLoop extends IoUringEve
     private final SingleThreadIoEventLoop eventLoop;
 
     protected final EventFd cqeReadyEventFd;
-    protected final MemorySegment cqeReadyMemory;
+    protected final OwnershipMemory cqeReadyMemory;
     protected final FileDescriptor nettyFd;
     protected IoRegistration registration;
     protected final CountDownLatch shutdownLatch = new CountDownLatch(1);
@@ -48,7 +47,7 @@ public non-sealed abstract class AbstractNettyBridgeEventLoop extends IoUringEve
             throw new SyscallException(sysCall);
         }
 
-        this.cqeReadyMemory = JemallocAllocator.INSTANCE.allocate(ValueLayout.JAVA_LONG);
+        this.cqeReadyMemory = memoryAllocator.allocateOwnerShipMemory(ValueLayout.JAVA_LONG.byteSize());
         this.nettyFd = new FileDescriptor(cqeReadyEventFd.fd());
         IoHandle handle = ioHandle();
         Future<IoRegistration> future = eventLoop.register(handle);
@@ -128,7 +127,7 @@ public non-sealed abstract class AbstractNettyBridgeEventLoop extends IoUringEve
                }
            }
            Instance.LIBC.close(cqeReadyEventFd.fd());
-           Instance.LIB_JEMALLOC.free(cqeReadyMemory);
+           cqeReadyMemory.drop();
            shutdownLatch.countDown();
        });
     }

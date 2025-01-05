@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import top.dreamlike.panama.uring.async.cancel.CancelToken;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
-import top.dreamlike.panama.uring.helper.JemallocAllocator;
 import top.dreamlike.panama.uring.helper.MemoryAllocator;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
@@ -30,7 +29,6 @@ import top.dreamlike.panama.uring.thirdparty.colletion.LongObjectHashMap;
 import top.dreamlike.panama.uring.thirdparty.colletion.LongObjectMap;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
-import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.Objects;
 import java.util.PriorityQueue;
@@ -67,8 +65,8 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     private final AtomicLong tokenGenerator;
     private final LongObjectHashMap<IoUringCompletionCallBack> callBackMap;
     private final PriorityQueue<ScheduledTask> scheduledTasks;
-    private final MemorySegment eventReadBuffer;
-    private final MemoryAllocator memoryAllocator;
+    private final OwnershipMemory eventReadBuffer;
+    protected final MemoryAllocator<? extends OwnershipMemory> memoryAllocator;
     protected IoUringCore ioUringCore;
     private Consumer<Throwable> exceptionHandler = (t) -> {
         log.error("Uncaught exception in event loop", t);
@@ -80,14 +78,14 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
             Thread thread = new Thread(r);
             thread.setName("IoUringEventLoop-" + count.incrementAndGet());
             return thread;
-        }, MemoryAllocator.JDK_MULTI_THREAD);
+        }, MemoryAllocator.LIBC_MALLOC);
     }
 
     public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory, ThreadFactory factory) {
-        this(ioUringParamsFactory, factory, MemoryAllocator.JDK_MULTI_THREAD);
+        this(ioUringParamsFactory, factory, MemoryAllocator.LIBC_MALLOC);
     }
 
-    public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory, ThreadFactory factory, MemoryAllocator allocator) {
+    public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory, ThreadFactory factory, MemoryAllocator<? extends OwnershipMemory> allocator) {
         this.wakeUpFd = new EventFd(0, 0);
         log.info("wakeupFd: {}", wakeUpFd);
         this.taskQueue = new MpscUnboundedArrayQueue<>(1024);
@@ -99,7 +97,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         this.ioUringCore = new IoUringCore(ioUringParamsFactory);
         this.internalRing = ioUringCore.getInternalRing();
         this.owner = factory.newThread(this);
-        this.eventReadBuffer = JemallocAllocator.INSTANCE.allocate(ValueLayout.JAVA_LONG);
+        this.eventReadBuffer = memoryAllocator.allocateOwnerShipMemory(ValueLayout.JAVA_LONG.byteSize());
         if (needWakeUpFd()) {
             initWakeUpFdMultiShot();
         }
@@ -114,7 +112,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     }
 
     private void registerWakeUpFd(IoUringSqe sqe) {
-        libUring.io_uring_prep_read(sqe, wakeUpFd.fd(), eventReadBuffer, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
+        libUring.io_uring_prep_read(sqe, wakeUpFd.fd(), eventReadBuffer.resource(), (int) ValueLayout.JAVA_LONG.byteSize(), 0);
     }
 
     private void initWakeUpFdMultiShot() {
@@ -292,6 +290,10 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         return asyncOperation(sqe -> libUring.io_uring_prep_msg_ring(sqe, otherRingFd, message, userData, 0));
     }
 
+    public MemoryAllocator<? extends OwnershipMemory> getMemoryAllocator() {
+        return memoryAllocator;
+    }
+
     public CancelToken asyncOperation(Consumer<IoUringSqe> sqeFunction, Consumer<IoUringCqe> repeatableCallback) {
         return asyncOperation(sqeFunction, repeatableCallback, false);
     }
@@ -390,7 +392,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
             }
         } finally {
             this.wakeUpFd.close();
-            Instance.LIB_JEMALLOC.free(eventReadBuffer);
+            eventReadBuffer.drop();
             try {
                 ioUringCore.close();
             } catch (Exception e) {
@@ -488,13 +490,13 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         private final NativeIoUringBufRing internal;
         private final short bufferGroupId;
         private final IoUringBufferRingElement[] buffers;
-        private final MemoryAllocator allocator;
+        private final MemoryAllocator<? extends OwnershipMemory> allocator;
         private final int count;
         private final int blockSize;
         private boolean hasRelease = false;
         private short hasAllocate;
 
-        private InternalNativeIoUringRing(NativeIoUringBufRing internal, short bufferGroupId, int count, int blockSize, MemoryAllocator allocator) {
+        private InternalNativeIoUringRing(NativeIoUringBufRing internal, short bufferGroupId, int count, int blockSize, MemoryAllocator<? extends OwnershipMemory> allocator) {
             this.internal = internal;
             this.bufferGroupId = bufferGroupId;
             this.blockSize = blockSize;
@@ -590,7 +592,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
                 for (int i = 0; i < buffers.length; i++) {
                     IoUringBufferRingElement ioUringBufferRingElement = buffers[i];
                     if (ioUringBufferRingElement != null) {
-                        allocator.free(ioUringBufferRingElement.element());
+                        ioUringBufferRingElement.element().drop();
                     }
                 }
                 return null;

@@ -35,12 +35,12 @@ public class AsyncTcpServerSocketFd implements IoUringAsyncFd, PollableFd {
         this.owner = owner;
         this.address = address;
         this.port = port;
-        this.fd = AsyncTcpSocketFd.socketSysCall(address);
+        this.fd = AsyncTcpSocketFd.socketSysCall(address, owner.getMemoryAllocator());
         this.hasListen = false;
     }
 
     public int bind() {
-        OwnershipMemory addr = AsyncTcpSocketFd.mallocAddr(address);
+        OwnershipMemory addr = AsyncTcpSocketFd.mallocAddr(address, owner.getMemoryAllocator());
         try (addr) {
             int listenRes = LIBC.bind(fd, addr.resource(), (int) addr.resource().byteSize());
             if (listenRes < 0) {

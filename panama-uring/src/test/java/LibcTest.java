@@ -1,9 +1,11 @@
 import org.junit.Assert;
 import org.junit.Test;
+import top.dreamlike.panama.uring.helper.MemoryAllocator;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.helper.UnsafeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
+import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,6 +52,16 @@ public class LibcTest {
             int fd = UnsafeHelper.getFd(fc);
             Assert.assertTrue(fd > 0);
         }
+    }
+
+    @Test
+    public void testMalloc() {
+        MemoryAllocator libcMalloc = MemoryAllocator.LIBC_MALLOC;
+        OwnershipMemory ownershipMemory = libcMalloc.allocateOwnerShipMemory(1024);
+        Assert.assertNotNull(ownershipMemory);
+        Assert.assertTrue(ownershipMemory.resource().address() > 0);
+        libcMalloc.free(ownershipMemory);
+
     }
 
 }

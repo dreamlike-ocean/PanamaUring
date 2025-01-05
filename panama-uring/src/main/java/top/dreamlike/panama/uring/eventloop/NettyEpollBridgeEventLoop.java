@@ -54,7 +54,7 @@ public class NettyEpollBridgeEventLoop extends AbstractNettyBridgeEventLoop impl
         }
 
         //清除事件
-        cqeReadyEventFd.read(cqeReadyMemory, (int) ValueLayout.JAVA_LONG.byteSize());
+        cqeReadyEventFd.read(cqeReadyMemory.resource(), (int) ValueLayout.JAVA_LONG.byteSize());
         //处理cqe
         ioUringCore.processCqes(this::processCqes);
     }

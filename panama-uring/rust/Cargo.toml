@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-    "jemalloc_rs", "liburing_rs",
+    "liburing_rs"
 ]
 
 [profile.release]

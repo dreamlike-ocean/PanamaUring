@@ -13,7 +13,7 @@ import top.dreamlike.panama.uring.async.fd.AsyncTcpSocketFd;
 import top.dreamlike.panama.uring.async.operator.IoUringNoOp;
 import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
-import top.dreamlike.panama.uring.helper.JemallocAllocator;
+import top.dreamlike.panama.uring.helper.MemoryAllocator;
 import top.dreamlike.panama.uring.helper.Pair;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
@@ -198,7 +198,7 @@ public class AdvanceLiburingTest {
         });
 
         try (eventLoop;
-             OwnershipMemory readBuffer = Instance.LIB_JEMALLOC.mallocMemory(1024)) {
+             OwnershipMemory readBuffer = MemoryAllocator.LIBC_MALLOC.allocateOwnerShipMemory(1024)) {
             eventLoop.start();
             AsyncInotifyFd fd = new AsyncInotifyFd(eventLoop);
             Path path = Files.createTempDirectory("test");
@@ -388,14 +388,14 @@ public class AdvanceLiburingTest {
            eventLoop.sendMessage(PanamaUringSecret.findUring.apply(eventLoop).getRing_fd(),1, 1);
        });
 
-        MemorySegment ioUringMemory = Instance.LIB_JEMALLOC.malloc(IoUring.LAYOUT.byteSize());
+        MemorySegment ioUringMemory = Instance.LIBC_MALLOC.malloc(IoUring.LAYOUT.byteSize());
         IoUring internalRing = Instance.STRUCT_PROXY_GENERATOR.enhance(ioUringMemory);
-        MemorySegment ioUringParamMemory = Instance.LIB_JEMALLOC.malloc(IoUringParams.LAYOUT.byteSize());
+        MemorySegment ioUringParamMemory = Instance.LIBC_MALLOC.malloc(IoUringParams.LAYOUT.byteSize());
         IoUringParams ioUringParams = Instance.STRUCT_PROXY_GENERATOR.enhance(ioUringParamMemory);
         paramsFactory.accept(ioUringParams);
         int initRes = Instance.LIB_URING.io_uring_queue_init_params(ioUringParams.getSq_entries(), internalRing, ioUringParams);
         if (initRes < 0) {
-            Instance.LIB_JEMALLOC.free(ioUringMemory);
+            Instance.LIBC_MALLOC.free(ioUringMemory);
             throw new SyscallException(initRes);
         }
 
@@ -403,7 +403,7 @@ public class AdvanceLiburingTest {
         Assert.assertEquals(0, ioUringCqe.getRes());
         Instance.LIB_URING.io_uring_submit_and_wait(internalRing, 1);
 
-        var cqeArrayPtr = JemallocAllocator.INSTANCE.allocate(ValueLayout.ADDRESS, 4);
+        var cqeArrayPtr = Instance.LIBC_MALLOC.malloc(ValueLayout.ADDRESS.byteSize() * 4);
         int cqe_count =  Instance.LIB_URING.io_uring_peek_batch_cqe(internalRing, cqeArrayPtr, 4);
         Assert.assertEquals(1, cqe_count);
 

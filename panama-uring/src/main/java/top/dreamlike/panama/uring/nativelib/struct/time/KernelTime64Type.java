@@ -1,6 +1,13 @@
 package top.dreamlike.panama.uring.nativelib.struct.time;
 
+import top.dreamlike.panama.uring.nativelib.Instance;
+
+import java.lang.foreign.MemoryLayout;
+
 public class KernelTime64Type {
+
+    public static final MemoryLayout LAYOUT = Instance.STRUCT_PROXY_GENERATOR.extract(KernelTime64Type.class);
+
     private long tv_sec;
     private long tv_nsec;
 
