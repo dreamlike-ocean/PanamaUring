@@ -1,6 +1,7 @@
 package top.dreamlike.panama.uring.helper;
 
 import top.dreamlike.panama.uring.nativelib.Instance;
+import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
 import java.lang.foreign.Arena;
@@ -19,7 +20,7 @@ public interface MemoryAllocator<T extends OwnershipMemory> {
         memory.drop();
     }
 
-    default Arena  disposableArena() {
+    default Arena disposableArena() {
         return new Arena() {
             private final ReentrantReadWriteLock reentrantReadWriteLock = new ReentrantReadWriteLock();
             private final ConcurrentLinkedQueue<OwnershipMemory> memoryQueue = new ConcurrentLinkedQueue<>();
@@ -31,7 +32,14 @@ public interface MemoryAllocator<T extends OwnershipMemory> {
                     try {
                         T ownerShipMemory = allocateOwnerShipMemory(alignedSize);
                         memoryQueue.offer(ownerShipMemory);
-                        return ownerShipMemory.resource();
+                        MemorySegment originalMemory = ownerShipMemory.resource();
+                        if (alignedSize != byteSize) {
+                            long buf = originalMemory.address();
+                            long alignedBuf = NativeHelper.alignUp(buf, byteAlignment);
+                            long delta = alignedBuf - buf;
+                            return originalMemory.asSlice(delta, byteSize);
+                        }
+                        return originalMemory;
                     } finally {
                         reentrantReadWriteLock.readLock().unlock();
                     }

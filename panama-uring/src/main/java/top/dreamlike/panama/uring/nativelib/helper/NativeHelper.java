@@ -77,6 +77,10 @@ public class NativeHelper {
         }
     }
 
+    public static long alignUp(long n, long alignment) {
+        return (n + alignment - 1) & -alignment;
+    }
+
     public static String getErrorStr(int errno) {
         if (errno < 0 || errno >= errStr.length) {
             return "Unknown error";
