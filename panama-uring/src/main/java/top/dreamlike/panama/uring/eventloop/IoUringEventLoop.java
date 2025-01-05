@@ -10,7 +10,6 @@ import top.dreamlike.panama.uring.helper.MemoryAllocator;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
-import top.dreamlike.panama.uring.nativelib.helper.OSIoUringProbe;
 import top.dreamlike.panama.uring.nativelib.libs.LibPoll;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
@@ -49,7 +48,6 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
 
     protected static final AtomicInteger count = new AtomicInteger(0);
     protected static final LibUring libUring = Instance.LIB_URING;
-    private static final OSIoUringProbe PROBE = new OSIoUringProbe();
     private final static Logger log = LoggerFactory.getLogger(IoUringEventLoop.class);
 
     static {
@@ -308,7 +306,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
             IoUringSqe sqe = ioUringCore.ioUringGetSqe(true).get();
             sqeFunction.accept(sqe);
 
-            if (NativeHelper.enableOpVersionCheck && sqe.getOpcode() > PROBE.getLastOp()) {
+            if (NativeHelper.enableOpVersionCheck && sqe.getOpcode() > IoUringCore.PROBE.getLastOp()) {
                 Instance.LIB_URING.io_uring_back_sqe(internalRing);
                 throw new UnsupportedOperationException(sqe.getOpcode() + " is unsupported");
             }

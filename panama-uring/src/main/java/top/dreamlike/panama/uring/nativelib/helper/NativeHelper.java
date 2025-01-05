@@ -61,6 +61,8 @@ public class NativeHelper {
 
     private static final boolean isSkipSameEventLoopCheck = System.getProperty("top.dreamlike.panama.uring.skipSameEventLoopCheck", "false").equalsIgnoreCase("true");
 
+    public static final long[] EMPTY_ARRAY = new long[0];
+
     public static String bufToString(MemorySegment nativeMemory, int length) {
         byte[] bytes = new byte[length];
         MemorySegment.copy(

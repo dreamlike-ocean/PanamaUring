@@ -8,6 +8,7 @@ import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.KernelVersionLimit;
+import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.struct.epoll.NativeEpollEvent;
 import top.dreamlike.panama.uring.nativelib.struct.futex.FutexWaitV;
 import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
@@ -99,6 +100,45 @@ public interface LibUring {
             }
         } while (overflow_checked);
         return 0;
+    }
+
+    @NativeFunction(fast = true)
+    default long[] io_uring_peek_batch_cqe(@Pointer IoUring ring, int maxCount) {
+        int ready;
+        boolean overflow_checked = false;
+        int shift = 0;
+        if ((ring.getFlags() & IoUringConstant.IORING_SETUP_CQE32) != 0) {
+            shift = 1;
+        }
+        MemorySegment ringStruct = StructProxyGenerator.findMemorySegment(ring);
+        do {
+            ready = io_uring_cq_ready(ring);
+            if (ready != 0) {
+                int head = (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KHEAD_DEFERENCE_VARHANDLE.get(ringStruct, 0L);
+                int mask = (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_RING_MASK_VARHANDLE.get(ringStruct, 0L);
+                int last;
+                int i = 0;
+                maxCount = Math.min(maxCount, ready);
+                long[] cqes = new long[maxCount];
+                last = head + maxCount;
+                MemorySegment cqesBase = (MemorySegment) IoUringConstant.AccessShortcuts.IO_URING_CQ_CQES_VARHANDLE.get(ringStruct, 0L);
+                long step = IoUringConstant.AccessShortcuts.IoUringCqeLayout.byteSize();
+                for (; head != last; head++, i++) {
+                    int index = (head & mask) << shift;
+                    long currentCqe = cqesBase.address() + index * step;
+                    cqes[i] = currentCqe;
+                }
+                return cqes;
+            }
+            if (overflow_checked) {
+                return NativeHelper.EMPTY_ARRAY;
+            }
+            if (cq_ring_needs_flush(ringStruct)) {
+                io_uring_get_events(ring);
+                overflow_checked = true;
+            }
+        } while (overflow_checked);
+        return NativeHelper.EMPTY_ARRAY;
     }
 
     default int get_koverflow(@Pointer IoUring uring) {

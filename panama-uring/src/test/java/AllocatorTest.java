@@ -12,12 +12,12 @@ public class AllocatorTest {
     public void testAlignment() {
         MemoryAllocator<OwnershipMemory> libcMalloc = MemoryAllocator.LIBC_MALLOC;
 
-
         try (Arena arena = libcMalloc.disposableArena()) {
             int byteAlignment = 4 * 1024;
             MemorySegment memorySegment = arena.allocate(100, byteAlignment);
             long address = memorySegment.address();
             Assert.assertEquals(0, address % byteAlignment);
+            Assert.assertEquals(100, memorySegment.byteSize());
         }
     }
 

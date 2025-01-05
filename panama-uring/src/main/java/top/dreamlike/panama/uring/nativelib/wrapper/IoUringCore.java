@@ -7,6 +7,7 @@ import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.helper.Unsafe;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
+import top.dreamlike.panama.uring.nativelib.helper.OSIoUringProbe;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
@@ -35,6 +36,8 @@ public class IoUringCore implements AutoCloseable {
     private final MemorySegment cqePtrArray;
 
     private final KernelTime64Type kernelTime64Type;
+
+    public static final OSIoUringProbe PROBE = new OSIoUringProbe();
 
     public IoUringCore(Consumer<IoUringParams> ioUringParamsFactory) {
         MemorySegment ioUringMemory = Instance.LIBC_MALLOC.malloc(IoUring.LAYOUT.byteSize());
@@ -125,12 +128,13 @@ public class IoUringCore implements AutoCloseable {
     }
 
     public final void processCqes(Consumer<IoUringCqe> nativeCqeConsumer, boolean advance) {
-        int count = libUring.io_uring_peek_batch_cqe(internalRing, cqePtrArray, cqeSize);
+        long[] cqes = libUring.io_uring_peek_batch_cqe(internalRing, cqeSize);
+        int count = cqes.length;
         if (log.isDebugEnabled()) {
             log.debug("processCqes count:{}", count);
         }
         for (int i = 0; i < count; i++) {
-            IoUringCqe nativeCqe = Instance.STRUCT_PROXY_GENERATOR.enhance(cqePtrArray.getAtIndex(ValueLayout.ADDRESS, i));
+            IoUringCqe nativeCqe = Instance.STRUCT_PROXY_GENERATOR.enhance(MemorySegment.ofAddress(cqes[i]).reinterpret(Long.MAX_VALUE));
             nativeCqeConsumer.accept(nativeCqe);
         }
         if (advance) {
