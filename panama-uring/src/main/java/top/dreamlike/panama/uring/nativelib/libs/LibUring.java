@@ -9,14 +9,17 @@ import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.KernelVersionLimit;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
+import top.dreamlike.panama.uring.nativelib.libs.syscall.IoUringSysCall;
 import top.dreamlike.panama.uring.nativelib.struct.epoll.NativeEpollEvent;
 import top.dreamlike.panama.uring.nativelib.struct.futex.FutexWaitV;
 import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufReg;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCq;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringParams;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringProbe;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSq;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.NativeIoUringBufRing;
 import top.dreamlike.panama.uring.nativelib.struct.sigset.SigsetType;
@@ -29,6 +32,7 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
 @CLib(value = "liburing-ffi.so", suffix = "_rs")
@@ -56,9 +60,171 @@ public interface LibUring {
     void io_uring_free_probe(@Pointer IoUringProbe probe);
 
     //跟队列本身相关的操作=
-    int io_uring_queue_init(int entries, @Pointer IoUring ring, int flags);
+    default int io_uring_queue_init(int entries, @Pointer IoUring ring, int flags) {
+        MemoryLayout ioUringParamLayout = IoUringParams.LAYOUT;
+        MemorySegment p = Instance.LIBC_MALLOC.malloc(ioUringParamLayout.byteSize());
+        try {
+            IoUringParams params = Instance.STRUCT_PROXY_GENERATOR.enhance(p);
+            params.setFlags(flags);
+            return io_uring_queue_init_params(entries, ring, params);
+        } finally {
+            Instance.LIBC_MALLOC.free(p);
+        }
+    }
 
-    int io_uring_queue_init_params(int entries, @Pointer IoUring ring, @Pointer IoUringParams p);
+    default int io_uring_queue_init_params(int entries, @Pointer IoUring ring, @Pointer IoUringParams p) {
+        int flags = p.getFlags();
+        p.setFlags(flags | IoUringConstant.IORING_SETUP_NO_SQARRAY);
+        MemorySegment ringStruct = StructProxyGenerator.findMemorySegment(ring);
+        ringStruct.fill((byte) 0);
+
+        int tryNoSqeArray = io_uring_queue_init_params0(entries, ring, p);
+        if (tryNoSqeArray != -Libc.Error_H.EINVAL || (flags & IoUringConstant.IORING_SETUP_NO_SQARRAY) != 0) {
+            return tryNoSqeArray;
+        }
+
+        p.setFlags(flags);
+        return io_uring_queue_init_params0(entries, ring, p);
+    }
+
+    private int io_uring_queue_init_params0(int entries, @Pointer IoUring ring, @Pointer IoUringParams p) {
+        int flags = p.getFlags();
+        if ((flags & IoUringConstant.IORING_SETUP_REGISTERED_FD_ONLY) != 0 && (p.getFlags() & IoUringConstant.IORING_SETUP_NO_MMAP) == 0) {
+            return -Libc.Error_H.EINVAL;
+        }
+        if ((flags & IoUringConstant.IORING_SETUP_NO_MMAP) != 0) {
+            throw new UnsupportedOperationException("current version dont support IORING_SETUP_NO_MMAP");
+        }
+
+        MemorySegment paramsStruct = StructProxyGenerator.findMemorySegment(p);
+        int fd = IoUringSysCall.io_uring_setup(entries, paramsStruct);
+        if (fd < 0) {
+            return fd;
+        }
+
+        int res = io_uring_mmap_and_queue_init(fd, ring, p);
+        if (res < 0) {
+            Instance.LIBC.close(fd);
+            return res;
+        }
+
+        IoUringSq sq = ring.getSq();
+        int sqRingEntries = sq.getRing_entries();
+
+        if((flags & IoUringConstant.IORING_SETUP_NO_SQARRAY) == 0) {
+            MemorySegment sqArray = sq.getArray().reinterpret(Long.MAX_VALUE);
+            for (int index = 0; index < sqRingEntries; index++) {
+                sqArray.setAtIndex(JAVA_INT,index,index);
+            }
+        }
+
+        ring.setFeatures(p.getFeatures());
+        ring.setFlags(p.getFlags());
+        ring.setEnter_ring_fd(fd);
+        if ((flags & IoUringConstant.IORING_SETUP_REGISTERED_FD_ONLY) != 0) {
+            ring.setRing_fd(-1);
+            ring.setInt_flags((byte) (ring.getInt_flags() | IoUringConstant.IORING_ENTER_REGISTERED_RING | 1));
+        } else {
+            ring.setRing_fd(fd);
+        }
+        return 0;
+    }
+
+    private int io_uring_mmap_and_queue_init(int fd, IoUring ring, IoUringParams p) {
+        MemorySegment ringStruct = StructProxyGenerator.findMemorySegment(ring);
+        IoUringCq cq = ring.getCq();
+        IoUringSq sq = ring.getSq();
+        int features = p.getFeatures();
+        int cqe_size = io_uring_cqe_struct_size();
+
+        if ((p.getFlags() & IoUringConstant.IORING_SETUP_CQE32) != 0) {
+            cqe_size += io_uring_cqe_struct_size();
+        }
+
+        IoUringParams.IoSqringOffsets sqOff = p.getSq_off();
+        IoUringParams.IoCqruingOffsets cqOff = p.getCq_off();
+
+        sq.setRing_sz(sqOff.getArray() + p.getSq_entries() * ValueLayout.JAVA_INT.byteSize());
+        cq.setRing_sz(cqOff.getCqes() + (long) p.getCq_entries() * cqe_size);
+        if ((features & IoUringConstant.IORING_FEAT_SINGLE_MMAP) != 0) {
+            if (cq.getRing_sz() > sq.getRing_sz()) {
+                sq.setRing_sz(cq.getRing_sz());
+            }
+            cq.setRing_sz(sq.getRing_sz());
+        }
+
+        MemorySegment sqRingPtr = Instance.LIB_MMAN.mmap(MemorySegment.NULL, sq.getRing_sz(), LibMman.Prot.PROT_READ | LibMman.Prot.PROT_WRITE, LibMman.Flag.MAP_SHARED | LibMman.Flag.MAP_POPULATE, fd, IoUringConstant.IORING_OFF_SQ_RING);
+
+        if (sqRingPtr.address() < 0) {
+            return -NativeHelper.errorno();
+        }
+
+        sq.setRing_ptr(sqRingPtr);
+        if ((features & IoUringConstant.IORING_FEAT_SINGLE_MMAP) != 0) {
+            cq.setRing_ptr(sqRingPtr);
+        } else {
+            MemorySegment cqRingPtr = Instance.LIB_MMAN.mmap(MemorySegment.NULL, cq.getRing_sz(), LibMman.Prot.PROT_READ | LibMman.Prot.PROT_WRITE, LibMman.Flag.MAP_SHARED | LibMman.Flag.MAP_POPULATE, fd, IoUringConstant.IORING_OFF_CQ_RING);
+            if (cqRingPtr.address() < 0) {
+                Instance.LIB_MMAN.munmap(sqRingPtr, sq.getRing_sz());
+                return -NativeHelper.errorno();
+            }
+            cq.setRing_ptr(cqRingPtr);
+        }
+
+        int sqeSize = io_uring_sqe_struct_size();
+        if ((p.getFeatures() & IoUringConstant.IORING_SETUP_SQE128) != 0) {
+            sqeSize += 64;
+        }
+        MemorySegment sqesPtr = Instance.LIB_MMAN.mmap(MemorySegment.NULL, (long) sqeSize * p.getSq_entries(), LibMman.Prot.PROT_READ | LibMman.Prot.PROT_WRITE, LibMman.Flag.MAP_SHARED | LibMman.Flag.MAP_POPULATE, fd, IoUringConstant.IORING_OFF_SQES);
+        if (sqesPtr.address() < 0) {
+            Instance.LIB_MMAN.munmap(sqRingPtr, sq.getRing_sz());
+            Instance.LIB_MMAN.munmap(cq.getRing_ptr(), sq.getRing_sz());
+            return -NativeHelper.errorno();
+        }
+
+        IoUringConstant.AccessShortcuts.IO_URING_SQ_SQES_VARHANDLE.set(ringStruct, 0L, sqesPtr);
+
+        //初始化cq和sq的参数
+        long sqRingPtrAddress = sq.getRing_ptr().address();
+        sq.setKhead(MemorySegment.ofAddress(sqRingPtrAddress + sqOff.getHead()));
+        sq.setKtail(MemorySegment.ofAddress(sqRingPtrAddress + sqOff.getTail()));
+
+        MemorySegment sqKringMask = MemorySegment.ofAddress(sqRingPtrAddress + sqOff.getRing_mask());
+        MemorySegment sqKringEntries = MemorySegment.ofAddress(sqRingPtrAddress + sqOff.getRing_entries());
+        sq.setKring_mask(sqKringMask);
+        sq.setKring_entries(sqKringEntries);
+
+        sq.setKflags(MemorySegment.ofAddress(sqRingPtrAddress + sqOff.getFlags()));
+        sq.setKdropped(MemorySegment.ofAddress(sqRingPtrAddress + sqOff.getDropped()));
+        if ((p.getFlags() & IoUringConstant.IORING_SETUP_NO_SQARRAY) == 0) {
+            sq.setArray(MemorySegment.ofAddress(sqRingPtrAddress + sqOff.getArray()));
+        }
+
+        long cqRingPtrAddress = cq.getRing_ptr().address();
+        cq.setKhead(MemorySegment.ofAddress(cqRingPtrAddress + cqOff.getHead()));
+        cq.setKtail(MemorySegment.ofAddress(cqRingPtrAddress + cqOff.getTail()));
+
+        MemorySegment cqKringMask = MemorySegment.ofAddress(cqRingPtrAddress + cqOff.getRing_mask());
+        MemorySegment cqKringEntries = MemorySegment.ofAddress(cqRingPtrAddress + cq.getRing_entries());
+        cq.setKring_mask(cqKringMask);
+        cq.setKring_entries(cqKringEntries);
+
+        cq.setKoverflow(MemorySegment.ofAddress(cqRingPtrAddress + cqOff.getOverflow()));
+        IoUringConstant.AccessShortcuts.IO_URING_CQ_CQES_VARHANDLE.set(ringStruct, 0L, MemorySegment.ofAddress(cqRingPtrAddress + cqOff.getCqes()));
+
+        if (cqOff.getFlags() != 0) {
+            cq.setKflags(MemorySegment.ofAddress(cqRingPtrAddress + cqOff.getFlags()));
+        }
+
+        sq.setRing_mask(sqKringMask.reinterpret(JAVA_INT.byteSize()).get(JAVA_INT,0));
+        sq.setRing_entries(sqKringEntries.reinterpret(JAVA_INT.byteSize()).get(JAVA_INT,0));
+
+        cq.setRing_mask(cqKringMask.reinterpret(JAVA_INT.byteSize()).get(JAVA_INT,0));
+        cq.setRing_entries(cqKringEntries.reinterpret(JAVA_INT.byteSize()).get(JAVA_INT,0));
+
+        return 0;
+    }
+
 
     void io_uring_queue_exit(@Pointer IoUring ring);
 
@@ -743,7 +909,7 @@ public interface LibUring {
     default int io_uring_cq_ready(@Pointer IoUring ring) {
         MemorySegment realMemory = StructProxyGenerator.findMemorySegment(ring);
         return (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KTAIL_DEFERENCE_VARHANDLE.get(realMemory, 0L)
-                - (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KHEAD_DEFERENCE_VARHANDLE.get(realMemory, 0L);
+               - (int) IoUringConstant.AccessShortcuts.IO_URING_CQ_KHEAD_DEFERENCE_VARHANDLE.get(realMemory, 0L);
     }
 
     default boolean io_uring_cq_has_overflow(@Pointer IoUring ring) {
