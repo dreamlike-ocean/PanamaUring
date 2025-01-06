@@ -111,10 +111,10 @@ public interface LibUring {
         IoUringSq sq = ring.getSq();
         int sqRingEntries = sq.getRing_entries();
 
-        if((flags & IoUringConstant.IORING_SETUP_NO_SQARRAY) == 0) {
+        if ((flags & IoUringConstant.IORING_SETUP_NO_SQARRAY) == 0) {
             MemorySegment sqArray = sq.getArray().reinterpret(Long.MAX_VALUE);
             for (int index = 0; index < sqRingEntries; index++) {
-                sqArray.setAtIndex(JAVA_INT,index,index);
+                sqArray.setAtIndex(JAVA_INT, index, index);
             }
         }
 
@@ -123,7 +123,7 @@ public interface LibUring {
         ring.setEnter_ring_fd(fd);
         if ((flags & IoUringConstant.IORING_SETUP_REGISTERED_FD_ONLY) != 0) {
             ring.setRing_fd(-1);
-            ring.setInt_flags((byte) (ring.getInt_flags() | IoUringConstant.IORING_ENTER_REGISTERED_RING | 1));
+            ring.setInt_flags((byte) (ring.getInt_flags() | IoUringConstant.INT_FLAG_REG_RING | IoUringConstant.INT_FLAG_REG_REG_RING));
         } else {
             ring.setRing_fd(fd);
         }
@@ -216,19 +216,62 @@ public interface LibUring {
             cq.setKflags(MemorySegment.ofAddress(cqRingPtrAddress + cqOff.getFlags()));
         }
 
-        sq.setRing_mask(sqKringMask.reinterpret(JAVA_INT.byteSize()).get(JAVA_INT,0));
-        sq.setRing_entries(sqKringEntries.reinterpret(JAVA_INT.byteSize()).get(JAVA_INT,0));
+        sq.setRing_mask(sqKringMask.reinterpret(JAVA_INT.byteSize()).get(JAVA_INT, 0));
+        sq.setRing_entries(sqKringEntries.reinterpret(JAVA_INT.byteSize()).get(JAVA_INT, 0));
 
-        cq.setRing_mask(cqKringMask.reinterpret(JAVA_INT.byteSize()).get(JAVA_INT,0));
-        cq.setRing_entries(cqKringEntries.reinterpret(JAVA_INT.byteSize()).get(JAVA_INT,0));
+        cq.setRing_mask(cqKringMask.reinterpret(JAVA_INT.byteSize()).get(JAVA_INT, 0));
+        cq.setRing_entries(cqKringEntries.reinterpret(JAVA_INT.byteSize()).get(JAVA_INT, 0));
 
         return 0;
     }
 
 
-    void io_uring_queue_exit(@Pointer IoUring ring);
+    default void io_uring_queue_exit(@Pointer IoUring ring) {
+        MemorySegment ringStruct = StructProxyGenerator.findMemorySegment(ring);
 
-    int io_uring_setup(int entries, @Pointer IoUringParams ioUringParams);
+        IoUringSq sq = ring.getSq();
+        IoUringCq cq = ring.getCq();
+        long sqRingSz = sq.getRing_sz();
+        byte ringIntFlags = ring.getInt_flags();
+
+        long sqeSize = io_uring_sqe_struct_size();
+        MemorySegment sqesBase = (MemorySegment) IoUringConstant.AccessShortcuts.IO_URING_SQ_SQES_VARHANDLE.get(ringStruct, 0L);
+        if (sqRingSz == 0 && (ringIntFlags & IoUringConstant.INT_FLAG_APP_MEM) == 0) {
+
+            if ((ring.getFlags() & IoUringConstant.IORING_SETUP_SQE128) != 0) {
+                sqeSize += 64;
+            }
+            Instance.LIB_MMAN.munmap(sqesBase, sqeSize * sq.getRing_entries());
+            unmap_ring(sq, cq);
+        } else {
+            if ((ringIntFlags & IoUringConstant.INT_FLAG_APP_MEM) == 0) {
+                Instance.LIB_MMAN.munmap(sqesBase, sq.getKring_entries().reinterpret(Long.MAX_VALUE).get(JAVA_INT, 0) * sqeSize);
+                unmap_ring(sq, cq);
+            }
+        }
+
+        if ((ringIntFlags & IoUringConstant.INT_FLAG_REG_RING) != 0) {
+            //todo io_uring_unregister_ring_fd
+        }
+        if (ring.getRing_fd() != -1) {
+            Instance.LIBC.close(ring.getRing_fd());
+        }
+    }
+
+    private void unmap_ring(IoUringSq sq, IoUringCq cq) {
+        if (sq.getRing_sz() != 0) {
+            Instance.LIB_MMAN.munmap(sq.getRing_ptr(), sq.getRing_sz());
+        }
+
+        if (cq.getRing_sz() != 0 && cq.getRing_ptr().address() != sq.getRing_ptr().address()) {
+            Instance.LIB_MMAN.munmap(cq.getRing_ptr(), cq.getRing_sz());
+        }
+
+    }
+
+    default int io_uring_setup(int entries, @Pointer IoUringParams ioUringParams) {
+        return IoUringSysCall.io_uring_setup(entries, StructProxyGenerator.findMemorySegment(ioUringParams));
+    }
 
     //cqe相关的操作
     @NativeFunction(fast = true)

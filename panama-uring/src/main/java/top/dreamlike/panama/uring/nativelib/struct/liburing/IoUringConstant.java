@@ -191,6 +191,11 @@ public class IoUringConstant {
     public static final int IORING_ENTER_SQ_WAIT = 1 << 2;
     public static final int IORING_ENTER_EXT_ARG = 1 << 3;
     public static final int IORING_ENTER_REGISTERED_RING = 1 << 4;
+
+    public static final int INT_FLAG_REG_RING = IORING_ENTER_REGISTERED_RING;
+    public static final int INT_FLAG_REG_REG_RING = 1;
+    public static final int INT_FLAG_APP_MEM = 2;
+
     /*
      * io_uring_params->features flags
      */
