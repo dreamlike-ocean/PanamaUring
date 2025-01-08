@@ -585,7 +585,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
             assertClose();
             return runOnEventLoop(() -> {
                 assertClose();
-                Instance.LIB_URING.io_uring_unregister_buf_ring(internalRing, bufferGroupId);
+                Instance.LIB_URING.io_uring_free_buf_ring(internalRing, internal, count, bufferGroupId);
                 hasRelease = true;
                 for (int i = 0; i < buffers.length; i++) {
                     IoUringBufferRingElement ioUringBufferRingElement = buffers[i];

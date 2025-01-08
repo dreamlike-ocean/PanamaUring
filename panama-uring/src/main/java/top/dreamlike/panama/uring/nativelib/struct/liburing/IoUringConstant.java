@@ -428,7 +428,7 @@ public class IoUringConstant {
                 MemoryLayout.PathElement.groupElement("koverflow"),
                 MemoryLayout.PathElement.dereferenceElement()
         ).withInvokeExactBehavior();
-        public static final MemoryLayout IoUringBufLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringBuf.class);
+        public static final MemoryLayout IoUringBufLayout = IoUringBuf.LAYOUT;
         public static final VarHandle IO_URING_BUF_ADDR_VARHANDLE = IoUringBufLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("addr")
         ).withInvokeExactBehavior();

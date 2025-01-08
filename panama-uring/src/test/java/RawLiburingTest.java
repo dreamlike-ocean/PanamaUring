@@ -1,8 +1,10 @@
 import org.junit.Assert;
 import org.junit.Test;
+import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.OSIoUringProbe;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
+import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
 import top.dreamlike.panama.uring.nativelib.wrapper.IoUringCore;
@@ -50,6 +52,20 @@ public class RawLiburingTest {
 
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment readyEventReadBuffer = arena.allocate(ValueLayout.JAVA_LONG);
+
+                MemorySegment files = arena.allocate(ValueLayout.JAVA_INT, 1);
+                files.set(ValueLayout.JAVA_INT, 0, readyEventFd.fd());
+                int registerFiles = Instance.LIB_URING.io_uring_register_files(ioUringCore.getInternalRing(), files, 1);
+                Assert.assertTrue(registerFiles >= 0);
+
+                MemorySegment iovec = arena.allocate(Iovec.LAYOUT, 1);
+                NativeArrayPointer<Iovec> iovecNativeArray = new NativeArrayPointer<>(Instance.STRUCT_PROXY_GENERATOR, iovec);
+                iovecNativeArray.getAtIndex(0).setIov_base(readyEventReadBuffer);
+                iovecNativeArray.getAtIndex(0).setIov_len(readyEventReadBuffer.byteSize());
+
+                int registerBuffer = Instance.LIB_URING.io_uring_register_buffers(ioUringCore.getInternalRing(), iovecNativeArray, 1);
+                Assert.assertTrue(registerBuffer >= 0);
+
                 int i = readyEventFd.eventfdRead(readyEventReadBuffer);
                 Assert.assertTrue(i >= 0);
                 int count = readyEventReadBuffer.get(ValueLayout.JAVA_INT, 0);
@@ -58,6 +74,12 @@ public class RawLiburingTest {
         } finally {
             int res = Instance.LIB_URING.io_uring_unregister_eventfd(ioUringCore.getInternalRing());
             Assert.assertTrue(res >= 0);
+
+            int unRegisterFiles = Instance.LIB_URING.io_uring_unregister_files(ioUringCore.getInternalRing());
+            Assert.assertTrue(unRegisterFiles >= 0);
+
+            int unregisterBuffers = Instance.LIB_URING.io_uring_unregister_buffers(ioUringCore.getInternalRing());
+            Assert.assertTrue(unregisterBuffers >= 0);
             ioUringCore.close();
             readyEventFd.close();
             pollEventFd.close();

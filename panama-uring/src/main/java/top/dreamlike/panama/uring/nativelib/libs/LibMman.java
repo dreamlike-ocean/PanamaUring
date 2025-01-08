@@ -1,14 +1,21 @@
 package top.dreamlike.panama.uring.nativelib.libs;
 
+import top.dreamlike.panama.generator.annotation.NativeFunction;
 import top.dreamlike.panama.uring.nativelib.Instance;
 
 import java.lang.foreign.MemorySegment;
 
 public interface LibMman {
 
-    public int PAGE_SIZE = Instance.LIBC.getpagesize();
+    int PAGE_SIZE = Instance.LIBC.getpagesize();
 
-    MemorySegment mmap(MemorySegment addr, long length, int prot, int flags, int fd, long offset);
+    default MemorySegment mmap(MemorySegment addr, long length, int prot, int flags, int fd, long offset) {
+        return MemorySegment.ofAddress(mmapNative(addr,length,prot,flags,fd,offset))
+                .reinterpret(length);
+    }
+
+    @NativeFunction("mmap")
+    long mmapNative(MemorySegment addr, long length, int prot, int flags, int fd, long offset);
 
     int munmap(MemorySegment addr, long length);
 

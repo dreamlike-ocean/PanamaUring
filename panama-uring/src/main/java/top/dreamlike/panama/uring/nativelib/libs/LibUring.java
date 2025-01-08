@@ -14,6 +14,7 @@ import top.dreamlike.panama.uring.nativelib.struct.epoll.NativeEpollEvent;
 import top.dreamlike.panama.uring.nativelib.struct.futex.FutexWaitV;
 import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBuf;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufReg;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCq;
@@ -422,13 +423,21 @@ public interface LibUring {
         kheadVH.setRelease(realMemory, 0L, head + nr);
     }
 
-    int io_uring_register_buffers(@Pointer IoUring ring, @Pointer NativeArrayPointer<Iovec> iovecs, int nr_iovecs);
+    default int io_uring_register_buffers(@Pointer IoUring ring, @Pointer NativeArrayPointer<Iovec> iovecs, int nr_iovecs) {
+        return IoUringSysCall.io_uring_register(ring, IoUringConstant.RegisterOp.IORING_REGISTER_BUFFERS, iovecs.address(), nr_iovecs);
+    }
 
-    int io_uring_unregister_buffers(@Pointer IoUring ring);
+    default int io_uring_unregister_buffers(@Pointer IoUring ring) {
+        return IoUringSysCall.io_uring_register(ring, IoUringConstant.RegisterOp.IORING_UNREGISTER_BUFFERS, MemorySegment.NULL, 0);
+    }
 
-    int io_uring_register_files(@Pointer IoUring ring,/*const int * */ @Pointer MemorySegment files, int nr_files);
+    default int io_uring_register_files(@Pointer IoUring ring,/*const int * */ @Pointer MemorySegment files, int nr_files) {
+        return IoUringSysCall.io_uring_register(ring, IoUringConstant.RegisterOp.IORING_REGISTER_FILES, files, nr_files);
+    }
 
-    int io_uring_unregister_files(@Pointer IoUring ring);
+    default int io_uring_unregister_files(@Pointer IoUring ring) {
+        return IoUringSysCall.io_uring_register(ring, IoUringConstant.RegisterOp.IORING_UNREGISTER_FILES, MemorySegment.NULL, 0);
+    }
 
     default int io_uring_register_eventfd(@Pointer IoUring ring, int fd) {
         MemorySegment tmpInt = Instance.LIBC_MALLOC.mallocNoInit(JAVA_INT.byteSize());
@@ -461,10 +470,80 @@ public interface LibUring {
     int io_uring_close_ring_fd(@Pointer IoUring ring);
 
     @KernelVersionLimit(major = 5, minor = 19)
-    int io_uring_register_buf_ring(@Pointer IoUring ring, @Pointer IoUringBufReg br, int br_flags);
+    default int io_uring_register_buf_ring(@Pointer IoUring ring, @Pointer IoUringBufReg reg, int br_flags) {
+        reg.setFlags((short) (reg.getFlags() | br_flags));
+        return IoUringSysCall.io_uring_register(
+                ring, IoUringConstant.RegisterOp.IORING_REGISTER_PBUF_RING,
+                StructProxyGenerator.findMemorySegment(reg), 1
+        );
+    }
+
+    @NativeFunction(returnIsPointer = true)
+    @KernelVersionLimit(major = 5, minor = 19)
+    default NativeIoUringBufRing io_uring_setup_buf_ring(@Pointer IoUring ioUring, int nentries, int bgid, int flags,/*int *ret*/@Pointer MemorySegment ret) {
+        long ioUringBufSizeof = IoUringBuf.LAYOUT.byteSize();
+        long ringSize = ioUringBufSizeof * nentries;
+        long bufferRingPtr = Instance.LIB_MMAN.mmapNative(
+                MemorySegment.NULL, ringSize,
+                LibMman.Prot.PROT_READ | LibMman.Prot.PROT_WRITE,
+                LibMman.Flag.MAP_ANONYMOUS | LibMman.Flag.MAP_PRIVATE,
+                -1,
+                0
+        );
+
+        if (bufferRingPtr < 0) {
+            ret.set(JAVA_INT,0,(int) bufferRingPtr);
+            return null;
+        }
+
+        MemorySegment bufferRingStruct = MemorySegment.ofAddress(bufferRingPtr).reinterpret(ringSize);
+        MemorySegment regStruct = Instance.LIBC_MALLOC.malloc(IoUringBufReg.LAYOUT.byteSize());
+        try {
+            IoUringBufReg reg = Instance.STRUCT_PROXY_GENERATOR.enhance(regStruct);
+            reg.setRing_addr(bufferRingPtr);
+            reg.setRing_ring_entries(nentries);
+            reg.setBgid((short) bgid);
+
+            int registerResult = io_uring_register_buf_ring(ioUring, reg, flags);
+
+            if (registerResult != 0) {
+                Instance.LIB_MMAN.munmap(bufferRingStruct, ringSize);
+                ret.set(JAVA_INT,0, registerResult);
+                return null;
+            }
+
+            NativeIoUringBufRing ring = Instance.STRUCT_PROXY_GENERATOR.enhance(bufferRingStruct);
+            IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.set(bufferRingStruct, 0L, (short)0);
+            return ring;
+        } finally {
+            Instance.LIBC_MALLOC.free(regStruct);
+        }
+    }
+
+    default int io_uring_free_buf_ring(@Pointer IoUring ioUring,@Pointer NativeIoUringBufRing br, int nentries, int bgid) {
+        int res = io_uring_unregister_buf_ring(ioUring, bgid);
+        if (res != 0) {
+            return res;
+        }
+        long ioUringBufSizeof = IoUringBuf.LAYOUT.byteSize();
+        long ringSize = ioUringBufSizeof * nentries;
+        Instance.LIB_MMAN.munmap(
+                StructProxyGenerator.findMemorySegment(br),
+                ringSize
+        );
+        return 0;
+    }
 
     @KernelVersionLimit(major = 5, minor = 19)
-    int io_uring_unregister_buf_ring(@Pointer IoUring ring, int bgid);
+    default int io_uring_unregister_buf_ring(@Pointer IoUring ring, int bgid) {
+        MemorySegment reg = Instance.LIBC_MALLOC.malloc(IoUringBufReg.LAYOUT.byteSize());
+        try {
+            IoUringBufReg.BGID_VH.set(reg, 0L, (short) bgid);
+            return IoUringSysCall.io_uring_register(ring, IoUringConstant.RegisterOp.IORING_UNREGISTER_PBUF_RING, reg, 1);
+        } finally {
+            Instance.LIBC_MALLOC.free(reg);
+        }
+    }
 
     @NativeFunction(fast = true)
     @KernelVersionLimit(major = 5, minor = 19)
@@ -497,12 +576,8 @@ public interface LibUring {
     @NativeFunction(fast = true)
     default void io_uring_buf_ring_init(@Pointer NativeIoUringBufRing br) {
         MemorySegment realMemory = StructProxyGenerator.findMemorySegment(br);
-        IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.set(realMemory, 0L, 0);
+        IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.set(realMemory, 0L, (short) 0);
     }
-
-    @NativeFunction(returnIsPointer = true)
-    @KernelVersionLimit(major = 5, minor = 19)
-    NativeIoUringBufRing io_uring_setup_buf_ring(@Pointer IoUring ioUring, int nentries, int bgid, int flags,/*int *ret*/@Pointer MemorySegment ret);
 
     int io_uring_buf_ring_head(@Pointer IoUring ring, int buf_group, /* unsigned * head*/ @Pointer MemorySegment head);
 

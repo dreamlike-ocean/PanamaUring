@@ -75,12 +75,14 @@ public class IoUringCore implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
+        int ringFd = internalRing.getRing_fd();
         Instance.LIB_URING.io_uring_queue_exit(internalRing);
         MemorySegment ioUringMemory = StructProxyGenerator.findMemorySegment(internalRing);
         Instance.LIBC_MALLOC.free(ioUringMemory);
         Instance.LIBC_MALLOC.free(cqePtrArray);
         MemorySegment kernelTime64Type = StructProxyGenerator.findMemorySegment(this.kernelTime64Type);
         Instance.LIBC_MALLOC.free(kernelTime64Type);
+        ioUringFds.remove(ringFd);
     }
 
     public IoUring getInternalRing() {
