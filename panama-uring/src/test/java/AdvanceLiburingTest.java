@@ -110,6 +110,9 @@ public class AdvanceLiburingTest {
 
             memory = asyncFileFd.asyncSelectedRead(1024, 0).get();
 
+            int head = bufferRing.head();
+            Assert.assertEquals(2, head);
+
             memory = asyncFileFd.asyncSelectedReadResult(1024, 0).get().value();
             actual = NativeHelper.bufToString(memory.resource(), (int) memory.resource().byteSize());
             Assert.assertEquals(hello, actual);
@@ -121,6 +124,7 @@ public class AdvanceLiburingTest {
             SyscallException syscallException = (SyscallException) exception.getCause();
             Assert.assertEquals(Libc.Error_H.ENOBUFS, syscallException.getErrorno());
             bufferRing.releaseRing();
+
         } catch (Exception e) {
            throw new RuntimeException(e);
         }

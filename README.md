@@ -4,10 +4,7 @@
 
 主要目的在于提供一个与基础read/write原语签名类似的 **Linux异步文件I/O** API，以补齐虚拟线程读写文件会导致pin住载体线程的短板，同时也提供了异步socket api。
 
-这个项目并非与netty的io_uring一样会从系统调用开始处理，而是直接使用[liburing](https://github.com/axboe/liburing)
-源码，在此基础上封装调用，即它最底层只是一层对liburing的封装。
-
-内存分配器部分则是使用封装jemalloc实现
+本项目来自于[liburing](https://github.com/axboe/liburing)的启发，使用Java重新实现liburing并进行高阶封装
 
 maven坐标为
 
@@ -16,7 +13,6 @@ maven坐标为
     <groupId>io.github.dreamlike-ocean</groupId>
     <artifactId>panama-uring</artifactId>
     <version>${lastest}</version>
-    <classifier>linux-x86_64</classifier>
 </dependency>
 ```
 
@@ -88,7 +84,6 @@ mvn clean test -am -pl panama-uring
 - Maven 3.8.4
 - OpenJDK 24
 - Linux >= 5.10 越新越好
-- Cargo 越新越好
 
 构建非常简单
 

@@ -23,4 +23,6 @@ public interface IoUringBufferRing {
     IoUringEventLoop owner();
 
     void fillSqe(IoUringSqe sqe);
+
+    int head();
 }

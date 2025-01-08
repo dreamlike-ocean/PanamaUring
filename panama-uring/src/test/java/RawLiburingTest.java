@@ -3,6 +3,7 @@ import org.junit.Test;
 import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.OSIoUringProbe;
+import top.dreamlike.panama.uring.nativelib.libs.LibUring;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
 import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
@@ -13,6 +14,7 @@ import top.dreamlike.panama.uring.sync.fd.EventFd;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.lang.reflect.Method;
 
 public class RawLiburingTest {
 
@@ -41,6 +43,11 @@ public class RawLiburingTest {
         EventFd readyEventFd = new EventFd(0, Libc.EventFd_H.EFD_NONBLOCK);
         EventFd pollEventFd = new EventFd();
         try {
+
+            int registerRingFdResult = Instance.LIB_URING.io_uring_register_ring_fd(ioUringCore.getInternalRing());
+            Assert.assertEquals(1,registerRingFdResult);
+
+
             int res = Instance.LIB_URING.io_uring_register_eventfd(ioUringCore.getInternalRing(), readyEventFd.fd());
             Assert.assertTrue(res >= 0);
 
@@ -80,9 +87,22 @@ public class RawLiburingTest {
 
             int unregisterBuffers = Instance.LIB_URING.io_uring_unregister_buffers(ioUringCore.getInternalRing());
             Assert.assertTrue(unregisterBuffers >= 0);
+
+            int i = Instance.LIB_URING.io_uring_unregister_ring_fd(ioUringCore.getInternalRing());
+            Assert.assertEquals(1, i);
             ioUringCore.close();
             readyEventFd.close();
             pollEventFd.close();
         }
     }
+
+    @Test
+    public void testRegister() {
+        for (Method method : LibUring.class.getMethods()) {
+            if (!method.isDefault()) {
+                System.out.println(method.getName());
+            }
+        }
+    }
+
 }

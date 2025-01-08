@@ -16,11 +16,13 @@ import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBuf;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufReg;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufStatus;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCq;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringParams;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringProbe;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringProbeOp;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringRsrcUpdate;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSq;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.NativeIoUringBufRing;
@@ -42,19 +44,29 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 public interface LibUring {
 
     @NativeFunction(fast = true)
-    int io_uring_struct_size();
+    default int io_uring_struct_size() {
+        return ((int) IoUring.LAYOUT.byteSize());
+    }
 
     @NativeFunction(fast = true)
-    int io_uring_cq_struct_size();
+    default int io_uring_cq_struct_size() {
+        return ((int) IoUringCq.LAYOUT.byteSize());
+    }
 
     @NativeFunction(fast = true)
-    int io_uring_cqe_struct_size();
+    default int io_uring_cqe_struct_size() {
+        return ((int) IoUringConstant.AccessShortcuts.IoUringCqeLayout.byteSize());
+    }
 
     @NativeFunction(fast = true)
-    int io_uring_sq_struct_size();
+    default int io_uring_sq_struct_size() {
+        return ((int) IoUringSq.LAYOUT.byteSize());
+    }
 
     @NativeFunction(fast = true)
-    int io_uring_sqe_struct_size();
+    default int io_uring_sqe_struct_size() {
+        return ((int) IoUringConstant.AccessShortcuts.IoUringSqeLayout.byteSize());
+    }
 
     @NativeFunction(returnIsPointer = true)
     default IoUringProbe io_uring_get_probe() {
@@ -181,7 +193,7 @@ public interface LibUring {
         IoUringParams.IoSqringOffsets sqOff = p.getSq_off();
         IoUringParams.IoCqruingOffsets cqOff = p.getCq_off();
 
-        sq.setRing_sz(sqOff.getArray() + p.getSq_entries() * ValueLayout.JAVA_INT.byteSize());
+        sq.setRing_sz(sqOff.getArray() + p.getSq_entries() * JAVA_INT.byteSize());
         cq.setRing_sz(cqOff.getCqes() + (long) p.getCq_entries() * cqe_size);
         if ((features & IoUringConstant.IORING_FEAT_SINGLE_MMAP) != 0) {
             if (cq.getRing_sz() > sq.getRing_sz()) {
@@ -463,11 +475,86 @@ public interface LibUring {
         return IoUringSysCall.io_uring_register(ring, IoUringConstant.RegisterOp.IORING_UNREGISTER_EVENTFD, MemorySegment.NULL, 0);
     }
 
-    int io_uring_register_ring_fd(@Pointer IoUring ring);
+    default int io_uring_register_ring_fd(@Pointer IoUring ring) {
 
-    int io_uring_unregister_ring_fd(@Pointer IoUring ring);
+        byte ringIntFlags = ring.getInt_flags();
+        if ((ringIntFlags & IoUringConstant.INT_FLAG_REG_RING) != 0) {
+            return -Libc.Error_H.EEXIST;
+        }
 
-    int io_uring_close_ring_fd(@Pointer IoUring ring);
+        MemorySegment updater = Instance.LIBC_MALLOC.malloc(IoUringRsrcUpdate.LAYOUT.byteSize());
+
+        try {
+            IoUringRsrcUpdate.DATA_VH.set(updater, 0L, ring.getRing_fd());
+            IoUringRsrcUpdate.OFFSET_VH.set(updater, 0L, 0xFFFFFFFF);
+
+            int registerRes = IoUringSysCall.io_uring_register(
+                    ring, IoUringConstant.RegisterOp.IORING_REGISTER_RING_FDS,
+                    updater, 1
+            );
+
+            if (registerRes != 1) {
+                return registerRes;
+            }
+
+            ring.setEnter_ring_fd((int) IoUringRsrcUpdate.OFFSET_VH.get(updater, 0L));
+            ringIntFlags |= IoUringConstant.INT_FLAG_REG_RING;
+            if ((ring.getFeatures() & IoUringConstant.IORING_FEAT_REG_REG_RING) != 0) {
+                ringIntFlags |= IoUringConstant.INT_FLAG_REG_REG_RING;
+            }
+            ring.setInt_flags(ringIntFlags);
+            return registerRes;
+        } finally {
+            Instance.LIBC_MALLOC.free(updater);
+        }
+    }
+
+    default int io_uring_unregister_ring_fd(@Pointer IoUring ring) {
+        byte ringIntFlags = ring.getInt_flags();
+        if ((ringIntFlags & IoUringConstant.INT_FLAG_REG_RING) == 0) {
+            return -Libc.Error_H.EINVAL;
+        }
+
+        MemorySegment updater = Instance.LIBC_MALLOC.malloc(IoUringRsrcUpdate.LAYOUT.byteSize());
+        try {
+            IoUringRsrcUpdate.OFFSET_VH.set(updater, 0L, ring.getEnter_ring_fd());
+
+            int registerRes = IoUringSysCall.io_uring_register(
+                    ring, IoUringConstant.RegisterOp.IORING_UNREGISTER_RING_FDS,
+                    updater, 1
+            );
+
+            if (registerRes != 1) {
+                return registerRes;
+            }
+
+            ring.setEnter_ring_fd(ring.getRing_fd());
+            ringIntFlags &= ~(IoUringConstant.INT_FLAG_REG_RING | IoUringConstant.INT_FLAG_REG_REG_RING);
+            ring.setInt_flags(ringIntFlags);
+            return registerRes;
+        } finally {
+            Instance.LIBC_MALLOC.free(updater);
+        }
+    }
+
+    default int io_uring_close_ring_fd(@Pointer IoUring ring) {
+        if ((ring.getFeatures() & IoUringConstant.IORING_FEAT_REG_REG_RING) == 0) {
+            return -Libc.Error_H.EOPNOTSUPP;
+        }
+
+        if ((ring.getInt_flags() & IoUringConstant.INT_FLAG_REG_RING) == 0) {
+            return -Libc.Error_H.EINVAL;
+        }
+
+        int ringFd = ring.getRing_fd();
+        if (ringFd == -1) {
+            return -Libc.Error_H.EBADF;
+        }
+
+        Instance.LIBC.close(ringFd);
+        ring.setRing_fd(-1);
+        return 1;
+    }
 
     @KernelVersionLimit(major = 5, minor = 19)
     default int io_uring_register_buf_ring(@Pointer IoUring ring, @Pointer IoUringBufReg reg, int br_flags) {
@@ -492,7 +579,7 @@ public interface LibUring {
         );
 
         if (bufferRingPtr < 0) {
-            ret.set(JAVA_INT,0,(int) bufferRingPtr);
+            ret.set(JAVA_INT, 0, (int) bufferRingPtr);
             return null;
         }
 
@@ -508,19 +595,19 @@ public interface LibUring {
 
             if (registerResult != 0) {
                 Instance.LIB_MMAN.munmap(bufferRingStruct, ringSize);
-                ret.set(JAVA_INT,0, registerResult);
+                ret.set(JAVA_INT, 0, registerResult);
                 return null;
             }
 
             NativeIoUringBufRing ring = Instance.STRUCT_PROXY_GENERATOR.enhance(bufferRingStruct);
-            IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.set(bufferRingStruct, 0L, (short)0);
+            IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.set(bufferRingStruct, 0L, (short) 0);
             return ring;
         } finally {
             Instance.LIBC_MALLOC.free(regStruct);
         }
     }
 
-    default int io_uring_free_buf_ring(@Pointer IoUring ioUring,@Pointer NativeIoUringBufRing br, int nentries, int bgid) {
+    default int io_uring_free_buf_ring(@Pointer IoUring ioUring, @Pointer NativeIoUringBufRing br, int nentries, int bgid) {
         int res = io_uring_unregister_buf_ring(ioUring, bgid);
         if (res != 0) {
             return res;
@@ -579,7 +666,25 @@ public interface LibUring {
         IoUringConstant.AccessShortcuts.IO_URING_BUF_RING_TAIL_VARHANDLE.set(realMemory, 0L, (short) 0);
     }
 
-    int io_uring_buf_ring_head(@Pointer IoUring ring, int buf_group, /* unsigned * head*/ @Pointer MemorySegment head);
+    default int io_uring_buf_ring_head(@Pointer IoUring ring, int buf_group, /* unsigned * head*/ @Pointer MemorySegment head) {
+        MemorySegment bufStatus = Instance.LIBC_MALLOC.malloc(IoUringBufStatus.LAYOUT.byteSize());
+        try {
+            IoUringBufStatus.BUF_GROUP_VH.set(bufStatus, 0L, buf_group);
+            int registerResult = IoUringSysCall.io_uring_register(
+                    ring,
+                    IoUringConstant.RegisterOp.IORING_REGISTER_PBUF_STATUS,
+                    bufStatus,
+                    1
+            );
+            if (registerResult != 0) {
+                return registerResult;
+            }
+            head.set(JAVA_SHORT, 0L, (short) (int) IoUringBufStatus.HEADER_VH.get(bufStatus, 0L));
+            return 0;
+        } finally {
+            Instance.LIBC_MALLOC.free(bufStatus);
+        }
+    }
 
     int io_uring_submit_and_get_events(@Pointer IoUring ring);
 

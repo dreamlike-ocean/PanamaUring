@@ -9,6 +9,7 @@ import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
 import top.dreamlike.panama.uring.helper.MemoryAllocator;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
+import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.LibPoll;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
@@ -28,6 +29,7 @@ import top.dreamlike.panama.uring.thirdparty.colletion.LongObjectHashMap;
 import top.dreamlike.panama.uring.thirdparty.colletion.LongObjectMap;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
+import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.Objects;
 import java.util.PriorityQueue;
@@ -58,13 +60,13 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
     protected final AtomicBoolean hasClosed;
     protected final Thread owner;
     protected final IoUring internalRing;
+    protected final MemoryAllocator<? extends OwnershipMemory> memoryAllocator;
     private final EventFd wakeUpFd;
     private final MpscUnboundedArrayQueue<Runnable> taskQueue;
     private final AtomicLong tokenGenerator;
     private final LongObjectHashMap<IoUringCompletionCallBack> callBackMap;
     private final PriorityQueue<ScheduledTask> scheduledTasks;
     private final OwnershipMemory eventReadBuffer;
-    protected final MemoryAllocator<? extends OwnershipMemory> memoryAllocator;
     protected IoUringCore ioUringCore;
     private Consumer<Throwable> exceptionHandler = (t) -> {
         log.error("Uncaught exception in event loop", t);
@@ -577,6 +579,20 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         private void assertClose() {
             if (hasRelease) {
                 throw new IllegalStateException("The buffer ring has been released");
+            }
+        }
+
+        @Override
+        public int head() {
+            MemorySegment ptr = Instance.LIBC_MALLOC.mallocNoInit(ValueLayout.JAVA_SHORT.byteSize());
+            try {
+                int res = Instance.LIB_URING.io_uring_buf_ring_head(internalRing, bufferGroupId, ptr);
+                if (res < 0) {
+                    throw new SyscallException(res);
+                }
+                return ptr.get(ValueLayout.JAVA_SHORT, 0L);
+            } finally {
+                Instance.LIBC_MALLOC.free(ptr);
             }
         }
 
