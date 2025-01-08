@@ -1,6 +1,8 @@
 package top.dreamlike.panama.uring.nativelib.libs.syscall;
 
 import top.dreamlike.panama.uring.nativelib.libs.LibSysCall;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
@@ -54,7 +56,7 @@ public class IoUringSysCall {
         }
     }
 
-    public static int io_uring_enter(int fd, int to_submit, int min_complete, int flags, MemorySegment sig, long sig_sz){
+    public static int io_uring_enter(int fd, int to_submit, int min_complete, int flags, MemorySegment sig, long sig_sz) {
         try {
             return (int) IO_URING_ENTER_MH.invokeExact(
                     LibSysCall.SYSCALL_FP,
@@ -69,6 +71,18 @@ public class IoUringSysCall {
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static int io_uring_register(IoUring ioUring, int op, MemorySegment arg, int nr_args) {
+        int fd;
+        if ((ioUring.getInt_flags() & IoUringConstant.INT_FLAG_REG_REG_RING) != 0) {
+            op |= IoUringConstant.RegisterOp.IORING_REGISTER_USE_REGISTERED_RING;
+            fd = ioUring.getEnter_ring_fd();
+        } else {
+            fd = ioUring.getRing_fd();
+        }
+
+        return io_uring_register(fd, op, arg, nr_args);
     }
 
     public static int io_uring_register(int fd, int op, MemorySegment arg, int nr_args) {

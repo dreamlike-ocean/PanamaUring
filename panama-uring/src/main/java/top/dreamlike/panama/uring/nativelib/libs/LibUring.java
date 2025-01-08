@@ -19,6 +19,7 @@ import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCq;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringParams;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringProbe;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringProbeOp;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSq;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.NativeIoUringBufRing;
@@ -55,9 +56,44 @@ public interface LibUring {
     int io_uring_sqe_struct_size();
 
     @NativeFunction(returnIsPointer = true)
-    IoUringProbe io_uring_get_probe();
+    default IoUringProbe io_uring_get_probe() {
+        long probeSize = IoUringProbe.LAYOUT.byteSize();
+        long mallocSize = probeSize + 256 * IoUringProbeOp.LAYOUT.byteSize();
 
-    void io_uring_free_probe(@Pointer IoUringProbe probe);
+        MemorySegment ioUringMemory = Instance.LIBC_MALLOC.malloc(IoUring.LAYOUT.byteSize());
+        MemorySegment probePtr = Instance.LIBC_MALLOC.malloc(mallocSize);
+        boolean fail = false;
+        try {
+            IoUring ioUring = Instance.STRUCT_PROXY_GENERATOR.enhance(ioUringMemory);
+            int initRingResult = io_uring_queue_init(2, ioUring, 0);
+
+            if (initRingResult < 0) {
+                fail = true;
+                return null;
+            }
+
+            IoUringProbe probe = Instance.STRUCT_PROXY_GENERATOR.enhance(probePtr);
+            int result = IoUringSysCall.io_uring_register(ioUring, IoUringConstant.RegisterOp.IORING_REGISTER_PROBE, probePtr, 256);
+            int features = ioUring.getFeatures();
+            io_uring_queue_exit(ioUring);
+            if (result >= 0) {
+                probe.setFeatures(features);
+                return probe;
+            }
+            fail = true;
+            return null;
+        } finally {
+            Instance.LIBC_MALLOC.free(ioUringMemory);
+            if (fail) {
+                Instance.LIBC_MALLOC.free(probePtr);
+            }
+        }
+    }
+
+    default void io_uring_free_probe(@Pointer IoUringProbe probe) {
+        MemorySegment rawPtr = StructProxyGenerator.findMemorySegment(probe);
+        Instance.LIBC_MALLOC.free(rawPtr);
+    }
 
     //跟队列本身相关的操作=
     default int io_uring_queue_init(int entries, @Pointer IoUring ring, int flags) {
@@ -224,7 +260,6 @@ public interface LibUring {
 
         return 0;
     }
-
 
     default void io_uring_queue_exit(@Pointer IoUring ring) {
         MemorySegment ringStruct = StructProxyGenerator.findMemorySegment(ring);
@@ -395,11 +430,29 @@ public interface LibUring {
 
     int io_uring_unregister_files(@Pointer IoUring ring);
 
-    int io_uring_register_eventfd(@Pointer IoUring ring, int fd);
+    default int io_uring_register_eventfd(@Pointer IoUring ring, int fd) {
+        MemorySegment tmpInt = Instance.LIBC_MALLOC.mallocNoInit(JAVA_INT.byteSize());
+        try {
+            tmpInt.set(JAVA_INT, 0, fd);
+            return IoUringSysCall.io_uring_register(ring, IoUringConstant.RegisterOp.IORING_REGISTER_EVENTFD, tmpInt, 1);
+        } finally {
+            Instance.LIBC_MALLOC.free(tmpInt);
+        }
+    }
 
-    int io_uring_register_eventfd_async(@Pointer IoUring ring, int fd);
+    default int io_uring_register_eventfd_async(@Pointer IoUring ring, int fd) {
+        MemorySegment tmpInt = Instance.LIBC_MALLOC.mallocNoInit(JAVA_INT.byteSize());
+        try {
+            tmpInt.set(JAVA_INT, 0, fd);
+            return IoUringSysCall.io_uring_register(ring, IoUringConstant.RegisterOp.IORING_REGISTER_EVENTFD_ASYNC, tmpInt, 1);
+        } finally {
+            Instance.LIBC_MALLOC.free(tmpInt);
+        }
+    }
 
-    int io_uring_unregister_eventfd(@Pointer IoUring ring);
+    default int io_uring_unregister_eventfd(@Pointer IoUring ring) {
+        return IoUringSysCall.io_uring_register(ring, IoUringConstant.RegisterOp.IORING_UNREGISTER_EVENTFD, MemorySegment.NULL, 0);
+    }
 
     int io_uring_register_ring_fd(@Pointer IoUring ring);
 

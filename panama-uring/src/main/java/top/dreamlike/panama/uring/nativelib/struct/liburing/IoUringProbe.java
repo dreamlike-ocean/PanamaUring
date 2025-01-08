@@ -1,6 +1,7 @@
 package top.dreamlike.panama.uring.nativelib.struct.liburing;
 
 import top.dreamlike.panama.generator.annotation.NativeArrayMark;
+import top.dreamlike.panama.generator.annotation.Skip;
 import top.dreamlike.panama.uring.nativelib.Instance;
 
 import java.lang.foreign.MemoryLayout;
@@ -23,6 +24,9 @@ public class IoUringProbe {
 
     @NativeArrayMark(size = IoUringProbeOp.class, length = 0)
     private MemorySegment ops;
+
+    @Skip
+    private int features;
 
     public byte getLastOp() {
         return lastOp;
@@ -62,5 +66,13 @@ public class IoUringProbe {
 
     public void setOps(MemorySegment ops) {
         this.ops = ops;
+    }
+
+    public int getFeatures() {
+        return features;
+    }
+
+    public void setFeatures(int features) {
+        this.features = features;
     }
 }

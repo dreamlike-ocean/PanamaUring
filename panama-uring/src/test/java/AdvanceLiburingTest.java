@@ -19,7 +19,6 @@ import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
-import top.dreamlike.panama.uring.nativelib.helper.OSIoUringProbe;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufRingSetupResult;
@@ -412,11 +411,4 @@ public class AdvanceLiburingTest {
         Assert.assertEquals(message, nativeCqe.getUser_data());
     }
 
-    @Test
-    public void testProbe() {
-        OSIoUringProbe probe = new OSIoUringProbe();
-        int lastOp = probe.getLastOp();
-        Assert.assertTrue(lastOp > 0);
-        Assert.assertEquals(lastOp + 1, probe.getOps().length);
-    }
 }

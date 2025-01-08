@@ -291,6 +291,71 @@ public class IoUringConstant {
 
     }
 
+    public static class RegisterOp {
+        public static final int IORING_REGISTER_BUFFERS = 0;
+        public static final int IORING_UNREGISTER_BUFFERS = 1;
+        public static final int IORING_REGISTER_FILES = 2;
+        public static final int IORING_UNREGISTER_FILES = 3;
+        public static final int IORING_REGISTER_EVENTFD = 4;
+        public static final int IORING_UNREGISTER_EVENTFD = 5;
+        public static final int IORING_REGISTER_FILES_UPDATE = 6;
+        public static final int IORING_REGISTER_EVENTFD_ASYNC = 7;
+        public static final int IORING_REGISTER_PROBE = 8;
+        public static final int IORING_REGISTER_PERSONALITY = 9;
+        public static final int IORING_UNREGISTER_PERSONALITY = 10;
+        public static final int IORING_REGISTER_RESTRICTIONS = 11;
+        public static final int IORING_REGISTER_ENABLE_RINGS = 12;
+
+        /* extended with tagging */
+        public static final int IORING_REGISTER_FILES2 = 13;
+        public static final int IORING_REGISTER_FILES_UPDATE2 = 14;
+        public static final int IORING_REGISTER_BUFFERS2 = 15;
+        public static final int IORING_REGISTER_BUFFERS_UPDATE = 16;
+
+        /* set/clear io-wq thread affinities */
+        public static final int IORING_REGISTER_IOWQ_AFF = 17;
+        public static final int IORING_UNREGISTER_IOWQ_AFF = 18;
+
+        /* set/get max number of io-wq workers */
+        public static final int IORING_REGISTER_IOWQ_MAX_WORKERS = 19;
+
+        /* register/unregister io_uring fd with the ring */
+        public static final int IORING_REGISTER_RING_FDS = 20;
+        public static final int IORING_UNREGISTER_RING_FDS = 21;
+
+        /* register ring based provide buffer group */
+        public static final int IORING_REGISTER_PBUF_RING = 22;
+        public static final int IORING_UNREGISTER_PBUF_RING = 23;
+
+        /* sync cancelation API */
+        public static final int IORING_REGISTER_SYNC_CANCEL = 24;
+
+        /* register a range of fixed file slots for automatic slot allocation */
+        public static final int IORING_REGISTER_FILE_ALLOC_RANGE = 25;
+
+        /* return status information for a buffer group */
+        public static final int IORING_REGISTER_PBUF_STATUS = 26;
+
+        /* set/clear busy poll settings */
+        public static final int IORING_REGISTER_NAPI = 27;
+        public static final int IORING_UNREGISTER_NAPI = 28;
+
+        public static final int IORING_REGISTER_CLOCK = 29;
+
+        /* clone registered buffers from source ring to current ring */
+        public static final int IORING_REGISTER_CLONE_BUFFERS = 30;
+
+        public static final int IORING_REGISTER_RESIZE_RINGS = 33;
+
+        public static final int IORING_REGISTER_MEM_REGION = 34;
+
+        /* this goes last */
+        public static final int IORING_REGISTER_LAST = 35;
+
+        /* flag added to the opcode to use a registered ring fd */
+        public static final int IORING_REGISTER_USE_REGISTERED_RING = 1 << 31;
+    }
+
     public static class AccessShortcuts {
         public static final MemoryLayout IoUringSqeLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringSqe.class);
         public static final MemoryLayout IoUringCqeLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringCqe.class);
