@@ -43,6 +43,8 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 @KernelVersionLimit(major = 5, minor = 10)
 public interface LibUring {
 
+    long LIBURING_UDATA_TIMEOUT = Long.MIN_VALUE;
+
     @NativeFunction(fast = true)
     default int io_uring_struct_size() {
         return ((int) IoUring.LAYOUT.byteSize());
@@ -416,13 +418,100 @@ public interface LibUring {
     @KernelVersionLimit(major = 5, minor = 11)
     int io_uring_wait_cqe_timeout(@Pointer IoUring ring, @Pointer MemorySegment cqe_ptr, @Pointer KernelTime64Type ts);
 
-    int io_uring_submit(@Pointer IoUring ring);
+    default int io_uring_submit(@Pointer IoUring ring) {
+        return io_uring_submit_and_wait(ring, 0);
+    }
 
     @KernelVersionLimit(major = 5, minor = 11)
-    int io_uring_submit_and_wait(@Pointer IoUring ring, int wait_nr);
+    default int io_uring_submit_and_wait(@Pointer IoUring ring, int wait_nr) {
+        return io_uring_submit0(
+                ring,
+                io_uring_flush_sq(ring),
+                wait_nr,
+                false
+        );
+    }
+
+    default int io_uring_submit_and_get_events(@Pointer IoUring ring) {
+        return io_uring_submit0(
+                ring,
+                io_uring_flush_sq(ring),
+                0,
+                true
+        );
+    }
+
+    default int io_uring_get_events(@Pointer IoUring ioUring) {
+        MemorySegment ioUringStruct = StructProxyGenerator.findMemorySegment(ioUring);
+        int flags = (byte) IoUringConstant.AccessShortcuts.IO_URING_INT_FLAGS_VARHANDLE.get(ioUringStruct, 0L) & IoUringConstant.IORING_ENTER_REGISTERED_RING;
+        flags |= IoUringConstant.IORING_ENTER_GETEVENTS;
+        int enterFd = (int) IoUringConstant.AccessShortcuts.IO_URING_ENTER_RING_FD_VARHANDLE.get(ioUringStruct, 0L);
+        return IoUringSysCall.io_uring_enter(enterFd, 0, 0, flags, MemorySegment.NULL, SigsetType._NSIG / 8);
+    }
 
     @KernelVersionLimit(major = 5, minor = 11)
     int io_uring_submit_and_wait_timeout(@Pointer IoUring ring, @Pointer MemorySegment cqe_ptr, int wait_nr, @Pointer KernelTime64Type ts, @Pointer SigsetType sigmask);
+
+    private int io_uring_submit0(@Pointer IoUring ioUring, int submitted, int wait_nr, boolean getevents) {
+        MemorySegment ioUringStruct = StructProxyGenerator.findMemorySegment(ioUring);
+        int ringFlags = (int) IoUringConstant.AccessShortcuts.IO_URING_FLAGS_VARHANDLE.get(ioUringStruct, 0L);
+        boolean cq_need_enter = getevents || wait_nr != 0 || (ringFlags & IoUringConstant.IORING_SETUP_IOPOLL) != 0 || cq_ring_needs_flush(ioUringStruct);
+
+        int flags = (byte) IoUringConstant.AccessShortcuts.IO_URING_INT_FLAGS_VARHANDLE.get(ioUringStruct, 0L) & IoUringConstant.IORING_ENTER_REGISTERED_RING;
+
+//        sq_ring_needs_enter
+        boolean sq_ring_needs_enter;
+        //如果不需要提交就不需要enter
+        if (submitted == 0) {
+            sq_ring_needs_enter = false;
+        } else {
+            //如果不是sqpoll模式，那就得进入
+            if ((ringFlags & IoUringConstant.IORING_SETUP_SQPOLL) == 0) {
+                sq_ring_needs_enter = true;
+            } else {
+                VarHandle.fullFence();
+                // 如果ring需要唤醒，那就需要进入
+                int ringKFlags = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_KFLAGS_DEFERENCE_VARHANDLE.get(ioUringStruct, 0L);
+                if ((ringKFlags & IoUringConstant.IORING_SQ_NEED_WAKEUP) != 0) {
+                    flags |= IoUringConstant.IORING_ENTER_SQ_WAKEUP;
+                    sq_ring_needs_enter = true;
+                } else {
+                    sq_ring_needs_enter = false;
+                }
+            }
+        }
+
+        if (sq_ring_needs_enter || cq_need_enter) {
+            if (cq_need_enter) {
+                flags |= IoUringConstant.IORING_ENTER_GETEVENTS;
+            }
+            int enterFd = (int) IoUringConstant.AccessShortcuts.IO_URING_ENTER_RING_FD_VARHANDLE.get(ioUringStruct, 0L);
+            return IoUringSysCall.io_uring_enter(enterFd, submitted, wait_nr, flags, MemorySegment.NULL, SigsetType._NSIG / 8);
+        } else {
+            return submitted;
+        }
+    }
+
+    private int io_uring_flush_sq(@Pointer IoUring ioUring) {
+        MemorySegment ioUringStruct = StructProxyGenerator.findMemorySegment(ioUring);
+        int tail = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_SQE_TAIL_VARHANDLE.get(ioUringStruct, 0L);
+        int head = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_SQE_HEAD_VARHANDLE.get(ioUringStruct, 0L);
+        if (tail != head) {
+            IoUringConstant.AccessShortcuts.IO_URING_SQ_SQE_HEAD_VARHANDLE.set(ioUringStruct, 0L, tail);
+            int ringFlags = (int) IoUringConstant.AccessShortcuts.IO_URING_FLAGS_VARHANDLE.get(ioUringStruct, 0L);
+            //不使用内核轮询的情况
+            if ((ringFlags & IoUringConstant.IORING_SETUP_SQPOLL) == 0) {
+                IoUringConstant.AccessShortcuts.IO_URING_SQ_KTAIL_DEFERENCE_VARHANDLE.set(ioUringStruct, 0L, tail);
+            } else {
+                IoUringConstant.AccessShortcuts.IO_URING_SQ_KTAIL_DEFERENCE_VARHANDLE.setRelease(ioUringStruct, 0L, tail);
+            }
+        }
+
+        //内核不会向提交队列（submission queue）中写入新的数据，它只是通过推进 khead 来表明已经完成了对提交队列条目的读取。
+        //这意味着用户空间代码不需要担心内存顺序问题，因为没有共享数据的写入操作。
+        // load_acquire 通常用于确保后续的读写操作不会被重排序到该加载操作之前，但在这种情况下并不需要这种保证
+        return tail - (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_KHEAD_DEFERENCE_VARHANDLE.get(ioUringStruct, 0L);
+    }
 
     @NativeFunction(fast = true)
     default void io_uring_cq_advance(@Pointer IoUring ring, int nr) {
@@ -685,10 +774,6 @@ public interface LibUring {
             Instance.LIBC_MALLOC.free(bufStatus);
         }
     }
-
-    int io_uring_submit_and_get_events(@Pointer IoUring ring);
-
-    int io_uring_get_events(@Pointer IoUring ring);
 
     //sqe相关的操作
     @NativeFunction(fast = true, returnIsPointer = true)

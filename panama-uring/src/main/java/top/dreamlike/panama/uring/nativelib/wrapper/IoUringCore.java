@@ -89,15 +89,17 @@ public class IoUringCore implements AutoCloseable {
         return internalRing;
     }
 
-    public void submitAndWait(long durationNs) {
+    public int submitAndWait(long durationNs) {
         log.debug("duration: {}", durationNs);
+        int sqeCount;
         if (durationNs == -1) {
-            libUring.io_uring_submit_and_wait(internalRing, 1);
+            sqeCount = libUring.io_uring_submit_and_wait(internalRing, 1);
         } else {
             kernelTime64Type.setTv_sec(durationNs / 1000000000);
             kernelTime64Type.setTv_nsec(durationNs % 1000000000);
-            libUring.io_uring_submit_and_wait_timeout(internalRing, cqePtrArray, 1, kernelTime64Type, null);
+            sqeCount = libUring.io_uring_submit_and_wait_timeout(internalRing, cqePtrArray, 1, kernelTime64Type, null);
         }
+        return sqeCount;
     }
 
     public int submit() {

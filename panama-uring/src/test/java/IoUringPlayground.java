@@ -3,7 +3,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
-import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
@@ -66,7 +65,8 @@ public class IoUringPlayground {
             MemorySegment readBuffer = Arena.global().allocate(ValueLayout.JAVA_LONG);
             Instance.LIB_URING.io_uring_prep_read(sqe, eventFd.fd(), readBuffer, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
             eventFd.eventfdWrite(2);
-            ioUringCore.submitAndWait(-1);
+            int result = ioUringCore.submitAndWait(-1);
+            Assert.assertTrue(result > 0);
             List<IoUringCqe> uringCqes = ioUringCore.processCqes();
             Assert.assertEquals(1, uringCqes.size());
             IoUringCqe cqe = uringCqes.get(0);
@@ -223,10 +223,4 @@ public class IoUringPlayground {
         return submitResult;
     }
 
-    public void testNettyIoUring() {
-        IoUringEventLoop eventLoop = IoUringEventLoopGetter.get(IoUringEventLoopGetter.EventLoopType.Netty_IoUring, params -> {
-            params.setSq_entries(4);
-            params.setFlags(0);
-        });
-    }
 }

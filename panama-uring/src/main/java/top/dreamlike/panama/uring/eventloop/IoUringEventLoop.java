@@ -91,7 +91,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         this.taskQueue = new MpscUnboundedArrayQueue<>(1024);
         this.hasClosed = new AtomicBoolean();
         this.memoryAllocator = allocator;
-        this.tokenGenerator = new AtomicLong(0);
+        this.tokenGenerator = new AtomicLong(Long.MIN_VALUE + 1);
         this.callBackMap = new LongObjectHashMap<>();
         this.scheduledTasks = new PriorityQueue<>();
         this.ioUringCore = new IoUringCore(ioUringParamsFactory);

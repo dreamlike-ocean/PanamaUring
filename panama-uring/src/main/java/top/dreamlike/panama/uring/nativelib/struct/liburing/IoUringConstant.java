@@ -369,6 +369,15 @@ public class IoUringConstant {
                 MemoryLayout.PathElement.groupElement("addr2")
         ).withInvokeExactBehavior();
         public static final MemoryLayout IoUringLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUring.class);
+        public static final VarHandle IO_URING_FLAGS_VARHANDLE = IoUringLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("flags")
+        ).withInvokeExactBehavior();
+        public static final VarHandle IO_URING_ENTER_RING_FD_VARHANDLE = IoUringLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("enter_ring_fd")
+        ).withInvokeExactBehavior();
+        public static final VarHandle IO_URING_INT_FLAGS_VARHANDLE = IoUringLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("int_flags")
+        ).withInvokeExactBehavior();
         public static final VarHandle IO_URING_SQ_KHEAD_DEFERENCE_VARHANDLE = IoUringLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("sq"),
                 MemoryLayout.PathElement.groupElement("khead"),
@@ -382,6 +391,10 @@ public class IoUringConstant {
         public static final VarHandle IO_URING_SQ_SQE_TAIL_VARHANDLE = IoUringLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("sq"),
                 MemoryLayout.PathElement.groupElement("sqe_tail")
+        ).withInvokeExactBehavior();
+        public static final VarHandle IO_URING_SQ_SQE_HEAD_VARHANDLE = IoUringLayout.varHandle(
+                MemoryLayout.PathElement.groupElement("sq"),
+                MemoryLayout.PathElement.groupElement("sqe_head")
         ).withInvokeExactBehavior();
         public static final VarHandle IO_URING_SQ_RING_MASK_VARHANDLE = IoUringLayout.varHandle(
                 MemoryLayout.PathElement.groupElement("sq"),
