@@ -3,14 +3,23 @@ package top.dreamlike.panama.uring.nativelib.struct.liburing;
 import top.dreamlike.panama.uring.nativelib.Instance;
 
 import java.lang.foreign.MemoryLayout;
+import java.lang.invoke.VarHandle;
 
 public class IoUringGetEventsArg {
 
     public static final MemoryLayout LAYOUT = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringGetEventsArg.class);
 
+    public static final VarHandle SIGMASK_VH = LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("sigmask"));
+
+    public static final VarHandle SIGMASK_SZ_VH = LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("sigmasksz"));
+
+    public static final VarHandle MIN_WAIT_USECSEC_VH = LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("minWaitUsecsec"));
+
+    public static final VarHandle TS_VH = LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("ts"));
+
     private long sigmask;
-    private int sigmask_sz;
-    private int pad;
+    private int sigmasksz;
+    private int minWaitUsecsec;
     private long ts;
 
     public long getSigmask() {
@@ -21,20 +30,20 @@ public class IoUringGetEventsArg {
         this.sigmask = sigmask;
     }
 
-    public int getSigmask_sz() {
-        return sigmask_sz;
+    public int getSigmasksz() {
+        return sigmasksz;
     }
 
-    public void setSigmask_sz(int sigmask_sz) {
-        this.sigmask_sz = sigmask_sz;
+    public void setSigmasksz(int sigmasksz) {
+        this.sigmasksz = sigmasksz;
     }
 
-    public int getPad() {
-        return pad;
+    public int getMinWaitUsecsec() {
+        return minWaitUsecsec;
     }
 
-    public void setPad(int pad) {
-        this.pad = pad;
+    public void setMinWaitUsecsec(int minWaitUsecsec) {
+        this.minWaitUsecsec = minWaitUsecsec;
     }
 
     public long getTs() {

@@ -2,6 +2,7 @@ package top.dreamlike.panama.uring.nativelib.helper;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
 import top.dreamlike.panama.uring.async.trait.IoUringOperator;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.helper.LambdaHelper;
@@ -70,6 +71,14 @@ public class NativeHelper {
                 MemorySegment.ofArray(bytes), 0L, length
         );
         return new String(bytes);
+    }
+
+    public static long safeGetAddress(Object o) {
+        if (o == null) {
+            return 0;
+        }
+
+        return StructProxyGenerator.findMemorySegment(o).address();
     }
 
     public static <T> T useCStr(MemoryAllocator<? extends OwnershipMemory> memoryAllocator, String str, Function<MemorySegment, T> useFunction) {

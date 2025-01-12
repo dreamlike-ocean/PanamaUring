@@ -16,7 +16,6 @@ import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
 import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -32,8 +31,6 @@ public class IoUringCore implements AutoCloseable {
     private final static Logger log = LoggerFactory.getLogger(IoUringCore.class);
     private final IoUring internalRing;
     private final int cqeSize;
-
-    private final MemorySegment cqePtrArray;
 
     private final KernelTime64Type kernelTime64Type;
 
@@ -56,7 +53,6 @@ public class IoUringCore implements AutoCloseable {
             int uringFd = this.internalRing.getRing_fd();
             ioUringFds.add(uringFd);
             this.cqeSize = ioUringParams.getCq_entries();
-            this.cqePtrArray = Instance.LIBC_MALLOC.malloc(ValueLayout.ADDRESS.byteSize() * cqeSize);
             this.kernelTime64Type = Instance.STRUCT_PROXY_GENERATOR.enhance(
                     Instance.LIBC_MALLOC.malloc(KernelTime64Type.LAYOUT.byteSize())
             );
@@ -79,7 +75,6 @@ public class IoUringCore implements AutoCloseable {
         Instance.LIB_URING.io_uring_queue_exit(internalRing);
         MemorySegment ioUringMemory = StructProxyGenerator.findMemorySegment(internalRing);
         Instance.LIBC_MALLOC.free(ioUringMemory);
-        Instance.LIBC_MALLOC.free(cqePtrArray);
         MemorySegment kernelTime64Type = StructProxyGenerator.findMemorySegment(this.kernelTime64Type);
         Instance.LIBC_MALLOC.free(kernelTime64Type);
         ioUringFds.remove(ringFd);
@@ -97,7 +92,7 @@ public class IoUringCore implements AutoCloseable {
         } else {
             kernelTime64Type.setTv_sec(durationNs / 1000000000);
             kernelTime64Type.setTv_nsec(durationNs % 1000000000);
-            sqeCount = libUring.io_uring_submit_and_wait_timeout(internalRing, cqePtrArray, 1, kernelTime64Type, null);
+            sqeCount = libUring.io_uring_submit_and_wait_timeout(internalRing, 1, kernelTime64Type);
         }
         return sqeCount;
     }
@@ -142,8 +137,12 @@ public class IoUringCore implements AutoCloseable {
             nativeCqeConsumer.accept(nativeCqe);
         }
         if (advance) {
-            libUring.io_uring_cq_advance(internalRing, count);
+            ioUringCqAdvance(count);
         }
+    }
+
+    public final void ioUringCqAdvance(int count) {
+        libUring.io_uring_cq_advance(internalRing, count);
     }
 
     public final List<IoUringCqe> processCqes() {

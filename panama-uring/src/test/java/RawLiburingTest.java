@@ -1,5 +1,7 @@
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.OSIoUringProbe;
@@ -7,7 +9,9 @@ import top.dreamlike.panama.uring.nativelib.libs.LibUring;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
 import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
+import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
 import top.dreamlike.panama.uring.nativelib.wrapper.IoUringCore;
 import top.dreamlike.panama.uring.sync.fd.EventFd;
 
@@ -15,8 +19,12 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.reflect.Method;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class RawLiburingTest {
+
+    private static final Logger log = LoggerFactory.getLogger(RawLiburingTest.class);
 
     @Test
     public void testProbe() {
@@ -38,6 +46,52 @@ public class RawLiburingTest {
     }
 
     @Test
+    public void testSubmit() {
+        try (IoUringCore ioUringCore = new IoUringCore(p -> p.setSq_entries(2))) {
+
+            try (Arena arena = Arena.ofConfined()) {
+                KernelTime64Type kernelTime64Type = Instance.STRUCT_PROXY_GENERATOR.enhance(
+                        Instance.LIBC_MALLOC.malloc(KernelTime64Type.LAYOUT.byteSize())
+                );
+                long durationNs = TimeUnit.MILLISECONDS.toNanos(500);
+                kernelTime64Type.setTv_nsec(durationNs / 1000000000);
+                kernelTime64Type.setTv_nsec(durationNs % 1000000000);
+                MemorySegment cqeptr = arena.allocate(ValueLayout.ADDRESS, 8);
+                int nativeResult = Instance.LIB_URING.io_uring_submit_and_wait_timeout_native(ioUringCore.getInternalRing(), cqeptr, 1, kernelTime64Type, null);
+                System.out.println(nativeResult);
+            }
+
+
+            ioUringCore.submitAndWait(TimeUnit.MILLISECONDS.toNanos(10_000));
+
+            long userData = 20240214;
+            IoUringSqe ioUringSqe = ioUringCore.ioUringGetSqe(true).get();
+            Instance.LIB_URING.io_uring_prep_nop(ioUringSqe);
+            ioUringSqe.setUser_data(userData);
+
+            ioUringCore.submit();
+
+            Assert.assertEquals(1, ioUringCore.countReadyCqe());
+
+            List<IoUringCqe> ioUringCqes = ioUringCore.processCqes();
+            Assert.assertEquals(1, ioUringCqes.size());
+            IoUringCqe ioUringCqe = ioUringCqes.get(0);
+            Assert.assertEquals(userData, ioUringCqe.getUser_data());
+            ioUringCore.ioUringCqAdvance(1);
+
+            EventFd eventFd = new EventFd(0, Libc.EventFd_H.EFD_NONBLOCK);
+            ioUringSqe = ioUringCore.ioUringGetSqe(true).get();
+            MemorySegment readBuffer = Arena.global().allocate(ValueLayout.JAVA_LONG);
+            Instance.LIB_URING.io_uring_prep_read(ioUringSqe, eventFd.fd(), readBuffer, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
+            long start = System.currentTimeMillis();
+            ioUringCore.submitAndWait(TimeUnit.MILLISECONDS.toNanos(500));
+            log.info("wait :{}", System.currentTimeMillis() - start);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
     public void testRegisterEventFd() throws Exception {
         IoUringCore ioUringCore = new IoUringCore(p -> p.setSq_entries(2));
         EventFd readyEventFd = new EventFd(0, Libc.EventFd_H.EFD_NONBLOCK);
@@ -45,7 +99,7 @@ public class RawLiburingTest {
         try {
 
             int registerRingFdResult = Instance.LIB_URING.io_uring_register_ring_fd(ioUringCore.getInternalRing());
-            Assert.assertEquals(1,registerRingFdResult);
+            Assert.assertEquals(1, registerRingFdResult);
 
 
             int res = Instance.LIB_URING.io_uring_register_eventfd(ioUringCore.getInternalRing(), readyEventFd.fd());

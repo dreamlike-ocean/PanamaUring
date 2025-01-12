@@ -19,6 +19,7 @@ import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufReg;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufStatus;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCq;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringGetEventsArg;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringParams;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringProbe;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringProbeOp;
@@ -301,10 +302,15 @@ public interface LibUring {
         }
 
         if ((ringIntFlags & IoUringConstant.INT_FLAG_REG_RING) != 0) {
-            //todo io_uring_unregister_ring_fd
+            io_uring_unregister_ring_fd(ring);
         }
         if (ring.getRing_fd() != -1) {
             Instance.LIBC.close(ring.getRing_fd());
+        }
+        MemorySegment getEventsArgs = ring.getGetEventsArgs();
+        if (getEventsArgs != null) {
+            ring.setGetEventsArgs(null);
+            Instance.LIBC_MALLOC.free(getEventsArgs);
         }
     }
 
@@ -361,7 +367,13 @@ public interface LibUring {
         return 0;
     }
 
-    @NativeFunction(fast = true)
+    /**
+     * 专门给Java侧调用设计的。。。
+     *
+     * @param ring
+     * @param maxCount
+     * @return
+     */
     default long[] io_uring_peek_batch_cqe(@Pointer IoUring ring, int maxCount) {
         int ready;
         boolean overflow_checked = false;
@@ -411,12 +423,94 @@ public interface LibUring {
         return (sqFlags & (IoUringConstant.IORING_SQ_CQ_OVERFLOW | IoUringConstant.IORING_SQ_TASKRUN)) != 0;
     }
 
-    int io_uring_peek_cqe(@Pointer IoUring ring, @Pointer MemorySegment cqe_ptr);
-
-    int io_uring_wait_cqes(@Pointer IoUring ring, @Pointer MemorySegment cqe_ptr, int wait_nr, @Pointer KernelTime64Type ts, @Pointer SigsetType sigmask);
+    @KernelVersionLimit(major = 5, minor = 11)
+    @NativeFunction(value = "io_uring_submit_and_wait_timeout")
+    int io_uring_submit_and_wait_timeout_native(@Pointer IoUring ring, @Pointer MemorySegment cqe_ptr, int wait_nr, @Pointer KernelTime64Type ts, @Pointer SigsetType sigmask);
 
     @KernelVersionLimit(major = 5, minor = 11)
-    int io_uring_wait_cqe_timeout(@Pointer IoUring ring, @Pointer MemorySegment cqe_ptr, @Pointer KernelTime64Type ts);
+    default int io_uring_submit_and_wait_timeout(@Pointer IoUring ring, int wait_nr, @Pointer KernelTime64Type ts) {
+        if ((ring.getFeatures() & IoUringConstant.IORING_FEAT_EXT_ARG) == 0) {
+            throw new UnsupportedOperationException("only support IORING_FEAT_EXT_ARG,please check your kernel version");
+        }
+        if (ts == null) {
+            throw new NullPointerException("ts cant be null");
+        }
+
+        int err = 0;
+
+        if (ring.getGetEventsArgs() == null) {
+            ring.setGetEventsArgs(Instance.LIBC_MALLOC.malloc(IoUringGetEventsArg.LAYOUT.byteSize()));
+        }
+        MemorySegment arg = ring.getGetEventsArgs();
+        //这里不考虑信号的事情所以直接为0
+        IoUringGetEventsArg.SIGMASK_VH.set(arg, 0L, 0L);
+        IoUringGetEventsArg.SIGMASK_SZ_VH.set(arg, 0L, SigsetType._NSIG / 8);
+        IoUringGetEventsArg.MIN_WAIT_USECSEC_VH.set(arg, 0L, 0);
+        IoUringGetEventsArg.TS_VH.set(arg, 0L, NativeHelper.safeGetAddress(ts));
+        int submit = io_uring_flush_sq(ring);
+
+        MemorySegment ioUringStruct = StructProxyGenerator.findMemorySegment(ring);
+        int ringFlags = ring.getFlags();
+        boolean looped = false;
+        do {
+            boolean need_enter = false;
+            int ret = 0;
+
+            int enterFlag = ring.getInt_flags() & IoUringConstant.IORING_ENTER_REGISTERED_RING;
+
+            int nr_available = io_uring_cq_ready(ring);
+            if (nr_available == 0 && wait_nr == 0 && submit == 0) {
+                if (looped || !((ringFlags & IoUringConstant.IORING_SETUP_IOPOLL) != 0 || cq_ring_needs_flush(ioUringStruct))) {
+                    if (err == 0) {
+                        err = -Libc.Error_H.EAGAIN;
+                        break;
+                    }
+                }
+                need_enter = true;
+            }
+
+            if (wait_nr > nr_available || need_enter) {
+                enterFlag |= IoUringConstant.IORING_ENTER_EXT_ARG;
+                enterFlag |= IoUringConstant.IORING_ENTER_GETEVENTS;
+                need_enter = true;
+            }
+
+            NeedEnterResult enterResult = sq_ring_needs_enter(ring, submit);
+            enterFlag |= enterResult.additionFlags();
+            if (enterResult.sq_ring_needs_enter()) {
+                need_enter = true;
+            }
+
+            if (!need_enter) {
+                break;
+            }
+
+            if (looped) {
+                if (err == 0 && nr_available == 0) {
+                    err = -Libc.Error_H.ETIME;
+                }
+                break;
+            }
+
+            ret = IoUringSysCall.io_uring_enter(
+                    ring.getEnter_ring_fd(), submit,
+                    wait_nr, enterFlag,
+                    arg, IoUringGetEventsArg.LAYOUT.byteSize()
+            );
+            if (ret < 0) {
+                err = ret;
+                break;
+            }
+
+            submit -= ret;
+            if (!looped) {
+                looped = true;
+                err = ret;
+            }
+        } while (true);
+
+        return err;
+    }
 
     default int io_uring_submit(@Pointer IoUring ring) {
         return io_uring_submit_and_wait(ring, 0);
@@ -449,9 +543,6 @@ public interface LibUring {
         return IoUringSysCall.io_uring_enter(enterFd, 0, 0, flags, MemorySegment.NULL, SigsetType._NSIG / 8);
     }
 
-    @KernelVersionLimit(major = 5, minor = 11)
-    int io_uring_submit_and_wait_timeout(@Pointer IoUring ring, @Pointer MemorySegment cqe_ptr, int wait_nr, @Pointer KernelTime64Type ts, @Pointer SigsetType sigmask);
-
     private int io_uring_submit0(@Pointer IoUring ioUring, int submitted, int wait_nr, boolean getevents) {
         MemorySegment ioUringStruct = StructProxyGenerator.findMemorySegment(ioUring);
         int ringFlags = (int) IoUringConstant.AccessShortcuts.IO_URING_FLAGS_VARHANDLE.get(ioUringStruct, 0L);
@@ -460,26 +551,11 @@ public interface LibUring {
         int flags = (byte) IoUringConstant.AccessShortcuts.IO_URING_INT_FLAGS_VARHANDLE.get(ioUringStruct, 0L) & IoUringConstant.IORING_ENTER_REGISTERED_RING;
 
 //        sq_ring_needs_enter
-        boolean sq_ring_needs_enter;
-        //如果不需要提交就不需要enter
-        if (submitted == 0) {
-            sq_ring_needs_enter = false;
-        } else {
-            //如果不是sqpoll模式，那就得进入
-            if ((ringFlags & IoUringConstant.IORING_SETUP_SQPOLL) == 0) {
-                sq_ring_needs_enter = true;
-            } else {
-                VarHandle.fullFence();
-                // 如果ring需要唤醒，那就需要进入
-                int ringKFlags = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_KFLAGS_DEFERENCE_VARHANDLE.get(ioUringStruct, 0L);
-                if ((ringKFlags & IoUringConstant.IORING_SQ_NEED_WAKEUP) != 0) {
-                    flags |= IoUringConstant.IORING_ENTER_SQ_WAKEUP;
-                    sq_ring_needs_enter = true;
-                } else {
-                    sq_ring_needs_enter = false;
-                }
-            }
-        }
+        NeedEnterResult enterResult = sq_ring_needs_enter(ioUring, submitted);
+
+        boolean sq_ring_needs_enter = enterResult.sq_ring_needs_enter();
+
+        flags |= enterResult.additionFlags();
 
         if (sq_ring_needs_enter || cq_need_enter) {
             if (cq_need_enter) {
@@ -489,6 +565,26 @@ public interface LibUring {
             return IoUringSysCall.io_uring_enter(enterFd, submitted, wait_nr, flags, MemorySegment.NULL, SigsetType._NSIG / 8);
         } else {
             return submitted;
+        }
+    }
+
+    private NeedEnterResult sq_ring_needs_enter(@Pointer IoUring ioUring, int submitted) {
+        if (submitted == 0) {
+            return new NeedEnterResult(false, 0);
+        }
+
+        MemorySegment ioUringStruct = StructProxyGenerator.findMemorySegment(ioUring);
+        int ringFlags = (int) IoUringConstant.AccessShortcuts.IO_URING_FLAGS_VARHANDLE.get(ioUringStruct, 0L);
+        if ((ringFlags & IoUringConstant.IORING_SETUP_SQPOLL) == 0) {
+            return new NeedEnterResult(true, 0);
+        }
+
+        VarHandle.fullFence();
+        int ringKFlags = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_KFLAGS_DEFERENCE_VARHANDLE.get(ioUringStruct, 0L);
+        if ((ringKFlags & IoUringConstant.IORING_SQ_NEED_WAKEUP) != 0) {
+            return new NeedEnterResult(true, IoUringConstant.IORING_ENTER_SQ_WAKEUP);
+        } else {
+            return new NeedEnterResult(false, 0);
         }
     }
 
