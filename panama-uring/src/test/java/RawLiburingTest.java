@@ -11,7 +11,6 @@ import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
-import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
 import top.dreamlike.panama.uring.nativelib.wrapper.IoUringCore;
 import top.dreamlike.panama.uring.sync.fd.EventFd;
 
@@ -49,25 +48,14 @@ public class RawLiburingTest {
     public void testSubmit() {
         try (IoUringCore ioUringCore = new IoUringCore(p -> p.setSq_entries(2))) {
 
-            try (Arena arena = Arena.ofConfined()) {
-                KernelTime64Type kernelTime64Type = Instance.STRUCT_PROXY_GENERATOR.enhance(
-                        Instance.LIBC_MALLOC.malloc(KernelTime64Type.LAYOUT.byteSize())
-                );
-                long durationNs = TimeUnit.MILLISECONDS.toNanos(500);
-                kernelTime64Type.setTv_nsec(durationNs / 1000000000);
-                kernelTime64Type.setTv_nsec(durationNs % 1000000000);
-                MemorySegment cqeptr = arena.allocate(ValueLayout.ADDRESS, 8);
-                int nativeResult = Instance.LIB_URING.io_uring_submit_and_wait_timeout_native(ioUringCore.getInternalRing(), cqeptr, 1, kernelTime64Type, null);
-                System.out.println(nativeResult);
-            }
-
-
-            ioUringCore.submitAndWait(TimeUnit.MILLISECONDS.toNanos(10_000));
+            log.info("start wait");
+            int res = ioUringCore.submitAndWait(TimeUnit.MILLISECONDS.toNanos(500));
+            log.info("end wait");
+            //todo 为何只返回-1？
+//             Assert.assertEquals(-Libc.Error_H.ETIME, res);
 
             long userData = 20240214;
-            IoUringSqe ioUringSqe = ioUringCore.ioUringGetSqe(true).get();
-            Instance.LIB_URING.io_uring_prep_nop(ioUringSqe);
-            ioUringSqe.setUser_data(userData);
+            prepNoop(ioUringCore, userData);
 
             ioUringCore.submit();
 
@@ -80,7 +68,7 @@ public class RawLiburingTest {
             ioUringCore.ioUringCqAdvance(1);
 
             EventFd eventFd = new EventFd(0, Libc.EventFd_H.EFD_NONBLOCK);
-            ioUringSqe = ioUringCore.ioUringGetSqe(true).get();
+            var ioUringSqe = ioUringCore.ioUringGetSqe(true).get();
             MemorySegment readBuffer = Arena.global().allocate(ValueLayout.JAVA_LONG);
             Instance.LIB_URING.io_uring_prep_read(ioUringSqe, eventFd.fd(), readBuffer, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
             long start = System.currentTimeMillis();
@@ -89,6 +77,24 @@ public class RawLiburingTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void prepNoop(IoUringCore ioUringCore, long userData) {
+        IoUringSqe ioUringSqe = ioUringCore.ioUringGetSqe(true).get();
+        Instance.LIB_URING.io_uring_prep_nop(ioUringSqe);
+        ioUringSqe.setUser_data(userData);
+    }
+
+    private EventFd prepReadEventFd(IoUringCore ioUringCore) {
+        EventFd eventFd = new EventFd();
+
+        MemorySegment readBuffer = Instance.LIBC_MALLOC.malloc(8);
+
+        IoUringSqe ioUringSqe = ioUringCore.ioUringGetSqe(true).get();
+
+        Instance.LIB_URING.io_uring_prep_read(ioUringSqe, eventFd.fd(), readBuffer, 8, 0);
+
+        return eventFd;
     }
 
     @Test

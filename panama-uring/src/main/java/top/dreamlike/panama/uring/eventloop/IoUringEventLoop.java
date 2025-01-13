@@ -238,7 +238,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
             } else if ((pollMask & LibPoll.POLLOUT) != 0) {
                 registerFd = fd.writeFd();
             } else {
-                fd.fd();
+                registerFd = fd.fd();
             }
             libUring.io_uring_prep_poll_add(sqe, registerFd, pollMask);
         }).thenApply(IoUringCqe::getRes);
