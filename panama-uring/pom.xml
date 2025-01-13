@@ -116,45 +116,7 @@
         </extensions>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
-                <executions>
-                    <execution>
-                        <id>compile-native-dependency</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>sh</executable>
-                            <workingDirectory>${project.basedir}/rust</workingDirectory>
-                            <arguments>
-                                <argument>build.sh</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <id>clean-native-dependency</id>
-                        <phase>clean</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>sh</executable>
-                            <workingDirectory>${project.basedir}/rust</workingDirectory>
-                            <arguments>
-                                <argument>clean.sh</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
-
                 <executions>
                     <execution>
                         <phase>package</phase>

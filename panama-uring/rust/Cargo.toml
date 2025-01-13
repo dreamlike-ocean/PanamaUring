@@ -1,9 +1,0 @@
-[workspace]
-
-members = [
-    "liburing_rs"
-]
-
-[profile.release]
-lto = true
-panic = 'abort'

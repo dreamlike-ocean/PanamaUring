@@ -1,6 +1,5 @@
 package top.dreamlike.panama.uring.nativelib.libs;
 
-import top.dreamlike.panama.generator.annotation.CLib;
 import top.dreamlike.panama.generator.annotation.NativeFunction;
 import top.dreamlike.panama.generator.annotation.Pointer;
 import top.dreamlike.panama.generator.exception.StructException;
@@ -40,7 +39,6 @@ import java.nio.ByteOrder;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
-@CLib(value = "liburing-ffi.so", suffix = "_rs")
 @KernelVersionLimit(major = 5, minor = 10)
 public interface LibUring {
 
@@ -422,10 +420,6 @@ public interface LibUring {
         int sqFlags = (int) IoUringConstant.AccessShortcuts.IO_URING_SQ_KFLAGS_DEFERENCE_VARHANDLE.get(ioUring, 0L);
         return (sqFlags & (IoUringConstant.IORING_SQ_CQ_OVERFLOW | IoUringConstant.IORING_SQ_TASKRUN)) != 0;
     }
-
-    @KernelVersionLimit(major = 5, minor = 11)
-    @NativeFunction(value = "io_uring_submit_and_wait_timeout")
-    int io_uring_submit_and_wait_timeout_native(@Pointer IoUring ring, @Pointer MemorySegment cqe_ptr, int wait_nr, @Pointer KernelTime64Type ts, @Pointer SigsetType sigmask);
 
     @KernelVersionLimit(major = 5, minor = 11)
     default int io_uring_submit_and_wait_timeout(@Pointer IoUring ring, int wait_nr, @Pointer KernelTime64Type ts) {
