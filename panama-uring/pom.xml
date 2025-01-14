@@ -123,9 +123,6 @@
                         <goals>
                             <goal>jar</goal>
                         </goals>
-                        <configuration>
-                            <classifier>${arch.classifier}</classifier>
-                        </configuration>
                     </execution>
                 </executions>
                 <version>3.2.0</version>
@@ -133,9 +130,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <classifier>${arch.classifier}</classifier>
-                </configuration>
                 <version>2.5</version>
             </plugin>
 

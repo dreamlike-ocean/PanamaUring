@@ -16,7 +16,7 @@ The maven coordinates are
 </dependency>
 ```
 
-Run Tests.Since it depends on the [ClassFile api](https://openjdk.org/jeps/484), it needs to use jdk23 and enable the `--enable-preview`  (it is expected that it can be removed after jdk24 is released)
+Run Tests.Since it depends on the [ClassFile api](https://openjdk.org/jeps/484), it needs to use jdk24
 
 ```shell
 mvn clean test -am -pl panama-uring
@@ -63,7 +63,7 @@ mvn clean test -am -pl panama-uring
 Here is the setup and environment used:
 
 - Maven 3.8.4
-- OpenJDK 23
+- OpenJDK 24
 - Linux ≥ 5.11 (newer versions recommended)
 
 To build the project:

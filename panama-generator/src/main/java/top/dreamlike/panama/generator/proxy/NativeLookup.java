@@ -90,7 +90,7 @@ class NativeLookup implements SymbolLookup {
                 try {
                     Class.forName("io.github.dreamlike.unsafe.vthread.TerminatingThreadLocal");
                     enableTerminatingThreadLocal = true;
-                } catch (ClassNotFoundException e) {
+                } catch (Throwable e) {
                     enableTerminatingThreadLocal = false;
                 }
             }
