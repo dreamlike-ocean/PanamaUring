@@ -1,5 +1,6 @@
 package top.dreamlike.panama.uring.sync.fd;
 
+import top.dreamlike.panama.uring.helper.MemoryAllocator;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.sync.trait.NativeFd;
@@ -15,10 +16,10 @@ public class PipeFd implements PollableFd, NativeFd {
 
     private final int writeSide;
 
-    private AtomicBoolean hasClosed = new AtomicBoolean(false);
+    private final AtomicBoolean hasClosed = new AtomicBoolean(false);
 
     public PipeFd() {
-        try (OwnershipMemory memory = Instance.LIB_JEMALLOC.mallocMemory(ValueLayout.JAVA_INT.byteSize() * 2)) {
+        try (OwnershipMemory memory = MemoryAllocator.LIBC_MALLOC.allocateOwnerShipMemory(ValueLayout.JAVA_INT.byteSize() * 2)) {
             int syscallRes = Instance.LIBC.pipe(memory.resource());
             if (syscallRes != 0) {
                 throw new IllegalArgumentException("pipe failure!, reason "+ NativeHelper.currentErrorStr());

@@ -3,9 +3,11 @@ package top.dreamlike.panama.uring.nativelib.wrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
-import top.dreamlike.panama.uring.helper.JemallocAllocator;
+import top.dreamlike.panama.uring.helper.PanamaUringSecret;
+import top.dreamlike.panama.uring.helper.Unsafe;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
+import top.dreamlike.panama.uring.nativelib.helper.OSIoUringProbe;
 import top.dreamlike.panama.uring.nativelib.libs.LibUring;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
@@ -14,7 +16,6 @@ import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
 import top.dreamlike.panama.uring.nativelib.struct.time.KernelTime64Type;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
+@Unsafe("only single Thread")
 public class IoUringCore implements AutoCloseable {
 
     protected static final LibUring libUring = Instance.LIB_URING;
@@ -30,13 +32,13 @@ public class IoUringCore implements AutoCloseable {
     private final IoUring internalRing;
     private final int cqeSize;
 
-    private MemorySegment cqePtrArray;
+    private final KernelTime64Type kernelTime64Type;
 
-    private KernelTime64Type kernelTime64Type;
+    public static final OSIoUringProbe PROBE = new OSIoUringProbe();
 
     public IoUringCore(Consumer<IoUringParams> ioUringParamsFactory) {
-        MemorySegment ioUringMemory = Instance.LIB_JEMALLOC.malloc(IoUring.LAYOUT.byteSize());
-        MemorySegment ioUringParamMemory = Instance.LIB_JEMALLOC.malloc(IoUringParams.LAYOUT.byteSize());
+        MemorySegment ioUringMemory = Instance.LIBC_MALLOC.malloc(IoUring.LAYOUT.byteSize());
+        MemorySegment ioUringParamMemory = Instance.LIBC_MALLOC.malloc(IoUringParams.LAYOUT.byteSize());
 
         this.internalRing = Instance.STRUCT_PROXY_GENERATOR.enhance(ioUringMemory);
         IoUringParams ioUringParams = Instance.STRUCT_PROXY_GENERATOR.enhance(ioUringParamMemory);
@@ -45,16 +47,17 @@ public class IoUringCore implements AutoCloseable {
         try {
             int initRes = Instance.LIB_URING.io_uring_queue_init_params(ioUringParams.getSq_entries(), internalRing, ioUringParams);
             if (initRes < 0) {
-                Instance.LIB_JEMALLOC.free(ioUringMemory);
+                Instance.LIBC_MALLOC.free(ioUringMemory);
                 throw new SyscallException(initRes);
             }
             int uringFd = this.internalRing.getRing_fd();
             ioUringFds.add(uringFd);
             this.cqeSize = ioUringParams.getCq_entries();
-            this.cqePtrArray = JemallocAllocator.INSTANCE.allocate(ValueLayout.ADDRESS, cqeSize);
-            this.kernelTime64Type = Instance.STRUCT_PROXY_GENERATOR.allocate(JemallocAllocator.INSTANCE, KernelTime64Type.class);
+            this.kernelTime64Type = Instance.STRUCT_PROXY_GENERATOR.enhance(
+                    Instance.LIBC_MALLOC.malloc(KernelTime64Type.LAYOUT.byteSize())
+            );
         } finally {
-            Instance.LIB_JEMALLOC.free(ioUringParamMemory);
+            Instance.LIBC_MALLOC.free(ioUringParamMemory);
         }
     }
 
@@ -68,27 +71,30 @@ public class IoUringCore implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
+        int ringFd = internalRing.getRing_fd();
         Instance.LIB_URING.io_uring_queue_exit(internalRing);
         MemorySegment ioUringMemory = StructProxyGenerator.findMemorySegment(internalRing);
-        Instance.LIB_JEMALLOC.free(ioUringMemory);
-        Instance.LIB_JEMALLOC.free(cqePtrArray);
-        MemorySegment kernelTime64Type = StructProxyGenerator.findMemorySegment(internalRing);
-        Instance.LIB_JEMALLOC.free(kernelTime64Type);
+        Instance.LIBC_MALLOC.free(ioUringMemory);
+        MemorySegment kernelTime64Type = StructProxyGenerator.findMemorySegment(this.kernelTime64Type);
+        Instance.LIBC_MALLOC.free(kernelTime64Type);
+        ioUringFds.remove(ringFd);
     }
 
     public IoUring getInternalRing() {
         return internalRing;
     }
 
-    public void submitAndWait(long durationNs) {
+    public int submitAndWait(long durationNs) {
         log.debug("duration: {}", durationNs);
+        int sqeCount;
         if (durationNs == -1) {
-            libUring.io_uring_submit_and_wait(internalRing, 1);
+            sqeCount = libUring.io_uring_submit_and_wait(internalRing, 1);
         } else {
             kernelTime64Type.setTv_sec(durationNs / 1000000000);
             kernelTime64Type.setTv_nsec(durationNs % 1000000000);
-            libUring.io_uring_submit_and_wait_timeout(internalRing, cqePtrArray, 1, kernelTime64Type, null);
+            sqeCount = libUring.io_uring_submit_and_wait_timeout(internalRing, 1, kernelTime64Type);
         }
+        return sqeCount;
     }
 
     public int submit() {
@@ -121,22 +127,31 @@ public class IoUringCore implements AutoCloseable {
     }
 
     public final void processCqes(Consumer<IoUringCqe> nativeCqeConsumer, boolean advance) {
-        int count = libUring.io_uring_peek_batch_cqe(internalRing, cqePtrArray, cqeSize);
+        long[] cqes = libUring.io_uring_peek_batch_cqe(internalRing, cqeSize);
+        int count = cqes.length;
         if (log.isDebugEnabled()) {
             log.debug("processCqes count:{}", count);
         }
         for (int i = 0; i < count; i++) {
-            IoUringCqe nativeCqe = Instance.STRUCT_PROXY_GENERATOR.enhance(cqePtrArray.getAtIndex(ValueLayout.ADDRESS, i));
+            IoUringCqe nativeCqe = Instance.STRUCT_PROXY_GENERATOR.enhance(MemorySegment.ofAddress(cqes[i]).reinterpret(Long.MAX_VALUE));
             nativeCqeConsumer.accept(nativeCqe);
         }
         if (advance) {
-            libUring.io_uring_cq_advance(internalRing, count);
+            ioUringCqAdvance(count);
         }
+    }
+
+    public final void ioUringCqAdvance(int count) {
+        libUring.io_uring_cq_advance(internalRing, count);
     }
 
     public final List<IoUringCqe> processCqes() {
         ArrayList<IoUringCqe> list = new ArrayList<>();
         processCqes(list::add, false);
         return list;
+    }
+
+    static {
+        PanamaUringSecret.getCqSizeFromCore = c -> c.cqeSize;
     }
 }

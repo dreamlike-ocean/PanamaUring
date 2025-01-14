@@ -7,11 +7,11 @@ import top.dreamlike.panama.uring.async.trait.IoUringSocketOperator;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.helper.CloseHandle;
 import top.dreamlike.panama.uring.helper.LambdaHelper;
+import top.dreamlike.panama.uring.helper.MemoryAllocator;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingElement;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn;
 import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn6;
@@ -37,22 +37,28 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, IoUringSelectedReadable
 
     private static final VarHandle BUFFER_RING_VH;
 
+    static {
+        try {
+            BUFFER_RING_VH = MethodHandles.lookup().findVarHandle(AsyncTcpSocketFd.class, "bufferRing", IoUringBufferRing.class);
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     final IoUringEventLoop ioUringEventLoop;
-
     final int fd;
-
-    SocketAddress localAddress;
-
-    SocketAddress remoteAddress;
-
-    volatile boolean hasConnected;
-
-    IoUringBufferRing bufferRing;
-
+    final MemoryAllocator allocator;
     private final CloseHandle closeHandle;
+    SocketAddress localAddress;
+    SocketAddress remoteAddress;
+    volatile boolean hasConnected;
+    IoUringBufferRing bufferRing;
 
     AsyncTcpSocketFd(IoUringEventLoop ioUringEventLoop, int fd, SocketAddress localAddress, SocketAddress remoteAddress) {
         this.ioUringEventLoop = ioUringEventLoop;
+        this.allocator = ioUringEventLoop.getMemoryAllocator();
         this.fd = fd;
         this.localAddress = localAddress;
         this.remoteAddress = remoteAddress;
@@ -62,67 +68,10 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, IoUringSelectedReadable
 
     public AsyncTcpSocketFd(IoUringEventLoop ioUringEventLoop, SocketAddress remoteAddress) {
         this.remoteAddress = remoteAddress;
-        this.fd = socketSysCall(remoteAddress);
+        this.fd = socketSysCall(remoteAddress, ioUringEventLoop.getMemoryAllocator());
         this.ioUringEventLoop = ioUringEventLoop;
+        this.allocator = ioUringEventLoop.getMemoryAllocator();
         this.closeHandle = new CloseHandle(IoUringSocketOperator.super::close);
-    }
-
-
-    public SocketAddress getLocalAddress() {
-        return localAddress;
-    }
-
-    public SocketAddress getRemoteAddress() {
-        return remoteAddress;
-    }
-
-    @Override
-    public IoUringEventLoop owner() {
-        return ioUringEventLoop;
-    }
-
-    @Override
-    public int fd() {
-        return fd;
-    }
-
-    public CancelableFuture<Integer> asyncConnect() {
-        if (hasConnected) {
-            throw new IllegalStateException("already connected.");
-        }
-        OwnershipMemory addr = mallocAddr(remoteAddress);
-        return ((CancelableFuture<Integer>) (owner()
-                .asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_connect(sqe, fd, addr.resource(), (int) addr.resource().byteSize()))
-                .whenComplete((_, _) -> addr.drop())
-                .thenApply(IoUringCqe::getRes))
-                .whenComplete((res, t) -> {
-                    if (res >= 0 && t == null) {
-                        hasConnected = true;
-                        localAddress = getSocketName();
-                    }
-                })
-        );
-    }
-
-    private SocketAddress getSocketName() {
-        if (remoteAddress instanceof UnixDomainSocketAddress) {
-            return localAddress;
-        }
-        long addrSize = addrSize(remoteAddress);
-        long totalSize = addrSize + ValueLayout.JAVA_INT.byteSize();
-        try (OwnershipMemory sockaddrMemory = Instance.LIB_JEMALLOC.mallocMemory(totalSize)) {
-            MemorySegment resource = sockaddrMemory.resource();
-            MemorySegment sockAddrMemory = resource.asSlice(0, addrSize);
-            MemorySegment sockLenMemory = resource.asSlice(addrSize, ValueLayout.JAVA_INT.byteSize());
-            sockLenMemory.set(ValueLayout.JAVA_INT, 0L, (int) sockAddrMemory.byteSize());
-            int i = LIBC.getsockname(fd, sockAddrMemory, sockLenMemory);
-            if (i < 0) {
-                throw new IllegalArgumentException("getsockname error, reason:" + NativeHelper.currentErrorStr());
-            }
-            return inferAddress(remoteAddress, sockAddrMemory);
-        } catch (Exception t) {
-            throw new IllegalStateException(t);
-        }
     }
 
     static SocketAddress inferAddress(SocketAddress peerAddress, MemorySegment sockaddrMemory) {
@@ -177,10 +126,70 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, IoUringSelectedReadable
         }
     }
 
-    static OwnershipMemory mallocAddr(SocketAddress address) {
-        return NativeHelper.mallocAddr(address);
+    static OwnershipMemory mallocAddr(SocketAddress address, MemoryAllocator memoryAllocator) {
+        return NativeHelper.mallocAddr(address, memoryAllocator);
     }
 
+    static int socketSysCall(SocketAddress address, MemoryAllocator memoryAllocator) {
+        return NativeHelper.socketSysCall(address, memoryAllocator);
+    }
+
+    public SocketAddress getLocalAddress() {
+        return localAddress;
+    }
+
+    public SocketAddress getRemoteAddress() {
+        return remoteAddress;
+    }
+
+    @Override
+    public IoUringEventLoop owner() {
+        return ioUringEventLoop;
+    }
+
+    @Override
+    public int fd() {
+        return fd;
+    }
+
+    public CancelableFuture<Integer> asyncConnect() {
+        if (hasConnected) {
+            throw new IllegalStateException("already connected.");
+        }
+        OwnershipMemory addr = mallocAddr(remoteAddress, allocator);
+        return ((CancelableFuture<Integer>) (owner()
+                .asyncOperation(sqe -> Instance.LIB_URING.io_uring_prep_connect(sqe, fd, addr.resource(), (int) addr.resource().byteSize()))
+                .whenComplete((_, _) -> addr.drop())
+                .thenApply(IoUringCqe::getRes))
+                .whenComplete((res, t) -> {
+                    if (res >= 0 && t == null) {
+                        hasConnected = true;
+                        localAddress = getSocketName();
+                    }
+                })
+        );
+    }
+
+    private SocketAddress getSocketName() {
+        if (remoteAddress instanceof UnixDomainSocketAddress) {
+            return localAddress;
+        }
+        long addrSize = addrSize(remoteAddress);
+        long totalSize = addrSize + ValueLayout.JAVA_INT.byteSize();
+        try (OwnershipMemory sockaddrMemory = allocator.allocateOwnerShipMemory(totalSize)) {
+            MemorySegment resource = sockaddrMemory.resource();
+            MemorySegment sockAddrMemory = resource.asSlice(0, addrSize);
+            MemorySegment sockLenMemory = resource.asSlice(addrSize, ValueLayout.JAVA_INT.byteSize());
+            sockLenMemory.set(ValueLayout.JAVA_INT, 0L, (int) sockAddrMemory.byteSize());
+            int i = LIBC.getsockname(fd, sockAddrMemory, sockLenMemory);
+            if (i < 0) {
+                throw new IllegalArgumentException("getsockname error, reason:" + NativeHelper.currentErrorStr());
+            }
+            return inferAddress(remoteAddress, sockAddrMemory);
+        } catch (Exception t) {
+            throw new IllegalStateException(t);
+        }
+    }
 
     public CancelableFuture<BufferResult<OwnershipMemory>> asyncRecv(OwnershipMemory buffer, int len, int flag) {
         if (!hasConnected) {
@@ -196,8 +205,7 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, IoUringSelectedReadable
         IoUringBufferRing bufferRing = Objects.requireNonNull(bufferRing());
         return (CancelableFuture<OwnershipMemory>) owner().asyncOperation(sqe -> {
             Instance.LIB_URING.io_uring_prep_recv(sqe, fd, MemorySegment.NULL, len, flag);
-            sqe.setFlags((byte) (sqe.getFlags() | IoUringConstant.IOSQE_BUFFER_SELECT));
-            sqe.setBufGroup(bufferRing.getBufferGroupId());
+            bufferRing.fillSqe(sqe);
         }).thenCompose(cqe -> {
             int syscallResult = cqe.getRes();
             if (syscallResult < 0) {
@@ -205,7 +213,7 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, IoUringSelectedReadable
             } else {
                 int bid = cqe.getBid();
                 IoUringBufferRingElement ringElement = LambdaHelper.runWithThrowable(() -> bufferRing.removeBuffer(bid).get());
-                return CompletableFuture.completedFuture(IoUringSelectedReadableFd.borrowUringBufferRingElement(ringElement, syscallResult));
+                return CompletableFuture.completedFuture(IoUringSelectedReadableFd.reinterpretUringBufferRingElement(ringElement, syscallResult));
             }
         });
 
@@ -245,22 +253,8 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, IoUringSelectedReadable
                '}';
     }
 
-    static int socketSysCall(SocketAddress address) {
-        return NativeHelper.socketSysCall(address);
-    }
-
     @Override
     public IoUringBufferRing bufferRing() {
         return bufferRing;
-    }
-
-    static {
-        try {
-            BUFFER_RING_VH = MethodHandles.lookup().findVarHandle(AsyncTcpSocketFd.class, "bufferRing", IoUringBufferRing.class);
-        } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
     }
 }
