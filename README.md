@@ -1,4 +1,5 @@
 # Panama uring Java
+[中文版本](README.md) | [English Version](README_EN.md)
 
 这是一个探索性质的项目，使用Java的[新ffi机制](https://openjdk.org/jeps/424)为Java引入io_uring。
 
@@ -20,7 +21,7 @@ maven坐标为
 git clone https://github.com/dreamlike-ocean/PanamaUring.git
 ```
 
-测试运行 由于依赖了[ClassFile api](https://openjdk.org/jeps/484)所以需要使用jdk24
+测试运行 由于依赖了[ClassFile api](https://openjdk.org/jeps/484)所以需要使用jdk23 并且需要开启 `--enable-preview` 参数（预计jdk24 release后可以移除）
 
 ```shell
 mvn clean test -am -pl panama-uring
