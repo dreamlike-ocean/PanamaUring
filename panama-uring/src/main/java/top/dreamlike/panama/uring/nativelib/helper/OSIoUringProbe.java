@@ -10,6 +10,8 @@ public class OSIoUringProbe {
 
     private final int lastOp;
 
+    private final int features;
+
     private final IoUringProbeOp[] ops;
 
     public OSIoUringProbe() {
@@ -17,6 +19,7 @@ public class OSIoUringProbe {
         if (probe == null) {
             throw new RuntimeException("Failed to get probe");
         }
+        features = probe.getFeatures();
         lastOp = probe.getLastOp();
         byte len = probe.getOpsLen();
         ops = new IoUringProbeOp[len];
@@ -39,6 +42,10 @@ public class OSIoUringProbe {
 
     public IoUringProbeOp[] getOps() {
         return ops;
+    }
+
+    public int getFeatures() {
+        return features;
     }
 
     public record IoUringProbeOp(byte op, short flags) {

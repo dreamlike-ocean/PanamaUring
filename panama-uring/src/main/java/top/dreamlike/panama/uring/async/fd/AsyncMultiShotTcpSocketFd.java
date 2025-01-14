@@ -77,7 +77,7 @@ public class AsyncMultiShotTcpSocketFd implements IoUringSocketOperator {
 
     public CancelToken asyncRecvMulti(int flag, IoUringBufferRing bufferRing, Consumer<IoUringSyscallResult<OwnershipMemory>> handleRecv) {
         return ioUringEventLoop.asyncOperation(
-                sqe -> fillMultiOp(sqe, flag, bufferRing.getBufferGroupId()),
+                sqe -> fillMultiOp(sqe, flag, bufferRing),
                 cqe -> {
                     IoUringSyscallResult<OwnershipMemory> result;
                     if (cqe.getRes() < 0) {
@@ -91,12 +91,13 @@ public class AsyncMultiShotTcpSocketFd implements IoUringSocketOperator {
     }
 
     private OwnershipMemory parseCqe(IoUringCqe cqe) {
-        IoUringBufferRingElement memoryByBid = bufferRing.removeBuffer(cqe.getBid()).resultNow();
-        return new OwnershipBufferRingElement(memoryByBid, cqe.getRes());
+        IoUringBufferRingElement ioUringBufferRingElement = bufferRing.removeBuffer(cqe.getBid()).resultNow();
+        return IoUringSelectedReadableFd.reinterpretUringBufferRingElement(ioUringBufferRingElement,cqe.getRes());
     }
 
-    private void fillMultiOp(IoUringSqe sqe, int flag, short bufferGroupId) {
-        Instance.LIB_URING.io_uring_prep_recv_multishot(sqe, fd, flag, bufferGroupId);
+    private void fillMultiOp(IoUringSqe sqe, int flag, IoUringBufferRing ring) {
+        Instance.LIB_URING.io_uring_prep_recv_multishot(sqe, fd, flag);
+        ring.fillSqe(sqe);
     }
 
     @Override

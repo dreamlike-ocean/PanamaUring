@@ -2,22 +2,27 @@ package top.dreamlike.panama.uring.async.trait;
 
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingElement;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
 
 import java.util.concurrent.CompletableFuture;
 
 public interface IoUringBufferRing {
 
-    public IoUringBufferRingElement getMemoryByBid(int bid);
+    IoUringBufferRingElement getMemoryByBid(int bid);
 
-    public CompletableFuture<IoUringBufferRingElement> removeBuffer(int bid);
+    CompletableFuture<IoUringBufferRingElement> removeBuffer(int bid);
 
-    public CompletableFuture<Void> releaseBuffer(IoUringBufferRingElement element);
+    CompletableFuture<Void> releaseBuffer(IoUringBufferRingElement element);
 
-    public short getBufferGroupId();
+    short getBufferGroupId();
 
-    public CompletableFuture<Void> releaseRing();
+    CompletableFuture<Void> releaseRing();
 
-    public boolean hasAvailableElements();
+    boolean hasAvailableElements();
 
-    public IoUringEventLoop owner();
+    IoUringEventLoop owner();
+
+    void fillSqe(IoUringSqe sqe);
+
+    int head();
 }

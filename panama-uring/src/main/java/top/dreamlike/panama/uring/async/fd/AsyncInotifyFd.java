@@ -2,7 +2,6 @@ package top.dreamlike.panama.uring.async.fd;
 
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
-import top.dreamlike.panama.uring.helper.JemallocAllocator;
 import top.dreamlike.panama.uring.helper.Pair;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
@@ -49,12 +48,13 @@ public class AsyncInotifyFd implements IoUringAsyncFd {
         if (name.length() > 4 * 1024) {
             throw new IllegalArgumentException("path length must less than 4K");
         }
-        MemorySegment namePtr = JemallocAllocator.INSTANCE.allocateFrom(name);
-        try {
+
+        var memoryAllocator = eventLoop.getMemoryAllocator();
+
+        try (var arena = memoryAllocator.disposableArena()){
+            MemorySegment namePtr = arena.allocateFrom(name);
             int wfd = NativeHelper.nativeCall(() -> Instance.LIBC.inotify_add_watch(inotifyFd, namePtr, mask));
             return new WatchKey(wfd, mask, name);
-        } finally {
-            JemallocAllocator.INSTANCE.free(namePtr);
         }
     }
 
@@ -63,8 +63,8 @@ public class AsyncInotifyFd implements IoUringAsyncFd {
     }
 
     public CancelableFuture<Pair<OwnershipMemory, List<InotifyEvent>>> asyncPoll(OwnershipMemory buffer) {
-        return (CancelableFuture<Pair<OwnershipMemory,
-                List<InotifyEvent>>>) asyncRead(buffer, (int) buffer.resource().byteSize(), 0)
+        return (CancelableFuture<Pair<OwnershipMemory, List<InotifyEvent>>>)
+                asyncRead(buffer, (int) buffer.resource().byteSize(), 0)
                 .thenCompose(res -> res.syscallRes() < 0 ? CompletableFuture.failedFuture(new SyscallException(res.syscallRes())) : CompletableFuture.completedFuture(res))
                 .thenApply(res -> new Pair<>(buffer, parseEvents(res.buffer().resource(), res.syscallRes())));
     }

@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>panama-uring</artifactId>
-    <version>4.1.8</version>
+    <version>4.1.9</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -18,7 +18,7 @@
         <jemalloc.so.name>libjemalloc.so.2</jemalloc.so.name>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <arch.classifier>${os.detected.classifier}</arch.classifier>
-        <netty.version>4.2.0.Alpha1</netty.version>
+        <netty.version>4.2.0.Beta1</netty.version>
         <kotlin.version>1.9.0</kotlin.version>
     </properties>
 
@@ -42,6 +42,15 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-transport-native-epoll</artifactId>
+            <version>${netty.version}</version>
+            <classifier>${arch.classifier}</classifier>
+            <scope>provided</scope>
+        </dependency>
+
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport-native-io_uring</artifactId>
             <version>${netty.version}</version>
             <classifier>${arch.classifier}</classifier>
             <scope>provided</scope>
@@ -107,45 +116,7 @@
         </extensions>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
-                <executions>
-                    <execution>
-                        <id>compile-native-dependency</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>sh</executable>
-                            <workingDirectory>${project.basedir}/rust</workingDirectory>
-                            <arguments>
-                                <argument>build.sh</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <id>clean-native-dependency</id>
-                        <phase>clean</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>sh</executable>
-                            <workingDirectory>${project.basedir}/rust</workingDirectory>
-                            <arguments>
-                                <argument>clean.sh</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
-
                 <executions>
                     <execution>
                         <phase>package</phase>

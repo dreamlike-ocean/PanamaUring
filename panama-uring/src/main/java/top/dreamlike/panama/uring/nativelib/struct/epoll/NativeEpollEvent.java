@@ -11,8 +11,13 @@ public class NativeEpollEvent {
 
     public static final MemoryLayout LAYOUT = Instance.STRUCT_PROXY_GENERATOR.extract(NativeEpollEvent.class);
 
-    private static final VarHandle U64_VH = LAYOUT
-            .varHandle(MemoryLayout.PathElement.groupElement("data"), MemoryLayout.PathElement.groupElement("u64"));
+    public static final VarHandle U64_VH = LAYOUT
+            .varHandle(MemoryLayout.PathElement.groupElement("data"), MemoryLayout.PathElement.groupElement("u64"))
+            .withInvokeExactBehavior();
+
+    public static final VarHandle EVENTS_VH = LAYOUT
+            .varHandle(MemoryLayout.PathElement.groupElement("events"))
+            .withInvokeExactBehavior();
 
     private int events;
     private EpollData data;
@@ -34,11 +39,11 @@ public class NativeEpollEvent {
     }
 
     public long getU64() {
-        return (long) U64_VH.get(StructProxyGenerator.findMemorySegment(this), 0);
+        return (long) U64_VH.get(StructProxyGenerator.findMemorySegment(this), 0L);
     }
 
     public void setU64(long u64) {
-        U64_VH.set(StructProxyGenerator.findMemorySegment(this), 0, u64);
+        U64_VH.set(StructProxyGenerator.findMemorySegment(this), 0L, u64);
     }
 
 }

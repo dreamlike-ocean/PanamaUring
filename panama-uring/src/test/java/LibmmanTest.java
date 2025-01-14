@@ -2,10 +2,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import top.dreamlike.panama.uring.helper.MemoryAllocator;
 import top.dreamlike.panama.uring.nativelib.Instance;
+import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.LibMman;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
-import top.dreamlike.panama.uring.nativelib.libs.PosixBridge;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,13 +25,13 @@ public class LibmmanTest {
         tempFile.deleteOnExit();
         String content = "hello mmap";
         int fileSize = 0;
-        try (var output = new FileOutputStream(tempFile)){
+        try (var output = new FileOutputStream(tempFile)) {
             output.write(content.getBytes());
             fileSize = (int) output.getChannel().size();
         }
         Assert.assertEquals(content.length(), fileSize);
 
-        var fd = PosixBridge.open(tempFile, Libc.Fcntl_H.O_RDWR);
+        var fd = NativeHelper.useCStr(MemoryAllocator.LIBC_MALLOC, tempFile.getAbsolutePath(), (fileName) -> Instance.LIBC.open(fileName, Libc.Fcntl_H.O_RDWR));
         Assert.assertTrue(fd > 0);
 
         LibMman libMman = Instance.LIB_MMAN;

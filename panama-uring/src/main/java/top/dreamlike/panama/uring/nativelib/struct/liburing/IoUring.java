@@ -1,6 +1,7 @@
 package top.dreamlike.panama.uring.nativelib.struct.liburing;
 
 import top.dreamlike.panama.generator.annotation.NativeArrayMark;
+import top.dreamlike.panama.generator.annotation.Skip;
 import top.dreamlike.panama.uring.nativelib.Instance;
 
 import java.lang.foreign.MemoryLayout;
@@ -20,6 +21,9 @@ public class IoUring {
     @NativeArrayMark(size = byte.class, length = 3)
     private MemorySegment pad;
     private int pad2;
+
+    @Skip
+    private MemorySegment getEventsArgs;
 
     public IoUringSq getSq() {
         return sq;
@@ -91,5 +95,13 @@ public class IoUring {
 
     public void setInt_flags(byte int_flags) {
         this.int_flags = int_flags;
+    }
+
+    public MemorySegment getGetEventsArgs() {
+        return getEventsArgs;
+    }
+
+    public void setGetEventsArgs(MemorySegment getEventsArgs) {
+        this.getEventsArgs = getEventsArgs;
     }
 }

@@ -14,29 +14,50 @@ import top.dreamlike.panama.uring.async.IoUringSyscallOwnershipResult;
 import top.dreamlike.panama.uring.async.IoUringSyscallResult;
 import top.dreamlike.panama.uring.async.cancel.CancelToken;
 import top.dreamlike.panama.uring.async.cancel.CancelableFuture;
-import top.dreamlike.panama.uring.async.fd.*;
+import top.dreamlike.panama.uring.async.fd.AsyncEventFd;
+import top.dreamlike.panama.uring.async.fd.AsyncFileFd;
+import top.dreamlike.panama.uring.async.fd.AsyncMultiShotTcpServerSocketFd;
+import top.dreamlike.panama.uring.async.fd.AsyncPipeFd;
+import top.dreamlike.panama.uring.async.fd.AsyncSplicer;
+import top.dreamlike.panama.uring.async.fd.AsyncTcpServerSocketFd;
+import top.dreamlike.panama.uring.async.fd.AsyncTcpSocketFd;
 import top.dreamlike.panama.uring.async.other.IoUringMadvise;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
+import top.dreamlike.panama.uring.helper.MemoryAllocator;
 import top.dreamlike.panama.uring.helper.PanamaUringSecret;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.LibMman;
 import top.dreamlike.panama.uring.nativelib.libs.LibPoll;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
-import top.dreamlike.panama.uring.nativelib.libs.PosixBridge;
 import top.dreamlike.panama.uring.nativelib.struct.iovec.Iovec;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.*;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringConstant;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCq;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringParams;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSq;
+import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
 import top.dreamlike.panama.uring.sync.fd.PipeFd;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 import top.dreamlike.panama.uring.trait.OwnershipResource;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.StandardSocketOptions;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
@@ -150,9 +171,9 @@ public class LiburingTest {
                 Assert.assertEquals(helloIoUring, string);
             }
             Integer fsyncRes = fd.asyncFsync(0).get();
-            Assert.assertTrue(fsyncRes == 0);
+            Assert.assertEquals(0, (int) fsyncRes);
             fsyncRes = fd.asyncFsync(0, 0, (int) (str.byteSize() - 1)).get();
-            Assert.assertTrue(fsyncRes == 0);
+            Assert.assertEquals(0, (int) fsyncRes);
             //async read
             var readBuffer = new OwnershipMemoryForTest(arena.allocate(str.byteSize() - 1));
             Integer readRes = fd.asyncRead(readBuffer, (int) str.byteSize() - 1, 0).get().syscallRes();
@@ -180,7 +201,7 @@ public class LiburingTest {
             eventFd.eventfdWrite(1);
             OwnershipMemory memory = OwnershipMemory.of(allocator.allocate(ValueLayout.JAVA_LONG));
             var read = eventFd.asyncRead(memory, (int) ValueLayout.JAVA_LONG.byteSize(), 0);
-            Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), (int) read.get().syscallRes());
+            Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), read.get().syscallRes());
             Assert.assertEquals(1, memory.resource().get(ValueLayout.JAVA_LONG, 0));
 
             //cancel Test:
@@ -202,7 +223,7 @@ public class LiburingTest {
             OwnershipResourceForTest<NativeArrayPointer<Iovec>> resource = new OwnershipResourceForTest<>(pointer);
             var readvRes = eventFd.asyncReadV(resource, 1, 0)
                     .get();
-            Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), (int) readvRes.syscallRes());
+            Assert.assertEquals(ValueLayout.JAVA_LONG.byteSize(), readvRes.syscallRes());
             Assert.assertEquals(214, readBufferVec0.get(ValueLayout.JAVA_LONG, 0));
             Assert.assertTrue(resource.dontDrop());
 
@@ -233,8 +254,8 @@ public class LiburingTest {
             serverFd.listen(16);
 
             long addrSize = serverFd.addrSize();
-            OwnershipMemoryForTest addr = new OwnershipMemoryForTest(Instance.LIB_JEMALLOC.malloc(addrSize));
-            OwnershipMemoryForTest addrLen = new OwnershipMemoryForTest(Instance.LIB_JEMALLOC.malloc(ValueLayout.JAVA_INT.byteSize()));
+            OwnershipMemoryForTest addr = new OwnershipMemoryForTest(Instance.LIBC_MALLOC.malloc(addrSize));
+            OwnershipMemoryForTest addrLen = new OwnershipMemoryForTest(Instance.LIBC_MALLOC.malloc(ValueLayout.JAVA_INT.byteSize()));
 
             CancelableFuture<AsyncTcpSocketFd> waitAccept = serverFd.asyncAccept(0, addr, addrLen);
             ArrayBlockingQueue<Socket> oneshot = new ArrayBlockingQueue<>(1);
@@ -340,11 +361,11 @@ public class LiburingTest {
             AsyncPipeFd pipeFd = new AsyncPipeFd(ioUringEventLoop);
             log.info("pipeFd: {}", pipeFd);
             String demoStr = "hello async pipe";
-            OwnershipMemory writeBuffer = Instance.LIB_JEMALLOC.mallocMemory(demoStr.length());
+            OwnershipMemory writeBuffer = MemoryAllocator.LIBC_MALLOC.allocateOwnerShipMemory(demoStr.length());
             MemorySegment.copy(demoStr.getBytes(), 0, writeBuffer.resource(), ValueLayout.JAVA_BYTE, 0, demoStr.length());
             BufferResult<OwnershipMemory> _ = pipeFd.asyncWrite(writeBuffer, demoStr.length(), 0).get();
 
-            OwnershipMemory readBuffer = Instance.LIB_JEMALLOC.mallocMemory(demoStr.length());
+            OwnershipMemory readBuffer = MemoryAllocator.LIBC_MALLOC.allocateOwnerShipMemory(demoStr.length());
             BufferResult<OwnershipMemory> readRes = pipeFd.asyncRead(readBuffer, demoStr.length(), 0).get();
             Assert.assertEquals(demoStr.length(), readRes.syscallRes());
             Assert.assertEquals(demoStr, NativeHelper.bufToString(readBuffer.resource(), demoStr.length()));
@@ -358,18 +379,19 @@ public class LiburingTest {
 
             CancelableFuture<Integer> pollInRes = poller.register(pipeFd, LibPoll.POLLIN);
             ioUringEventLoop.submitScheduleTask(1000, TimeUnit.MILLISECONDS, () -> {
-                try (OwnershipMemory writeBuffer1 = Instance.LIB_JEMALLOC.mallocMemory(demoStr.length())) {
-                    MemorySegment.copy(demoStr.getBytes(), 0, writeBuffer1.resource(), ValueLayout.JAVA_BYTE, 0, demoStr.length());
-                    log.info("submitScheduleTask start!");
-                    pipeFd.asyncWrite(writeBuffer1, demoStr.length(), 0);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+                OwnershipMemory writeBuffer1 = MemoryAllocator.LIBC_MALLOC.allocateOwnerShipMemory(demoStr.length());
+                MemorySegment.copy(demoStr.getBytes(), 0, writeBuffer1.resource(), ValueLayout.JAVA_BYTE, 0, demoStr.length());
+                log.info("submitScheduleTask start!");
+                pipeFd.asyncWrite(writeBuffer1, demoStr.length(), 0)
+                        .thenAccept(br -> {
+                            br.buffer().drop();
+                            Assert.assertEquals(demoStr.length(), br.syscallRes());
+                        });
             });
             Integer pollRes = pollInRes.get();
             Assert.assertTrue((pollRes & LibPoll.POLLIN) != 0);
 
-            MemorySegment syncReadBuffer = Instance.LIB_JEMALLOC.malloc(demoStr.length());
+            MemorySegment syncReadBuffer = Instance.LIBC_MALLOC.malloc(demoStr.length());
             int read = pipeFd.read(syncReadBuffer, demoStr.length());
             Assert.assertEquals(demoStr.length(), read);
             Assert.assertEquals(demoStr, NativeHelper.bufToString(syncReadBuffer, demoStr.length()));
@@ -448,8 +470,8 @@ public class LiburingTest {
             serverFd.listen(16);
 
             long addrSize = serverFd.addrSize();
-            OwnershipMemoryForTest addr = new OwnershipMemoryForTest(Instance.LIB_JEMALLOC.malloc(addrSize));
-            OwnershipMemoryForTest addrLen = new OwnershipMemoryForTest(Instance.LIB_JEMALLOC.malloc(ValueLayout.JAVA_INT.byteSize()));
+            OwnershipMemoryForTest addr = new OwnershipMemoryForTest(Instance.LIBC_MALLOC.malloc(addrSize));
+            OwnershipMemoryForTest addrLen = new OwnershipMemoryForTest(Instance.LIBC_MALLOC.malloc(ValueLayout.JAVA_INT.byteSize()));
             ArrayBlockingQueue<Socket> sockets = new ArrayBlockingQueue<>(2);
             IntStream.range(0, 2)
                     .mapToObj(_ -> Thread.ofVirtual().unstarted(() -> {
@@ -525,7 +547,7 @@ public class LiburingTest {
                 output.write(content.getBytes());
                 fileSize = (int) output.getChannel().size();
             }
-            var fd = PosixBridge.open(tempFile, Libc.Fcntl_H.O_RDWR);
+            var fd = NativeHelper.useCStr(MemoryAllocator.LIBC_MALLOC, tempFile.getAbsolutePath(), (fileName) -> Instance.LIBC.open(fileName, Libc.Fcntl_H.O_RDWR));
             Assert.assertTrue(fd > 0);
 
             LibMman libMman = Instance.LIB_MMAN;
