@@ -10,15 +10,15 @@
     <groupId>io.github.dreamlike-ocean</groupId>
     <artifactId>PanamaUring</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
     <properties>
-        <java.version>23</java.version>
+        <java.version>24</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <vertx.version>4.3.7</vertx.version>
         <vertx-async.version>3.0.0</vertx-async.version>
         <native-lib>3.0.0</native-lib>
         <mutiny.version>2.5.0</mutiny.version>
-        <panama-generator>1.4.2</panama-generator>
+        <panama-generator>1.4.3</panama-generator>
         <logback.version>1.2.3</logback.version>
         <log.version>2.23.1</log.version>
     </properties>
@@ -91,7 +91,6 @@
                             <!-- jdk1.8要加上，1.7要去掉，否则会报错 -->
                             <additionalJOptions>
                                 <additionalJOption>-Xdoclint:none</additionalJOption>
-                                <additonalJOption>--enable-preview</additonalJOption>
                             </additionalJOptions>
                         </configuration>
                         <executions>
@@ -189,7 +188,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M5</version>
                 <configuration>
-                    <argLine>--enable-preview</argLine>
+                    <argLine>--enable-native-access=ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>
         </plugins>

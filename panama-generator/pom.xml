@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.dreamlike-ocean</groupId>
         <artifactId>PanamaUring</artifactId>
-        <version>1.0.3</version>
+        <version>1.0.5</version>
     </parent>
 
     <artifactId>panama-generator</artifactId>
@@ -28,6 +28,14 @@
     </profiles>
 
     <dependencies>
+
+        <dependency>
+            <groupId>io.github.dreamlike-ocean</groupId>
+            <artifactId>unsafe-vt</artifactId>
+            <version>1.0.5</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.graalvm.sdk/nativeimage -->
         <dependency>
             <groupId>org.graalvm.sdk</groupId>
@@ -59,11 +67,6 @@
                 <configuration>
                     <target>${java.version}</target>
                     <source>${java.version}</source>
-                    <compilerArgs>
-                        <compilerArg>
-                            --enable-preview
-                        </compilerArg>
-                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>

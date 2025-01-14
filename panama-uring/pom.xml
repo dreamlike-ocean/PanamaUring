@@ -5,7 +5,7 @@
     <parent>
         <artifactId>PanamaUring</artifactId>
         <groupId>io.github.dreamlike-ocean</groupId>
-        <version>1.0.4</version>
+        <version>1.0.5</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -60,7 +60,7 @@
         <dependency>
             <groupId>io.github.dreamlike-ocean</groupId>
             <artifactId>unsafe-vt</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.5</version>
         </dependency>
         <dependency>
             <groupId>io.github.dreamlike-ocean</groupId>
@@ -123,9 +123,6 @@
                         <goals>
                             <goal>jar</goal>
                         </goals>
-                        <configuration>
-                            <classifier>${arch.classifier}</classifier>
-                        </configuration>
                     </execution>
                 </executions>
                 <version>3.2.0</version>
@@ -133,9 +130,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <classifier>${arch.classifier}</classifier>
-                </configuration>
                 <version>2.5</version>
             </plugin>
 
@@ -206,9 +200,6 @@
                 <configuration>
                     <target>${java.version}</target>
                     <source>${java.version}</source>
-                    <compilerArgs>
-                        <compilerArg>--enable-preview</compilerArg>
-                    </compilerArgs>
                 </configuration>
             </plugin>
         </plugins>
