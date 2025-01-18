@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>panama-generator</artifactId>
-    <version>${panama-generator}</version>
+    <version>1.4.4</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

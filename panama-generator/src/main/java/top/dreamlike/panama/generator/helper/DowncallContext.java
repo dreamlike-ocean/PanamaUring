@@ -7,7 +7,9 @@ import java.util.Arrays;
 
 public record DowncallContext(FunctionDescriptor fd, Linker.Option[] ops,
                               String functionName, boolean returnPointer,
-                              boolean needCaptureStatue, ArrayList<Integer> rawMemoryIndex) {
+                              boolean needCaptureStatue, ArrayList<Integer> rawMemoryIndex,
+                              boolean containFp
+                              ) {
 
     public boolean fast() {
         return Arrays
