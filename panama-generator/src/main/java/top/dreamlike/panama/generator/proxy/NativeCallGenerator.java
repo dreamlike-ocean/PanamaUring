@@ -2,6 +2,7 @@ package top.dreamlike.panama.generator.proxy;
 
 import top.dreamlike.panama.generator.annotation.CLib;
 import top.dreamlike.panama.generator.annotation.NativeFunction;
+import top.dreamlike.panama.generator.annotation.NativeFunctionPointer;
 import top.dreamlike.panama.generator.annotation.Pointer;
 import top.dreamlike.panama.generator.exception.StructException;
 import top.dreamlike.panama.generator.helper.ClassFileHelper;
@@ -52,12 +53,9 @@ import static top.dreamlike.panama.generator.helper.NativeGeneratorHelper.TRANSF
  */
 public class NativeCallGenerator {
 
+    static final String GENERATOR_FIELD_NAME = "_generator";
     private static final MethodHandle DLSYM_MH;
-
-
-    private final NativeLookup nativeLibLookup;
-
-    private final ClassFile classFile = ClassFile.of();
+    private static final Method GENERATE_IN_GENERATOR_CONTEXT;
 
     static {
         try {
@@ -68,17 +66,13 @@ public class NativeCallGenerator {
         }
     }
 
-
-    static final String GENERATOR_FIELD_NAME = "_generator";
-
-    private static final Method GENERATE_IN_GENERATOR_CONTEXT;
-
-    public volatile boolean use_lmf = !NativeImageHelper.inExecutable();
-    private final Map<String, MemorySegment> foreignFunctionAddressCache = new ConcurrentHashMap<>();
-    private volatile boolean use_indy = !NativeImageHelper.inExecutable();
-
     final Map<Class<?>, Supplier<Object>> ctorCaches = new ConcurrentHashMap<>();
+    private final NativeLookup nativeLibLookup;
+    private final ClassFile classFile = ClassFile.of();
+    private final Map<String, MemorySegment> foreignFunctionAddressCache = new ConcurrentHashMap<>();
     private final StructProxyGenerator structProxyGenerator;
+    public volatile boolean use_lmf = !NativeImageHelper.inExecutable();
+    private volatile boolean use_indy = !NativeImageHelper.inExecutable();
 
     public NativeCallGenerator() {
         this.structProxyGenerator = new StructProxyGenerator();
@@ -96,9 +90,41 @@ public class NativeCallGenerator {
         NativeCallGenerator generator = (NativeCallGenerator) lookupClass.getField(GENERATOR_FIELD_NAME).get(null);
         Class<?> targetInterface = lookupClass.getInterfaces()[0];
         Method method = targetInterface.getMethod(methodName, methodType.parameterArray());
-        //本来就是lazy的所以这里直接寻找对应符号地址然后绑定就行了
-        MethodHandle nativeCallMH = generator.nativeMethodHandle(method, false);
+
+        MethodHandle nativeCallMH = generator.nativeMethodHandle(method);
         return new ConstantCallSite(nativeCallMH);
+    }
+
+    private static boolean needTransToPointer(Parameter parameter) {
+        Class<?> typeClass = parameter.getType();
+        return MemorySegment.class.isAssignableFrom(typeClass)
+               || NativeAddressable.class.isAssignableFrom(typeClass)
+               || (!typeClass.isPrimitive() && parameter.getAnnotation(Pointer.class) != null);
+    }
+
+    public static void loadSo(Class<?> interfaceClass) throws IOException {
+        ClassLoader classLoader = interfaceClass.getClassLoader();
+        CLib annotation = interfaceClass.getAnnotation(CLib.class);
+        if (annotation == null || annotation.value().isBlank()) return;
+        if (annotation.isLib()) {
+            Runtime.getRuntime().loadLibrary(classLoader.getName());
+            return;
+        }
+
+        InputStream inputStream = annotation.inClassPath()
+                ? classLoader.getResourceAsStream(annotation.value())
+                : new FileInputStream(annotation.value());
+        if (inputStream == null) {
+            throw new IllegalArgumentException("cant find clib! classloader: " + classLoader + ", path: " + annotation.value());
+        }
+        String tmpFileName = interfaceClass.getSimpleName() + "_" + UUID.randomUUID() + "_dynamic.so";
+        File file = File.createTempFile(tmpFileName, ".tmp");
+        FileOutputStream fileOutputStream = new FileOutputStream(file);
+        file.deleteOnExit();
+        try (fileOutputStream; inputStream) {
+            inputStream.transferTo(fileOutputStream);
+            System.load(file.getAbsolutePath());
+        }
     }
 
     public void indyMode() {
@@ -117,13 +143,6 @@ public class NativeCallGenerator {
         } catch (Throwable throwable) {
             throw new StructException("should not reach here!", throwable);
         }
-    }
-
-    private static boolean needTransToPointer(Parameter parameter) {
-        Class<?> typeClass = parameter.getType();
-        return MemorySegment.class.isAssignableFrom(typeClass)
-                || NativeAddressable.class.isAssignableFrom(typeClass)
-                || (!typeClass.isPrimitive() && parameter.getAnnotation(Pointer.class) != null);
     }
 
     public MethodHandle generateInGeneratorContext(Class interfaceClass, String methodName, MethodType methodType) throws NoSuchMethodException {
@@ -219,11 +238,6 @@ public class NativeCallGenerator {
         use_indy = false;
     }
 
-
-    private MethodHandle nativeMethodHandle(Method method) {
-        return nativeMethodHandle(method, false);
-    }
-
     /**
      * This private method handles the native method call based on the given Method.
      *
@@ -231,7 +245,7 @@ public class NativeCallGenerator {
      * @return The MethodHandle object for the native method call.
      * @throws IllegalArgumentException if the return type of the method is not a primitive type or marked as returnIsPointer.
      */
-    MethodHandle nativeMethodHandle(Method method, boolean lazy) {
+    MethodHandle nativeMethodHandle(Method method) {
         DowncallContext downcallContext = parseDowncallContext(method);
 
         String functionName = downcallContext.functionName();
@@ -239,6 +253,7 @@ public class NativeCallGenerator {
         Linker.Option[] options = downcallContext.ops();
         boolean returnPointer = downcallContext.returnPointer();
         boolean needCaptureStatue = downcallContext.needCaptureStatue();
+        boolean haveFp = downcallContext.containFp();
         ArrayList<Integer> rawMemoryIndex = downcallContext.rawMemoryIndex();
         if (needCaptureStatue && downcallContext.fast()) {
             throw new IllegalArgumentException("fast mode cant capture errno");
@@ -246,17 +261,7 @@ public class NativeCallGenerator {
 
 //        MethodHandle methodHandle = nativeLibLookup.downcallHandle(functionName, fd, options);
         MethodHandle methodHandle = Linker.nativeLinker().downcallHandle(fd, options);
-        if (lazy) {
-            //延迟到第一次调用时去找符号
-            MethodHandle dlsymMH = DLSYM_MH
-                    .bindTo(this)
-                    .bindTo(functionName);
-            methodHandle = MethodHandles.collectArguments(
-                    methodHandle,
-                    0,
-                    dlsymMH
-            );
-        } else {
+        if (!haveFp) {
             methodHandle = methodHandle.bindTo(dlsym(functionName));
         }
 
@@ -377,9 +382,30 @@ public class NativeCallGenerator {
         ArrayList<Integer> rawMemoryIndex = new ArrayList<>();
         MemoryLayout[] layouts = new MemoryLayout[method.getParameterCount()];
         Parameter[] parameters = method.getParameters();
+        boolean hasFp = false;
         for (int i = 0; i < parameters.length; i++) {
-            Class<?> typeClass = parameters[i].getType();
-            if (needTransToPointer(parameters[i])) {
+            Parameter parameter = parameters[i];
+
+            if (parameter.getAnnotation(NativeFunctionPointer.class) != null) {
+                if (hasFp) {
+                    throw new IllegalArgumentException("only one function pointer is allowed");
+                }
+
+                if (!MemorySegment.class.isAssignableFrom(parameter.getType())) {
+                    throw new IllegalArgumentException("function pointer must be MemorySegment or its sub class");
+                }
+
+                if (i != 0) {
+                    //虽然不限定位置也能做 比如利用permuteArguments做 但是这样代码写起来有点麻烦
+                    //收益不大 所以还是固定第一个吧
+                    throw new IllegalArgumentException("function pointer must be the first parameter");
+                }
+                hasFp = true;
+                continue;
+            }
+
+            Class<?> typeClass = parameter.getType();
+            if (needTransToPointer(parameter)) {
                 layouts[i] = ValueLayout.ADDRESS;
                 rawMemoryIndex.add(i);
                 continue;
@@ -400,6 +426,14 @@ public class NativeCallGenerator {
             }
         }
 
+        if (hasFp) {
+            //去除第一个参数的布局。。。
+            //java没有slice真sb啊
+            MemoryLayout[] newLayout = new MemoryLayout[layouts.length - 1];
+            System.arraycopy(layouts, 1, newLayout, 0, newLayout.length);
+            layouts = newLayout;
+        }
+
         MemoryLayout returnLayout;
         if (MemorySegment.class.isAssignableFrom(returnType) || returnPointer) {
             returnLayout = ValueLayout.ADDRESS;
@@ -417,9 +451,8 @@ public class NativeCallGenerator {
                 returnLayout,
                 layouts
         );
-        return new DowncallContext(fd, options.toArray(Linker.Option[]::new), functionName, returnPointer, needCaptureStatue, rawMemoryIndex);
+        return new DowncallContext(fd, options.toArray(Linker.Option[]::new), functionName, returnPointer, needCaptureStatue, rawMemoryIndex, hasFp);
     }
-
 
     private Class generateRuntimeProxyClass(MethodHandles.Lookup lookup, Class nativeInterface) throws IllegalAccessException {
         String className = generateProxyClassName(nativeInterface);
@@ -565,30 +598,5 @@ public class NativeCallGenerator {
     private MemorySegment dlsym(String name) {
         Objects.requireNonNull(name);
         return foreignFunctionAddressCache.computeIfAbsent(name, nativeLibLookup::findOrException);
-    }
-
-    public static void loadSo(Class<?> interfaceClass) throws IOException {
-        ClassLoader classLoader = interfaceClass.getClassLoader();
-        CLib annotation = interfaceClass.getAnnotation(CLib.class);
-        if (annotation == null || annotation.value().isBlank()) return;
-        if (annotation.isLib()) {
-            Runtime.getRuntime().loadLibrary(classLoader.getName());
-            return;
-        }
-
-        InputStream inputStream = annotation.inClassPath()
-                ? classLoader.getResourceAsStream(annotation.value())
-                : new FileInputStream(annotation.value());
-        if (inputStream == null) {
-            throw new IllegalArgumentException("cant find clib! classloader: " + classLoader + ", path: " + annotation.value());
-        }
-        String tmpFileName = interfaceClass.getSimpleName() + "_" + UUID.randomUUID() + "_dynamic.so";
-        File file = File.createTempFile(tmpFileName, ".tmp");
-        FileOutputStream fileOutputStream = new FileOutputStream(file);
-        file.deleteOnExit();
-        try (fileOutputStream; inputStream) {
-            inputStream.transferTo(fileOutputStream);
-            System.load(file.getAbsolutePath());
-        }
     }
 }

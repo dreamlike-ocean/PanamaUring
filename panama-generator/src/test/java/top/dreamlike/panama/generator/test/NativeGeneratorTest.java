@@ -1,8 +1,9 @@
 package top.dreamlike.panama.generator.test;
 
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import top.dreamlike.panama.generator.proxy.NativeArray;
 import top.dreamlike.panama.generator.proxy.NativeCallGenerator;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
@@ -14,22 +15,36 @@ import top.dreamlike.panama.generator.test.struct.TestContainer;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
 
-public class IndyGeneratorTest {
+@RunWith(Parameterized.class)
+public class NativeGeneratorTest {
 
-    private static StructProxyGenerator structProxyGenerator;
+    private final StructProxyGenerator structProxyGenerator;
 
-    private static NativeCallGenerator callGenerator;
+    private final NativeCallGenerator callGenerator;
 
-    private static LibPerson libPerson;
+    private final LibPerson libPerson;
 
-    @BeforeClass
-    public static void init() {
-        structProxyGenerator = new StructProxyGenerator();
-        structProxyGenerator.setProxySavePath("apt-generator");
-        callGenerator = new NativeCallGenerator(structProxyGenerator);
-        callGenerator.indyMode();
+    public NativeGeneratorTest(StructProxyGenerator structProxyGenerator, NativeCallGenerator callGenerator) {
+        this.structProxyGenerator = structProxyGenerator;
+        this.callGenerator = callGenerator;
         libPerson = callGenerator.generate(LibPerson.class);
+    }
+    @Parameterized.Parameters
+    public static Object[] data() {
+        NativeCallGenerator indyNativeCallGenerator = new NativeCallGenerator();
+        indyNativeCallGenerator.indyMode();
+        StructProxyGenerator indyStructProxyGenerator = new StructProxyGenerator();
+
+        NativeCallGenerator plainNativeCallGenerator = new NativeCallGenerator();
+        plainNativeCallGenerator.plainMode();
+        StructProxyGenerator plainStructProxyGenerator = new StructProxyGenerator();
+
+        return new Object[][]{
+                {indyStructProxyGenerator, indyNativeCallGenerator},
+                {plainStructProxyGenerator, plainNativeCallGenerator}
+        };
     }
 
     @Test
@@ -192,6 +207,16 @@ public class IndyGeneratorTest {
             long n = p.getN();
             Assert.assertEquals(targetPersonN, n);
         }
+    }
+
+    @Test
+    public void testFp() {
+        MemorySegment return1Fp = SymbolLookup.loaderLookup()
+                .find("return1").get();
+        MemorySegment rawAddFp = SymbolLookup.loaderLookup()
+                .find("raw_add").get();
+       Assert.assertEquals(1,  libPerson.return1(return1Fp));
+        Assert.assertEquals(3,  libPerson.rawAdd(rawAddFp, 1, 2));
     }
 
 

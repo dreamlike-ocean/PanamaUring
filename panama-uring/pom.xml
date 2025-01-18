@@ -65,6 +65,7 @@
         <dependency>
             <groupId>io.github.dreamlike-ocean</groupId>
             <artifactId>panama-generator</artifactId>
+            <version>1.4.4</version>
         </dependency>
 
 
