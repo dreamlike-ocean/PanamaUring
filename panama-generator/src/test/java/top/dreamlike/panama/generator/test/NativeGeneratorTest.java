@@ -56,8 +56,8 @@ public class NativeGeneratorTest {
     @Test
     public void testSimpleFunctionHeap() {
         long[] longs = new long[10];
-        Assert.assertEquals( 0, longs[1]);
-        libPerson.set_array(longs,1, 20010329);
+        Assert.assertEquals(0, longs[1]);
+        libPerson.set_array(longs, 1, 20010329);
         Assert.assertEquals(20010329, longs[1]);
     }
 
@@ -215,8 +215,8 @@ public class NativeGeneratorTest {
                 .find("return1").get();
         MemorySegment rawAddFp = SymbolLookup.loaderLookup()
                 .find("raw_add").get();
-       Assert.assertEquals(1,  libPerson.return1(return1Fp));
-        Assert.assertEquals(3,  libPerson.rawAdd(rawAddFp, 1, 2));
+        Assert.assertEquals(1, libPerson.return1(return1Fp));
+        Assert.assertEquals(3, libPerson.rawAdd(rawAddFp, 1, 2));
     }
 
 

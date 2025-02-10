@@ -48,7 +48,6 @@
     <modules>
         <module>panama-uring</module>
         <module>panama-generator</module>
-        <module>graal-native-example</module>
     </modules>
     <profiles>
         <profile>
