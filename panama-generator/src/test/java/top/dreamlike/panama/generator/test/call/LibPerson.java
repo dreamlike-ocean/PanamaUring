@@ -2,6 +2,7 @@ package top.dreamlike.panama.generator.test.call;
 
 import top.dreamlike.panama.generator.annotation.CLib;
 import top.dreamlike.panama.generator.annotation.NativeFunction;
+import top.dreamlike.panama.generator.annotation.NativeFunctionPointer;
 import top.dreamlike.panama.generator.annotation.Pointer;
 import top.dreamlike.panama.generator.test.struct.Person;
 import top.dreamlike.panama.generator.test.struct.TestContainer;
@@ -42,4 +43,8 @@ public interface LibPerson {
     long set_error_no(int error, long returnValue);
 
     long set_array(long[] error, int index, long value);
+
+    int return1(@NativeFunctionPointer MemorySegment fp);
+
+    int rawAdd(@NativeFunctionPointer MemorySegment fp, int a, int b);
 }

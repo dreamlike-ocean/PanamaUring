@@ -48,7 +48,6 @@
     <modules>
         <module>panama-uring</module>
         <module>panama-generator</module>
-        <module>graal-native-example</module>
     </modules>
     <profiles>
         <profile>
@@ -188,6 +187,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M5</version>
                 <configuration>
+                    <trimStackTrace>false</trimStackTrace>
                     <argLine>--enable-native-access=ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>

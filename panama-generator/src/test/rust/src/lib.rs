@@ -144,12 +144,38 @@ pub unsafe extern "C" fn set_array(array :*mut i64, index: usize, value : i64) {
 }
 
 #[no_mangle]
+#[cfg(target_os = "linux")]
 pub unsafe extern "C" fn current_error(_ :i32, _: i32) -> i32 {
     return *libc::__errno_location();
 }
 
 #[no_mangle]
+#[cfg(target_os = "linux")]
 pub unsafe extern "C" fn set_error_no(error_no: i32, return_value: i64) -> i64 {
     (*libc::__errno_location()) = error_no;
     return_value
+}
+
+#[no_mangle]
+#[cfg(target_os = "macos")]
+pub unsafe extern "C" fn current_error(_ :i32, _: i32) -> i32 {
+    return *libc::__error();
+}
+
+#[no_mangle]
+#[cfg(target_os = "macos")]
+pub unsafe extern "C" fn set_error_no(error_no: i32, return_value: i64) -> i64 {
+    (*libc::__error()) = error_no;
+    return_value
+}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn return1() -> i32 {
+    return 1;
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn raw_add(a: i32, b :i32) -> i32 {
+    return a + b;
 }
