@@ -72,7 +72,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
+                <version>3.5.0</version>
                 <executions>
                     <execution>
                         <id>exec-buildScript</id>
@@ -120,7 +120,6 @@
                             </arguments>
                         </configuration>
                     </execution>
-
                 </executions>
             </plugin>
         </plugins>
