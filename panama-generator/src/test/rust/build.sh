@@ -1,3 +1,4 @@
+#!/bin/bash
 rm -f ../resources/libperson.so
 cargo build || { echo "cargo build fail!"; exit 1; }
 mkdir -p ../resources

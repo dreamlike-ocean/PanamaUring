@@ -5,14 +5,13 @@ import top.dreamlike.panama.uring.async.fd.AsyncMultiShotTcpSocketFd;
 import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
 import top.dreamlike.panama.uring.eventloop.IoUringEventLoop;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingElement;
 import top.dreamlike.panama.uring.nativelib.wrapper.IoUringCore;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
 import java.util.function.Function;
 
 public class PanamaUringSecret {
-    public final static Function<OwnershipMemory, IoUringBufferRingElement> lookupOwnershipBufferRingElement = memory -> (IoUringBufferRingElement) memory;
+
     public static Function<CancelToken, Long> peekCancelToken;
 
     public static Function<IoUringEventLoop, IoUring> findUring;

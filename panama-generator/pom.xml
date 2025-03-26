@@ -98,7 +98,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <executable>sh</executable>
+                            <executable>bash</executable>
                             <workingDirectory>${project.basedir}/src/test/rust</workingDirectory>
                             <arguments>
                                 <argument>clean.sh</argument>
@@ -113,7 +113,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <executable>sh</executable>
+                            <executable>bash</executable>
                             <workingDirectory>${project.basedir}/src/test/rust</workingDirectory>
                             <arguments>
                                 <argument>build.sh</argument>
