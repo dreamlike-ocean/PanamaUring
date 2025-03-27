@@ -24,6 +24,8 @@ import top.dreamlike.panama.uring.nativelib.struct.liburing.NativeIoUringBufRing
 import top.dreamlike.panama.uring.nativelib.wrapper.IoUringCore;
 import top.dreamlike.panama.uring.sync.fd.EventFd;
 import top.dreamlike.panama.uring.sync.trait.PollableFd;
+import top.dreamlike.panama.uring.thirdparty.colletion.IntObjectHashMap;
+import top.dreamlike.panama.uring.thirdparty.colletion.IntObjectMap;
 import top.dreamlike.panama.uring.thirdparty.colletion.LongObjectHashMap;
 import top.dreamlike.panama.uring.thirdparty.colletion.LongObjectMap;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
@@ -31,6 +33,7 @@ import top.dreamlike.panama.uring.trait.OwnershipMemory;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -71,6 +74,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         log.error("Uncaught exception in event loop", t);
     };
     private boolean enableLink;
+    private IntObjectMap<IoUringBufferRing> bufferRingMap;
 
     public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory) {
         this(ioUringParamsFactory, (r) -> {
@@ -86,7 +90,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
 
     public IoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory, ThreadFactory factory, MemoryAllocator<? extends OwnershipMemory> allocator) {
         this.wakeUpFd = new EventFd(0, 0);
-        log.info("wakeupFd: {}", wakeUpFd);
+        log.debug("wakeupFd: {}", wakeUpFd);
         this.taskQueue = new MpscUnboundedArrayQueue<>(1024);
         this.hasClosed = new AtomicBoolean();
         this.memoryAllocator = allocator;
@@ -96,6 +100,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
         this.ioUringCore = new IoUringCore(ioUringParamsFactory);
         this.internalRing = ioUringCore.getInternalRing();
         this.owner = factory.newThread(this);
+        this.bufferRingMap = new IntObjectHashMap<>();
         this.eventReadBuffer = memoryAllocator.allocateOwnerShipMemory(ValueLayout.JAVA_LONG.byteSize());
         if (needWakeUpFd()) {
             initWakeUpFdMultiShot();
@@ -212,7 +217,7 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
                     return new IoUringBufRingSetupResult(res, null);
                 }
                 InternalNativeIoUringRing bufferRing = new InternalNativeIoUringRing(bufRing, bufferGroupId, internalEntries, blockSize, memoryAllocator);
-
+                bufferRingMap.put(bufferGroupId, bufferRing);
                 return new IoUringBufRingSetupResult(res, bufferRing);
             } finally {
                 if (resPtr != null) {
@@ -220,6 +225,10 @@ public sealed class IoUringEventLoop implements AutoCloseable, Executor, Runnabl
                 }
             }
         });
+    }
+
+    public CompletableFuture<Optional<IoUringBufferRing>> findBufferRing(short bufferGroupId) {
+        return runOnEventLoop(() -> Optional.ofNullable(bufferRingMap.get(bufferGroupId)));
     }
 
     public CancelableFuture<Integer> poll(PollableFd fd, int pollMask) {
