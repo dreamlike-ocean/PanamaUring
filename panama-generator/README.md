@@ -170,6 +170,22 @@ public class TestContainer {
 - 如果表现为一个指针但是实际上是个数组，记得asPointer这个参数
 - 不使用NativeArray也可以，直接使用MemorySegment也是支持的，只要你的NativeArrayMark标注的是对的
 
+### shortcut
+
+某些时候你可能不想那么OOP，只想从某个MemorySegment或者某个被增强的对象里面取到一个嵌套的值，或者使用某个内存顺序，那么就可以用这种方式
+
+- 返回值必须要是对应的原始类型，
+- 如果第一个参数为MemorySegment那么owner必填
+- value为取值的路径，这里就是EpollEventGenerated.data.u64
+- mode为你需要的类型
+```java
+@ShortcutOption(value = {"data", "u64"}, owner = EpollEventGenerated.class, mode = VarHandle.AccessMode.GET)
+long getU64(EpollEventGenerated eventGenerated);
+
+@ShortcutOption(value = {"data", "u64"}, owner = EpollEventGenerated.class, mode = VarHandle.AccessMode.GET)
+long getU64(MemorySegment eventGenerated);
+```
+
 ### 后门
 
 - 通过StructProxyGenerator::isNativeStruct 来判断一个实例是不是绑定到一个MemorySegment上
@@ -223,7 +239,7 @@ var libPerson = callGenerator.generate(LibPerson.class);
 - @NativeFunction
     - value 对应native函数名若为空则默认使用被注解的函数的名字
     - fast 是否使用Linker.Option.isTrivial()这个链接参数，注意对于调用时间长的函数会对JVM产生很恶劣的性能影响
-    - allowPassHeap 暂无作于，jdk22后支持用heap的MemorySegment传递到native
+    - allowPassHeap jdk22后支持用heap的MemorySegment传递到native，如果接口签名中存在某个参数是原始类型数组则会自动使用allowPassHeap
     - returnIsPointer 如果native函数返回了一个struct的指针，通过声明这个属性为true可以将函数返回值自动映射为对应的这里支持使用对应被StructProxyGenerator增强过的Java类
     - needErrorNo，如果设置为true则会使用Linker.Option.captureCallState("errno"),具体后面会讲
 - @Pointer 如果native入参是一个结构体指针，这里支持使用对应被StructProxyGenerator增强过的Java类作为入参
@@ -251,6 +267,14 @@ Java Panama FFI errorno api其实是有点奇怪的，所以你需要这样使�
                 });
     }
 }
+```
+
+### function ptr
+
+某些情况下可能只有一组方法签名一致但是入口地址不同的native函数，为了避免重复工作，所以你可以声明第一个参数是一个函数指针,注意必须要是第一个且类型为MemorySegment，此时函数名则不参与解析
+
+```java
+ int rawAdd(@NativeFunctionPointer MemorySegment fp, int a, int b);
 ```
 
 ### indy模式
