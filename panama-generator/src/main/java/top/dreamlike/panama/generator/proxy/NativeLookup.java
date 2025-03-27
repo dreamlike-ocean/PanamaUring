@@ -39,6 +39,7 @@ class NativeLookup implements SymbolLookup {
     private static final MethodHandle MEMORY_SEGMENT_HEAP_BYTE_MH;
     private static final MethodHandle MEMORY_SEGMENT_HEAP_SHORT_MH;
 
+    public static final MethodHandle CSTR_TOSTRING_MH;
 
     private static final boolean TERMINATING_THREAD_LOCAL_ENABLE;
     private static final VarHandle errorHandle;
@@ -81,6 +82,8 @@ class NativeLookup implements SymbolLookup {
             MEMORY_SEGMENT_HEAP_DOUBLE_MH = lookup.findStatic(MemorySegment.class, "ofArray", MethodType.methodType(MemorySegment.class, double[].class));
             MEMORY_SEGMENT_HEAP_BYTE_MH = lookup.findStatic(MemorySegment.class, "ofArray", MethodType.methodType(MemorySegment.class, byte[].class));
             MEMORY_SEGMENT_HEAP_SHORT_MH = lookup.findStatic(MemorySegment.class, "ofArray", MethodType.methodType(MemorySegment.class, short[].class));
+
+            CSTR_TOSTRING_MH = MethodHandles.lookup().findStatic(NativeLookup.class, "ctrToJavaString", MethodType.methodType(String.class, MemorySegment.class));
 
             boolean enableTerminatingThreadLocal;
 
@@ -237,6 +240,12 @@ class NativeLookup implements SymbolLookup {
 //            case Class c when NativeStructEnhanceMark.class.isAssignableFrom(c) -> ValueLayout.ADDRESS;
             default -> null;
         };
+    }
+
+    public static String ctrToJavaString(MemorySegment memorySegment) {
+        return memorySegment
+                .reinterpret(Long.MAX_VALUE)
+                .getString(0);
     }
 
     @Override

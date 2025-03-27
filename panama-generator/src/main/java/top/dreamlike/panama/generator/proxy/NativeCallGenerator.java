@@ -98,8 +98,8 @@ public class NativeCallGenerator {
     private static boolean needTransToPointer(Parameter parameter) {
         Class<?> typeClass = parameter.getType();
         return MemorySegment.class.isAssignableFrom(typeClass)
-               || NativeAddressable.class.isAssignableFrom(typeClass)
-               || (!typeClass.isPrimitive() && parameter.getAnnotation(Pointer.class) != null);
+                || NativeAddressable.class.isAssignableFrom(typeClass)
+                || (!typeClass.isPrimitive() && parameter.getAnnotation(Pointer.class) != null);
     }
 
     public static void loadSo(Class<?> interfaceClass) throws IOException {
@@ -350,6 +350,14 @@ public class NativeCallGenerator {
                     returnEnhance
             );
         }
+
+        if (method.getReturnType() == String.class) {
+            methodHandle = MethodHandles.filterReturnValue(
+                    methodHandle,
+                    NativeLookup.CSTR_TOSTRING_MH
+            );
+        }
+
         return methodHandle;
     }
 
@@ -376,8 +384,13 @@ public class NativeCallGenerator {
             options.add(Linker.Option.captureCallState("errno"));
         }
 
-        if ((NativeLookup.primitiveMapToMemoryLayout(returnType) == null && !returnPointer && !MemorySegment.class.isAssignableFrom(returnType)) && returnType != void.class) {
-            throw new IllegalArgumentException(method + " must return primitive type or is marked returnIsPointer");
+        if ((NativeLookup.primitiveMapToMemoryLayout(returnType) == null
+                && !returnPointer
+                && !MemorySegment.class.isAssignableFrom(returnType))
+                && returnType != void.class
+                && returnType != String.class
+        ) {
+            throw new IllegalArgumentException(method + " must return primitive type or j.l.String or is marked returnIsPointer");
         }
         ArrayList<Integer> rawMemoryIndex = new ArrayList<>();
         MemoryLayout[] layouts = new MemoryLayout[method.getParameterCount()];
@@ -435,7 +448,7 @@ public class NativeCallGenerator {
         }
 
         MemoryLayout returnLayout;
-        if (MemorySegment.class.isAssignableFrom(returnType) || returnPointer) {
+        if (MemorySegment.class.isAssignableFrom(returnType) || returnPointer || returnType == String.class) {
             returnLayout = ValueLayout.ADDRESS;
         } else {
             returnLayout = structProxyGenerator.extract(returnType);

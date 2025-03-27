@@ -1,3 +1,5 @@
+use std::ffi::{c_char, CString};
+
 #[no_mangle]
 pub extern "C" fn add(i: i32, j: i32) -> i32 {
     i + j
@@ -178,4 +180,10 @@ pub unsafe extern "C" fn return1() -> i32 {
 #[no_mangle]
 pub unsafe extern "C" fn raw_add(a: i32, b :i32) -> i32 {
     return a + b;
+}
+
+#[no_mangle]
+pub extern "C" fn returnCStr() -> *const c_char {
+    let c_string = CString::new("cstr").unwrap();
+    c_string.into_raw()
 }

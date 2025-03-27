@@ -219,5 +219,10 @@ public class NativeGeneratorTest {
         Assert.assertEquals(3, libPerson.rawAdd(rawAddFp, 1, 2));
     }
 
+    @Test
+    public void cstr() {
+        String s = libPerson.returnCStr();
+        Assert.assertEquals("cstr", s);
+    }
 
 }
