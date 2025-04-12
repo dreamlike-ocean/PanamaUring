@@ -187,3 +187,8 @@ pub extern "C" fn returnCStr() -> *const c_char {
     let c_string = CString::new("cstr").unwrap();
     c_string.into_raw()
 }
+
+#[no_mangle]
+pub extern "C" fn returnStr(javaStr: *const c_char) -> *const c_char {
+    return javaStr
+}

@@ -49,4 +49,6 @@ public interface LibPerson {
     int rawAdd(@NativeFunctionPointer MemorySegment fp, int a, int b);
 
     String returnCStr();
+
+    String returnStr(String str);
 }

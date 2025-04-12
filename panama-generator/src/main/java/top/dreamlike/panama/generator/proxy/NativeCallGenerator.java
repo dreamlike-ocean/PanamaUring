@@ -298,6 +298,16 @@ public class NativeCallGenerator {
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
             Class<?> parameterType = parameter.getType();
+
+            if (parameterType == String.class) {
+                methodHandle = MethodHandles.filterArguments(
+                        methodHandle,
+                        i,
+                        NativeLookup.JAVASTR_CSTR_MH
+                );
+                continue;
+            }
+
             if (!parameterType.isArray()) {
                 continue;
             }
@@ -418,6 +428,13 @@ public class NativeCallGenerator {
             }
 
             Class<?> typeClass = parameter.getType();
+
+            //string转c str
+            if (typeClass == String.class) {
+                layouts[i] = ValueLayout.ADDRESS;
+                continue;
+            }
+
             if (needTransToPointer(parameter)) {
                 layouts[i] = ValueLayout.ADDRESS;
                 rawMemoryIndex.add(i);

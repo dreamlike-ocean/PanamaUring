@@ -27,10 +27,12 @@ public class ErrorNoTest {
     }
 
     @Test
-    public void testError() {
-        long res = libPerson.set_error_no(999, 2);
-        Assert.assertEquals(res, 2);
-        Assert.assertEquals(ErrorNo.error.get().intValue(), 999);
+    public void testError() throws Exception {
+        try(MemoryLifetimeScope scope = MemoryLifetimeScope.local()) {
+            long res = libPerson.set_error_no(999, 2);
+            Assert.assertEquals(res, 2);
+            Assert.assertEquals(ErrorNo.error.get().intValue(), 999);
+        }
 
         try (Arena arena = Arena.ofConfined()) {
             MemoryLifetimeScope.of(arena)
@@ -40,5 +42,6 @@ public class ErrorNoTest {
                         Assert.assertEquals(ErrorNo.error.get().intValue(), 888);
                     });
         }
+
     }
 }

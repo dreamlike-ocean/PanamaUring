@@ -1,13 +1,11 @@
 package top.dreamlike.panama.generator.proxy;
 
-import io.github.dreamlike.unsafe.vthread.TerminatingThreadLocal;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
@@ -40,6 +38,7 @@ class NativeLookup implements SymbolLookup {
     private static final MethodHandle MEMORY_SEGMENT_HEAP_SHORT_MH;
 
     public static final MethodHandle CSTR_TOSTRING_MH;
+    public static final MethodHandle JAVASTR_CSTR_MH;
 
     private static final boolean TERMINATING_THREAD_LOCAL_ENABLE;
     private static final VarHandle errorHandle;
@@ -84,6 +83,7 @@ class NativeLookup implements SymbolLookup {
             MEMORY_SEGMENT_HEAP_SHORT_MH = lookup.findStatic(MemorySegment.class, "ofArray", MethodType.methodType(MemorySegment.class, short[].class));
 
             CSTR_TOSTRING_MH = MethodHandles.lookup().findStatic(NativeLookup.class, "ctrToJavaString", MethodType.methodType(String.class, MemorySegment.class));
+            JAVASTR_CSTR_MH = MethodHandles.lookup().findStatic(NativeLookup.class, "toCStr", MethodType.methodType(MemorySegment.class, String.class));
 
             boolean enableTerminatingThreadLocal;
 
@@ -105,40 +105,16 @@ class NativeLookup implements SymbolLookup {
     }
 
     public static MemorySegment allocateErrorBuffer() {
-        SegmentAllocator allocator = MemoryLifetimeScope.currentAllocator.get();
-        StructLayout structLayout = Linker.Option.captureStateLayout();
-        MemorySegment buffer;
-
-        if (allocator != null) {
-            buffer = allocator.allocate(structLayout);
-        } else {
-            if (!TERMINATING_THREAD_LOCAL_ENABLE) {
-                throw new IllegalStateException("please active MemoryLifetimeScope first!");
-            } else {
-                //lazy init
-                class Holder {
-                    static final TerminatingThreadLocal<ErrorBufferHolder> errorBufferHolder = new TerminatingThreadLocal<>() {
-                        @Override
-                        protected void threadTerminated(ErrorBufferHolder value) {
-                            value.allocator.close();
-                        }
-                    };
-                }
-
-                ErrorBufferHolder errorBufferHolder = Holder.errorBufferHolder.get();
-                if (errorBufferHolder == null) {
-                    Arena arena = Arena.ofConfined();
-                    buffer = arena.allocate(structLayout);
-                    Holder.errorBufferHolder.set(new ErrorBufferHolder(arena, buffer));
-                } else {
-                    buffer = errorBufferHolder.buffer;
-                }
-            }
-        }
-
-
+        MemoryLifetimeScope memoryLifetimeScope = MemoryLifetimeScope.currentScope();
+        StructLayout errorNoLayout = Linker.Option.captureStateLayout();
+        MemorySegment buffer = memoryLifetimeScope.allocator.allocate(errorNoLayout);
         errorBuffer.set(buffer);
         return buffer;
+    }
+
+    public static MemorySegment toCStr(String javaString) {
+        MemoryLifetimeScope memoryLifetimeScope = MemoryLifetimeScope.currentScope();
+        return memoryLifetimeScope.allocator.allocateFrom(javaString);
     }
 
     public static MethodHandle fillErrorNoAfterReturn(MethodHandle methodHandle) {
