@@ -40,14 +40,12 @@ public class NettyIoUringBridgeEventLoop extends AbstractNettyBridgeEventLoop im
     private void registerReadyFdOneShot() {
         try {
             //不用清空buffer 覆盖写入就行了 无所谓 不关心这些
-            this.nettyIoUringReadId = registration.submit(
-                    new IoUringIoOps(
-                            IoUringConstant.Opcode.IORING_OP_READ,
-                            0, (short) 0, nettyFd.intValue(), 0,
-                            cqeReadyMemory.resource().address(), (int) ValueLayout.JAVA_LONG.byteSize(),
-                            0, (short) 0
-                    )
+            var ops = new IoUringIoOps(
+                    IoUringConstant.Opcode.IORING_OP_READ, (byte) 0, (short) 0, nettyFd.intValue(),
+                    0,  cqeReadyMemory.resource().address(), (int) ValueLayout.JAVA_LONG.byteSize(), 0,
+                    (short)  0, (short) 0, (short) 0, 0, 0L
             );
+            this.nettyIoUringReadId = registration.submit(ops);
             log.debug("end setRegistration");
         } catch (Exception e) {
             log.error("register epoll bridge event loop failed", e);
@@ -86,7 +84,9 @@ public class NettyIoUringBridgeEventLoop extends AbstractNettyBridgeEventLoop im
             }
 
             if (opCode == IoUringConstant.Opcode.IORING_OP_ASYNC_CANCEL && res == -Libc.Error_H.EALREADY) {
-                registration.submit(IoUringIoOps.newAsyncCancel(nettyFd.intValue(), 0, nettyIoUringReadId, IoUringConstant.Opcode.IORING_OP_READ));
+                var ops = new IoUringIoOps(IoUringConstant.Opcode.IORING_OP_ASYNC_CANCEL, (byte) 0, (short) 0, -1, 0, nettyIoUringReadId, 0, 0,
+                        IoUringConstant.Opcode.IORING_OP_READ, (short) 0, (short) 0, 0, 0);
+                registration.submit(ops);
             }
         } catch (Exception e) {
             //should not reach hear
@@ -101,7 +101,9 @@ public class NettyIoUringBridgeEventLoop extends AbstractNettyBridgeEventLoop im
     @Override
     public void close() throws Exception {
         if (hasClosed.compareAndSet(false, true)) {
-            registration.submit(IoUringIoOps.newAsyncCancel(nettyFd.intValue(), 0, nettyIoUringReadId, IoUringConstant.Opcode.IORING_OP_READ));
+            var ops = new IoUringIoOps(IoUringConstant.Opcode.IORING_OP_ASYNC_CANCEL, (byte) 0, (short) 0, -1, 0, nettyIoUringReadId, 0, 0,
+                    IoUringConstant.Opcode.IORING_OP_READ, (short) 0, (short) 0, 0, 0);
+            registration.submit(ops);
         }
     }
 }

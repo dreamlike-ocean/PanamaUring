@@ -14,11 +14,9 @@
     <packaging>jar</packaging>
 
     <properties>
-        <liburing.so.name>liburing-ffi.so.2.6</liburing.so.name>
-        <jemalloc.so.name>libjemalloc.so.2</jemalloc.so.name>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <arch.classifier>${os.detected.classifier}</arch.classifier>
-        <netty.version>4.2.0.Beta1</netty.version>
+        <netty.version>4.2.0.Final</netty.version>
         <kotlin.version>1.9.0</kotlin.version>
     </properties>
 
