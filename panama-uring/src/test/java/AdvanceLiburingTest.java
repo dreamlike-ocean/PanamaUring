@@ -22,7 +22,6 @@ import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
 import top.dreamlike.panama.uring.nativelib.libs.Libc;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUring;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufRingSetupResult;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingElement;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringParams;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringSqe;
@@ -89,6 +88,8 @@ public class AdvanceLiburingTest {
 
             IoUringBufRingSetupResult ringSetupResult = eventLoop.setupBufferRing(2, 1024, (short) 1).get();
             IoUringBufferRing bufferRing = ringSetupResult.bufRing();
+            //关闭自动填充 测试耗尽场景
+            bufferRing.setAutoFill(false);
             Assert.assertNotNull(bufferRing);
             Assert.assertFalse(ringSetupResult.res() < 0);
 
@@ -101,22 +102,21 @@ public class AdvanceLiburingTest {
             String actual = NativeHelper.bufToString(memory.resource(), (int) memory.resource().byteSize());
             Assert.assertEquals(hello, actual);
 
-            IoUringBufferRingElement ringElement = (IoUringBufferRingElement) memory;
-            int bid = ringElement.bid();
-            Assert.assertEquals(bufferRing, ringElement.ring());
-            Assert.assertTrue(bufferRing.getMemoryByBid(bid).hasOccupy());
-            memory.drop();
-            Assert.assertFalse(bufferRing.getMemoryByBid(bid).hasOccupy());
-
             memory = asyncFileFd.asyncSelectedRead(1024, 0).get();
+            memory.drop();
 
             int head = bufferRing.head();
             Assert.assertEquals(2, head);
 
+            //保证填充
+            bufferRing.fillAll();
+
             memory = asyncFileFd.asyncSelectedReadResult(1024, 0).get().value();
             actual = NativeHelper.bufToString(memory.resource(), (int) memory.resource().byteSize());
+            System.out.println(memory.resource());
             Assert.assertEquals(hello, actual);
-            Assert.assertFalse(bufferRing.hasAvailableElements());
+            memory = asyncFileFd.asyncSelectedReadResult(1024, 0).get().value();
+            memory.drop();
 
             ExecutionException exception = Assert.assertThrows(ExecutionException.class, () -> {
                 asyncFileFd.asyncSelectedRead(1024, 0).get();
@@ -178,12 +178,7 @@ public class AdvanceLiburingTest {
             Assert.assertEquals(helloBytes.length, ownershipMemory.resource().byteSize());
             Assert.assertEquals(hello, NativeHelper.bufToString(ownershipMemory.resource(), helloBytes.length));
 
-            IoUringBufferRingElement ringElement = PanamaUringSecret.lookupOwnershipBufferRingElement.apply(ownershipMemory);
-            int bid = ringElement.bid();
-            Assert.assertEquals(bufferRing, ringElement.ring());
-            Assert.assertTrue(bufferRing.getMemoryByBid(bid).hasOccupy());
             ownershipMemory.drop();
-            Assert.assertFalse(bufferRing.getMemoryByBid(bid).hasOccupy());
 
             bufferRing.releaseRing();
             Files.delete(udsPath);
@@ -256,7 +251,7 @@ public class AdvanceLiburingTest {
             Integer connectRes = socketFd.asyncConnect().get();
             Assert.assertTrue(connectRes >= 0);
 
-            IoUringBufRingSetupResult result = eventLoop.setupBufferRing(4, 1024, (short) 1, 4).get();
+            IoUringBufRingSetupResult result = eventLoop.setupBufferRing(4, 1024, (short) 1).get();
             Assert.assertNotNull(result.bufRing());
             Assert.assertTrue(result.res() >= 0);
 
@@ -290,10 +285,7 @@ public class AdvanceLiburingTest {
                 String msg = p.t1();
                 OwnershipMemory element = p.t2();
                 Assert.assertTrue(checkMsgSet.contains(msg));
-                IoUringBufferRingElement ringElement = (IoUringBufferRingElement) element;
-                Assert.assertTrue(ringElement.hasOccupy());
                 element.drop();
-                Assert.assertFalse(ringElement.ring().getMemoryByBid(ringElement.bid()).hasOccupy());
             };
             checker.accept(strings.take());
             writeSide.write(ByteBuffer.wrap(hello2.getBytes()));

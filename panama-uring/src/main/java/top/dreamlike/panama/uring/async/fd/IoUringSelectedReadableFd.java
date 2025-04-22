@@ -6,7 +6,6 @@ import top.dreamlike.panama.uring.async.trait.IoUringBufferRing;
 import top.dreamlike.panama.uring.async.trait.IoUringOperator;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingElement;
 import top.dreamlike.panama.uring.sync.trait.NativeFd;
 import top.dreamlike.panama.uring.trait.OwnershipMemory;
 
@@ -28,10 +27,9 @@ public interface IoUringSelectedReadableFd extends IoUringOperator, NativeFd {
                     if (syscallResult < 0) {
                         return CompletableFuture.failedFuture(new SyscallException(syscallResult));
                     } else {
-                        int readLen = syscallResult;
                         int bid = cqe.getBid();
-                        IoUringBufferRingElement ringElement = bufferRing.removeBuffer(bid).resultNow();
-                        return CompletableFuture.completedFuture(reinterpretUringBufferRingElement(ringElement, readLen));
+                        var ringElement = bufferRing.removeBuffer(bid);
+                        return CompletableFuture.completedFuture(ringElement.slice(0, syscallResult));
                     }
                 }, r -> owner().runOnEventLoop(r));
     }
@@ -50,17 +48,12 @@ public interface IoUringSelectedReadableFd extends IoUringOperator, NativeFd {
                     } else {
                         int readLen = cqe.getRes();
                         int bid = cqe.getBid();
-                        IoUringBufferRingElement ringElement = bufferRing.removeBuffer(bid).resultNow();
-                        result = new IoUringSyscallResult<>(cqe.getRes(), reinterpretUringBufferRingElement(ringElement, readLen));
+                        var ringElement = bufferRing.removeBuffer(bid);
+                        result = new IoUringSyscallResult<>(cqe.getRes(), ringElement.slice(0, readLen));
                     }
                     return result;
                 }, r -> owner().runOnEventLoop(r));
 
     }
 
-    static OwnershipMemory reinterpretUringBufferRingElement(IoUringBufferRingElement ringElement, int len) {
-        OwnershipMemory element = ringElement.element();
-        element = OwnershipMemory.of(element.resource().reinterpret(len));
-        return new IoUringBufferRingElement(ringElement.ring(), ringElement.bid(), element, true);
-    }
 }

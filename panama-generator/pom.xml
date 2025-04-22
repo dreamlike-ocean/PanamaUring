@@ -29,13 +29,6 @@
 
     <dependencies>
 
-        <dependency>
-            <groupId>io.github.dreamlike-ocean</groupId>
-            <artifactId>unsafe-vt</artifactId>
-            <version>1.0.5</version>
-            <scope>provided</scope>
-        </dependency>
-
         <!-- https://mvnrepository.com/artifact/org.graalvm.sdk/nativeimage -->
         <dependency>
             <groupId>org.graalvm.sdk</groupId>
@@ -98,7 +91,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <executable>sh</executable>
+                            <executable>bash</executable>
                             <workingDirectory>${project.basedir}/src/test/rust</workingDirectory>
                             <arguments>
                                 <argument>clean.sh</argument>
@@ -113,7 +106,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <executable>sh</executable>
+                            <executable>bash</executable>
                             <workingDirectory>${project.basedir}/src/test/rust</workingDirectory>
                             <arguments>
                                 <argument>build.sh</argument>

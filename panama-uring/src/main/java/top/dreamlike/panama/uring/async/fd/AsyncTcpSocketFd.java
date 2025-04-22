@@ -11,7 +11,6 @@ import top.dreamlike.panama.uring.helper.MemoryAllocator;
 import top.dreamlike.panama.uring.nativelib.Instance;
 import top.dreamlike.panama.uring.nativelib.exception.SyscallException;
 import top.dreamlike.panama.uring.nativelib.helper.NativeHelper;
-import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringBufferRingElement;
 import top.dreamlike.panama.uring.nativelib.struct.liburing.IoUringCqe;
 import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn;
 import top.dreamlike.panama.uring.nativelib.struct.socket.SocketAddrIn6;
@@ -212,8 +211,8 @@ public class AsyncTcpSocketFd implements IoUringAsyncFd, IoUringSelectedReadable
                 return CompletableFuture.failedFuture(new SyscallException(syscallResult));
             } else {
                 int bid = cqe.getBid();
-                IoUringBufferRingElement ringElement = LambdaHelper.runWithThrowable(() -> bufferRing.removeBuffer(bid).get());
-                return CompletableFuture.completedFuture(IoUringSelectedReadableFd.reinterpretUringBufferRingElement(ringElement, syscallResult));
+                var ringElement = bufferRing.removeBuffer(bid);
+                return CompletableFuture.completedFuture(ringElement.slice(0, syscallResult));
             }
         });
 

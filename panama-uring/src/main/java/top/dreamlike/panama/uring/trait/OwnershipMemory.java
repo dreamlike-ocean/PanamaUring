@@ -18,4 +18,20 @@ public interface OwnershipMemory extends OwnershipResource<MemorySegment> {
             }
         };
     }
+
+    default OwnershipMemory slice(long offset, long newLength) {
+        OwnershipMemory internalMemory = this;
+        MemorySegment memorySegment = internalMemory.resource().asSlice(offset, newLength);
+        return new OwnershipMemory() {
+            @Override
+            public MemorySegment resource() {
+                return memorySegment;
+            }
+
+            @Override
+            public void drop() {
+                internalMemory.drop();
+            }
+        };
+    }
 }

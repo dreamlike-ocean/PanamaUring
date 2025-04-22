@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import top.dreamlike.panama.generator.proxy.MemoryLifetimeScope;
 import top.dreamlike.panama.generator.proxy.NativeArray;
 import top.dreamlike.panama.generator.proxy.NativeCallGenerator;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
@@ -16,6 +17,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
+import java.util.UUID;
 
 @RunWith(Parameterized.class)
 public class NativeGeneratorTest {
@@ -219,5 +221,24 @@ public class NativeGeneratorTest {
         Assert.assertEquals(3, libPerson.rawAdd(rawAddFp, 1, 2));
     }
 
+    @Test
+    public void cstr() {
+        String s = libPerson.returnCStr();
+        Assert.assertEquals("cstr", s);
+    }
+
+    @Test
+    public void javaString() {
+        String string = UUID.randomUUID().toString();
+
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            String s = libPerson.returnStr(string);
+        });
+        try (MemoryLifetimeScope scope = MemoryLifetimeScope.local()) {
+            String s = libPerson.returnStr(string);
+            Assert.assertEquals(s, string);
+        } catch (Exception e) {
+        }
+    }
 
 }
