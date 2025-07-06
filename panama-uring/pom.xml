@@ -57,11 +57,6 @@
 
         <dependency>
             <groupId>io.github.dreamlike-ocean</groupId>
-            <artifactId>unsafe-vt</artifactId>
-            <version>1.0.5</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.dreamlike-ocean</groupId>
             <artifactId>panama-generator</artifactId>
             <version>1.4.4</version>
         </dependency>
