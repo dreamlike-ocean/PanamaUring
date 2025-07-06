@@ -1,7 +1,7 @@
 package top.dreamlike.panama.uring.helper;
 
 import io.netty.util.concurrent.SingleThreadEventExecutor;
-import top.dreamlike.unsafe.core.MasterKey;
+import top.dreamlike.panama.uring.helper.unsafe.TrustedLookup;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -35,7 +35,7 @@ public class NettyHelper {
 
         isIoUringSupported = haveIoUring;
 
-        MethodHandles.Lookup lookup = MasterKey.INSTANCE.getTrustedLookup();
+        MethodHandles.Lookup lookup = TrustedLookup.TREUSTED_LOOKUP;
         try {
             EVENTLOO_THREAD = lookup.findVarHandle(SingleThreadEventExecutor.class, "thread", Thread.class);
         } catch (Throwable t) {

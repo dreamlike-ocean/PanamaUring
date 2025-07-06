@@ -1,18 +1,15 @@
 package top.dreamlike.panama.uring.nativelib.helper;
 
-import sun.misc.Unsafe;
-import top.dreamlike.unsafe.core.MasterKey;
+import top.dreamlike.panama.uring.helper.unsafe.TrustedLookup;
 
 import java.io.FileDescriptor;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
-import java.lang.reflect.Field;
 import java.nio.channels.FileChannel;
 
 public class UnsafeHelper {
-    private static final Unsafe unsafe;
 
     private static final MethodHandles.Lookup trusted_lookup;
 
@@ -22,10 +19,7 @@ public class UnsafeHelper {
 
     static {
         try {
-            MethodHandles.Lookup trustedLookup = MasterKey.INSTANCE.getTrustedLookup();
-            Field field = Unsafe.class.getDeclaredField("theUnsafe");
-            field.setAccessible(true);
-            unsafe = (Unsafe) trustedLookup.unreflectVarHandle(field).get();
+            MethodHandles.Lookup trustedLookup = TrustedLookup.TREUSTED_LOOKUP;
             trusted_lookup = trustedLookup;
             getDirectMemorySizeMH = trusted_lookup.findStatic(Class.forName("jdk.internal.misc.VM"), "maxDirectMemory", MethodType.methodType(long.class));
             var getFileDescriptorMH = trusted_lookup.findVarHandle(
