@@ -9,12 +9,17 @@ import java.io.FileInputStream;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 public class VTIoUringTest {
 
     @Test
     public void testIoUringVT() {
-        VTIoUringEventLoop eventLoop = new VTIoUringEventLoop(params -> {
+        VTIoUringEventLoop eventLoop = VTIoUringEventLoop.newInstance(params -> {
             params.setSq_entries(4);
             params.setFlags(0);
         });
@@ -37,6 +42,19 @@ public class VTIoUringTest {
                 String string = new String(stream.readAllBytes());
                 Assert.assertEquals(helloIoUring, string);
             }
+
+            ThreadFactory vtScheduler = eventLoop.asVTScheduler();
+            ExecutorService executor = Executors.newThreadPerTaskExecutor(vtScheduler);
+            Thread vtCarrier = CompletableFuture.supplyAsync(VTIoUringEventLoop.LoomSupport::carrierThread, executor).join();
+            Assert.assertFalse(vtCarrier.isVirtual());
+
+            Thread ioCarrier = eventLoop.runOnEventLoop(VTIoUringEventLoop.LoomSupport::carrierThread).join();
+            Assert.assertSame(ioCarrier, vtCarrier);
+
+            Thread vt = CompletableFuture.supplyAsync(Thread::currentThread, executor).join();
+            Thread ioVT = eventLoop.runOnEventLoop(Thread::currentThread).join();
+            Assert.assertTrue(ioVT.isVirtual());
+            Assert.assertNotSame(vt, ioVT);
         } catch (Exception exception) {
         }
     }

@@ -30,7 +30,7 @@ public class IoUringEventLoopGetter {
     public static IoUringEventLoop get(EventLoopType type,Consumer<IoUringParams> ioUringParamsFactory) {
         return switch (type) {
             case Original -> new IoUringEventLoop(ioUringParamsFactory);
-            case VT -> new VTIoUringEventLoop(ioUringParamsFactory);
+            case VT -> VTIoUringEventLoop.newInstance(ioUringParamsFactory);
             case Netty_Epoll -> new NettyEpollBridgeEventLoop(EPOLL_EVENT_LOOP, ioUringParamsFactory);
             case Netty_IoUring -> new NettyIoUringBridgeEventLoop(IO_URING_EVENT_LOOP, ioUringParamsFactory);
         };
