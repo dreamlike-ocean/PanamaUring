@@ -27,12 +27,12 @@ public final class VTIoUringEventLoop extends IoUringEventLoop {
     private static final Logger log = LoggerFactory.getLogger(VTIoUringEventLoop.class);
     private final EventFd cqeReadyEventFd;
     private final OwnershipMemory cqeReadyMemory;
-    private final BlockingQueue<Runnable> continuationQueue;
+    private final Executor vtScheduler;
     private final Thread carrierThread;
 
-    private VTIoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory, ThreadFactory factory, Thread carrierThread, BlockingQueue<Runnable> continuationQueue) {
+    private VTIoUringEventLoop(Consumer<IoUringParams> ioUringParamsFactory, ThreadFactory factory, Thread carrierThread, Executor vtScheduler) {
         super(ioUringParamsFactory, factory);
-        this.continuationQueue = continuationQueue;
+        this.vtScheduler = vtScheduler;
         this.carrierThread = carrierThread;
         //poll的时候不一定有事件 也可能是单纯的超时了
         cqeReadyEventFd = new EventFd(0, Libc.Fcntl_H.O_NONBLOCK);
@@ -66,15 +66,16 @@ public final class VTIoUringEventLoop extends IoUringEventLoop {
             }
             continuationQueue.forEach(Runnable::run);
         });
-        ThreadFactory ioVTFactory = LoomSupport.setScheduler(Thread.ofVirtual().name("IoUringEventLoop-VT-" + count.incrementAndGet()), continuationQueue::offer)
+        Executor vtScheduler = continuationQueue::offer;
+        ThreadFactory ioVTFactory = LoomSupport.setScheduler(Thread.ofVirtual().name("IoUringEventLoop-VT-" + count.incrementAndGet()), vtScheduler)
                 .factory();
-        VTIoUringEventLoop vtIoUringEventLoop = new VTIoUringEventLoop(ioUringParamsFactory, ioVTFactory, carrierThread, continuationQueue);
+        VTIoUringEventLoop vtIoUringEventLoop = new VTIoUringEventLoop(ioUringParamsFactory, ioVTFactory, carrierThread, vtScheduler);
         lazyBox[0] = vtIoUringEventLoop;
         return vtIoUringEventLoop;
     }
 
     public ThreadFactory asVTScheduler() {
-        return LoomSupport.setScheduler(Thread.ofVirtual(), continuationQueue::offer)
+        return LoomSupport.setScheduler(Thread.ofVirtual(), vtScheduler)
                 .factory();
     }
 
