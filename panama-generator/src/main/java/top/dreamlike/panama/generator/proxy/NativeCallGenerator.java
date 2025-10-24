@@ -22,12 +22,7 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.DynamicCallSiteDesc;
-import java.lang.foreign.Arena;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
+import java.lang.foreign.*;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
@@ -259,10 +254,25 @@ public class NativeCallGenerator {
             throw new IllegalArgumentException("fast mode cant capture errno");
         }
 
-//        MethodHandle methodHandle = nativeLibLookup.downcallHandle(functionName, fd, options);
         MethodHandle methodHandle = Linker.nativeLinker().downcallHandle(fd, options);
         if (!haveFp) {
             methodHandle = methodHandle.bindTo(dlsym(functionName));
+        }
+
+        int allocatorIndex = -1;
+        for (int i = 0; i < methodHandle.type().parameterCount(); i++) {
+            if (methodHandle.type().parameterType(i) == SegmentAllocator.class) {
+                allocatorIndex = i;
+                break;
+            }
+        }
+        boolean returnStruct = allocatorIndex != -1;
+        if (returnStruct) {
+            methodHandle = MethodHandles.collectArguments(
+                    methodHandle,
+                    allocatorIndex,
+                    NativeLookup.CURRENT_ALLOCTOR_MH
+            );
         }
 
         if (needCaptureStatue) {
@@ -336,7 +346,7 @@ public class NativeCallGenerator {
             return methodHandle;
         }
 
-        if (returnPointer) {
+        if (returnPointer || returnStruct) {
             MemoryLayout returnLayout = fd.returnLayout().get();
             //先调整返回值类型对应的memorySegment长度
             methodHandle = MethodHandles.filterReturnValue(
@@ -394,14 +404,6 @@ public class NativeCallGenerator {
             options.add(Linker.Option.captureCallState("errno"));
         }
 
-        if ((NativeLookup.primitiveMapToMemoryLayout(returnType) == null
-                && !returnPointer
-                && !MemorySegment.class.isAssignableFrom(returnType))
-                && returnType != void.class
-                && returnType != String.class
-        ) {
-            throw new IllegalArgumentException(method + " must return primitive type or j.l.String or is marked returnIsPointer");
-        }
         ArrayList<Integer> rawMemoryIndex = new ArrayList<>();
         MemoryLayout[] layouts = new MemoryLayout[method.getParameterCount()];
         Parameter[] parameters = method.getParameters();

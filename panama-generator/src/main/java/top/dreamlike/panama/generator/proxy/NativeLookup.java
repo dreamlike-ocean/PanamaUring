@@ -1,14 +1,7 @@
 package top.dreamlike.panama.generator.proxy;
 
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.StructLayout;
-import java.lang.foreign.SymbolLookup;
-import java.lang.foreign.ValueLayout;
+import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -28,6 +21,8 @@ class NativeLookup implements SymbolLookup {
     public static final MethodHandle FILL_ERROR_CODE_BOOLEAN_MH;
     public static final MethodHandle FILL_ERROR_CODE_CHAR_MH;
     public static final MethodHandle FILL_ERROR_CODE_ADDRESS_MH;
+
+    public static final MethodHandle CURRENT_ALLOCTOR_MH;
 
     private static final MethodHandle MEMORY_SEGMENT_HEAP_INT_MH;
     private static final MethodHandle MEMORY_SEGMENT_HEAP_LONG_MH;
@@ -51,6 +46,8 @@ class NativeLookup implements SymbolLookup {
             MethodHandles.Lookup lookup = MethodHandles.lookup();
             AllocateErrorBuffer_MH = lookup
                     .findStatic(NativeLookup.class, "allocateErrorBuffer", MethodType.methodType(MemorySegment.class));
+            CURRENT_ALLOCTOR_MH = lookup
+                    .findStatic(NativeLookup.class, "currentAllocator", MethodType.methodType(SegmentAllocator.class));
             errorHandle = MethodHandles.insertCoordinates(Linker.Option.captureStateLayout()
                     .varHandle(MemoryLayout.PathElement.groupElement("errno")), 1, 0);
             FILL_ERROR_CODE_VOID_MH = lookup
@@ -110,6 +107,10 @@ class NativeLookup implements SymbolLookup {
         MemorySegment buffer = memoryLifetimeScope.allocator.allocate(errorNoLayout);
         errorBuffer.set(buffer);
         return buffer;
+    }
+
+    public static SegmentAllocator currentAllocator() {
+        return MemoryLifetimeScope.currentScope().allocator;
     }
 
     public static MemorySegment toCStr(String javaString) {
