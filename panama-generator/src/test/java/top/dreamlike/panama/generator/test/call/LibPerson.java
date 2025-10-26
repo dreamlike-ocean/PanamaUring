@@ -51,4 +51,10 @@ public interface LibPerson {
     String returnCStr();
 
     String returnStr(String str);
+
+    @NativeFunction(fast = true)
+    Person returnStruct(int a, long n);
+
+    @NativeFunction(needErrorNo = true, fast = true, allowPassHeap = true)
+    Person returnStructAndErrorNo(int a, long n, int errorNo);
 }

@@ -6,11 +6,11 @@
     <parent>
         <groupId>io.github.dreamlike-ocean</groupId>
         <artifactId>PanamaUring</artifactId>
-        <version>1.0.5</version>
+        <version>1.0.6</version>
     </parent>
 
     <artifactId>panama-generator</artifactId>
-    <version>1.4.4</version>
+    <version>1.4.5</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

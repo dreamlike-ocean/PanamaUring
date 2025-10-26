@@ -189,6 +189,17 @@ pub extern "C" fn returnCStr() -> *const c_char {
 }
 
 #[no_mangle]
-pub extern "C" fn returnStr(javaStr: *const c_char) -> *const c_char {
-    return javaStr
+pub extern "C" fn returnStr(java_str: *const c_char) -> *const c_char {
+    return java_str
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn returnStruct(a: i32, n: i64) -> Person {
+    Person { a, n }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn returnStructAndErrorNo(a: i32, n: i64, error_no :i32) -> Person {
+    set_error_no(error_no, 0);
+    Person { a, n }
 }
