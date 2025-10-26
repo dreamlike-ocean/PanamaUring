@@ -6,7 +6,7 @@ import java.util.ArrayDeque;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 
-public class MemoryLifetimeScope implements AutoCloseable{
+public class MemoryLifetimeScope implements AutoCloseable {
     static MemoryLifetimeScopeThreadLocal currentScope = new MemoryLifetimeScopeThreadLocal();
     final SegmentAllocator allocator;
     final boolean needClose;

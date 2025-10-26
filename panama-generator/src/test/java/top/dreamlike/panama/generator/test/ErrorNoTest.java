@@ -30,6 +30,27 @@ public class ErrorNoTest {
     }
 
     @Test
+    public void testError() throws Exception {
+        try(MemoryLifetimeScope scope = MemoryLifetimeScope.local()) {
+            long res = libPerson.set_error_no(999, 2);
+            Assert.assertEquals(res, 2);
+            Assert.assertEquals(ErrorNo.error.get().intValue(), 999);
+        }
+
+        try (Arena arena = Arena.ofConfined()) {
+            MemoryLifetimeScope.of(arena)
+                    .active(() -> {
+                        long res1 = libPerson.set_error_no(888, 2);
+                        Assert.assertEquals(res1, 2);
+                        Assert.assertEquals(ErrorNo.error.get().intValue(), 888);
+                        ErrorNo.CapturedErrorState capturedError = ErrorNo.getCapturedError();
+                        Assert.assertEquals(capturedError.errno(), 888);
+                    });
+        }
+
+    }
+
+    @Test
     public void testReturnStruct() {
         MemoryLayout rawCStructLayout = structProxyGenerator.extract(Person.class);
         long size = rawCStructLayout.byteSize();

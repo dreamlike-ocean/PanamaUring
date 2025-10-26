@@ -55,6 +55,6 @@ public interface LibPerson {
     @NativeFunction(fast = true)
     Person returnStruct(int a, long n);
 
-    @NativeFunction(needErrorNo = true)
+    @NativeFunction(needErrorNo = true, fast = true, allowPassHeap = true)
     Person returnStructAndErrorNo(int a, long n, int errorNo);
 }

@@ -250,9 +250,6 @@ public class NativeCallGenerator {
         boolean needCaptureStatue = downcallContext.needCaptureStatue();
         boolean haveFp = downcallContext.containFp();
         ArrayList<Integer> rawMemoryIndex = downcallContext.rawMemoryIndex();
-        if (needCaptureStatue && downcallContext.fast()) {
-            throw new IllegalArgumentException("fast mode cant capture errno");
-        }
 
         MethodHandle methodHandle = Linker.nativeLinker().downcallHandle(fd, options);
         if (!haveFp) {
@@ -401,7 +398,7 @@ public class NativeCallGenerator {
 
         boolean needCaptureStatue = function != null && function.needErrorNo();
         if (needCaptureStatue) {
-            options.add(Linker.Option.captureCallState("errno"));
+            options.add(NativeLookup.guessErrorNoOption());
         }
 
         ArrayList<Integer> rawMemoryIndex = new ArrayList<>();
@@ -473,7 +470,7 @@ public class NativeCallGenerator {
             returnLayout = structProxyGenerator.extract(returnType);
         }
 
-        if (needFast) {
+        if (needFast || needHeap) {
             options.add(Linker.Option.critical(needHeap));
         }
 

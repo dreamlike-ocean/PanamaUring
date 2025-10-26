@@ -35,8 +35,9 @@ class NativeLookup implements SymbolLookup {
     public static final MethodHandle CSTR_TOSTRING_MH;
     public static final MethodHandle JAVASTR_CSTR_MH;
 
-    private static final boolean TERMINATING_THREAD_LOCAL_ENABLE;
-    private static final VarHandle errorHandle;
+    private static final VarHandle ERROR_HANDLE;
+    private static final VarHandle GetLastError_HANDLE;
+    private static final VarHandle WSAGetLastError_HANDLE;
 
     //sb java 只能枚举全部原始类型了
     static ThreadLocal<MemorySegment> errorBuffer = new ThreadLocal<>();
@@ -48,8 +49,29 @@ class NativeLookup implements SymbolLookup {
                     .findStatic(NativeLookup.class, "allocateErrorBuffer", MethodType.methodType(MemorySegment.class));
             CURRENT_ALLOCTOR_MH = lookup
                     .findStatic(NativeLookup.class, "currentAllocator", MethodType.methodType(SegmentAllocator.class));
-            errorHandle = MethodHandles.insertCoordinates(Linker.Option.captureStateLayout()
-                    .varHandle(MemoryLayout.PathElement.groupElement("errno")), 1, 0);
+            StructLayout structLayout = Linker.Option.captureStateLayout();
+            ERROR_HANDLE = MethodHandles.insertCoordinates(
+                    structLayout.varHandle(MemoryLayout.PathElement.groupElement("errno")),
+                    1, 0
+            );
+
+            // windows有三种
+            // 参考https://github.com/openjdk/jdk/blob/e7c7892b9f0fcee37495cce312fdd67dc800f9c9/src/hotspot/share/prims/downcallLinker.cpp#L34
+            if (structLayout.memberLayouts().size() > 1) {
+                GetLastError_HANDLE = MethodHandles.insertCoordinates(
+                        structLayout.varHandle(MemoryLayout.PathElement.groupElement("GetLastError")),
+                        1, 0
+                );
+                WSAGetLastError_HANDLE = MethodHandles.insertCoordinates(
+                        structLayout.varHandle(MemoryLayout.PathElement.groupElement("WSAGetLastError")),
+                        1, 0
+                );
+            } else {
+                GetLastError_HANDLE = null;
+                WSAGetLastError_HANDLE = null;
+            }
+
+
             FILL_ERROR_CODE_VOID_MH = lookup
                     .findStatic(NativeLookup.class, "fillTLErrorVoid", MethodType.methodType(void.class));
             FILL_ERROR_CODE_BYTE_MH = lookup
@@ -81,21 +103,6 @@ class NativeLookup implements SymbolLookup {
 
             CSTR_TOSTRING_MH = MethodHandles.lookup().findStatic(NativeLookup.class, "ctrToJavaString", MethodType.methodType(String.class, MemorySegment.class));
             JAVASTR_CSTR_MH = MethodHandles.lookup().findStatic(NativeLookup.class, "toCStr", MethodType.methodType(MemorySegment.class, String.class));
-
-            boolean enableTerminatingThreadLocal;
-
-            if (NativeImageHelper.inExecutable()) {
-                enableTerminatingThreadLocal = false;
-            } else {
-                try {
-                    Class.forName("io.github.dreamlike.unsafe.vthread.TerminatingThreadLocal");
-                    enableTerminatingThreadLocal = true;
-                } catch (Throwable e) {
-                    enableTerminatingThreadLocal = false;
-                }
-            }
-
-            TERMINATING_THREAD_LOCAL_ENABLE = enableTerminatingThreadLocal;
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -155,8 +162,26 @@ class NativeLookup implements SymbolLookup {
 
     public static void fillTLErrorVoid() {
         MemorySegment errorSegment = errorBuffer.get();
-        int errorCode = (int) errorHandle.get(errorSegment);
-        ErrorNo.error.set(errorCode);
+        ErrorNo.CapturedErrorState capturedErrorState;
+        if (GetLastError_HANDLE == null && WSAGetLastError_HANDLE == null) {
+            capturedErrorState = fillPosixError(errorSegment);
+        } else {
+            capturedErrorState = fillWindowsError(errorSegment);
+        }
+        ErrorNo.error.set(capturedErrorState.errno());
+        ErrorNo.capturedError.set(capturedErrorState);
+    }
+
+    private static ErrorNo.PosixCapturedError fillPosixError(MemorySegment errorNoBuffer) {
+        return new ErrorNo.PosixCapturedError(((int) ERROR_HANDLE.get(errorNoBuffer)));
+    }
+
+    private static ErrorNo.WindowsCapturedError fillWindowsError(MemorySegment errorNoBuffer) {
+        return new ErrorNo.WindowsCapturedError(
+                (int) ERROR_HANDLE.get(errorNoBuffer),
+                (int) GetLastError_HANDLE.get(errorNoBuffer),
+                (int) WSAGetLastError_HANDLE.get(errorNoBuffer)
+        );
     }
 
     public static byte fillTLErrorByte(byte returnValue) {
@@ -237,14 +262,11 @@ class NativeLookup implements SymbolLookup {
                 .orElseThrow(() -> new IllegalArgumentException("cant link to " + name));
     }
 
-    public MethodHandle downcallHandle(String name, FunctionDescriptor functionDescriptor, Linker.Option... options) {
-        return find(name)
-                .map(functionAddr -> Linker.nativeLinker().downcallHandle(functionAddr, functionDescriptor, options))
-                .orElseThrow(() -> new IllegalArgumentException("cant link " + name));
+    static Linker.Option guessErrorNoOption() {
+        return Linker.Option.captureCallState(Linker.Option.captureStateLayout().memberLayouts().stream()
+                .map(MemoryLayout::name)
+                .flatMap(Optional::stream)
+                .toArray(String[]::new)
+        );
     }
-
-    record ErrorBufferHolder(Arena allocator, MemorySegment buffer) {
-    }
-
-
 }
