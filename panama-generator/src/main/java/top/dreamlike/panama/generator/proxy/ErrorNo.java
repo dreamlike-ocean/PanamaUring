@@ -17,4 +17,16 @@ public class ErrorNo {
     public static CapturedErrorState getCapturedError() {
         return capturedError.get();
     }
+
+    public enum ErrorNoType {
+        AUTO(null),
+        POSIX_ERROR_NO ("errno"),
+        WINDOWS_GET_LAST_ERROR("GetLastError"),
+        WINDOWS_WSA_GET_LAST_ERROR("WSAGetLastError");
+        final String fieldName;
+
+        ErrorNoType(String fieldName) {
+            this.fieldName = fieldName;
+        }
+    }
 }

@@ -4,6 +4,7 @@ import top.dreamlike.panama.generator.annotation.CLib;
 import top.dreamlike.panama.generator.annotation.NativeFunction;
 import top.dreamlike.panama.generator.annotation.NativeFunctionPointer;
 import top.dreamlike.panama.generator.annotation.Pointer;
+import top.dreamlike.panama.generator.proxy.ErrorNo;
 import top.dreamlike.panama.generator.test.struct.Person;
 import top.dreamlike.panama.generator.test.struct.TestContainer;
 
@@ -39,7 +40,7 @@ public interface LibPerson {
     @NativeFunction(fast = false, needErrorNo = true)
     int current_error(int dummy, long dummy2);
 
-    @NativeFunction(needErrorNo = true)
+    @NativeFunction(needErrorNo = true, errorNoType = ErrorNo.ErrorNoType.POSIX_ERROR_NO)
     long set_error_no(int error, long returnValue);
 
     long set_array(long[] error, int index, long value);

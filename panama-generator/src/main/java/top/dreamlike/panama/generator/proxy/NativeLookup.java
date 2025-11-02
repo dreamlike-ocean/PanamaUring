@@ -1,29 +1,31 @@
 package top.dreamlike.panama.generator.proxy;
 
 
-import java.lang.foreign.*;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.StructLayout;
+import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 class NativeLookup implements SymbolLookup {
 
     public static final MethodHandle AllocateErrorBuffer_MH;
-    public static final MethodHandle FILL_ERROR_CODE_VOID_MH;
-    public static final MethodHandle FILL_ERROR_CODE_BYTE_MH;
-    public static final MethodHandle FILL_ERROR_CODE_SHORT_MH;
-    public static final MethodHandle FILL_ERROR_CODE_INT_MH;
-    public static final MethodHandle FILL_ERROR_CODE_LONG_MH;
-    public static final MethodHandle FILL_ERROR_CODE_FLOAT_MH;
-    public static final MethodHandle FILL_ERROR_CODE_DOUBLE_MH;
-    public static final MethodHandle FILL_ERROR_CODE_BOOLEAN_MH;
-    public static final MethodHandle FILL_ERROR_CODE_CHAR_MH;
-    public static final MethodHandle FILL_ERROR_CODE_ADDRESS_MH;
+    public static final MethodHandle FILL_ERROR_CODE_AUTO_MH;
+    public static final MethodHandle FILL_ERROR_CODE_BY_TYPES_MH;
 
     public static final MethodHandle CURRENT_ALLOCTOR_MH;
-
+    public static final MethodHandle CSTR_TOSTRING_MH;
+    public static final MethodHandle JAVASTR_CSTR_MH;
     private static final MethodHandle MEMORY_SEGMENT_HEAP_INT_MH;
     private static final MethodHandle MEMORY_SEGMENT_HEAP_LONG_MH;
     private static final MethodHandle MEMORY_SEGMENT_HEAP_CHAR_MH;
@@ -31,15 +33,10 @@ class NativeLookup implements SymbolLookup {
     private static final MethodHandle MEMORY_SEGMENT_HEAP_DOUBLE_MH;
     private static final MethodHandle MEMORY_SEGMENT_HEAP_BYTE_MH;
     private static final MethodHandle MEMORY_SEGMENT_HEAP_SHORT_MH;
-
-    public static final MethodHandle CSTR_TOSTRING_MH;
-    public static final MethodHandle JAVASTR_CSTR_MH;
-
     private static final VarHandle ERROR_HANDLE;
     private static final VarHandle GetLastError_HANDLE;
     private static final VarHandle WSAGetLastError_HANDLE;
 
-    //sb java 只能枚举全部原始类型了
     static ThreadLocal<MemorySegment> errorBuffer = new ThreadLocal<>();
 
     static {
@@ -72,27 +69,10 @@ class NativeLookup implements SymbolLookup {
             }
 
 
-            FILL_ERROR_CODE_VOID_MH = lookup
-                    .findStatic(NativeLookup.class, "fillTLErrorVoid", MethodType.methodType(void.class));
-            FILL_ERROR_CODE_BYTE_MH = lookup
-                    .findStatic(NativeLookup.class, "fillTLErrorByte", MethodType.methodType(byte.class, byte.class));
-            FILL_ERROR_CODE_SHORT_MH = lookup
-                    .findStatic(NativeLookup.class, "fillTLErrorShort", MethodType.methodType(short.class, short.class));
-            FILL_ERROR_CODE_INT_MH = lookup
-                    .findStatic(NativeLookup.class, "fillTLErrorInt", MethodType.methodType(int.class, int.class));
-            FILL_ERROR_CODE_LONG_MH = lookup
-                    .findStatic(NativeLookup.class, "fillTLErrorLong", MethodType.methodType(long.class, long.class));
-            FILL_ERROR_CODE_FLOAT_MH = lookup
-                    .findStatic(NativeLookup.class, "fillTLErrorFloat", MethodType.methodType(float.class, float.class));
-            FILL_ERROR_CODE_DOUBLE_MH = lookup
-                    .findStatic(NativeLookup.class, "fillTLErrorDouble", MethodType.methodType(double.class, double.class));
-            FILL_ERROR_CODE_BOOLEAN_MH = lookup
-                    .findStatic(NativeLookup.class, "fillTLErrorBoolean", MethodType.methodType(boolean.class, boolean.class));
-            FILL_ERROR_CODE_CHAR_MH = lookup
-                    .findStatic(NativeLookup.class, "fillTLErrorChar", MethodType.methodType(char.class, char.class));
-            FILL_ERROR_CODE_ADDRESS_MH = lookup
-                    .findStatic(NativeLookup.class, "fillTLErrorAddress", MethodType.methodType(MemorySegment.class, MemorySegment.class));
-
+            FILL_ERROR_CODE_AUTO_MH = lookup
+                    .findStatic(NativeLookup.class, "fillTLErrorAuto", MethodType.methodType(void.class));
+            FILL_ERROR_CODE_BY_TYPES_MH = lookup
+                    .findStatic(NativeLookup.class, "fillTLErrorByTypes", MethodType.methodType(void.class, ErrorNo.ErrorNoType[].class));
             MEMORY_SEGMENT_HEAP_INT_MH = lookup.findStatic(MemorySegment.class, "ofArray", MethodType.methodType(MemorySegment.class, int[].class));
             MEMORY_SEGMENT_HEAP_LONG_MH = lookup.findStatic(MemorySegment.class, "ofArray", MethodType.methodType(MemorySegment.class, long[].class));
             MEMORY_SEGMENT_HEAP_CHAR_MH = lookup.findStatic(MemorySegment.class, "ofArray", MethodType.methodType(MemorySegment.class, char[].class));
@@ -125,24 +105,33 @@ class NativeLookup implements SymbolLookup {
         return memoryLifetimeScope.allocator.allocateFrom(javaString);
     }
 
-    public static MethodHandle fillErrorNoAfterReturn(MethodHandle methodHandle) {
-        Class<?> returnType = methodHandle.type().returnType();
-        return switch (returnType) {
-            case Class c when c == int.class -> MethodHandles.filterReturnValue(methodHandle, FILL_ERROR_CODE_INT_MH);
-            case Class c when c == long.class -> MethodHandles.filterReturnValue(methodHandle, FILL_ERROR_CODE_LONG_MH);
-            case Class c when c == short.class ->
-                    MethodHandles.filterReturnValue(methodHandle, FILL_ERROR_CODE_SHORT_MH);
-            case Class c when c == char.class -> MethodHandles.filterReturnValue(methodHandle, FILL_ERROR_CODE_CHAR_MH);
-            case Class c when c == float.class ->
-                    MethodHandles.filterReturnValue(methodHandle, FILL_ERROR_CODE_FLOAT_MH);
-            case Class c when c == double.class ->
-                    MethodHandles.filterReturnValue(methodHandle, FILL_ERROR_CODE_DOUBLE_MH);
-            case Class c when c == boolean.class ->
-                    MethodHandles.filterReturnValue(methodHandle, FILL_ERROR_CODE_BOOLEAN_MH);
-            case Class c when c == void.class -> MethodHandles.filterReturnValue(methodHandle, FILL_ERROR_CODE_VOID_MH);
-            default -> MethodHandles.filterReturnValue(methodHandle, FILL_ERROR_CODE_ADDRESS_MH);
-        };
+    public static MethodHandle fillErrorAfterReturn(MethodHandle downcallMH) {
+        Class<?> returnType = downcallMH.type().returnType();
+        if (returnType == void.class) {
+            return MethodHandles.filterReturnValue(downcallMH, FILL_ERROR_CODE_AUTO_MH);
+        }
+
+        // (returnType) -> void
+        MethodHandle errorSetMH = MethodHandles.dropArguments(FILL_ERROR_CODE_AUTO_MH, 0, returnType);
+        // (returnType) -> returnType
+        errorSetMH = MethodHandles.foldArguments(MethodHandles.identity(returnType), errorSetMH);
+        return MethodHandles.filterReturnValue(downcallMH, errorSetMH);
     }
+
+    public static MethodHandle fillErrorAfterReturn(MethodHandle downcallMH, ErrorNo.ErrorNoType[] errorNoType) {
+        Class<?> returnType = downcallMH.type().returnType();
+        MethodHandle fillTLErrorByTypesMH = FILL_ERROR_CODE_BY_TYPES_MH.bindTo(errorNoType);
+        if (returnType == void.class) {
+            return MethodHandles.filterReturnValue(downcallMH, fillTLErrorByTypesMH);
+        }
+
+        // (returnType) -> void
+        MethodHandle errorSetMH = MethodHandles.dropArguments(fillTLErrorByTypesMH, 0, returnType);
+        // (returnType) -> returnType
+        errorSetMH = MethodHandles.foldArguments(MethodHandles.identity(returnType), errorSetMH);
+        return MethodHandles.filterReturnValue(downcallMH, errorSetMH);
+    }
+
 
     public static MethodHandle heapAccessMH(Class primitiveType) {
         if (!primitiveType.isPrimitive()) {
@@ -160,7 +149,7 @@ class NativeLookup implements SymbolLookup {
         };
     }
 
-    public static void fillTLErrorVoid() {
+    private static void fillTLErrorAuto() {
         MemorySegment errorSegment = errorBuffer.get();
         ErrorNo.CapturedErrorState capturedErrorState;
         if (GetLastError_HANDLE == null && WSAGetLastError_HANDLE == null) {
@@ -168,6 +157,26 @@ class NativeLookup implements SymbolLookup {
         } else {
             capturedErrorState = fillWindowsError(errorSegment);
         }
+        ErrorNo.error.set(capturedErrorState.errno());
+        ErrorNo.capturedError.set(capturedErrorState);
+    }
+
+    private static void fillTLErrorByTypes(ErrorNo.ErrorNoType[] errorNoTypes) {
+        MemorySegment errorNoBuffer = errorBuffer.get();
+        boolean isWin = GetLastError_HANDLE != null && WSAGetLastError_HANDLE != null;
+        int errorNo = 0, getLast = 0, wSAGetLast = 0;
+        for (ErrorNo.ErrorNoType errorNoType : errorNoTypes) {
+            switch (errorNoType) {
+                case POSIX_ERROR_NO -> errorNo = (int) ERROR_HANDLE.get(errorNoBuffer);
+                case WINDOWS_GET_LAST_ERROR -> getLast = isWin ? (int) GetLastError_HANDLE.get(errorNoBuffer) : 0;
+                case WINDOWS_WSA_GET_LAST_ERROR ->
+                        wSAGetLast = isWin ? (int) WSAGetLastError_HANDLE.get(errorNoBuffer) : 0;
+            }
+        }
+        ErrorNo.CapturedErrorState capturedErrorState =
+                isWin
+                        ? new ErrorNo.WindowsCapturedError(errorNo, getLast, wSAGetLast)
+                        : new ErrorNo.PosixCapturedError(errorNo);
         ErrorNo.error.set(capturedErrorState.errno());
         ErrorNo.capturedError.set(capturedErrorState);
     }
@@ -182,51 +191,6 @@ class NativeLookup implements SymbolLookup {
                 (int) GetLastError_HANDLE.get(errorNoBuffer),
                 (int) WSAGetLastError_HANDLE.get(errorNoBuffer)
         );
-    }
-
-    public static byte fillTLErrorByte(byte returnValue) {
-        fillTLErrorVoid();
-        return returnValue;
-    }
-
-    public static int fillTLErrorInt(int returnValue) {
-        fillTLErrorVoid();
-        return returnValue;
-    }
-
-    public static long fillTLErrorLong(long returnValue) {
-        fillTLErrorVoid();
-        return returnValue;
-    }
-
-    public static float fillTLErrorFloat(float returnValue) {
-        fillTLErrorVoid();
-        return returnValue;
-    }
-
-    public static double fillTLErrorDouble(double returnValue) {
-        fillTLErrorVoid();
-        return returnValue;
-    }
-
-    public static boolean fillTLErrorBoolean(boolean returnValue) {
-        fillTLErrorVoid();
-        return returnValue;
-    }
-
-    public static char fillTLErrorChar(char returnValue) {
-        fillTLErrorVoid();
-        return returnValue;
-    }
-
-    public static short fillTLErrorShort(short returnValue) {
-        fillTLErrorVoid();
-        return returnValue;
-    }
-
-    public static MemorySegment fillTLErrorAddress(MemorySegment returnValue) {
-        fillTLErrorVoid();
-        return returnValue;
     }
 
     public static MemoryLayout primitiveMapToMemoryLayout(Class source) {
@@ -250,6 +214,27 @@ class NativeLookup implements SymbolLookup {
                 .getString(0);
     }
 
+    static Linker.Option guessErrorNoOption(boolean auto, ErrorNo.ErrorNoType[] errorNoTypes) {
+        String[] currentPlatformSupport = Linker.Option.captureStateLayout().memberLayouts().stream()
+                .map(MemoryLayout::name)
+                .flatMap(Optional::stream)
+                .toArray(String[]::new);
+        if (auto) {
+            return Linker.Option.captureCallState(currentPlatformSupport);
+        }
+        ArrayList<String> capturedStateList = new ArrayList<>();
+        List<String> currentPlatformSupportList = Arrays.asList(currentPlatformSupport);
+        for (ErrorNo.ErrorNoType errorNoType : errorNoTypes) {
+            String fieldName = errorNoType.fieldName;
+            if (currentPlatformSupportList.contains(fieldName)) {
+                capturedStateList.add(fieldName);
+            } else {
+                throw new IllegalArgumentException("current platform dont support " + errorNoType + " as errorno type");
+            }
+        }
+        return Linker.Option.captureCallState(capturedStateList.toArray(String[]::new));
+    }
+
     @Override
     public Optional<MemorySegment> find(String name) {
         return SymbolLookup.loaderLookup()
@@ -260,13 +245,5 @@ class NativeLookup implements SymbolLookup {
     public MemorySegment findOrException(String name) {
         return find(name)
                 .orElseThrow(() -> new IllegalArgumentException("cant link to " + name));
-    }
-
-    static Linker.Option guessErrorNoOption() {
-        return Linker.Option.captureCallState(Linker.Option.captureStateLayout().memberLayouts().stream()
-                .map(MemoryLayout::name)
-                .flatMap(Optional::stream)
-                .toArray(String[]::new)
-        );
     }
 }

@@ -50,6 +50,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -299,7 +300,12 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                                 AnnotationElement.of("fast", AnnotationValue.ofBoolean(nativeFunction.fast())),
                                 AnnotationElement.of("allowPassHeap", AnnotationValue.ofBoolean(nativeFunction.allowPassHeap())),
                                 AnnotationElement.of("returnIsPointer", AnnotationValue.ofBoolean(nativeFunction.returnIsPointer())),
-                                AnnotationElement.of("needErrorNo", AnnotationValue.ofBoolean(nativeFunction.needErrorNo()))
+                                AnnotationElement.of("needErrorNo", AnnotationValue.ofBoolean(nativeFunction.needErrorNo())),
+                                AnnotationElement.of("errorNoType",AnnotationValue.ofArray(
+                                        Arrays.stream(nativeFunction.errorNoType())
+                                                .map(errorNoType -> AnnotationValue.ofEnum(ClassFileHelper.toDesc(ErrorNo.ErrorNoType.class), errorNoType.name()))
+                                                .collect(Collectors.toUnmodifiableList())
+                                ))
                         );
                         it.with(RuntimeVisibleAnnotationsAttribute.of(annotation));
                     }

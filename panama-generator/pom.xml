@@ -60,6 +60,8 @@
                 <configuration>
                     <target>${java.version}</target>
                     <source>${java.version}</source>
+                    <testCompilerArguments>
+                    </testCompilerArguments>
                 </configuration>
             </plugin>
             <plugin>

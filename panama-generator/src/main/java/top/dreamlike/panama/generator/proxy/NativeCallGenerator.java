@@ -22,7 +22,13 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.DynamicCallSiteDesc;
-import java.lang.foreign.*;
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
@@ -33,6 +39,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -93,8 +100,8 @@ public class NativeCallGenerator {
     private static boolean needTransToPointer(Parameter parameter) {
         Class<?> typeClass = parameter.getType();
         return MemorySegment.class.isAssignableFrom(typeClass)
-                || NativeAddressable.class.isAssignableFrom(typeClass)
-                || (!typeClass.isPrimitive() && parameter.getAnnotation(Pointer.class) != null);
+               || NativeAddressable.class.isAssignableFrom(typeClass)
+               || (!typeClass.isPrimitive() && parameter.getAnnotation(Pointer.class) != null);
     }
 
     public static void loadSo(Class<?> interfaceClass) throws IOException {
@@ -247,7 +254,8 @@ public class NativeCallGenerator {
         FunctionDescriptor fd = downcallContext.fd();
         Linker.Option[] options = downcallContext.ops();
         boolean returnPointer = downcallContext.returnPointer();
-        boolean needCaptureStatue = downcallContext.needCaptureStatue();
+        DowncallContext.CaptureContext captureContext = downcallContext.captureContext();
+        boolean needCaptureStatue = captureContext.needCaptureStatue();
         boolean haveFp = downcallContext.containFp();
         ArrayList<Integer> rawMemoryIndex = downcallContext.rawMemoryIndex();
 
@@ -327,16 +335,7 @@ public class NativeCallGenerator {
         }
 
         if (needCaptureStatue) {
-            /*
-             *  别看fillErrorNoAfterReturn 太丑了。。SB java.。
-             *  等价于
-             *  {
-             *    var returnValue = nativeMethodHandle.invokeExact(...);
-             *    fillErrorNo();
-             *    return returnValue;
-             *  }
-             */
-            methodHandle = NativeLookup.fillErrorNoAfterReturn(methodHandle);
+            methodHandle = captureContext.auto() ? NativeLookup.fillErrorAfterReturn(methodHandle) : NativeLookup.fillErrorAfterReturn(methodHandle, captureContext.errorNoTypes());
         }
 
         if (MemorySegment.class.isAssignableFrom(method.getReturnType())) {
@@ -397,8 +396,12 @@ public class NativeCallGenerator {
         boolean needHeap = function != null && function.allowPassHeap();
 
         boolean needCaptureStatue = function != null && function.needErrorNo();
+        ErrorNo.ErrorNoType[] types = null;
+        boolean autoError = false;
         if (needCaptureStatue) {
-            options.add(NativeLookup.guessErrorNoOption());
+            types = function.errorNoType();
+            autoError = Arrays.stream(types).anyMatch(errorNoType -> errorNoType == ErrorNo.ErrorNoType.AUTO);
+            options.add(NativeLookup.guessErrorNoOption(autoError, types));
         }
 
         ArrayList<Integer> rawMemoryIndex = new ArrayList<>();
@@ -480,7 +483,7 @@ public class NativeCallGenerator {
                 returnLayout,
                 layouts
         );
-        return new DowncallContext(fd, options.toArray(Linker.Option[]::new), functionName, returnPointer, needCaptureStatue, rawMemoryIndex, hasFp);
+        return new DowncallContext(fd, options.toArray(Linker.Option[]::new), functionName, returnPointer, new DowncallContext.CaptureContext(needCaptureStatue,autoError, types), rawMemoryIndex, hasFp);
     }
 
     private Class generateRuntimeProxyClass(MethodHandles.Lookup lookup, Class nativeInterface) throws IllegalAccessException {
