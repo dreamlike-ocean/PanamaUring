@@ -5,12 +5,12 @@
     <parent>
         <artifactId>PanamaUring</artifactId>
         <groupId>io.github.dreamlike-ocean</groupId>
-        <version>1.0.6</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>panama-uring</artifactId>
-    <version>4.1.9</version>
+    <version>4.2.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -58,7 +58,7 @@
         <dependency>
             <groupId>io.github.dreamlike-ocean</groupId>
             <artifactId>panama-generator</artifactId>
-            <version>${panama-generator}</version>
+            <version>${panama.version}</version>
         </dependency>
 
 
@@ -109,18 +109,6 @@
             </extension>
         </extensions>
         <plugins>
-            <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <version>3.2.0</version>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>

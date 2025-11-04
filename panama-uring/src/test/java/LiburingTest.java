@@ -5,6 +5,7 @@ import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import struct.io_uring_cqe_struct;
+import struct.io_uring_params;
 import struct.io_uring_sqe_struct;
 import top.dreamlike.panama.generator.proxy.NativeArrayPointer;
 import top.dreamlike.panama.generator.proxy.StructProxyGenerator;
@@ -129,8 +130,8 @@ public class LiburingTest {
 
         MemoryLayout ioUringParamsLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringParams.class).withName("io_uring_params");
 
-        Assert.assertEquals(struct.io_uring_params.layout.byteSize(), ioUringParamsLayout.byteSize());
-        Assert.assertEquals(struct.io_uring_params.layout, ioUringParamsLayout);
+        Assert.assertEquals(io_uring_params.layout.byteSize(), ioUringParamsLayout.byteSize());
+        Assert.assertEquals(io_uring_params.layout, ioUringParamsLayout);
 
 
         MemoryLayout ioUringSqLayout = Instance.STRUCT_PROXY_GENERATOR.extract(IoUringSq.class).withName("io_uring_sq");
