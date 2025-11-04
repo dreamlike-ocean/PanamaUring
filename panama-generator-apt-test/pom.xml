@@ -28,4 +28,23 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <target>${java.version}</target>
+                    <source>${java.version}</source>
+                    <annotationProcessors>
+                        <annotationProcessor>top.dreamlike.panama.generator.proxy.PanamaAnnotationProcessor</annotationProcessor>
+                    </annotationProcessors>
+                    <compilerArgs>
+                        <compilerArg>-Aindy.enable=true</compilerArg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>
