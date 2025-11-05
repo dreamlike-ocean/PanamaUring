@@ -40,6 +40,7 @@ public class NativeGeneratorHelper {
 
     public static final Method FETCH_STRUCT_PROXY_GENERATOR;
     public static final Method REAL_MEMORY;
+    public static final Method LAYOUT;
 
     public static final Method REBIND_MEMORY;
 
@@ -70,6 +71,7 @@ public class NativeGeneratorHelper {
             LOAD_SO = NativeCallGenerator.class.getMethod("loadSo", Class.class);
             FETCH_STRUCT_PROXY_GENERATOR = NativeStructEnhanceMark.class.getMethod("fetchStructProxyGenerator");
             REAL_MEMORY = NativeStructEnhanceMark.class.getMethod("realMemory");
+            LAYOUT = NativeStructEnhanceMark.class.getMethod("layout");
             REBIND_MEMORY = NativeStructEnhanceMark.class.getMethod("rebind", MemorySegment.class);
             GET_ADDRESS_FROM_MEMORY_SEGMENT = MemorySegment.class.getMethod("get", AddressLayout.class, long.class);
             REINTERPRET = MemorySegment.class.getMethod("reinterpret", long.class);
@@ -119,9 +121,6 @@ public class NativeGeneratorHelper {
 
     public static MemoryLayout currentLayout() {
         StructProxyContext context = fetchCurrentNativeStructGenerator.get();
-        if (context == null) {
-            new RuntimeException().printStackTrace();
-        }
         return context.memoryLayout();
     }
 

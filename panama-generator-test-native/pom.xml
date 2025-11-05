@@ -38,7 +38,7 @@
                     </execution>
 
                     <execution>
-                        <id>prepare-libPerson</id>
+                        <id>prepare-nativeLib</id>
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>exec</goal>

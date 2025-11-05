@@ -109,7 +109,7 @@ public class NativeCallGenerator {
         CLib annotation = interfaceClass.getAnnotation(CLib.class);
         if (annotation == null || annotation.value().isBlank()) return;
         if (annotation.isLib()) {
-            Runtime.getRuntime().loadLibrary(classLoader.getName());
+            Runtime.getRuntime().loadLibrary(annotation.value());
             return;
         }
 

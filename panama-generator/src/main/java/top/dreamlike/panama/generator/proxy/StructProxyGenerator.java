@@ -583,7 +583,7 @@ public class StructProxyGenerator {
             //return
             it.return_();
         });
-        cb.withMethodBody("layout", ClassFileHelper.toMethodDescriptor(NativeGeneratorHelper.REAL_MEMORY), ClassFile.ACC_PUBLIC, it -> {
+        cb.withMethodBody("layout", ClassFileHelper.toMethodDescriptor(NativeGeneratorHelper.LAYOUT), ClassFile.ACC_PUBLIC, it -> {
             it.getstatic(thisClass, LAYOUT_FIELD, ClassFileHelper.toDesc(MemoryLayout.class));
             it.areturn();
         });

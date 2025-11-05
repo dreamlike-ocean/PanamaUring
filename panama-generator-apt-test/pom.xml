@@ -39,9 +39,6 @@
                     <annotationProcessors>
                         <annotationProcessor>top.dreamlike.panama.generator.proxy.PanamaAnnotationProcessor</annotationProcessor>
                     </annotationProcessors>
-                    <compilerArgs>
-                        <compilerArg>-Aindy.enable=true</compilerArg>
-                    </compilerArgs>
                 </configuration>
             </plugin>
         </plugins>

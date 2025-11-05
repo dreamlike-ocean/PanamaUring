@@ -113,7 +113,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
         }
 
         this.structProxyGenerator = new StructProxyGenerator();
-        structProxyGenerator.skipInit = false;
+        structProxyGenerator.skipInit = true;
         this.structProxyGenerator.classDataPeek = (className, bytecode) -> {
             try (var ouputStream = this.env.getFiler().createClassFile(className).openOutputStream()) {
                 ouputStream.write(bytecode);
@@ -229,12 +229,12 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
         //这里不在乎什么继承啥的 只需要解析内部结构数据就行了
         boolean isInterface = currentTypeElement.getKind().isInterface();
         CompileTimeGenerate compileTimeGenerate = currentTypeElement.getAnnotation(CompileTimeGenerate.class);
-        CompileTimeGenerate.GenerateType type = compileTimeGenerate.value();
         try {
             Class c = null;
             if (!isInterface) {
                 c = toRuntimeClassForNativeStruct(currentTypeElement);
             } else {
+                CompileTimeGenerate.GenerateType type = compileTimeGenerate.value();
                 c = switch (type) {
                     case STRUCT_PROXY -> toRuntimeClassForNativeStruct(currentTypeElement);
                     case SHORTCUT -> toRuntimeClassForShortcutInterface(currentTypeElement);
