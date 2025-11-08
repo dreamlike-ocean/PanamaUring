@@ -16,6 +16,21 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <profiles>
+        <profile>
+            <id>native-image-testsuite</id>
+            <activation>
+                <file>
+                    <!-- GraalVM 'native-image' should exist when using GraalVM -->
+                    <exists>${java.home}/bin/native-image</exists>
+                </file>
+            </activation>
+            <build>
+
+            </build>
+        </profile>
+    </profiles>
+
     <dependencies>
         <dependency>
             <groupId>io.github.dreamlike-ocean</groupId>
@@ -39,6 +54,10 @@
                     <annotationProcessors>
                         <annotationProcessor>top.dreamlike.panama.generator.proxy.PanamaAnnotationProcessor</annotationProcessor>
                     </annotationProcessors>
+                    <compilerArgs>
+                        <arg>-A</arg>
+                        <arg>generate.graal.feature.enable=true</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
         </plugins>
