@@ -21,6 +21,7 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedOptions;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -85,6 +86,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
     private StructProxyGenerator structProxyGenerator;
     private NativeCallGenerator nativeCallGenerator;
     private final ArrayList<ProxyPair> proxyPair = new ArrayList<>();
+    private final ArrayList<String> classPathLibs = new ArrayList<>();
 
 
     private final ClassFile classFile = ClassFile.of();
@@ -94,7 +96,8 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
     private final Map<String, Class> classMap = new HashMap<>(
             Map.of(
                     MemorySegment.class.getCanonicalName(), MemorySegment.class,
-                    NativeArray.class.getCanonicalName(), NativeArray.class
+                    NativeArray.class.getCanonicalName(), NativeArray.class,
+                    String.class.getCanonicalName(), NativeArray.class
             )
     );
 
@@ -173,7 +176,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 }
             }
         } catch (Throwable t) {
-            t.printStackTrace();
+           throw new RuntimeException(t);
         }
         return false;
     }
@@ -266,6 +269,9 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                         AnnotationElement.of("suffix", AnnotationValue.ofString(cLib.suffix()))
                 );
                 classBuilder.with(RuntimeVisibleAnnotationsAttribute.of(annotation));
+                if (cLib.inClassPath()) {
+                    classPathLibs.add(cLib.value());
+                }
             }
 
             List<ExecutableElement> executableElements = ElementFilter.methodsIn(currentTypeElement.getEnclosedElements());
@@ -283,14 +289,13 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                         .collect(Collectors.joining());
                 String returnSignature = ClassFileHelper.toSignature(returnClass);
                 MethodTypeDesc methodTypeDesc = MethodTypeDesc.ofDescriptor("(" + parametersSignature + ")" + returnSignature);
-                classBuilder.withMethod(executableElement.getSimpleName().toString(), methodTypeDesc, AccessFlag.PUBLIC.mask() | AccessFlag.ABSTRACT.mask(), it -> {
+                classBuilder.withMethod(executableElement.getSimpleName().toString(), methodTypeDesc, AccessFlag.PUBLIC.mask() | AccessFlag.ABSTRACT.mask(), methodBytecodeBuilder -> {
                     //对参数做处理
                     List<List<Annotation>> parameterAnnotation = parameters.stream()
-                            .map(v -> v.getAnnotation(Pointer.class) == null ? List.<Annotation>of() : List.of(Annotation.of(ClassFileHelper.toDesc(Pointer.class))))
+                                .map(this::findAllAnnotation)
                             .toList();
 
-                    it.with(RuntimeVisibleParameterAnnotationsAttribute.of(parameterAnnotation));
-
+                    methodBytecodeBuilder.with(RuntimeVisibleParameterAnnotationsAttribute.of(parameterAnnotation));
                     //NativeFunction处理
                     NativeFunction nativeFunction = executableElement.getAnnotation(NativeFunction.class);
                     if (nativeFunction != null) {
@@ -307,7 +312,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                                                 .collect(Collectors.toUnmodifiableList())
                                 ))
                         );
-                        it.with(RuntimeVisibleAnnotationsAttribute.of(annotation));
+                        methodBytecodeBuilder.with(RuntimeVisibleAnnotationsAttribute.of(annotation));
                     }
 
                 });
@@ -362,6 +367,17 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
         return define(thisClassName, bytecode);
     }
 
+    private List<Annotation> findAllAnnotation(VariableElement element) {
+        List<? extends AnnotationMirror> annotationMirrors = element.getAnnotationMirrors();
+        ArrayList<Annotation> allAnnotation = new ArrayList<>();
+        for (AnnotationMirror annotationMirror : annotationMirrors) {
+            String annotationName = ((TypeElement) annotationMirror.getAnnotationType().asElement()).getQualifiedName().toString();
+            allAnnotation.add(Annotation.of(ClassFileHelper.toDesc(annotationName)));
+        }
+
+        return allAnnotation;
+    }
+
     private Class getAnnotationAttributeClassValue(Supplier<Class> supplier) {
         try {
             return supplier.get();
@@ -379,12 +395,13 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
         byte[] byteCode = classFile.build(thisClassDesc, classBuilder -> {
             classBuilder.withFlags(AccessFlag.PUBLIC);
             Alignment alignment = currentTypeElement.getAnnotation(Alignment.class);
+            List<Annotation> typeAnnotation = new ArrayList<>();
             if (alignment != null) {
                 Annotation annotation = Annotation.of(
                         ClassFileHelper.toDesc(Alignment.class),
                         AnnotationElement.of("byteSize", AnnotationValue.ofInt(alignment.byteSize()))
                 );
-                classBuilder.with(RuntimeVisibleAnnotationsAttribute.of(annotation));
+                typeAnnotation.add(annotation);
             }
 
             Union union = currentTypeElement.getAnnotation(Union.class);
@@ -392,8 +409,9 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 Annotation annotation = Annotation.of(
                         ClassFileHelper.toDesc(Union.class)
                 );
-                classBuilder.with(RuntimeVisibleAnnotationsAttribute.of(annotation));
+                typeAnnotation.add(annotation);
             }
+            classBuilder.with(RuntimeVisibleAnnotationsAttribute.of(typeAnnotation));
             List<VariableElement> fields = ElementFilter.fieldsIn(currentTypeElement.getEnclosedElements());
             for (VariableElement field : fields) {
                 classBuilder.withField(field.getSimpleName().toString(), ClassFileHelper.toDesc(toRuntiumeClass(field.asType())), it -> {
@@ -488,10 +506,16 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
 
     private String generateDuringSetupBlock() {
         ArrayList<ProxyPair> callInterfaceNames = this.proxyPair;
-        return callInterfaceNames.stream()
+        var classPathRegister = this.classPathLibs.stream()
+                .map(lib -> String.format("""
+                        RuntimeResourceAccess.addResource(%s.class.getModule(), "%s");
+                        """, featureName, lib))
+                .collect(Collectors.joining("\n"));
+        var panamaRegister = callInterfaceNames.stream()
                 .filter(p -> p.generateType == CompileTimeGenerate.GenerateType.NATIVE_CALL)
                 .map(proxyPair -> "NativeImageHelper.initPanamaFeature(" + proxyPair.origin + ".class);")
                 .collect(Collectors.joining("\n"));
+        return classPathRegister + panamaRegister;
     }
 
     private String generateBeforeAnalysisBlock() {
@@ -509,7 +533,6 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                                 RuntimeReflection.registerAllMethods(needRegisterClass);
                         
                                 RuntimeReflection.registerAllDeclaredClasses(needRegisterClass);
-                              //  RuntimeClassInitialization.initializeAtBuildTime(needRegisterClass);
                         """, p.proxy, p.origin));
 
         var structProxyStream = this.proxyPair
@@ -525,13 +548,12 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                                 RuntimeReflection.register(constructor);
                                 RuntimeReflection.register(needRegisterClass);
                                 RuntimeReflection.registerAllDeclaredConstructors(needRegisterClass);
-                              //  RuntimeClassInitialization.initializeAtBuildTime(needRegisterClass);
                         """, p.origin, p.proxy));
 
         var baseStream = Stream.of(NativeStructEnhanceMark.class, NativeGeneratorHelper.class)
                 .map(Class::getName)
                 .map(name -> String.format("""
-                        needRegisterClass = Class.forName("%s", false, getClass().getClassLoader());
+                         needRegisterClass = Class.forName("%s", false, getClass().getClassLoader());
                          RuntimeReflection.registerAllMethods(needRegisterClass);
                         """, name));
         return Stream.of(baseStream, interfaceStream, structProxyStream)
@@ -551,6 +573,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 import top.dreamlike.panama.generator.proxy.NativeImageHelper;
                 import org.graalvm.nativeimage.hosted.RuntimeClassInitialization;
                 import java.lang.reflect.Constructor;
+                import org.graalvm.nativeimage.hosted.RuntimeResourceAccess;
                 """);
         statements.add(String.format("""
                 public class %s implements Feature {
@@ -572,7 +595,7 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                         try {
                          %s
                         } catch(Throwable t) {
-                          t.printStackTrace();
+                           new RuntimeException("register panama generate result error!", t);
                        }
                     }
                 }

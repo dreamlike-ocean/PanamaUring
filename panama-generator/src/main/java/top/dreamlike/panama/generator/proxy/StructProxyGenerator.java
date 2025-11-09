@@ -754,7 +754,6 @@ public class StructProxyGenerator {
         ClassFileHelper.invoke(it, NativeGeneratorHelper.OVER_WRITE_SUB_ELEMENT);
     }
 
-
     private Consumer<CodeBuilder> generateMemorySegmentField(ClassBuilder cb, ClassDesc thisClass, Field field, MemoryLayout structLayout) {
         long offset = structLayout.byteOffset(MemoryLayout.PathElement.groupElement(field.getName()));
         NativeArrayMark arrayMark = field.getAnnotation(NativeArrayMark.class);

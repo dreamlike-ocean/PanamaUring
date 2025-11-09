@@ -14,9 +14,21 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <skipNativeImageTestsuite>false</skipNativeImageTestsuite>
     </properties>
 
     <profiles>
+        <profile>
+            <id>skipTests</id>
+            <activation>
+                <property>
+                    <name>skipTests</name>
+                </property>
+            </activation>
+            <properties>
+<!--                <skipNativeImageTestsuite>true</skipNativeImageTestsuite>-->
+            </properties>
+        </profile>
         <profile>
             <id>native-image-testsuite</id>
             <activation>
@@ -26,7 +38,53 @@
                 </file>
             </activation>
             <build>
-
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <version>0.10.6</version>
+                        <extensions>false</extensions>
+                        <executions>
+                            <execution>
+                                <id>native-image-test</id>
+                                <phase>package</phase>
+                                <goals><goal>compile-no-fork</goal></goals>
+                                <configuration>
+                                    <metadataRepository><enabled>false</enabled></metadataRepository>
+                                    <imageName>panama-generator-test-native</imageName>
+                                    <mainClass>top.dreamlike.panama.generator.proxy.NativeImageTestMain</mainClass>
+                                    <buildArgs>
+                                        <arg>--report-unsupported-elements-at-runtime</arg>
+                                        <arg>--allow-incomplete-classpath</arg>
+                                        <arg>-Ob</arg>
+                                        <arg>--enable-native-access=ALL-UNNAMED</arg>
+                                        <arg>--features=PanamaGeneratorFeature</arg>
+                                    </buildArgs>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>verify-native-image</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <skip>${skipNativeImageTestsuite}</skip>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>${project.basedir}/verify-native-image.sh</argument>
+                            </arguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
     </profiles>
@@ -39,7 +97,12 @@
         <dependency>
             <groupId>io.github.dreamlike-ocean</groupId>
             <artifactId>panama-generator-test-native</artifactId>
-            <scope>test</scope>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>nativeimage</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
@@ -52,11 +115,12 @@
                     <target>${java.version}</target>
                     <source>${java.version}</source>
                     <annotationProcessors>
-                        <annotationProcessor>top.dreamlike.panama.generator.proxy.PanamaAnnotationProcessor</annotationProcessor>
+                        <annotationProcessor>top.dreamlike.panama.generator.proxy.PanamaAnnotationProcessor
+                        </annotationProcessor>
                     </annotationProcessors>
                     <compilerArgs>
-                        <arg>-A</arg>
-                        <arg>generate.graal.feature.enable=true</arg>
+                        <arg>-Agenerate.graal.feature.enable=true</arg>
+                        <arg>-Agenerate.graal.feature.name=PanamaGeneratorFeature</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

@@ -5,23 +5,21 @@ import top.dreamlike.panama.generator.annotation.CompileTimeGenerate;
 import top.dreamlike.panama.generator.annotation.Pointer;
 import top.dreamlike.panama.generator.annotation.Union;
 
-import java.lang.foreign.MemorySegment;
-
 @CompileTimeGenerate
 @Union
 @Alignment(byteSize = 1)
 public class EpollEventData {
     @Pointer
-    private MemorySegment ptr;
+    private long ptr;
     private int fd;
     private int u32;
     private long u64;
 
-    public MemorySegment getPtr() {
+    public long getPtr() {
         return ptr;
     }
 
-    public void setPtr(MemorySegment ptr) {
+    public void setPtr(long ptr) {
         this.ptr = ptr;
     }
 
