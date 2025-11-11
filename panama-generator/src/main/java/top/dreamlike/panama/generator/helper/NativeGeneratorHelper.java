@@ -177,8 +177,7 @@ public class NativeGeneratorHelper {
         MethodHandle target = callSite.getTarget();
         //传入捕获的变量
         Function<MemorySegment, Object> lambdaFunction = (Function<MemorySegment, Object>) target.invoke();
-        //对传入的memorysegment再reinterpret
-        return (ms) -> lambdaFunction.apply(ms.reinterpret(memoryLayout.byteSize()));
+        return lambdaFunction;
     }
 
     public static Supplier<Object> ctorBinder(MethodHandle methodHandle) throws Throwable {

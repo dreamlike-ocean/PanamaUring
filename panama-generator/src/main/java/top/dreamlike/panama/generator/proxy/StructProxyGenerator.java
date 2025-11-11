@@ -56,6 +56,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static top.dreamlike.panama.generator.helper.NativeGeneratorHelper.REINTERPRET;
 import static top.dreamlike.panama.generator.helper.NativeGeneratorHelper.TRANSFORM_OBJECT_TO_STRUCT_MH;
 import static top.dreamlike.panama.generator.proxy.NativeLookup.primitiveMapToMemoryLayout;
 
@@ -85,7 +86,7 @@ public class StructProxyGenerator {
         }
     }
 
-    final Map<Class<?>, Function<MemorySegment, Object>> ctorCaches = new ConcurrentHashMap<>();
+    final Map<Class<?>, NativeStructProxyCtorMeta> ctorCaches = new ConcurrentHashMap<>();
     private final Map<Class<?>, MemoryLayout> layoutCaches = new ConcurrentHashMap<>();
     BiConsumer<String, byte[]> classDataPeek;
     boolean skipInit = false;
@@ -161,10 +162,16 @@ public class StructProxyGenerator {
 
         try {
             return (T) ctorCaches.computeIfAbsent(t, this::enhance)
+                    .lmfCtor()
                     .apply(binder);
         } catch (Throwable throwable) {
             throw new StructException("should not reach here!", throwable);
         }
+    }
+
+    MethodHandle findEnhancedCtor(Class<?> t) {
+        return ctorCaches.computeIfAbsent(t, this::enhance)
+                .mhCtor();
     }
 
     public <T> T allocate(SegmentAllocator allocator, Class<T> t) {
@@ -270,7 +277,7 @@ public class StructProxyGenerator {
         return memoryLayout;
     }
 
-    <T> Function<MemorySegment, Object> enhance(Class<T> targetClass) {
+    <T> NativeStructProxyCtorMeta enhance(Class<T> targetClass) {
         try {
             MemoryLayout structMemoryLayout = extract(targetClass);
             NativeGeneratorHelper.STRUCT_CONTEXT.set(new StructProxyContext(this, structMemoryLayout));
@@ -284,7 +291,7 @@ public class StructProxyGenerator {
             if (aClass == null) {
                 var thisClassDesc = ClassDesc.of(className);
                 byte[] classByteCode = classFile.build(thisClassDesc, classBuilder -> {
-                    generatorCtor(classBuilder, thisClassDesc, targetClass);
+                    generatorCtor(classBuilder, thisClassDesc, targetClass, structMemoryLayout);
                     ArrayList<Consumer<CodeBuilder>> clinitBlocks = new ArrayList<>();
                     Consumer<CodeBuilder> interfaceClinit = implementStructMarkInterface(classBuilder, thisClassDesc);
                     clinitBlocks.add(interfaceClinit);
@@ -323,11 +330,10 @@ public class StructProxyGenerator {
             }
             MethodHandle ctorMh = MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class, MemorySegment.class));
             if (use_lmf) {
-                return NativeGeneratorHelper.memoryBinder(ctorMh, structMemoryLayout);
+                return new NativeStructProxyCtorMeta(NativeGeneratorHelper.memoryBinder(ctorMh, structMemoryLayout), ctorMh);
             }
             var ctorErased = ctorMh.asType(ctorMh.type().changeReturnType(Object.class));
-            return (memorySegment) -> {
-                memorySegment = memorySegment.reinterpret(structMemoryLayout.byteSize());
+            Function<MemorySegment, Object> ctorlmf = (memorySegment) -> {
                 try {
                     return ctorErased.invokeExact(memorySegment);
                 } catch (Throwable e) {
@@ -335,6 +341,7 @@ public class StructProxyGenerator {
                 }
                 return null;
             };
+            return new NativeStructProxyCtorMeta(ctorlmf, ctorMh);
         } catch (Throwable e) {
             throw new StructException("should not reach here!", e);
         } finally {
@@ -595,13 +602,17 @@ public class StructProxyGenerator {
         };
     }
 
-    private void generatorCtor(ClassBuilder cb, ClassDesc thisClass, Class originClass) {
+    private void generatorCtor(ClassBuilder cb, ClassDesc thisClass, Class originClass, MemoryLayout structMemoryLayout) {
         cb.withSuperclass(ClassFileHelper.toDesc(originClass));
         cb.withMethodBody(ConstantDescs.INIT_NAME, MethodType.methodType(void.class, MemorySegment.class).describeConstable().get(), ClassFile.ACC_PUBLIC, it -> {
             //super()
             it.aload(0);
             it.invokespecial(ClassFileHelper.toDesc(originClass), ConstantDescs.INIT_NAME, ConstantDescs.MTD_void);
-
+            // newSegment = memorySegment.reinterpret(structMemoryLayout.byteSize())
+            it.aload(1);
+            it.loadConstant(structMemoryLayout.byteSize());
+            it.invokeinterface(ClassFileHelper.toDesc(MemorySegment.class), "reinterpret", ClassFileHelper.toMethodDescriptor(NativeGeneratorHelper.REINTERPRET));
+            it.astore(1);
             //this._realMemory = newSegment;
             it.aload(0);
             it.aload(1);
@@ -783,7 +794,7 @@ public class StructProxyGenerator {
                         ClassFileHelper.invoke(it, NativeGeneratorHelper.GET_ADDRESS_FROM_MEMORY_SEGMENT, true);
                         it.ldc(realSize.byteSize() * arrayMark.length());
 //                memory.reinterpret(realSize.byteSize() * arrayMark.length());
-                        ClassFileHelper.invoke(it, NativeGeneratorHelper.REINTERPRET, true);
+                        ClassFileHelper.invoke(it, REINTERPRET, true);
                         it.areturn();
                     } else {
 //                realMemory.asSlice(offset, realSize.byteSize() * arrayMark.length());
@@ -830,7 +841,7 @@ public class StructProxyGenerator {
                         it.ldc(offset);
                         ClassFileHelper.invoke(it, NativeGeneratorHelper.GET_ADDRESS_FROM_MEMORY_SEGMENT, true);
                         it.ldc(subStructLayoutSize);
-                        ClassFileHelper.invoke(it, NativeGeneratorHelper.REINTERPRET, true);
+                        ClassFileHelper.invoke(it, REINTERPRET, true);
                         it.astore(2);
                         it.getstatic(thisClass, GENERATOR_FIELD, ClassFileHelper.toDesc(StructProxyGenerator.class));
                         it.ldc(ClassFileHelper.toDesc(field.getType()));
@@ -881,6 +892,8 @@ public class StructProxyGenerator {
 
     private record ShortCutInfo(String[] path, VarHandle.AccessMode accessMode, Method method) {
     }
+
+    private record NativeStructProxyCtorMeta(Function<MemorySegment, Object> lmfCtor, MethodHandle mhCtor) {};
 
 }
 

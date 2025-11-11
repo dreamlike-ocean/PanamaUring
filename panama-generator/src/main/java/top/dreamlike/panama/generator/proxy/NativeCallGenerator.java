@@ -356,11 +356,8 @@ public class NativeCallGenerator {
 
             //绑定当前的StructProxyGenerator
             //绑定的结果是 (MemorySegment) -> ${returnType}
-            //todo可以直接返回ctor的method
-            MethodHandle returnEnhance = StructProxyGenerator.ENHANCE_MH
-                    .asType(StructProxyGenerator.ENHANCE_MH.type().changeReturnType(method.getReturnType()))
-                    .bindTo(structProxyGenerator)
-                    .bindTo(method.getReturnType());
+            MethodHandle returnEnhance = structProxyGenerator.findEnhancedCtor(method.getReturnType());
+            returnEnhance = returnEnhance.asType(returnEnhance.type().changeReturnType(method.getReturnType()));
             //来把MemorySegment返回值转换为java bean
             methodHandle = MethodHandles.filterReturnValue(
                     methodHandle,
