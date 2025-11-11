@@ -11,11 +11,12 @@ import java.lang.foreign.AddressLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
-import java.lang.invoke.*;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static java.lang.foreign.MemoryLayout.paddingLayout;
@@ -118,7 +119,6 @@ public class NativeGeneratorHelper {
         };
     }
 
-
     public static MemoryLayout currentLayout() {
         StructProxyContext context = fetchCurrentNativeStructGenerator.get();
         return context.memoryLayout();
@@ -158,39 +158,6 @@ public class NativeGeneratorHelper {
             System.out.println("支持对齐的序列为" + layouts + ", sizeof(layouts): " + size + ", align: " + align);
         }
         return MemoryLayout.structLayout(layouts.toArray(MemoryLayout[]::new));
-    }
-
-    public static Function<MemorySegment, Object> memoryBinder(MethodHandle methodHandle, MemoryLayout memoryLayout) throws Throwable {
-        CallSite callSite = LambdaMetafactory.metafactory(
-                MethodHandles.lookup(),
-                "apply",
-                //返回值为目标sam 其余的为捕获变量
-                MethodType.methodType(Function.class),
-                //sam的方法签名
-                MethodType.methodType(Object.class, Object.class),
-                //转发到的目标方法 这里是(MemorySegment.class) -> ${EnhanceClass}
-                methodHandle,
-                //最终想要的调用形式
-                MethodType.methodType(Object.class, MemorySegment.class)
-        );
-
-        MethodHandle target = callSite.getTarget();
-        //传入捕获的变量
-        Function<MemorySegment, Object> lambdaFunction = (Function<MemorySegment, Object>) target.invoke();
-        return lambdaFunction;
-    }
-
-    public static Supplier<Object> ctorBinder(MethodHandle methodHandle) throws Throwable {
-
-        CallSite callSite = LambdaMetafactory.metafactory(
-                MethodHandles.lookup(),
-                "get",
-                MethodType.methodType(Supplier.class),
-                MethodType.methodType(Object.class),
-                methodHandle,
-                methodHandle.type()
-        );
-        return (Supplier<Object>) callSite.getTarget().invoke();
     }
 
     public static void setPtr(Object proxyStruct, long offset, Object newStructPtr) {

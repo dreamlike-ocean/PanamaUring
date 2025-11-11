@@ -59,6 +59,7 @@
                                         <arg>-Ob</arg>
                                         <arg>--enable-native-access=ALL-UNNAMED</arg>
                                         <arg>--features=PanamaGeneratorFeature</arg>
+                                        <arg>--no-fallback</arg>
                                     </buildArgs>
                                 </configuration>
                             </execution>
@@ -121,6 +122,7 @@
                     <compilerArgs>
                         <arg>-Agenerate.graal.feature.enable=true</arg>
                         <arg>-Agenerate.graal.feature.name=PanamaGeneratorFeature</arg>
+                        <arg>-Aindy.enable=true</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

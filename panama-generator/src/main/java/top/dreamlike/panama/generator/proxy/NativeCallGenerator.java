@@ -5,46 +5,23 @@ import top.dreamlike.panama.generator.annotation.NativeFunction;
 import top.dreamlike.panama.generator.annotation.NativeFunctionPointer;
 import top.dreamlike.panama.generator.annotation.Pointer;
 import top.dreamlike.panama.generator.exception.StructException;
-import top.dreamlike.panama.generator.helper.ClassFileHelper;
-import top.dreamlike.panama.generator.helper.DowncallContext;
-import top.dreamlike.panama.generator.helper.FunctionPointer;
-import top.dreamlike.panama.generator.helper.NativeAddressable;
-import top.dreamlike.panama.generator.helper.NativeGeneratorHelper;
+import top.dreamlike.panama.generator.helper.*;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
-import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDescs;
-import java.lang.constant.DynamicCallSiteDesc;
-import java.lang.foreign.Arena;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.ValueLayout;
-import java.lang.invoke.CallSite;
-import java.lang.invoke.ConstantCallSite;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
+import java.lang.constant.*;
+import java.lang.foreign.*;
+import java.lang.invoke.*;
 import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static top.dreamlike.panama.generator.helper.NativeGeneratorHelper.TRANSFORM_OBJECT_TO_STRUCT_MH;
@@ -56,6 +33,7 @@ import static top.dreamlike.panama.generator.helper.NativeGeneratorHelper.TRANSF
 public class NativeCallGenerator {
 
     static final String GENERATOR_FIELD_NAME = "_generator";
+    static final String CTOR_FACTORY_NAME = "_ctorFactory";
     private static final MethodHandle DLSYM_MH;
     private static final Method GENERATE_IN_GENERATOR_CONTEXT;
 
@@ -73,8 +51,7 @@ public class NativeCallGenerator {
     private final ClassFile classFile = ClassFile.of();
     private final Map<String, MemorySegment> foreignFunctionAddressCache = new ConcurrentHashMap<>();
     private final StructProxyGenerator structProxyGenerator;
-    public volatile boolean use_lmf = !NativeImageHelper.inExecutable();
-    private volatile boolean use_indy = !NativeImageHelper.inExecutable();
+    private volatile boolean use_indy = true;
 
     public NativeCallGenerator() {
         this.structProxyGenerator = new StructProxyGenerator();
@@ -523,6 +500,7 @@ public class NativeCallGenerator {
                 clinits.forEach(init -> init.accept(it));
                 it.return_();
             });
+            generatorCtorFactory(classBuilder, thisClassDesc);
         });
         if (structProxyGenerator.classDataPeek != null) {
             structProxyGenerator.classDataPeek.accept(className, thisClass);
@@ -563,6 +541,27 @@ public class NativeCallGenerator {
         });
     }
 
+    private void generatorCtorFactory(ClassBuilder thisClass, ClassDesc thisClassDesc) {
+        MethodTypeDesc methodTypeDesc = MethodTypeDesc.of(Function.class.describeConstable().get());
+        thisClass.withMethodBody(CTOR_FACTORY_NAME, methodTypeDesc, AccessFlag.STATIC.mask() | AccessFlag.PUBLIC.mask(), it -> {
+            it.invokedynamic(
+                    DynamicCallSiteDesc.of(
+                            ConstantDescs.ofCallsiteBootstrap(
+                                    ClassFileHelper.toDesc(LambdaMetafactory.class), "metafactory", ConstantDescs.CD_CallSite,
+                                    MethodType.class.describeConstable().get(), MethodHandle.class.describeConstable().get(), MethodType.class.describeConstable().get()
+                            ),
+                            "get",
+                            MethodTypeDesc.of(Supplier.class.describeConstable().get())
+                    ).withArgs(
+                            MethodTypeDesc.of(Object.class.describeConstable().get()),
+                            MethodHandleDesc.ofConstructor(thisClassDesc),
+                            MethodTypeDesc.of(thisClassDesc)
+                    )
+            );
+            it.areturn();
+        });
+    }
+
     /**
      * Binds a native interface to a dynamically generated implementation using byteBuddy library.
      *
@@ -580,41 +579,27 @@ public class NativeCallGenerator {
             String className = generateProxyClassName(nativeInterface);
             NativeGeneratorHelper.CURRENT_GENERATOR.set(this);
             MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(nativeInterface, MethodHandles.lookup());
-            Class<?> aClass = null;
+            Class<?> structProxyClass = null;
             try {
-                aClass = lookup.findClass(className);
+                structProxyClass = lookup.findClass(className);
             } catch (ClassNotFoundException ignore) {
             }
             //证明没有生成过
-            if (aClass == null) {
-                aClass = generateRuntimeProxyClass(lookup, nativeInterface);
+            if (structProxyClass == null) {
+                structProxyClass = generateRuntimeProxyClass(lookup, nativeInterface);
             }
             //强制初始化执行cInit
             if (!structProxyGenerator.skipInit) {
-                lookup.ensureInitialized(aClass);
+                lookup.ensureInitialized(structProxyClass);
             }
-            MethodHandle methodHandle = MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class));
-            if (use_lmf) {
-                return NativeGeneratorHelper.ctorBinder(methodHandle);
-            }
-            return () -> {
-                var mh = methodHandle.asType(methodHandle.type().changeReturnType(Object.class));
-                try {
-                    return (Object) mh.invokeExact();
-                } catch (Throwable t) {
-                    t.printStackTrace();
-                }
-                return null;
-            };
+            return structProxyGenerator.skipInit
+                    ? () -> null  //给apt用的 不用真实生成
+                    : (Supplier<Object>) (structProxyClass.getDeclaredMethod(CTOR_FACTORY_NAME).invoke(null));
         } catch (Throwable e) {
             throw new StructException("should not reach here!", e);
         } finally {
             NativeGeneratorHelper.CURRENT_GENERATOR.remove();
         }
-    }
-
-    public void useLmf(boolean use_lmf) {
-        this.use_lmf = use_lmf;
     }
 
     String generateProxyClassName(Class nativeInterface) {

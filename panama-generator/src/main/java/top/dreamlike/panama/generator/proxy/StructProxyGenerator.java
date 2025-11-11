@@ -1,55 +1,22 @@
 package top.dreamlike.panama.generator.proxy;
 
 
-import top.dreamlike.panama.generator.annotation.Alignment;
-import top.dreamlike.panama.generator.annotation.NativeArrayMark;
-import top.dreamlike.panama.generator.annotation.Pointer;
-import top.dreamlike.panama.generator.annotation.ShortcutOption;
-import top.dreamlike.panama.generator.annotation.Skip;
-import top.dreamlike.panama.generator.annotation.Union;
+import top.dreamlike.panama.generator.annotation.*;
 import top.dreamlike.panama.generator.exception.StructException;
-import top.dreamlike.panama.generator.helper.ClassFileHelper;
-import top.dreamlike.panama.generator.helper.NativeAddressable;
-import top.dreamlike.panama.generator.helper.NativeGeneratorHelper;
-import top.dreamlike.panama.generator.helper.NativeStructEnhanceMark;
-import top.dreamlike.panama.generator.helper.StructProxyContext;
+import top.dreamlike.panama.generator.helper.*;
 
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.TypeKind;
-import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDescs;
-import java.lang.constant.DirectMethodHandleDesc;
-import java.lang.constant.DynamicCallSiteDesc;
-import java.lang.constant.MethodHandleDesc;
-import java.lang.constant.MethodTypeDesc;
-import java.lang.foreign.AddressLayout;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.SequenceLayout;
-import java.lang.foreign.UnionLayout;
-import java.lang.foreign.ValueLayout;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.invoke.VarHandle;
-import java.lang.reflect.AccessFlag;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
+import java.lang.constant.*;
+import java.lang.foreign.*;
+import java.lang.invoke.*;
+import java.lang.reflect.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -66,6 +33,8 @@ public class StructProxyGenerator {
     static final String GENERATOR_FIELD = "_generator";
 
     static final String LAYOUT_FIELD = "_layout";
+    static final String CTOR_FACTORY_NAME = "_ctorFactory";
+    static final String SHORTCUT_FACTORY_NAME = "_shortcut_ctor_factory";
     static final MethodHandle ENHANCE_MH;
     private static final Method REALMEMORY_METHOD;
 
@@ -90,7 +59,6 @@ public class StructProxyGenerator {
     private final Map<Class<?>, MemoryLayout> layoutCaches = new ConcurrentHashMap<>();
     BiConsumer<String, byte[]> classDataPeek;
     boolean skipInit = false;
-    private volatile boolean use_lmf = !NativeImageHelper.inExecutable();
     private final ClassFile classFile = ClassFile.of();
 
     public StructProxyGenerator() {
@@ -315,6 +283,7 @@ public class StructProxyGenerator {
                         clinitBlocks.forEach(init -> init.accept(it));
                         it.return_();
                     });
+                    generateCtor(classBuilder, thisClassDesc);
                 });
 
                 if (classDataPeek != null) {
@@ -329,18 +298,7 @@ public class StructProxyGenerator {
                 lookup.ensureInitialized(aClass);
             }
             MethodHandle ctorMh = MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class, MemorySegment.class));
-            if (use_lmf) {
-                return new NativeStructProxyCtorMeta(NativeGeneratorHelper.memoryBinder(ctorMh, structMemoryLayout), ctorMh);
-            }
-            var ctorErased = ctorMh.asType(ctorMh.type().changeReturnType(Object.class));
-            Function<MemorySegment, Object> ctorlmf = (memorySegment) -> {
-                try {
-                    return ctorErased.invokeExact(memorySegment);
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
-                return null;
-            };
+            Function<MemorySegment, Object> ctorlmf = (Function<MemorySegment, Object>) aClass.getDeclaredMethod(CTOR_FACTORY_NAME).invoke(null);
             return new NativeStructProxyCtorMeta(ctorlmf, ctorMh);
         } catch (Throwable e) {
             throw new StructException("should not reach here!", e);
@@ -353,6 +311,26 @@ public class StructProxyGenerator {
         enhance(target);
     }
 
+    private void generateCtor(ClassBuilder thisClass, ClassDesc thisClassDesc) {
+        MethodTypeDesc methodTypeDesc = MethodTypeDesc.of(Function.class.describeConstable().get());
+        thisClass.withMethodBody(CTOR_FACTORY_NAME, methodTypeDesc, AccessFlag.STATIC.mask() | AccessFlag.PUBLIC.mask(), it -> {
+            it.invokedynamic(
+                    DynamicCallSiteDesc.of(
+                            ConstantDescs.ofCallsiteBootstrap(
+                                    ClassFileHelper.toDesc(LambdaMetafactory.class), "metafactory", ConstantDescs.CD_CallSite,
+                                    MethodType.class.describeConstable().get(), MethodHandle.class.describeConstable().get(), MethodType.class.describeConstable().get()
+                            ),
+                            "apply",
+                            MethodTypeDesc.of(Function.class.describeConstable().get())
+                    ).withArgs(
+                            MethodTypeDesc.of(Object.class.describeConstable().get(), Object.class.describeConstable().get()),
+                            MethodHandleDesc.ofConstructor(thisClassDesc, MemorySegment.class.describeConstable().get()),
+                            MethodTypeDesc.of(thisClassDesc, MemorySegment.class.describeConstable().get())
+                    )
+            );
+            it.areturn();
+        });
+    }
     public <T> Supplier<T> generateShortcut(Class<T> shortcutInterface) {
         if (!shortcutInterface.isInterface()) {
             throw new IllegalArgumentException("shortcut should be interface!");
@@ -371,25 +349,34 @@ public class StructProxyGenerator {
             if (!skipInit) {
                 lookup.ensureInitialized(targetProxyClass);
             }
-            MethodHandle methodHandle = MethodHandles.lookup().findConstructor(targetProxyClass, MethodType.methodType(void.class));
-            if (use_lmf) {
-                return (Supplier<T>) NativeGeneratorHelper.ctorBinder(methodHandle);
-            }
-            return () -> {
-                var mh = methodHandle.asType(methodHandle.type().changeReturnType(Object.class));
-                try {
-                    return (T) mh.invokeExact();
-                } catch (Throwable t) {
-                    t.printStackTrace();
-                }
-                return null;
-            };
+            return (Supplier<T>) (targetProxyClass.getDeclaredMethod(SHORTCUT_FACTORY_NAME).invoke(null));
         } catch (Throwable e) {
             throw new RuntimeException(e);
         } finally {
             NativeGeneratorHelper.STRUCT_CONTEXT.remove();
         }
 
+    }
+
+    private void generateShortcutCtorFactory(ClassBuilder thisClass, ClassDesc thisClassDesc) {
+        MethodTypeDesc methodTypeDesc = MethodTypeDesc.of(Function.class.describeConstable().get());
+        thisClass.withMethodBody(SHORTCUT_FACTORY_NAME, methodTypeDesc, AccessFlag.STATIC.mask() | AccessFlag.PUBLIC.mask(), it -> {
+            it.invokedynamic(
+                    DynamicCallSiteDesc.of(
+                            ConstantDescs.ofCallsiteBootstrap(
+                                    ClassFileHelper.toDesc(LambdaMetafactory.class), "metafactory", ConstantDescs.CD_CallSite,
+                                    MethodType.class.describeConstable().get(), MethodHandle.class.describeConstable().get(), MethodType.class.describeConstable().get()
+                            ),
+                            "get",
+                            MethodTypeDesc.of(Supplier.class.describeConstable().get())
+                    ).withArgs(
+                            MethodTypeDesc.of(Object.class.describeConstable().get()),
+                            MethodHandleDesc.ofConstructor(thisClassDesc),
+                            MethodTypeDesc.of(thisClassDesc)
+                    )
+            );
+            it.areturn();
+        });
     }
 
     private <T> Class<T> generateShortcutClass(MethodHandles.Lookup lookup, Class<T> interfaceClass) throws IllegalAccessException {
@@ -431,6 +418,7 @@ public class StructProxyGenerator {
                 it.invokespecial(ConstantDescs.CD_Object, ConstantDescs.INIT_NAME, ConstantDescs.MTD_void);
                 it.return_();
             });
+            generateShortcutCtorFactory(cb, thisClass);
         });
 
         if (classDataPeek != null) {
@@ -531,10 +519,6 @@ public class StructProxyGenerator {
 
     <T> String generatorShortcutProxyName(Class<T> shortcutInterface) {
         return shortcutInterface.getName() + "_shortcut_proxy";
-    }
-
-    public void useLmf(boolean use_lmf) {
-        this.use_lmf = use_lmf;
     }
 
     private boolean needSkip(Field field) {
