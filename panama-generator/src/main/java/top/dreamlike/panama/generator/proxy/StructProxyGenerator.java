@@ -33,7 +33,7 @@ public class StructProxyGenerator {
 
     static final String LAYOUT_FIELD = "_layout";
     static final String CTOR_FACTORY_NAME = "_ctorFactory";
-    static final String SHORTCUT_FACTORY_NAME = "_shortcut_ctor_factory";
+    static final String SHORTCUT_FACTORY_NAME = CTOR_FACTORY_NAME;
     static final MethodHandle ENHANCE_MH;
     private static final Method REALMEMORY_METHOD;
 

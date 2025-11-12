@@ -501,13 +501,16 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 .map(p -> String.format("""
                                 needRegisterClass = Class.forName("%s", false, getClass().getClassLoader());
                                 RuntimeReflection.registerFieldLookup(needRegisterClass, "_generator");
+                                RuntimeReflection.registerMethodLookup(needRegisterClass, "_ctorFactory");
                                 RuntimeReflection.registerConstructorLookup(needRegisterClass);
                                 RuntimeReflection.registerMethodLookup(needRegisterClass,"<init>");
                                 RuntimeReflection.register(needRegisterClass);
                                 RuntimeReflection.registerForReflectiveInstantiation(needRegisterClass);
+                                RuntimeReflection.registerAllDeclaredMethods(needRegisterClass);
+                                RuntimeReflection.registerAllMethods(needRegisterClass);
                                 needRegisterClass = Class.forName("%s", false, getClass().getClassLoader());
                                 RuntimeReflection.registerAllMethods(needRegisterClass);
-                        
+                                RuntimeReflection.registerAllDeclaredMethods(needRegisterClass);
                                 RuntimeReflection.registerAllDeclaredClasses(needRegisterClass);
                         """, p.proxy, p.origin));
 
@@ -516,13 +519,16 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 .filter(p -> p.generateType == CompileTimeGenerate.GenerateType.STRUCT_PROXY)
                 .map(p -> String.format("""
                                 needRegisterClass = Class.forName("%s", false, getClass().getClassLoader());
-                              //  RuntimeReflection.registerConstructorLookup(needRegisterClass, MemorySegment.class);
                                 RuntimeReflection.register(needRegisterClass);
+                                RuntimeReflection.registerMethodLookup(needRegisterClass, "_ctorFactory");
                                 RuntimeReflection.registerAllDeclaredFields(needRegisterClass);
+                                RuntimeReflection.registerAllDeclaredMethods(needRegisterClass);
+                                RuntimeReflection.registerAllMethods(needRegisterClass);
                                 needRegisterClass = Class.forName("%s", false, getClass().getClassLoader());
                                 constructor = needRegisterClass.getDeclaredConstructor(MemorySegment.class);
                                 RuntimeReflection.register(constructor);
                                 RuntimeReflection.register(needRegisterClass);
+                                RuntimeReflection.registerAllDeclaredMethods(needRegisterClass);
                                 RuntimeReflection.registerAllDeclaredConstructors(needRegisterClass);
                         """, p.origin, p.proxy));
 
