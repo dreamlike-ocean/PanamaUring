@@ -5,10 +5,7 @@ import top.dreamlike.panama.generator.annotation.*;
 import top.dreamlike.panama.generator.exception.StructException;
 import top.dreamlike.panama.generator.helper.*;
 
-import java.lang.classfile.ClassBuilder;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.TypeKind;
+import java.lang.classfile.*;
 import java.lang.constant.*;
 import java.lang.foreign.*;
 import java.lang.invoke.*;
@@ -18,6 +15,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -55,7 +54,8 @@ public class StructProxyGenerator {
         }
     }
 
-    final Map<Class<?>, NativeStructProxyCtorMeta> ctorCaches = new ConcurrentHashMap<>();
+    final Lock ctorCacheLock = new ReentrantLock();
+    final Map<Class<?>, NativeStructProxyCtorMeta> ctorCaches = new HashMap<>();
     private final Map<Class<?>, MemoryLayout> layoutCaches = new ConcurrentHashMap<>();
     BiConsumer<String, byte[]> classDataPeek;
     boolean skipInit = false;
@@ -129,17 +129,32 @@ public class StructProxyGenerator {
         }
 
         try {
-            return (T) ctorCaches.computeIfAbsent(t, this::enhance)
-                    .lmfCtor()
-                    .apply(binder);
+            ctorCacheLock.lock();
+            NativeStructProxyCtorMeta nativeStructProxyCtorMeta = ctorCaches.get(t);
+            if (nativeStructProxyCtorMeta == null) {
+                nativeStructProxyCtorMeta = enhanceInternal(t);
+                ctorCaches.put(t, nativeStructProxyCtorMeta);
+            }
+            return (T) nativeStructProxyCtorMeta.lmfCtor.apply(binder);
         } catch (Throwable throwable) {
             throw new StructException("should not reach here!", throwable);
+        } finally {
+            ctorCacheLock.unlock();
         }
     }
 
     MethodHandle findEnhancedCtor(Class<?> t) {
-        return ctorCaches.computeIfAbsent(t, this::enhance)
-                .mhCtor();
+        ctorCacheLock.lock();
+        try {
+            NativeStructProxyCtorMeta nativeStructProxyCtorMeta = ctorCaches.get(t);
+            if (nativeStructProxyCtorMeta == null) {
+                nativeStructProxyCtorMeta = enhanceInternal(t);
+                ctorCaches.put(t, nativeStructProxyCtorMeta);
+            }
+            return nativeStructProxyCtorMeta.mhCtor();
+        } finally {
+            ctorCacheLock.unlock();
+        }
     }
 
     public <T> T allocate(SegmentAllocator allocator, Class<T> t) {
@@ -245,70 +260,70 @@ public class StructProxyGenerator {
         return memoryLayout;
     }
 
-    <T> NativeStructProxyCtorMeta enhance(Class<T> targetClass) {
+    <T> NativeStructProxyCtorMeta enhanceInternal(Class<T> targetClass) {
         try {
             MemoryLayout structMemoryLayout = extract(targetClass);
-            NativeGeneratorHelper.STRUCT_CONTEXT.set(new StructProxyContext(this, structMemoryLayout));
-            String className = generateProxyClassName(targetClass);
-            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(targetClass, MethodHandles.lookup());
-            Class<?> aClass = null;
-            try {
-                aClass = lookup.findClass(className);
-            } catch (ClassNotFoundException ignore) {
-            }
-            if (aClass == null) {
-                var thisClassDesc = ClassDesc.of(className);
-                byte[] classByteCode = classFile.build(thisClassDesc, classBuilder -> {
-                    generatorCtor(classBuilder, thisClassDesc, targetClass, structMemoryLayout);
-                    ArrayList<Consumer<CodeBuilder>> clinitBlocks = new ArrayList<>();
-                    Consumer<CodeBuilder> interfaceClinit = implementStructMarkInterface(classBuilder, thisClassDesc);
-                    clinitBlocks.add(interfaceClinit);
-                    for (Field field : targetClass.getDeclaredFields()) {
-                        if (needSkip(field)) {
-                            continue;
+            return ScopedValue.where(NativeGeneratorHelper.STRUCT_CONTEXT, new StructProxyContext(this, structMemoryLayout))
+                    .call(() -> {
+                        String className = generateProxyClassName(targetClass);
+                        MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(targetClass, MethodHandles.lookup());
+                        Class<?> aClass = null;
+                        try {
+                            aClass = lookup.findClass(className);
+                        } catch (ClassNotFoundException ignore) {
                         }
-                        var clinitBlock = switch (field.getType()) {
-                            case Class c when c.isPrimitive() ->
-                                    generatePrimitiveFieldVarHandle(classBuilder, thisClassDesc, field, structMemoryLayout);
-                            case Class c when c.equals(NativeArray.class) ->
-                                    generateNativeArray(classBuilder, thisClassDesc, field, structMemoryLayout);
-                            case Class c when MemorySegment.class.isAssignableFrom(c) ->
-                                    generateMemorySegmentField(classBuilder, thisClassDesc, field, structMemoryLayout);
-                            default -> generatorSubStructField(classBuilder, thisClassDesc, field, structMemoryLayout);
-                        };
-                        clinitBlocks.add(clinitBlock);
-                    }
+                        if (aClass == null) {
+                            var thisClassDesc = ClassDesc.of(className);
+                            byte[] classByteCode = classFile.build(thisClassDesc, classBuilder -> {
+                                generatorCtor(classBuilder, thisClassDesc, targetClass, structMemoryLayout);
+                                ArrayList<Consumer<CodeBuilder>> clinitBlocks = new ArrayList<>();
+                                Consumer<CodeBuilder> interfaceClinit = implementStructMarkInterface(classBuilder, thisClassDesc);
+                                clinitBlocks.add(interfaceClinit);
+                                for (Field field : targetClass.getDeclaredFields()) {
+                                    if (needSkip(field)) {
+                                        continue;
+                                    }
+                                    var clinitBlock = switch (field.getType()) {
+                                        case Class c when c.isPrimitive() ->
+                                                generatePrimitiveFieldVarHandle(classBuilder, thisClassDesc, field, structMemoryLayout);
+                                        case Class c when c.equals(NativeArray.class) ->
+                                                generateNativeArray(classBuilder, thisClassDesc, field, structMemoryLayout);
+                                        case Class c when MemorySegment.class.isAssignableFrom(c) ->
+                                                generateMemorySegmentField(classBuilder, thisClassDesc, field, structMemoryLayout);
+                                        default ->
+                                                generatorSubStructField(classBuilder, thisClassDesc, field, structMemoryLayout);
+                                    };
+                                    clinitBlocks.add(clinitBlock);
+                                }
 
-                    classBuilder.withMethodBody(ConstantDescs.CLASS_INIT_NAME, ConstantDescs.MTD_void, (AccessFlag.STATIC.mask()), it -> {
-                        clinitBlocks.forEach(init -> init.accept(it));
-                        it.return_();
+                                classBuilder.withMethodBody(ConstantDescs.CLASS_INIT_NAME, ConstantDescs.MTD_void, (AccessFlag.STATIC.mask()), it -> {
+                                    clinitBlocks.forEach(init -> init.accept(it));
+                                    it.return_();
+                                });
+                                generateCtor(classBuilder, thisClassDesc);
+                            });
+
+                            if (classDataPeek != null) {
+                                classDataPeek.accept(className, classByteCode);
+                            }
+                            aClass = lookup.defineClass(classByteCode);
+                        }
+
+                        //强制初始化执行cInit
+                        if (!skipInit) {
+                            lookup.ensureInitialized(aClass);
+                        }
+                        MethodHandle ctorMh = MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class, MemorySegment.class));
+                        Function<MemorySegment, Object> ctorlmf = (Function<MemorySegment, Object>) aClass.getDeclaredMethod(CTOR_FACTORY_NAME).invoke(null);
+                        return new NativeStructProxyCtorMeta(ctorlmf, ctorMh);
                     });
-                    generateCtor(classBuilder, thisClassDesc);
-                });
-
-                if (classDataPeek != null) {
-                    classDataPeek.accept(className, classByteCode);
-                }
-
-                aClass = lookup.defineClass(classByteCode);
-            }
-
-            //强制初始化执行cInit
-            if (!skipInit) {
-                lookup.ensureInitialized(aClass);
-            }
-            MethodHandle ctorMh = MethodHandles.lookup().findConstructor(aClass, MethodType.methodType(void.class, MemorySegment.class));
-            Function<MemorySegment, Object> ctorlmf = (Function<MemorySegment, Object>) aClass.getDeclaredMethod(CTOR_FACTORY_NAME).invoke(null);
-            return new NativeStructProxyCtorMeta(ctorlmf, ctorMh);
-        } catch (Throwable e) {
+        } catch (ReflectiveOperationException e) {
             throw new StructException("should not reach here!", e);
-        } finally {
-            NativeGeneratorHelper.STRUCT_CONTEXT.remove();
         }
     }
 
     public <T> void register(Class<T> target) {
-        enhance(target);
+        enhanceInternal(target);
     }
 
     private void generateCtor(ClassBuilder thisClass, ClassDesc thisClassDesc) {
@@ -331,31 +346,31 @@ public class StructProxyGenerator {
             it.areturn();
         });
     }
+
     public <T> Supplier<T> generateShortcut(Class<T> shortcutInterface) {
         if (!shortcutInterface.isInterface()) {
             throw new IllegalArgumentException("shortcut should be interface!");
         }
         String proxyName = generatorShortcutProxyName(shortcutInterface);
-        NativeGeneratorHelper.STRUCT_CONTEXT.set(new StructProxyContext(this, null));
         try {
-            Class<T> targetProxyClass = null;
-            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(shortcutInterface, MethodHandles.lookup());
-            try {
-                targetProxyClass = (Class<T>) lookup.findClass(proxyName);
-            } catch (ClassNotFoundException ignore) {
-                targetProxyClass = generateShortcutClass(lookup, shortcutInterface);
-            }
+            return ScopedValue.where(NativeGeneratorHelper.STRUCT_CONTEXT, new StructProxyContext(this, null))
+                    .call(() -> {
+                        Class<T> targetProxyClass = null;
+                        MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(shortcutInterface, MethodHandles.lookup());
+                        try {
+                            targetProxyClass = (Class<T>) lookup.findClass(proxyName);
+                        } catch (ClassNotFoundException ignore) {
+                            targetProxyClass = generateShortcutClass(lookup, shortcutInterface);
+                        }
 
-            if (!skipInit) {
-                lookup.ensureInitialized(targetProxyClass);
-            }
-            return (Supplier<T>) (targetProxyClass.getDeclaredMethod(SHORTCUT_FACTORY_NAME).invoke(null));
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        } finally {
-            NativeGeneratorHelper.STRUCT_CONTEXT.remove();
+                        if (!skipInit) {
+                            lookup.ensureInitialized(targetProxyClass);
+                        }
+                        return (Supplier<T>) (targetProxyClass.getDeclaredMethod(SHORTCUT_FACTORY_NAME).invoke(null));
+                    });
+        } catch (ReflectiveOperationException e) {
+            throw new StructException("should not reach here!", e);
         }
-
     }
 
     private void generateShortcutCtorFactory(ClassBuilder thisClass, ClassDesc thisClassDesc) {
@@ -533,8 +548,8 @@ public class StructProxyGenerator {
         }
         Class<?> type = field.getType();
         if (type.isPrimitive()
-            || field.getAnnotation(Pointer.class) != null
-            || Optional.ofNullable(field.getAnnotation(NativeArrayMark.class)).map(NativeArrayMark::asPointer).orElse(false)
+                || field.getAnnotation(Pointer.class) != null
+                || Optional.ofNullable(field.getAnnotation(NativeArrayMark.class)).map(NativeArrayMark::asPointer).orElse(false)
         ) {
             return MethodHandles.insertCoordinates(layout.varHandle(MemoryLayout.PathElement.groupElement(field.getName())), 1, 0);
         }
@@ -810,6 +825,7 @@ public class StructProxyGenerator {
         long subStructLayoutSize = structLayout.select(MemoryLayout.PathElement.groupElement(field.getName())).byteSize();
         long offset = structLayout.byteOffset(MemoryLayout.PathElement.groupElement(field.getName()));
         boolean isPointer = field.getAnnotation(Pointer.class) != null;
+        MethodHandle subStructCtor = findEnhancedCtor(field.getType());
         cb.withMethodBody(
                 "get" + upperFirstChar(field.getName()),
                 MethodType.methodType(field.getType()).describeConstable().get(),
@@ -820,6 +836,7 @@ public class StructProxyGenerator {
                     ClassFileHelper.invoke(it, REALMEMORY_METHOD, true);
                     it.astore(1);
                     it.aload(1);
+                    int aload;
                     if (isPointer) {
                         it.getstatic(ClassFileHelper.toDesc(ValueLayout.class), "ADDRESS", ClassFileHelper.toDesc(AddressLayout.class));
                         it.ldc(offset);
@@ -827,21 +844,37 @@ public class StructProxyGenerator {
                         it.ldc(subStructLayoutSize);
                         ClassFileHelper.invoke(it, REINTERPRET, true);
                         it.astore(2);
-                        it.getstatic(thisClass, GENERATOR_FIELD, ClassFileHelper.toDesc(StructProxyGenerator.class));
-                        it.ldc(ClassFileHelper.toDesc(field.getType()));
-                        it.aload(2);
+                        aload = 2;
                     } else {
                         it.ldc(offset);
                         it.ldc(subStructLayoutSize);
                         ClassFileHelper.invoke(it, NativeGeneratorHelper.AS_SLICE, true);
                         it.astore(1);
-                        it.getstatic(thisClass, GENERATOR_FIELD, ClassFileHelper.toDesc(StructProxyGenerator.class));
-                        it.ldc(ClassFileHelper.toDesc(field.getType()));
-                        it.aload(1);
+                        aload = 1;
                     }
-                    ClassFileHelper.invoke(it, NativeGeneratorHelper.ENHANCE);
-                    it.checkcast(ClassFileHelper.toDesc(field.getType()));
-                    it.areturn();
+                    it.aload(aload);
+                    it.invokestatic(
+                            NativeGeneratorHelper.class.describeConstable().get(),
+                            "isNull",
+                            MethodType.methodType(boolean.class, MemorySegment.class).describeConstable().get()
+                    );
+                    Label memorySegmentIsNull = it.newLabel();
+                    Label memorySegmentIsNotNull = it.newLabel();
+                    ClassDesc owner = subStructCtor.type().returnType().describeConstable().get();
+                    it.ifeq(memorySegmentIsNull)
+                            .aconst_null()
+                            .areturn()
+                            .labelBinding(memorySegmentIsNull)
+                            .new_(owner)
+                            .dup()
+                            .aload(aload)
+                            .invokespecial(
+                                    owner,
+                                    "<init>",
+                                    MethodType.methodType(void.class, MemorySegment.class).describeConstable().get()
+                            )
+                            .areturn()
+                            .labelBinding(memorySegmentIsNotNull);
                 });
 
         cb.withMethodBody(
@@ -877,7 +910,7 @@ public class StructProxyGenerator {
     private record ShortCutInfo(String[] path, VarHandle.AccessMode accessMode, Method method) {
     }
 
-    private record NativeStructProxyCtorMeta(Function<MemorySegment, Object> lmfCtor, MethodHandle mhCtor) {};
-
+    private record NativeStructProxyCtorMeta(Function<MemorySegment, Object> lmfCtor, MethodHandle mhCtor) {
+    }
 }
 

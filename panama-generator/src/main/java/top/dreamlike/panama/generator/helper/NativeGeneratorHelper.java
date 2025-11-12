@@ -34,8 +34,7 @@ public class NativeGeneratorHelper {
     public static final ThreadLocal<NativeCallGenerator> CURRENT_GENERATOR = new ThreadLocal<>();
     public static Supplier<NativeCallGenerator> fetchCurrentNativeCallGenerator = CURRENT_GENERATOR::get;
 
-    public static final ThreadLocal<StructProxyContext> STRUCT_CONTEXT = new ThreadLocal<>();
-    public static Supplier<StructProxyContext> fetchCurrentNativeStructGenerator = STRUCT_CONTEXT::get;
+    public static final ScopedValue<StructProxyContext> STRUCT_CONTEXT = ScopedValue.newInstance();
 
     public static final Method LOAD_SO;
 
@@ -50,8 +49,6 @@ public class NativeGeneratorHelper {
     public static final Method REINTERPRET;
 
     public static final Method AS_SLICE;
-
-    public static final Method ENHANCE;
 
     public static final MethodHandle TRANSFORM_OBJECT_TO_STRUCT_MH;
 
@@ -77,7 +74,6 @@ public class NativeGeneratorHelper {
             GET_ADDRESS_FROM_MEMORY_SEGMENT = MemorySegment.class.getMethod("get", AddressLayout.class, long.class);
             REINTERPRET = MemorySegment.class.getMethod("reinterpret", long.class);
             AS_SLICE = MemorySegment.class.getMethod("asSlice", long.class, long.class);
-            ENHANCE = StructProxyGenerator.class.getMethod("enhance", Class.class, MemorySegment.class);
             TRANSFORM_OBJECT_TO_STRUCT_MH = MethodHandles.lookup().findStatic(NativeGeneratorHelper.class, "transToStruct", MethodType.methodType(MemorySegment.class, Object.class));
             NATIVE_ARRAY_CTOR = MethodHandles.lookup().findConstructor(NativeArray.class, MethodType.methodType(void.class, StructProxyGenerator.class, MemorySegment.class, Class.class));
             SET_PTR = NativeGeneratorHelper.class.getMethod("setPtr", Object.class, long.class, Object.class);
@@ -105,7 +101,7 @@ public class NativeGeneratorHelper {
     }
 
     public static StructProxyContext currentStructContext() {
-        return fetchCurrentNativeStructGenerator.get();
+        return STRUCT_CONTEXT.get();
     }
 
     public static MemorySegment transToStruct(Object o) {
@@ -120,12 +116,12 @@ public class NativeGeneratorHelper {
     }
 
     public static MemoryLayout currentLayout() {
-        StructProxyContext context = fetchCurrentNativeStructGenerator.get();
+        StructProxyContext context = STRUCT_CONTEXT.get();
         return context.memoryLayout();
     }
 
     public static StructProxyGenerator currentStructGenerator() {
-        return fetchCurrentNativeStructGenerator.get().generator();
+        return STRUCT_CONTEXT.get().generator();
     }
 
     public static MemoryLayout calAlignLayout(List<MemoryLayout> memoryLayouts) {
@@ -177,6 +173,10 @@ public class NativeGeneratorHelper {
                 struct, ValueLayout.JAVA_BYTE, offset,
                 size
         );
+    }
+
+    public static boolean isNull(MemorySegment memorySegment) {
+        return memorySegment == null || memorySegment.address() == MemorySegment.NULL.address();
     }
 }
 

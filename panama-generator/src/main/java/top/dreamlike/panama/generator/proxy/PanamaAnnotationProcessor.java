@@ -1,32 +1,14 @@
 package top.dreamlike.panama.generator.proxy;
 
-import top.dreamlike.panama.generator.annotation.Alignment;
-import top.dreamlike.panama.generator.annotation.CLib;
-import top.dreamlike.panama.generator.annotation.CompileTimeGenerate;
-import top.dreamlike.panama.generator.annotation.NativeArrayMark;
-import top.dreamlike.panama.generator.annotation.NativeFunction;
-import top.dreamlike.panama.generator.annotation.Pointer;
-import top.dreamlike.panama.generator.annotation.ShortcutOption;
-import top.dreamlike.panama.generator.annotation.Skip;
-import top.dreamlike.panama.generator.annotation.Union;
+import top.dreamlike.panama.generator.annotation.*;
 import top.dreamlike.panama.generator.exception.StructException;
 import top.dreamlike.panama.generator.helper.ClassFileHelper;
 import top.dreamlike.panama.generator.helper.NativeGeneratorHelper;
 import top.dreamlike.panama.generator.helper.NativeStructEnhanceMark;
 
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedOptions;
-import javax.annotation.processing.SupportedSourceVersion;
+import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeKind;
@@ -49,13 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -148,12 +124,12 @@ public class PanamaAnnotationProcessor extends AbstractProcessor {
                 CompileTimeGenerate.GenerateType generateType = element.getAnnotation(CompileTimeGenerate.class).value();
 
                 if (!isInterface) {
-                    structProxyGenerator.enhance(runtimeClass);
+                    structProxyGenerator.enhanceInternal(runtimeClass);
                     proxyPair.add(new ProxyPair(runtimeClass.getName(), StructProxyGenerator.generateProxyClassName(runtimeClass), CompileTimeGenerate.GenerateType.STRUCT_PROXY));
                 } else {
                     switch (generateType) {
                         case STRUCT_PROXY -> {
-                            structProxyGenerator.enhance(runtimeClass);
+                            structProxyGenerator.enhanceInternal(runtimeClass);
                             proxyPair.add(new ProxyPair(runtimeClass.getName(), StructProxyGenerator.generateProxyClassName(runtimeClass), CompileTimeGenerate.GenerateType.STRUCT_PROXY));
                         }
                         case SHORTCUT -> {
