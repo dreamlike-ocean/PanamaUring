@@ -34,14 +34,12 @@ public class NativeCallGenerator {
 
     static final String GENERATOR_FIELD_NAME = "_generator";
     static final String CTOR_FACTORY_NAME = "_ctorFactory";
-    private static final MethodHandle DLSYM_MH;
     private static final Method GENERATE_IN_GENERATOR_CONTEXT;
 
     static {
         try {
-            DLSYM_MH = MethodHandles.lookup().findVirtual(NativeCallGenerator.class, "dlsym", MethodType.methodType(MemorySegment.class, String.class));
             GENERATE_IN_GENERATOR_CONTEXT = NativeCallGenerator.class.getMethod("generateInGeneratorContext", Class.class, String.class, MethodType.class);
-        } catch (NoSuchMethodException | IllegalAccessException e) {
+        } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
     }
@@ -173,10 +171,8 @@ public class NativeCallGenerator {
             for (Integer index : pointerIndex) {
                 int i = index;
                 Class<?> argType = parameters[i].getType();
-                MethodHandle argEnhanceMH = StructProxyGenerator.ENHANCE_MH
-                        .asType(StructProxyGenerator.ENHANCE_MH.type().changeReturnType(argType))
-                        .bindTo(structProxyGenerator)
-                        .bindTo(argType);
+                MethodHandle argEnhanceMH = structProxyGenerator.findEnhancedCtor(argType);
+                argEnhanceMH = argEnhanceMH.asType(argEnhanceMH.type().changeReturnType(argType));
                 //第二步将MemorySegment转为对应的java对象
                 handle = MethodHandles.filterArguments(
                         handle,

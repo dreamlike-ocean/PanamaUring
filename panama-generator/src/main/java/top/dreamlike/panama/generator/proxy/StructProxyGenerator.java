@@ -34,7 +34,6 @@ public class StructProxyGenerator {
     static final String LAYOUT_FIELD = "_layout";
     static final String CTOR_FACTORY_NAME = "_ctorFactory";
     static final String SHORTCUT_FACTORY_NAME = CTOR_FACTORY_NAME;
-    static final MethodHandle ENHANCE_MH;
     private static final Method REALMEMORY_METHOD;
 
     private static final Method GENERATOR_VARHANDLE;
@@ -45,11 +44,10 @@ public class StructProxyGenerator {
 
     static {
         try {
-            ENHANCE_MH = MethodHandles.lookup().findVirtual(StructProxyGenerator.class, "enhance", MethodType.methodType(Object.class, Class.class, MemorySegment.class));
             REALMEMORY_METHOD = NativeStructEnhanceMark.class.getMethod("realMemory");
             GENERATOR_VARHANDLE = StructProxyGenerator.class.getMethod("generateVarHandle", MemoryLayout.class, String.class);
             SHORTCUT_INDY_BOOTSTRAP_METHOD = InvokeDynamicFactory.class.getMethod("shortcutIndyFactory", MethodHandles.Lookup.class, String.class, MethodType.class, Object[].class);
-        } catch (NoSuchMethodException | IllegalAccessException e) {
+        } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
     }
