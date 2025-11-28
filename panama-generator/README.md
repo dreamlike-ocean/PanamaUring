@@ -230,7 +230,7 @@ public interface LibPerson {
 ```java
 var structProxyGenerator = new StructProxyGenerator();
 var callGenerator = new NativeCallGenerator(structProxyGenerator);
-var libPerson = callGenerator.generate(LibPerson.class);
+var nativeLib = callGenerator.generate(LibPerson.class);
 ```
 
 让我们简单回答下这些注解的含义
@@ -259,9 +259,9 @@ Java Panama FFI errorno api其实是有点奇怪的，所以你需要这样使�
     try (Arena arena = Arena.ofConfined()) {
         MemoryLifetimeScope.of(arena)
                 .active(() -> {
-                    long l = libPerson.set_error_no(888, 1);
+                    long l = nativeLib.set_error_no(888, 1);
                     Assert.assertEquals(l, 1);
-                    int error = libPerson.current_error(1, 2);
+                    int error = nativeLib.current_error(1, 2);
                     Assert.assertEquals(error, 888);
                     Assert.assertEquals(ErrorNo.error.get().intValue(), 888);
                 });

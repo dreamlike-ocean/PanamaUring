@@ -21,7 +21,7 @@ maven坐标为
 git clone https://github.com/dreamlike-ocean/PanamaUring.git
 ```
 
-测试运行 由于依赖了[ClassFile api](https://openjdk.org/jeps/484)所以需要使用jdk24
+测试运行 由于依赖了[ClassFile api](https://openjdk.org/jeps/484)所以需要使用jdk25
 
 ```shell
 mvn clean test -am -pl panama-uring

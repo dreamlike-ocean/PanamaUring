@@ -10,15 +10,11 @@
     <groupId>io.github.dreamlike-ocean</groupId>
     <artifactId>PanamaUring</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.6</version>
+    <version>4.2.0-SNAPSHOT</version>
     <properties>
-        <java.version>24</java.version>
+        <java.version>25</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <vertx.version>4.3.7</vertx.version>
-        <vertx-async.version>3.0.0</vertx-async.version>
-        <native-lib>3.0.0</native-lib>
-        <mutiny.version>2.5.0</mutiny.version>
-        <panama-generator>1.4.5</panama-generator>
+        <panama.version>4.2.0-SNAPSHOT</panama.version>
         <logback.version>1.2.3</logback.version>
         <log.version>2.23.1</log.version>
     </properties>
@@ -48,6 +44,8 @@
     <modules>
         <module>panama-uring</module>
         <module>panama-generator</module>
+        <module>panama-generator-apt-test</module>
+        <module>panama-generator-test-native</module>
     </modules>
     <profiles>
         <profile>
@@ -147,7 +145,12 @@
             <dependency>
                 <groupId>io.github.dreamlike-ocean</groupId>
                 <artifactId>panama-generator</artifactId>
-                <version>${panama-generator}</version>
+                <version>${panama.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.dreamlike-ocean</groupId>
+                <artifactId>panama-generator-test-native</artifactId>
+                <version>${panama.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit</groupId>
@@ -156,9 +159,15 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- https://mvnrepository.com/artifact/org.graalvm.sdk/nativeimage -->
+            <dependency>
+                <groupId>org.graalvm.sdk</groupId>
+                <artifactId>nativeimage</artifactId>
+                <version>23.1.1</version>
+                <scope>provided</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
-
 
     <dependencies>
         <!-- https://mvnrepository.com/artifact/junit/junit -->
@@ -181,6 +190,24 @@
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>3.5.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.10.1</version>
+                    <configuration>
+                        <target>${java.version}</target>
+                        <source>${java.version}</source>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -190,6 +217,11 @@
                     <trimStackTrace>false</trimStackTrace>
                     <argLine>--enable-native-access=ALL-UNNAMED</argLine>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.6.0</version>
             </plugin>
         </plugins>
     </build>
